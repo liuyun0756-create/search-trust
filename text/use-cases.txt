@@ -1,0 +1,120 @@
+"Search
+Trust"
+Home
+Framework
+Sample Report
+Use Cases
+Pricing
+Sign In
+Run a Trust Audit
+Use Cases for Search Trust
+SEO Agencies
+Local SEO Teams
+Affiliate Operators
+Multi-Location Businesses
+From pre-publish local page reviews to diagnosing ranking stagnation, Search Trust helps teams understand where page trust breaks and what to fix first
+View Sample Report
+Why teams turn to Search Trust
+Primary Use Cases Overview
+Use cases by team type
+Where Search Trust fits in your workflow
+What teams get from these use cases
+Related resources
+FAQ
+"→ 上线前信任审查
+→ 页面发布
+→ 监测排名 / GSC
+→ 若可见性停滞
+→ 运行信任诊断
+→ 优先修复
+→ 再次检测"
+很多团队并不是缺乏 SEO 数据，而是缺乏对“信任失败”的解释能力
+Local templates scale faster than trust
+Teams struggle to explain why pages feel “off”
+Existing tools don’t diagnose local trust collapse
+SEO agencies
+Local SEO specialists
+In-house local content teams
+"为什么不够
+这些检查只能验证“页面有没有做”，却不能解释：
+页面是否真的具体
+是否有现实锚点
+是否值得单独存在"
+"减少上线低
+信任页面"
+降低后期返工
+"提高页面发
+布质量门槛"
+"pre-publish QA
+stuck page diagnosis
+client reporting"
+"local page qualification
+trust breakdown analysis
+page improvement prioritization"
+"scaled page review
+doorway-risk detection
+template quality control"
+"location page consistency
+local entity alignment
+standalone value checks"
+Local SEO Specialists
+Affiliate Marketers
+Multi-location Businesses
+Fewer weak pages published
+Product Overview
+Faster diagnosis of non-performing pages
+More credible client communication
+Better quality control for scaled local SEO
+Clearer prioritization of fixes
+Stronger trust readiness for local search
+Which use case is best for agencies?
+Agency reporting + pre-publish review + stuck page diagnosis.
+"2. Can I use SearchTrust before publishing pages?
+Yes, that is one of the clearest MVP use cases.
+3. Is it useful for AI-generated local pages?
+Yes. It helps identify whether pages look generic, templated, or weakly grounded.
+4. Does it replace rank tracking tools?
+No. It complements them by diagnosing trust-related structural failure.
+5. Is this only for local SEO?
+The MVP is primarily built for local pages and local trust diagnosis.
+6. Can multi-location brands use it?
+Yes, especially for reviewing page differentiation and local grounding"
+Find the use case that matches your pages — then test it on a real URL
+Product
+Get Started
+Legal
+Learn
+Privacy
+Refunds
+Terms
+© 2026 SearchTrust. All rights reserved.
+社交媒体
+Blog
+Pages are indexed but not gaining traction
+"Audit local pages 
+before publishing"
+Audit local pages before publishing
+You’re about to publish a city page, service-area page, or location landing page — but you don’t know whether it looks like a credible local destination or just another scalable template.
+"当前常见做法
+手动 review 文案
+检查关键词和 meta
+看看有没有 city name / FAQ / map
+凭经验感觉是否“太模板化”"
+Improve client reporting for agencies
+Diagnose indexed-but-stuck pages
+Validate multi-location page quality
+Review AI-generated city pages at scale
+"Reduce doorway 
+programmatic risk"
+"AI Linter 如何帮助
+分析页面所在的主导失败层
+判断页面是否只是 location-labeled
+找出具体性、现实锚点、独立价值不足的问题
+在上线前给出低成本修复建议"
+"产出
+Trust status
+Dominant layer
+Risk list
+Fix priorities"
+预期收益
+Beta

@@ -1,0 +1,293 @@
+Terms:
+Terms of Service
+"Effective date: April 14, 2026
+These Terms of Service (“Terms”) govern your access to and use of 「trysearchtrust.com」 and the products and services provided by SearchTrust (“we”, “us”, or “our”), including SearchTrust
+By accessing our website, purchasing a report, or using our services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use the website or purchase our services."
+"1. Our service
+SearchTrust provides digital analysis and reporting services for submitted web pages or URLs. Our service is designed to evaluate a submitted page and provide a structured report, which may include observations, scoring, diagnostic output, findings, and recommended actions.
+Each purchase covers the specific service described at checkout or on the pricing page. Unless otherwise stated, a one-time purchase covers one report for one submitted URL.
+We may update, improve, modify, suspend, or discontinue parts of the service at any time."
+"2. Eligibility
+You may use our website and services only if you are legally capable of entering into a binding agreement under applicable law.
+If you are using the service on behalf of a company, agency, or other organization, you represent that you have authority to bind that entity to these Terms."
+"3. Purchases and payment
+Prices are listed on our website or checkout pages. By placing an order, you agree to pay the listed price, together with any applicable taxes, fees, or charges disclosed at checkout.
+Payments on this website are processed by Paddle. Paddle may act as merchant of record for transactions, and your payment may be subject to Paddle’s terms, policies, and checkout processes.
+Unless expressly stated otherwise:
+purchases are one-time payments,
+each purchase applies to the specific report or service selected,
+there is no recurring subscription or automatic renewal.
+We reserve the right to change pricing at any time, but any pricing changes will not affect orders already completed."
+"4. Submission and delivery
+To receive the service, you may be required to submit information such as a URL, email address, and any other details needed to process the report.
+You are responsible for ensuring that submitted information is accurate and that you have the right to submit the page or material for analysis.
+After purchase and required submission, your report will generally be delivered via email 、 web report within within two hours. Delivery times are estimates only and may vary based on demand, technical issues, review requirements, or other operational factors.
+We are not responsible for delays caused by incorrect information provided by you, unavailable websites, inaccessible pages, third-party failures, or events outside our reasonable control.
+
+5. Refunds
+Refunds are governed by our Refund Policy, available at trysearchtrust.com policy page
+In general, because our service is a digital product or analysis service, refunds are only available in limited circumstances, such as before processing begins or where required by law.
+
+6. Permitted use
+You may use our website and reports only for lawful purposes.
+You agree not to:
+use the service in violation of any law or regulation,
+interfere with or disrupt the website or service,
+attempt to gain unauthorized access to our systems,
+copy, resell, or exploit the service except as permitted by us,
+use bots, scraping tools, or automated methods to access restricted parts of the service without authorization,
+reverse engineer, decompile, or attempt to extract the underlying systems, prompts, models, or methodologies except where prohibited by law.
+
+7. Your content and submissions
+You may provide URLs, text, data, or other inputs in connection with the service (“Submissions”).
+You retain any rights you may have in your Submissions. By submitting content to us, you grant us a limited, non-exclusive right to use, process, store, and analyze those Submissions solely for the purpose of providing the service, supporting operations, improving quality, preventing abuse, and complying with legal obligations.
+You represent that:
+you have the necessary rights to submit the content,
+your Submissions do not violate applicable law,
+your Submissions do not infringe the rights of any third party.
+
+8. Intellectual property
+The website, branding, content, design, software, report format, methodologies, and all related intellectual property associated with SearchTrust, excluding your own Submissions, are owned by or licensed to us.
+These Terms do not transfer any ownership rights to you. You may not reproduce, distribute, modify, create derivative works from, publicly display, or commercially exploit our materials except as expressly permitted by us.
+
+9. No guarantees
+Our reports and outputs are provided for informational and internal business use only.
+We do not guarantee:
+search rankings,
+SEO performance,
+traffic growth,
+lead generation,
+conversion improvements,
+revenue impact,
+compliance outcomes,
+or any specific business result.
+Any analysis, recommendations, scores, or findings provided through the service are opinions or automated outputs based on available inputs and methodologies at the time of analysis.
+Our service does not constitute legal, financial, tax, compliance, or other professional advice."
+"10. Service availability
+We aim to provide a reliable service, but we do not guarantee that the website or service will always be available, uninterrupted, secure, or error-free.
+We may suspend access for maintenance, upgrades, abuse prevention, or operational reasons.
+
+11. Disclaimer of warranties
+To the maximum extent permitted by law, the website and services are provided on an “as is” and “as available” basis.
+We disclaim all warranties, express or implied, including any implied warranties of merchantability, fitness for a particular purpose, title, non-infringement, accuracy, availability, or reliability.
+
+12. Limitation of liability
+To the maximum extent permitted by law, SearchTrust and its affiliates, officers, owners, employees, contractors, and service providers will not be liable for any indirect, incidental, consequential, special, exemplary, or punitive damages, including loss of profits, revenue, data, business opportunities, or goodwill, arising out of or related to your use of the website or services.
+To the maximum extent permitted by law, our total liability for any claim arising out of or relating to the service will not exceed the amount you paid us for the specific purchase giving rise to the claim.
+Nothing in these Terms excludes liability that cannot be excluded under applicable law."
+"13. Indemnification
+You agree to indemnify and hold harmless SearchTrust and its affiliates, officers, owners, employees, contractors, and service providers from and against any claims, liabilities, damages, losses, and expenses arising out of:
+your misuse of the service,
+your violation of these Terms,
+your Submissions,
+or your violation of any law or third-party rights.
+
+14. Termination or refusal of service
+We may suspend, restrict, cancel, or refuse service at any time if we reasonably believe that:
+you are violating these Terms,
+your use is unlawful or abusive,
+fraud or payment issues are involved,
+the requested service cannot be completed safely or reasonably.
+If we cancel an order before processing begins, we may issue a refund where appropriate.
+
+15. Third-party services
+Our website and services may rely on third-party providers, including payment processors, hosting providers, analytics services, communication tools, and AI infrastructure providers.
+We are not responsible for the acts, omissions, or independent terms of third-party services.
+
+16. Changes to these Terms
+We may update these Terms from time to time. The updated version will be posted on this page with a revised effective date.
+By continuing to use the website or services after updated Terms become effective, you agree to the revised Terms.
+
+17. Governing law
+These Terms are governed by the laws of USA, without regard to conflict of law principles.
+Any dispute arising out of or relating to these Terms or the services will be subject to the courts located in USA, unless applicable law requires otherwise."
+"18. Contact
+If you have questions about these Terms, please contact:
+Company Name：SearchTrust Email: liu6685756@gmail.com Website: trysearchtrust.com"
+
+Privacy:
+Privacy Policy
+"Effective date:April 14, 2026
+These Terms of Service (“Terms”) govern your access to and use of trysearchtrust.com and the products and services provided by SearchTrust (“we”, “us”, or “our”), including SearchTrust
+By accessing our website, purchasing a report, or using our services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use the website or purchase our services."
+"1. Information we collect
+We may collect the following categories of information:
+a. Information you provide directly
+When you use our website or purchase our services, you may provide information such as:
+your name,
+email address,
+billing address,
+company or organization name,
+submitted URLs or page information,
+messages you send to us,
+support requests,
+any other information you choose to provide.
+b. Payment information
+Payments are processed by Paddle. We do not typically store your full payment card details.
+When you make a purchase, payment-related information may be collected and processed by Paddle in accordance with Paddle’s own privacy practices and terms.
+c. Automatically collected information
+When you visit our website, we may automatically collect certain technical and usage information, such as:
+IP address,
+browser type,
+device type,
+operating system,
+referring pages,
+pages visited,
+dates and times of access,
+usage events,
+approximate location based on IP,
+cookie or analytics identifiers.
+d. Cookies and similar technologies
+We may use cookies, pixels, analytics tools, and similar technologies to operate the website, understand usage, improve performance, and measure traffic.
+
+2. How we use information
+We may use your information to:
+provide and deliver reports and services,
+process transactions and purchases,
+communicate with you about your order,
+provide customer support,
+improve our website, products, and operations,
+monitor usage and prevent abuse or fraud,
+enforce our Terms and policies,
+comply with legal obligations,
+send important transactional or administrative messages.
+If we send marketing emails, we will do so in accordance with applicable law, and you may unsubscribe where applicable.
+
+3. Legal bases for processing
+If applicable data protection laws require a legal basis for processing personal information, we may process information on the basis of:
+performance of a contract,
+your consent,
+our legitimate interests in operating and improving the business,
+and compliance with legal obligations.
+
+4. How we share information
+We do not sell your personal information in the ordinary sense of selling customer lists for money.
+We may share information with trusted third parties only as needed to operate the service, including:
+payment processors such as Paddle,
+hosting and infrastructure providers,
+analytics providers,
+customer support or communication tools,
+contractors or service providers assisting with operations,
+legal or regulatory authorities when required by law.
+We may also disclose information:
+to enforce our rights,
+to detect or prevent fraud, abuse, or security issues,
+in connection with a merger, acquisition, sale of assets, or business transfer.
+
+5. Payment processing by Paddle
+Payments on our website are processed by Paddle. When you complete a transaction, certain personal and transaction-related information may be collected and processed by Paddle as part of the checkout and payment process.
+Please review Paddle’s own privacy policy for more information about how Paddle handles payment and billing data.
+
+6. Data retention
+We retain personal information for as long as reasonably necessary to:
+provide the service,
+maintain records,
+resolve disputes,
+enforce agreements,
+comply with legal, tax, accounting, or regulatory obligations,
+and support legitimate business operations.
+Retention periods may vary depending on the type of information and the purpose for which it was collected.
+
+7. Your rights and choices
+Depending on your location and applicable law, you may have rights relating to your personal information, including the right to:
+request access to your information,
+request correction of inaccurate information,
+request deletion of your information,
+object to or restrict certain processing,
+withdraw consent where processing is based on consent.
+To make a privacy-related request, contact us at liu6685756@gmail.com. We may need to verify your identity before responding.
+
+8. Cookies and analytics choices
+You may be able to control cookies through your browser settings. Disabling cookies may affect some website functionality.
+If we use analytics or tracking tools, those providers may also offer their own opt-out mechanisms.
+
+9. International data transfers
+Your information may be processed and stored in countries other than your own, including where our hosting, analytics, payment, or operational service providers are located.
+By using our website or services, you understand that your information may be transferred to and processed in jurisdictions with different data protection laws than those in your location.
+
+10. Data security
+We use reasonable administrative, technical, and organizational measures to help protect personal information.
+However, no method of transmission over the internet or electronic storage is completely secure, and we cannot guarantee absolute security.
+
+11. Children’s privacy
+Our website and services are not directed to children, and we do not knowingly collect personal information from children under the age required by applicable law.
+If you believe a child has provided us with personal information, please contact us and we will take appropriate steps.
+
+12. Third-party links
+Our website may contain links to third-party websites or services. We are not responsible for the privacy practices of those third parties. We encourage you to review their privacy policies separately.
+
+13. Changes to this Privacy Policy
+We may update this Privacy Policy from time to time. The updated version will be posted on this page with a revised effective date.
+Your continued use of the website or services after an update becomes effective indicates your acknowledgment of the updated policy.
+
+14. Contact
+If you have questions or requests regarding this Privacy Policy, please contact:
+Company Name：SearchTrust Email: liu6685756@gmail.com Website: trysearchtrust.com"
+
+Refunds:
+Refund Policy
+"Effective date: April 14, 2026
+This Refund Policy explains when refunds may be available for purchases made through trysearchtrust.com for SearchTrust"
+"1. Scope
+This policy applies to one-time purchases of digital reports, analyses, or related services sold through our website.
+
+2. General refund rule
+Because SearchTrust is a digital analysis and reporting service, refunds are generally available only in limited circumstances.
+As a general rule:
+before processing begins: a refund request may be eligible for approval;
+after processing has begun: the purchase is generally non-refundable;
+after the report has been delivered: the purchase is non-refundable except where required by law.
+
+3. What counts as processing
+For the purposes of this policy, processing begins once we start work on your order, which may include any of the following:
+your submitted URL or page enters our analysis workflow,
+automated report generation begins,
+manual review begins,
+internal preparation or delivery steps specific to your order begin.
+Once processing has started, we typically cannot offer a refund because the digital service has already begun.
+
+4. Situations where a refund may be available
+We may approve a refund in situations such as:
+you contact us before processing begins,
+you were charged more than once for the same order,
+a duplicate order was placed by mistake,
+we are unable to deliver the service due to a technical failure on our side,
+or where a refund is otherwise required by applicable law.
+
+5. Situations where a refund is generally not available
+Refunds are generally not available in the following situations:
+processing has already started,
+the report has already been delivered,
+you changed your mind after purchase,
+you no longer need the report,
+you submitted the wrong URL and processing has already started,
+you are dissatisfied with the outcome, findings, score, or recommendations,
+the analyzed page changed after submission or after delivery,
+your expectations were based on results not promised by the service.
+
+6. Incorrect submissions
+You are responsible for ensuring that the submitted URL and related information are correct at the time of submission.
+If you submitted the wrong URL, contact us as soon as possible at liu6685756@gmail.com. If processing has not yet started, we may be able to assist or update the order. If processing has already started, the purchase is generally non-refundable.
+
+7. How to request a refund
+To request a refund, email us at liu6685756@gmail.com and include:
+the email address used for purchase,
+the date of purchase,
+the submitted URL, if applicable,
+the reason for your request,
+and any relevant supporting details.
+
+8. Review process
+We review refund requests case by case and aim to respond within 3 business days.
+If a refund is approved, it will generally be returned to the original payment method used for the purchase.
+Processing times for completed refunds may depend on Paddle, your payment provider, and your financial institution.
+
+9. Chargebacks and payment disputes
+If you have an issue with your order, please contact us first at liu6685756@gmail.com before initiating a chargeback or payment dispute.
+We will do our best to resolve legitimate issues quickly and fairly.
+
+10. Changes to this policy
+We may update this Refund Policy from time to time. The updated version will be posted on this page with a revised effective date.
+
+11. Contact If you have any questions about this Refund Policy, contact:
+Company Name：SearchTrust Email: liu6685756@gmail.com Website: trysearchtrust.com"

@@ -1,0 +1,146 @@
+"Search
+Trust"
+Home
+Framework
+Sample Report
+Use Cases
+Pricing
+Sign In
+Run a Trust Audit
+See what a SearchTrust report looks like
+See What a Local Trust Audit Looks Like
+What’s inside the report
+Key insights from this sample
+What makes this report different
+Who this type of report is for
+Typical SEO audit
+Search Trust report
+"flat issue list
+technical checks
+generic recommendations
+little trust interpretation
+weak fix prioritization"
+"layer-based diagnosis
+identifies dominant failure point
+explains local trust weakness
+prioritizes fixes by structural impact
+built for local page interpretation"
+Explore a sample local page trust audit and see how SearchTrust diagnoses trust breakdown across six structural layers.
+This sample is illustrative. Some details may be simplified or anonymized to show the report structure clearly.
+总体结论
+Current trust status
+Not just issue detection
+Not all findings are equal
+Fixes are ordered by trust impact
+Built for local page interpretation
+Page interpretation
+Dominant failure layer
+Prioritized improvement path
+Key issues by layer
+Strategic recommendations
+A page-level summary of current structural trust strength
+It explains why the page feels untrustworthy.
+It identifies the dominant layer, not just a long list.
+Users know what to change first.
+Especially useful for city pages, service-area pages, and multi-location content.
+Why the page can participate, stall, or stay unstable
+The layer where trust breakdown matters most
+What to fix first, next, and later
+Weaknesses organized through the six-layer model
+Guidance focused on trust impact, not just issue listing
+URL
+https://nxtlvlautospa.com/
+类型
+"GBP
+URL"
+本地服务页
+页面水平
+重点问题
+六层架构
+Trust 修复执行方案
+View Sample Report
+Download Sample PDF
+What this sample report shows
+This sample is illustrative. Some details may be simplified to show the report structure clearly.
+Sample page type
+Purpose of the sample
+"a local service page
+a city / location-intent landing page
+a page reviewed as a trust diagnosis example"
+"to show how the report is structured
+to explain how SearchTrust applies the framework
+to preview the kind of findings and recommendations you receive"
+"示例 1
+The page is not failing because it lacks content volume"
+"示例 2
+Its local claim is weakly grounded and unsupported by real-world anchors."
+"示例 3
+The business presence is implied, but accountability signals are incomplete."
+"示例 4
+The page resembles a scalable city template more than a standalone local destination."
+"示例 5
+The best first fix is not “add more text” but strengthen location-service grounding."
+SEO Agencies
+Local SEO Specialists
+Affiliate Marketers
+Multi-location Businesses
+Use it to explain page weakness clearly to clients.
+Use it to diagnose why a page looks relevant but still isn’t competitive enough.
+Use it to catch generic, templated, or weakly grounded pages before scaling.
+Use it to evaluate whether a local page can stand as a credible local asset.
+Frequently asked questions
+Q1. What does SearchTrust analyze?
+SearchTrust analyzes one submitted local page URL and evaluates it through a six-layer trust model to identify where structural trust breaks down and what to fix first.
+Want a report like this for your own page?
+Run SearchTrust on a live URL and see where trust breaks down, which layer matters most, and what to fix first.
+"•	当前状态：中等偏弱 / 中等 / 良好
+•	排名潜力：可参与竞争 / 有提升空间 / 具备较强竞争力
+•	风险等级：中 / 中高 / 低"
+"你当前更可能遇到的是：
+•	页面能收录，但排名不稳定
+•	某些词能进入结果页，但难以持续上升
+•	对网站整体权重依赖较高
+•	遇到本地信号更强的竞争页时容易被超过"
+你的页面具备参与本地搜索竞争的基础条件，但目前还不是一个高信任的本地业务页面
+"这页已经具备基本的服务相关性和本地指向性，但在实体信任、现实连接和页面独立价值上仍有明显短板。
+这会影响页面的排名稳定性，以及在本地竞争中的持续表现"
+Product
+Get Started
+Legal
+Learn
+Privacy
+Refunds
+Terms
+© 2026 SearchTrust. All rights reserved.
+社交媒体
+Blog
+required
+optional / recommended
+GBPURL
+Page Type
+"Q2. What kinds of pages is it best for?
+SearchTrust is best for local service pages, city pages, service-area pages, and location landing pages. It is built for local page trust diagnosis, not general-purpose site auditing.
+Q3. Is this a full SEO audit?
+No. SearchTrust is not a full technical SEO audit, rank tracker, or GBP management tool. It focuses on page-level trust qualification, structural credibility, and local competitiveness.
+Q4. What do I receive after purchase?
+You receive one structured report for one submitted URL. The report includes current trust status, dominant failure layer, findings across the six-layer model, and prioritized recommendations.
+Q5. How is the report delivered?
+After payment, you submit the URL you want reviewed. Your report is delivered by email within two hours.
+Q6. Is the report automated? SearchTrust generates the report through an automated analysis workflow based on the submitted page and the SearchTrust framework
+Q7. Can I use this before publishing a page?
+Yes. Pre-publish review is one of the clearest use cases for SearchTrust. It can help identify weak local grounding, template risk, and trust gaps before rollout.
+Q8. Can I use this for pages that are already live?
+Yes. SearchTrust can also be used to diagnose indexed pages that appear relevant but are not gaining traction, holding rankings, or competing consistently.
+Q9. Does this guarantee better rankings?
+No. SearchTrust does not guarantee rankings, traffic, or business outcomes. It helps diagnose structural trust weaknesses that may affect a page’s ability to compete in local search.
+Q10. Does it analyze Google Business Profile performance?
+No. SearchTrust does not replace GBP management or local rank tracking. It focuses on the page itself and how well that page qualifies as a credible local asset.
+Q11. Does one purchase include multiple pages?
+No. Each purchase covers one submitted URL and one report.
+Q12. Is this suitable for agencies?
+Yes. Agencies can use SearchTrust for pre-publish reviews, stuck-page diagnosis, and clearer client reporting around page-level trust weaknesses.
+Q13. Is this useful for AI-generated or scaled local pages?
+Yes. SearchTrust is especially useful for reviewing pages that may look optimized on the surface but feel generic, weakly grounded, or structurally repetitive.
+Q14. Can I get a refund?
+Refunds may be available before processing begins. Once report processing has started or the report has been delivered, purchases are generally non-refundable. Please see our Refund Policy for full details."
+Beta

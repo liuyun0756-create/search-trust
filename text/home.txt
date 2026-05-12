@@ -1,0 +1,193 @@
+jhone
+AI-generated city pages are everywhere. Most look scalable, not believableAI-generated city pages are everywhere. Most look scalable, not believableAI-generated city pages are everywhere. Most look scalable, not believable
+A six-layer trust diagnosis for one submitted page
+The dominant failure point holding the page back
+Prioritized recommendations based on trust impact
+Delivery by email within two hours of submission
+Home
+"Find why Google doesn’t trust your local page 
+ and what to fix first"
+Built for local pages that look optimized but still struggle to rank, hold visibility, or compete consistently.
+SearchTrust analyzes a submitted local, city, service-area, or location page through a structured trust model and shows where trust breaks down, which layer matters most, and what to fix first.
+Framework
+Sample Report
+Use Cases
+Pricing
+Sign In
+"Search
+Trust"
+Search Trust Insight Engine
+"Local pages don’t fail because they lack content They fail 
+because Google doesn’t trust them"
+"a way to explain why a local page feels 
+optimized but still doesn’t rank"
+What you get
+"Most SEO tools measure performance 
+They don’t explain trust failure"
+How it works
+See what a Trust Collapse Report looks like
+Built for trust diagnosis, not just page scoring
+Common ways teams use Search Trust
+"How teams use Search
+Trust Audit local pages before publishing"
+How SearchTrust differs from other SEO tools
+Where the product is going
+Frequently asked questions
+The L0–L5 Trust Collapse Model
+Traditional SEO tools tell you what changed Search Trust tells you why Google may still not trust the page.
+A structural framework for diagnosing whether a page qualifies as a real local entity entry point
+Built to move from page trust diagnosis to search trust intelligence.
+Search Trust doesn’t just flag issues. It shows where trust collapses in the page’s structure.
+AI-generated city pages are exploding, but Google is getting stricter about templated, low-value, and weakly grounded local pages
+AI city page explosion
+SEO Agencies
+Single-page trust diagnosis
+Entity consistency analysis
+Trust Radar
+AI citation readiness
+L0 — Qualification
+Submit your page
+1.Single-Page Trust Diagnosis
+5. Entity Consistency Checks
+6. Lowest-Cost Fix Suggestions
+2.Trust Layer Mapping
+3. Programmatic Risk Detection
+4. Real-World Anchor Analysis
+Analyze trust signals
+Map the trust breakdown
+Get actionable output
+Google is stricter
+Local SEO Specialists
+L1 — Specificity
+Entity-based local search
+Affiliate Marketers
+L2 — Real-World Anchors
+L4 — Standalone Value
+Ranking is no longer enough
+Multi-location Businesses
+L3 — Responsibility
+L5 — Era Fit
+AI-generated city pages are everywhere. Most look scalable, not believable
+Explain trust-related ranking issues faster and with less manual analysis.
+Explain why client pages lose trust, not just rankings.
+Page × GBP × site-wide alignment
+Visual scoring, comparison, trends, and reporting
+Evaluate whether the page is ready to be cited in AI Overviews
+Does the page even qualify to compete?
+Enter the page URL, page type, and optionally a GBP link.
+Evaluate whether a page looks like a real local business entry point.
+Understand whether page claims align with business identity and local signals.
+Get specific, minimal actions to improve trust without rewriting everything.
+See which trust layer is holding the page back most.
+Spot signals that make a page look templated, doorway-like, or low-value.
+Detect whether the page is grounded in place, service context, and reality
+We scan structural patterns related to specificity, anchors, accountability, and page value.
+Each issue is mapped to your page’s dominant trust failure layer.
+Receive a trust report with findings, likely Google interpretation, and lowest-cost next steps
+Google is increasingly cautious about doorway-like local pages and template-based service pages
+Validate whether city + service pages qualify as real local entity
+Is it concrete enough to feel real, or generic enough to be reused anywhere?
+Local visibility depends on more than on-page content — GBP, entity consistency, UGC, and real-world anchors matter.
+Detect scaled page risk before Google treats pages as spam or doorway content.
+Does it connect to places, service context, time, and reality?
+Does this page deserve to exist on its own?
+Pages now compete not only for rankings, but for trust, citation eligibility, and local entity recognition
+Check whether local pages are distinct, grounded, and entity-aligned across locations.
+Does the page reflect real business accountability, not just claims?
+Is the page structure adapted to today’s Google and AI search environment?
+View Sample Report
+"这里放真实的产品画面
+输入：URL / Page Type / GBP Link
+输出：
+Trust Status: Moderately unstable
+Current Layer: L2 – Weak real-world anchors
+Top Risks: Template reuse / weak city grounding / low standalone value
+Suggested Fixes: 3–4条"
+Phase 1
+Phase 2
+Phase 3
+Phase 4
+"Stop guessing why pages don’t rank
+See where trust breaks."
+Run a trust audit to understand how Google may interpret your page — and what to fix first.
+Run a Trust Audit
+Product
+Get Started
+Legal
+Learn
+Privacy
+Refunds
+Terms
+© 2026 SearchTrust. All rights reserved.
+社交媒体
+Blog
+Step 1
+Step 2
+Step 3
+Step 4
+Input
+Output
+"URL: /austin-plumber
+
+Page type: Local service page
+
+GBP: Austin Plumbing LLC"
+Trust Status:⚠ Moderately unstable
+"Current Layer L2 — Weak real-world anchors
+What this means:This page may cover the target service, but lacks enough real-world grounding to be interpreted as a stable local entity entry point"
+"Likely Google interpretation location claim is weakly grounded
+service context feels reusable
+page may not justify standalone existence strongly enough"
+"Lowest-cost actions add 2–3 city-specific local references
+replace generic intro with a real service situation
+strengthen page-to-entity alignment
+include stronger operational or timeline signals"
+Audit local pages before publishing
+Catch trust gaps before a city page goes live
+Diagnose ranking stagnation
+Understand why a page is indexed but still not gaining visibility.
+"Review AI-generated 
+city pages"
+Reduce the risk of scaled local  pages being treated as spam or doorway content.
+"Improve client 
+reporting"
+Give agencies a clearer way to explain what’s structurally wrong and what to fix first
+Search trust
+What existing tools give you
+What Search Trust gives you
+"Rankings
+Traffic
+Backlinks
+Crawl issues
+Content scores"
+"Trust collapse diagnosis
+Programmatic / doorway risk clues
+Local specificity analysis
+Real-world anchor weakness
+Likely Google interpretation
+Lowest-cost fixes first"
+"Is SearchTrustan SEO audit tool?
+No. It diagnoses trust structure, not just SEO metrics.
+
+Does it generate content?
+No. It explains where trust breaks and what to improve.
+
+What inputs do I need?
+Usually a page URL, page type, and optionally a GBP link.
+
+Who is it for?
+SEO agencies, local SEO professionals, affiliate marketers, and multi-location businesses."
+"Can it detect programmatic page risk?
+Yes. One core use case is identifying template-like or doorway-risk patterns.
+
+Does it replace Ahrefs or Semrush?
+No. It complements them by diagnosing what those tools don’t explain: trust failure.
+
+Is this only for local SEO?
+The current focus is local search and local entity trust."
+URL
+required
+optional / recommended
+GBPURL
+Page Type
+Beta

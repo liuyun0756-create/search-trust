@@ -1,0 +1,120 @@
+L3 — Responsibility
+L2 — Real-World Anchors
+L1 — Specificity
+"Search
+Trust"
+Home
+Framework
+Sample Report
+Use Cases
+Pricing
+Sign In
+Run a Trust Audit
+The L0–L5 Trust Collapse Model
+A structural framework for diagnosing whether a local page qualifies as a trustworthy entry point for Google, local search, and AI-era citation systems.
+This framework is designed to explain why a page may fail trust before it fails visibility
+View Sample Report
+Why this framework exists
+In local SEO, pages often look optimized but still fail to rank or hold visibility.
+Existing tools explain metrics, but not trust interpretation.
+AI-generated local pages have made generic, scalable content cheap
+As a result, trust has become the real filter.
+What trust collapse means
+Trust collapse happens when a page stops being interpreted as a credible, grounded, accountable local entry point — even if it contains keywords, content, and optimization signals.
+"1. Not the same as a technical issue
+
+‘It’s not primarily about crawlability or indexing."
+"2. Not the same as thin content
+
+A long page can still feel structurally untrustworthy"
+"3. Not the same as ranking loss
+
+A page may rank briefly and still be structurally unstable."
+The six layers of page trust
+Detailed Breakdown of Each Layer
+How trust collapses across layers
+What This Framework Is Not
+How the framework appears inside SearchTrust
+Example: how a local page fails trust
+Frequently asked questions
+Why six layers?
+See how the framework applies to a real page
+"L0 — Qualification
+Can this page even qualify as a real competitor?
+L1 — Specificity
+Does it feel real and grounded, or generic and reusable?
+L2 — Real-World Anchors
+Does it connect to actual places, service reality, and local context?
+L3 — Responsibility
+Does it show signs of accountable business presence?
+L4 — Standalone Value
+Does the page deserve to exist on its own?
+L5 — Era Fit
+Is the page adapted to modern search and AI citation expectations?"
+L0 — Qualification
+它回答什么
+可写内容
+页面失败表现
+Google 可能的解读
+这个页面有没有资格进入判断流程，还是本质上就不该竞争
+"页面是否明确聚焦一个真实搜索意图
+是否属于有意义的本地页，而不是无效扩页
+是否有清晰的服务/位置/实体关系"
+"页面意图模糊
+服务与城市关系不成立
+更像批量占位页而不是真实入口页"
+This page may not represent a distinct local destination worth surfacing
+"Are all layers equally important?
+No. The layers are not equally important, and they often depend on each other. Earlier layers usually support later ones.
+
+Is this only for local pages?
+Yes. It may still rank in the short term, but the structure is usually less stable.
+
+How is this different from EEAT?
+E-E-A-T is a broad quality lens. L0–L5 is a page-structure diagnosis model."
+"Is this only for Google?
+Mainly for Google and local search today, but it also considers AI citation environments."
+"Is this just another content quality checklist?
+No. It focuses on layered qualification and interpretation, not just content quality checks."
+"Does this replace technical SEO?
+No. Technical SEO and this framework focus on different things. Both are important."
+Product
+Get Started
+Legal
+Learn
+Privacy
+Refunds
+Terms
+© 2026 SearchTrust. All rights reserved.
+社交媒体
+Blog
+"If a page fails qualification, deeper trust signals barely matter.
+If it passes qualification but lacks specificity, it begins to look templated.
+Without real-world anchors, local claims become weak.
+Without responsibility, business legitimacy is unclear.
+Without standalone value, the page feels unnecessary.
+Without era fit, it may be visible but not competitive"
+"It is not a ranking guarantee system.
+It is not a content generator.
+It is not a technical SEO crawler.
+It is not a substitute for overall SEO strategy.
+It is not a universal spam detector for every niche"
+"在 AI Linter 中，问题不会只是被“列出来”，而是会被映射到某一层信任结构中
+你最终看到的不只是问题列表，还包括"
+当前主导失败层
+这一层为什么关键
+Google 可能的页面解读
+最低成本修复路径
+Input
+Diagnosis
+Summary
+The page is not failing because it lacks text. It is failing because local claims are weakly grounded and the page does not justify itself as a distinct, accountable local destination.
+Austin plumber landing page
+"L0: passes
+L1: weak specificity
+L2: fails strongly
+L3: partial
+L4: weak
+L5: outdated structure"
+Because trust is not built by random signals. It forms through a structured sequence, and six layers describe that structure more clearly than scattered factors.
+Beta

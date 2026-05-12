@@ -1,0 +1,71 @@
+import { ArrowRight } from 'lucide-react';
+import Link from "next/link";
+
+export function FrameworkHero() {
+  return (
+    <section className="relative min-h-[600px] w-full overflow-hidden bg-[#F9F9F9] flex items-center">
+      {/* 背景纹理 */}
+      <div
+        className="absolute inset-0 opacity-40 pointer-events-none"
+        style={{
+          backgroundImage: "url('/images/abstract-lines.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/80 via-transparent to-white/20" />
+      </div>
+
+      <div className="container mx-auto max-w-7xl px-6 px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+
+          {/* 左侧文字区域 */}
+          <div className="flex-1 max-w-2xl">
+            <div className="mb-6">
+              <span className="inline-block px-3 py-1 text-[10px] tracking-[0.2em] font-bold text-[#666] border border-gray-200 rounded bg-white/50 backdrop-blur-sm uppercase">
+                The L0–L5 Trust Collapse Model
+              </span>
+            </div>
+
+            <h1 className="text-[44px] md:text-[56px] font-[800] leading-[1.1] text-[#1A1F2B] tracking-tight">
+              The L0–L5 Trust <br />
+              Collapse <span className="text-[#A5D020]">Model</span>
+            </h1>
+
+            <div className="mt-8 space-y-4 max-w-lg">
+              <p className="text-[#6B7280] text-[15px] leading-relaxed">
+                A structural framework for diagnosing whether a local page qualifies
+                as a trustworthy entry point for Google, local search, and AI–era
+                citation systems.
+              </p>
+              <div className="flex items-start gap-3">
+                <div className="mt-1.5 w-3 h-3 rounded-full bg-[#F59E0B] shadow-[0_0_12px_rgba(245,158,11,0.4)] shrink-0" />
+                <p className="text-[14px] text-[#F59E0B]/90 font-medium leading-snug">
+                  This framework is designed to explain why a page may fail trust before it fails visibility.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link href="/sample-case" target="_blank" className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
+                View Sample Report
+                <ArrowRight size={18} />
+              </Link>
+            </div>
+          </div>
+
+          {/* 右侧图片区域 */}
+          <div className="flex-1 w-full flex justify-center">
+            <div className="w-[600px] h-[612px] rounded-2xl border border-white/60 bg-white/30 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative overflow-hidden">
+              <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#A5D020]/10 blur-[80px] rounded-full" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <img src="/images/six-layer-trust-model.png" alt="Six-Layer Trust Model" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
