@@ -54,7 +54,7 @@ export default function UseCasesPage() {
       <WhatTeamsGet />
             <RelatedResources />
 
-      <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"} showContactLink items={useCasesFAQData} />
+      <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"}  items={useCasesFAQData} />
       <UseCasesCTA />
     </>
   );

@@ -59,7 +59,7 @@ export default function Home() {
       <CommonWaysSection />
       <ComparisonTable />
       <ProductRoadmap />
-      <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"} showContactLink items={homeFAQData} />
+      <FAQAccordion tag="FAQ" title="Frequently asked questions" items={homeFAQData} />
       {/* <CTABanner /> */}
     </>
   );
