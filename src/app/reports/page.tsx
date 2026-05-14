@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { FileSearch, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { FileSearch } from "lucide-react";
 import { ReportContent } from "@/components/report/ReportContent";
 import { ReportHistory } from "@/components/report/ReportHistory";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
+import { BackHeader } from "@/components/common/BackHeader";
 import type { Report } from "@/types/database";
 
 const MOCK_HISTORY = [
@@ -180,25 +180,7 @@ export default function ReportsPage() {
   if (!hasReports) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
-        <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-[14px] font-bold text-[#657083] hover:text-[#1D2531] transition-colors">
-              <ArrowLeft size={16} />
-              Back to SearchTrust
-            </Link>
-            <div className="flex items-center gap-2">
-              {/* <div className="w-5 h-5 bg-[#1D2531] rounded-[3px] grid grid-cols-2 gap-[2px] p-[2px]">
-                <div className="bg-white/40 rounded-[1px]"></div>
-                <div className="bg-white rounded-[1px]"></div>
-                <div className="bg-white rounded-[1px]"></div>
-                <div className="bg-white/40 rounded-[1px]"></div>
-              </div> */}
-              <img src="/images/logo.png" alt="" className="h-6 md:h-8 w-auto" />
-
-              {/* <span className="text-[14px] font-bold text-[#1D2531] tracking-tight">SearchTrust</span> */}
-            </div>
-          </div>
-        </div>
+        <BackHeader />
         <div className="max-w-7xl mx-auto px-6 pt-12 pb-24">
           <EmptyState />
         </div>
@@ -208,24 +190,7 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-[14px] font-bold text-[#657083] hover:text-[#1D2531] transition-colors">
-            <ArrowLeft size={16} />
-            Back to SearchTrust
-          </Link>
-          <div className="flex items-center gap-2">
-            {/* <div className="w-5 h-5 bg-[#1D2531] rounded-[3px] grid grid-cols-2 gap-[2px] p-[2px]">
-              <div className="bg-white/40 rounded-[1px]"></div>
-              <div className="bg-white rounded-[1px]"></div>
-              <div className="bg-white rounded-[1px]"></div>
-              <div className="bg-white/40 rounded-[1px]"></div>
-            </div> */}
-            <img src="/images/logo.png" alt="" className="h-6 md:h-8 w-auto" />
-            {/* <span className="text-[14px] font-bold text-[#1D2531] tracking-tight">SearchTrust</span> */}
-          </div>
-        </div>
-      </div>
+      <BackHeader />
       <div className="max-w-7xl mx-auto px-6 pt-12 pb-24 flex gap-10">
         <ReportHistory
           reports={history}

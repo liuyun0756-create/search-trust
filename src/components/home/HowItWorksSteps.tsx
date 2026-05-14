@@ -42,25 +42,25 @@ export function HowItWorksSteps() {
           {steps.map((s, i) => (
             <div
               key={i}
-              className={`relative p-10 md:p-12 bg-white flex flex-col items-start transition-colors hover:bg-gray-50/50 
+              className={`relative px-8 py-6 bg-white flex flex-col items-start transition-colors hover:bg-gray-50/50 
                 ${i !== steps.length - 1 ? 'border-b md:border-b-0 md:border-r border-gray-100' : ''}`}
             >
               {/* 右上角超大数字背景 */}
-              <span className="absolute top-8 right-8 text-[48px] font-bold text-gray-50 leading-none select-none pointer-events-none">
+              <span className="absolute top-3 right-8 text-[48px] font-bold text-[#E1E7ED] leading-none select-none pointer-events-none">
                 {i + 1}
               </span>
 
               {/* 图标 - 品牌色，无背景框 */}
-              <div className="mb-8 relative z-10">
-                <s.icon size={28} strokeWidth={1.5} className="text-[#A5D020]" />
+              <div className="mb-4 relative z-10">
+                <s.icon size={24} strokeWidth={1.5} className="text-[#A5D020]" />
               </div>
 
               {/* 内容区域 */}
               <div className="relative z-10">
-                <h3 className="text-[20px] font-bold text-[#1A1F2B] mb-4">
+                <h3 className="text-[18px] font-bold text-[#1A1F2B] mb-4">
                   {s.title}
                 </h3>
-                <p className="text-[15px] leading-relaxed text-gray-500 font-medium">
+                <p className="text-[14px] leading-relaxed text-gray-500 font-medium">
                   {s.desc}
                 </p>
               </div>

@@ -39,7 +39,7 @@ export function CommonWaysSection() {
               className="group relative flex flex-col md:flex-row items-center gap-6 p-1.5 rounded-[18px] bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm transition-all hover:bg-white/[0.06] hover:border-white/[0.15]"
             >
               {/* 左侧品牌色标签 */}
-              <div className="shrink-0 w-full md:w-[220px] py-3 px-6 rounded-[14px] bg-[#A5D020] flex items-center justify-center">
+              <div className="shrink-0 w-full md:w-[220px] py-2 px-6 rounded-[14px] bg-[#A5D020] flex items-center justify-center">
                 <span className="text-[13px] font-bold text-[#0B0C0E] whitespace-nowrap">
                   {item.tag}
                 </span>

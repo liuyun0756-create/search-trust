@@ -66,7 +66,7 @@ export function InsightEngine() {
         </div>
 
         {/* 底部引用区块 */}
-        <div className="rounded-[18px] border border-[#A5D020]/30 bg-[#A5D020]/5 p-8 md:p-10">
+        {/* <div className="rounded-[18px] border border-[#A5D020]/30 bg-[#A5D020]/5 p-8 md:p-10">
           <div className="max-w-7xl">
             <p className="text-[18px] md:text-[20px] font-bold text-[#1A1F2B] leading-relaxed">
               &quot;Most SEO tools measure performance. They don&apos;t explain trust failure — and that&apos;s the gap SearchTrust was built to close.&quot;
@@ -78,7 +78,7 @@ export function InsightEngine() {
               </span>
             </div>
           </div>
-        </div>
+        </div> */}
 
       </div>
     </section>

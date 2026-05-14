@@ -22,7 +22,7 @@ const competitors = [
 
 export function ComparisonTable() {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-24 bg-[#F7F9FA]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-[32px] md:text-[40px] font-bold text-[#1A1F2B]">
@@ -31,8 +31,8 @@ export function ComparisonTable() {
         </div>
 
         <div className="max-w-6xl mx-auto overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
+          <table className="w-full border-collapse bg-white">
+            <thead className="bg-[#F9FAFB]">
               <tr>
                 <th className="text-left py-6 px-6 text-[12px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                   Capability

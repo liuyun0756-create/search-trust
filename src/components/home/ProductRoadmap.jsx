@@ -1,4 +1,7 @@
-import React from 'react';
+"use client";
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 
 const roadmapPhases = [
   {
@@ -28,10 +31,12 @@ const roadmapPhases = [
 ];
 
 export function ProductRoadmap() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
   return (
     <section className="py-24 bg-white">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
+
         {/* 顶部标题 */}
         <div className="text-center mb-16">
           <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B] mb-4">
@@ -45,16 +50,22 @@ export function ProductRoadmap() {
         {/* 路线图卡片网格 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {roadmapPhases.map((item, index) => (
-            <div 
+            <motion.div
               key={index}
-              className={`relative overflow-hidden rounded-[24px] p-8 min-h-[320px] flex flex-col justify-end transition-all border ${
-                item.active 
-                ? 'bg-[#1A1F2B] border-[#1A1F2B] shadow-xl' 
-                : 'bg-[#F8F9FA] border-gray-100'
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ y: -8, transition: { duration: 0.25 } }}
+              onClick={() => setActiveIndex(index)}
+              className={`relative overflow-hidden rounded-[24px] p-8 min-h-[320px] flex flex-col justify-end border cursor-pointer ${
+                activeIndex === index
+                ? 'bg-[#1A1F2B] border-[#1A1F2B] shadow-xl'
+                : 'bg-[#F8F9FA] border-gray-100 hover:shadow-lg hover:border-gray-200'
               }`}
             >
-              {/* 卡片背景装饰纹理 (模拟原图中的线条感) */}
-              {!item.active && (
+              {/* 卡片背景装饰纹理 */}
+              {activeIndex !== index && (
                 <div className="absolute top-0 right-0 w-full h-full opacity-[0.03] pointer-events-none">
                   <svg width="100%" height="100%" viewBox="0 0 200 200">
                     <circle cx="200" cy="100" r="80" fill="none" stroke="black" strokeWidth="1" />
@@ -67,9 +78,9 @@ export function ProductRoadmap() {
               {/* 顶部 Phase 标签 */}
               <div className="absolute top-8 left-8">
                 <span className={`px-4 py-1.5 rounded-full text-[12px] font-bold tracking-wide ${
-                  item.active 
-                  ? 'bg-white/10 text-gray-300 border border-white/10' 
-                  : 'bg-[#A5D020] text-[#1A1F2B]'
+                  activeIndex === index
+                  ? 'bg-white/8 text-white border border-white/10'
+                  : 'bg-[#A5D020] text-[#FFFFFF]'
                 }`}>
                   {item.phase}
                 </span>
@@ -78,17 +89,17 @@ export function ProductRoadmap() {
               {/* 底部文字内容 */}
               <div className="relative z-10">
                 <h3 className={`text-[20px] font-bold mb-3 leading-tight ${
-                  item.active ? 'text-white' : 'text-[#1A1F2B]'
+                  activeIndex === index ? 'text-white' : 'text-[#1A1F2B]'
                 }`}>
                   {item.title}
                 </h3>
                 <p className={`text-[14px] leading-relaxed font-medium ${
-                  item.active ? 'text-gray-400' : 'text-gray-500'
+                  activeIndex === index ? 'text-gray-400' : 'text-gray-500'
                 }`}>
                   {item.desc}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 

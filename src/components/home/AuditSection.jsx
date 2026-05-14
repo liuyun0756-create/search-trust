@@ -44,7 +44,7 @@ export function AuditSection() {
           {auditUseCases.map((useCase, index) => (
             <div 
               key={index}
-              className="bg-[#F8F9FA] rounded-[20px] p-10 flex items-start gap-8 transition-all hover:shadow-sm"
+              className="bg-[#F8F9FA] rounded-[20px] p-8 flex items-start gap-6 transition-all hover:shadow-sm"
             >
               {/* 图标容器 */}
               <div className="mt-1">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ChevronDown, Loader2, Sparkles } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 
 export function AuditForm() {
   const [loading, setLoading] = useState(false);
@@ -14,99 +14,87 @@ export function AuditForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // 模拟提交逻辑
     setTimeout(() => {
       setLoading(false);
-      alert('Trust Audit Started for: ' + formData.url);
+      alert('Trust Audit Started');
     }, 1500);
   };
 
   return (
-    <section className="py-12 bg-white">
-      <div className="container mx-auto max-w-4xl px-6">
+    <section className="py-20 bg-transparent relative z-10">
+      <div className="container mx-auto max-w-6xl px-6">
         <form 
           onSubmit={handleSubmit}
-          className="bg-[#F3F4F6] rounded-[32px] p-8 md:p-12 shadow-sm border border-gray-100"
+          className="bg-white rounded-[24px] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100"
         >
-          <div className="space-y-6">
+          {/* 三列输入区域：对齐 image_66dd1a.png 的横向布局 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            
             {/* URL Input */}
-            <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-4">
-              <label className="md:col-span-3 text-[15px] font-black text-[#1A1F2B] uppercase tracking-tight">
+            <div className="flex flex-col gap-3">
+              <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
                 URL
               </label>
-              <div className="md:col-span-9">
-                <input
-                  required
-                  type="url"
-                  placeholder="required"
-                  value={formData.url}
-                  onChange={(e) => setFormData({...formData, url: e.target.value})}
-                  className="w-full bg-white border-none rounded-xl px-6 py-4 text-[15px] focus:ring-2 focus:ring-[#A5D020] transition-all placeholder:text-gray-300 shadow-sm"
-                />
-              </div>
+              <input
+                required
+                type="url"
+                placeholder="required"
+                value={formData.url}
+                onChange={(e) => setFormData({...formData, url: e.target.value})}
+                className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all placeholder:text-gray-300"
+              />
             </div>
 
             {/* GBP URL Input */}
-            <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-4">
-              <label className="md:col-span-3 text-[15px] font-black text-[#1A1F2B] uppercase tracking-tight">
-                GBP URL
+            <div className="flex flex-col gap-3">
+              <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
+                GBPURL
               </label>
-              <div className="md:col-span-9">
-                <input
-                  type="url"
-                  placeholder="optional / recommended"
-                  value={formData.gbpUrl}
-                  onChange={(e) => setFormData({...formData, gbpUrl: e.target.value})}
-                  className="w-full bg-white border-none rounded-xl px-6 py-4 text-[15px] focus:ring-2 focus:ring-[#A5D020] transition-all placeholder:text-gray-300 shadow-sm"
-                />
-              </div>
+              <input
+                type="url"
+                placeholder="optional / recommended"
+                value={formData.gbpUrl}
+                onChange={(e) => setFormData({...formData, gbpUrl: e.target.value})}
+                className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all placeholder:text-gray-300"
+              />
             </div>
 
             {/* Page Type Select */}
-            <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-4">
-              <label className="md:col-span-3 text-[15px] font-black text-[#1A1F2B] uppercase tracking-tight">
+            <div className="flex flex-col gap-3">
+              <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
                 Page Type
               </label>
-              <div className="md:col-span-9 relative">
+              <div className="relative">
                 <select
                   required
                   value={formData.pageType}
                   onChange={(e) => setFormData({...formData, pageType: e.target.value})}
-                  className="w-full bg-white border-none rounded-xl px-6 py-4 text-[15px] appearance-none focus:ring-2 focus:ring-[#A5D020] transition-all shadow-sm cursor-pointer"
+                  className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] appearance-none focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all cursor-pointer text-gray-400"
                 >
                   <option value="" disabled>required</option>
-                  <option value="local-service">Local Service Page</option>
-                  <option value="city-landing">City / Location Landing Page</option>
-                  <option value="multi-location">Multi-location Content</option>
+                  <option value="service">Service Page</option>
+                  <option value="landing">Landing Page</option>
                 </select>
-                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" size={18} />
               </div>
             </div>
+          </div>
 
-            {/* Submit Button */}
-            <div className="pt-6 flex justify-center">
-              <button
-                type="submit"
-                disabled={loading}
-                className="min-w-[240px] bg-[#2D2E32] text-white font-bold py-5 px-10 rounded-2xl hover:bg-[#1A1F2B] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin" size={20} />
-                ) : (
-                  <>
-                    <Sparkles size={18} className="text-[#A5D020] group-hover:scale-125 transition-transform" />
-                    <span className="text-[16px]">Run a Trust Audit</span>
-                  </>
-                )}
-              </button>
-            </div>
+          {/* 提交按钮：居中黑底白字 */}
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              disabled={loading}
+              className="min-w-[220px] bg-[#1A1F2B] text-white font-bold py-4 px-8 rounded-xl hover:bg-black hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-70"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <span className="text-[15px] tracking-tight">Run a Trust Audit</span>
+              )}
+            </button>
           </div>
         </form>
-        
-        {/* 表单下方的辅助说明 [cite: 37] */}
-        <p className="mt-8 text-center text-[13px] text-gray-400 font-medium">
-          Note: This audit identifies structural trust weaknesses across six layers. [cite: 51]
-        </p>
       </div>
     </section>
   );

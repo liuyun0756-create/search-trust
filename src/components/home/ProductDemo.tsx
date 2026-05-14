@@ -70,49 +70,26 @@ export function ProductDemo() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           
           {/* 左侧：标题与文案 */}
-          <div className="lg:sticky lg:top-24">
-            <h2 className="text-[40px] md:text-[52px] font-extrabold text-white leading-[1.1] mb-8 tracking-tighter">
-              The L0—L5 Trust <br /> Collapse Model
-            </h2>
-            <p className="text-gray-400 text-[17px] leading-relaxed max-w-md mb-24 font-medium">
-              A structural framework for diagnosing whether a page qualifies as a real local entity entry point.
-            </p>
-            
-            <div className="max-w-xs">
-               <p className="text-gray-500 text-[14px] font-medium italic border-l-2 border-gray-800 pl-4 leading-relaxed">
+          <div className="lg:sticky lg:top-24 w-full h-full max-w-[640px] flex flex-col">
+            <div className="flex-1">
+              <h2 className="text-[40px] md:text-[44px] font-extrabold text-white leading-[1.1] mb-8 tracking-tighter">
+                The L0—L5 Trust Collapse Model
+              </h2>
+              <p className="text-gray-400 text-[18px] leading-relaxed max-w-md font-medium">
+                A structural framework for diagnosing whether a page qualifies as a real local entity entry point.
+              </p>
+            </div>
+
+            <div className="w-full mt-24">
+               <p className="text-gray-500 text-[14px] font-medium pl-4 leading-relaxed">
                 Search Trust doesn't just flag issues. It shows where trust collapses in the page's structure.
               </p>
             </div>
           </div>
 
           {/* 右侧：层级列表 */}
-          <div className="relative pl-16 md:pl-24 py-4">
-            {/* SVG 连接线组件 */}
-            <CurvedConnectors />
-
-            <div className="space-y-[46px]"> {/* 间距与 ITEM_HEIGHT 匹配 */}
-              {levels.map((level) => (
-                <div key={level.id} className="relative z-10 flex flex-col group min-h-[64px]">
-                  <div className="flex items-center gap-3 mb-2">
-                    {/* ID 与 星星 垂直组合 */}
-                    <div className="flex flex-col items-center min-w-[40px]">
-                      <Sparkles size={16} className="text-[#A5D020] opacity-90 group-hover:scale-125 transition-transform" />
-                      <span className="text-[#A5D020] font-mono text-[20px] font-black mt-1">
-                        {level.id}
-                      </span>
-                    </div>
-                    {/* 标题 */}
-                    <h3 className="text-[22px] font-bold text-white tracking-tight group-hover:text-[#A5D020] transition-colors">
-                      {level.title}
-                    </h3>
-                  </div>
-                  {/* 描述文案 */}
-                  <p className="text-gray-400 text-[15px] leading-relaxed max-w-lg group-hover:text-gray-200 transition-colors pl-[52px]">
-                    {level.desc}
-                  </p>
-                </div>
-              ))}
-            </div>
+          <div className="relative py-4 w-full max-w-[640px]">
+           <img src="/images/layer-bg.png" alt="" className="w-full h-auto" />
           </div>
 
         </div>

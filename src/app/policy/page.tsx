@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, ShieldCheck, RotateCcw, ChevronRight } from 'lucide-react';
+import { BackHeader } from '@/components/common/BackHeader';
 
 const tabs = [
   { id: 'terms', label: 'Terms of Service', icon: FileText },
@@ -366,33 +367,11 @@ export default function PolicyPage() {
 
   return (
     <div className="bg-[#F8F9FA] min-h-screen font-sans text-[#1D2531] selection:bg-[#A5D020]/30">
-      
-      {/* 1. Hero Header - Dark Section */}
-      <section className="pt-32 pb-20 bg-[#0B0C0E] relative overflow-hidden">
-        {/* Subtle decorative glow */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#A5D020]/5 blur-[120px] rounded-full -mr-48 -mt-48" />
-        
-        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <span className="inline-block py-1 px-3 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-[#A5D020] text-[12px] font-bold tracking-widest uppercase mb-6">
-              Legal Documentation
-            </span>
-            <h1 className="text-[42px] md:text-[56px] font-bold text-white tracking-tighter leading-[1.1] mb-6">
-              SearchTrust <span className="text-[#A5D020]">Policies</span>
-            </h1>
-            <p className="text-[#9CA3AF] text-lg max-w-2xl mx-auto font-medium leading-relaxed">
-              Our commitment to transparency, privacy, and fair service. 
-              Last updated on <span className="text-white">{current.effective}</span>.
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* 2. Main Content Grid */}
+      {/* 顶部导航栏 */}
+      <BackHeader />
+
+      {/* Main Content */}
       <section className="py-24 max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           

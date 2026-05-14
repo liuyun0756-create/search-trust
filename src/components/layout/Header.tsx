@@ -24,7 +24,7 @@ export function Header() {
   const { isSignedIn } = useUser();
   const isAuthenticated = isSignedIn;
 
-  if (pathname === "/sample-case" || pathname === "/reports") return null;
+  if (pathname === "/sample-case" || pathname === "/reports" || pathname === "/policy") return null;
 
   const activeTab = navLinks.find(l => l.href === pathname)?.id ?? "home";
 
