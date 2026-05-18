@@ -4,6 +4,17 @@ import { getCurrentUser } from "@/lib/auth";
 
 const BACKEND_URL = "https://seo-backend-production-6f2b.up.railway.app/api/v1";
 
+// TODO: 后端统一成英文后删除此映射
+const PAGE_TYPE_MAP: Record<string, string> = {
+  "Service Page": "本地服务落地页",
+  "Location Page": "实体目的地",
+  "City Page": "门店信息",
+  "Service-Area Page": "服务总览",
+  "Product Page": "商品",
+  "Blog Post": "文章",
+  "Landing Page": "分类页",
+};
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -28,7 +39,7 @@ export async function POST(request: NextRequest) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         url,
-        page_type,
+        page_type: PAGE_TYPE_MAP[page_type] || page_type,
         language: "English",
         ...(gbp_url ? { gbp_url } : {}),
       }),

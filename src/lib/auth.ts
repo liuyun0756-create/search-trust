@@ -2,16 +2,21 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { createServerClient } from "@/lib/supabase";
 
 export async function getCurrentUser() {
-  const { userId: clerkUserId } = await auth();
+  const session = await auth();
+  console.log("[auth] session:", JSON.stringify({ userId: session.userId, sessionId: session.sessionId }));
+  const clerkUserId = session.userId;
   if (!clerkUserId) return null;
 
   const supabase = createServerClient();
+  console.log("[auth] service role key exists:", !!process.env.SUPABASE_SERVICE_ROLE_KEY, "starts with:", process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 10));
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("users")
     .select("id, audit_credits")
     .eq("clerk_user_id", clerkUserId)
     .single();
+
+  console.log("[auth] supabase query:", JSON.stringify({ data, error: error?.message }));
 
   if (data) return { userId: data.id, auditCredits: data.audit_credits };
 

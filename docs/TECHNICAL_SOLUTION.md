@@ -518,7 +518,7 @@ function handleRunAudit() {
 | `/use-cases` | 用例页 | 否 | ✅ 已完成 |
 | `/pricing` | 定价页 | 否 | ✅ 已完成 |
 | `/policy` | 隐私政策页 | 否 | ✅ 已完成 |
-| `/reports` | 历史报告页 | 是 | 🔶 UI 框架完成 |
+| `/reports` | 历史报告页 | 是 | ✅ 已完成 |
 
 **跳转方式：**
 - "View Sample Report" → 新窗口打开 `/sample-report`
@@ -614,10 +614,11 @@ SUPABASE_SERVICE_ROLE_KEY=
 | 7 | 邮件发送（Resend） | 无 | ✅ 完成 |
 | 8 | 域名 + DNS 配置 | 无 | ✅ 完成 |
 | 9a | 后端 API 对接 — 创建任务（POST /api/generate-report） | 后端接口 ready | ✅ 完成 |
-| 9b | 后端 API 对接 — 轮询结果（GET /api/report-status） | 阶段 9a | ❌ 待开发 |
-| 9c | 后端 API 对接 — AuditFormModal 调真实 API | 阶段 9b | ❌ 待开发 |
-| 9d | ReportContent isLocked 恢复（当前全部放开） | 阶段 9c | ❌ 待开发 |
-| 10 | Clerk 用户集成（API 路由从 session 获取真实 user_id） | 阶段 2 | ❌ 待开发 |
+| 9b | 后端 API 对接 — 轮询结果（GET /api/report-status） | 阶段 9a | ✅ 完成 |
+| 9c | 后端 API 对接 — AuditFormModal 调真实 API | 阶段 9b | ✅ 完成 |
+| 9d | ReportContent isLocked 恢复 | 阶段 9c | ✅ 完成 |
+| 10 | Clerk 用户集成（API 路由从 session 获取真实 user_id） | 阶段 2 | ✅ 完成 |
+| 15 | 报告页 UX 优化（加载态、左侧固定滚动、解锁遮罩毛玻璃效果） | 阶段 9d | ✅ 完成 |
 | 11 | 支付（Lemon Squeezy） | 阶段 6 | ❌ 待开发 |
 | 12 | PDF 导出 | 阶段 5 + 产品提供模板 | ❌ 待开发 |
 | 13 | 审计次数动态获取（UserDropdown 对接 /api/user/credits，支付后 +N，Run Audit 后 -1） | 阶段 10 + 11 | ❌ 待开发 |
@@ -625,35 +626,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 ### 下周待办（按优先级）
 
-#### P0 — 报告生成全流程打通
-
-**9b. 创建 `GET /api/report-status` 轮询接口**
-- 前端每 3 秒调用此接口，传入 `task_id`
-- 接口调后端 `GET /api/v1/task/{task_id}`
-- `status !== "done"` → 返回 `{ status, progress }`
-- `status === "done"` → 解析 `result`：
-  - `result.score`：去除 ` ```json ``` ` 包裹，JSON.parse 得到 5 个模块数据
-  - `result.trust_status` / `result.ranking_potential` / `result.risk_level`：JSON 字符串，直接存入 reports 表
-  - `result.generated_at` / `result.page_type` / `result.gbp_url` / `result.page_url`：存入对应字段
-- UPDATE reports 表：`module_1_overview` ~ `module_5_optimization` + 顶层字段
-- 返回完整报告数据给前端
-
-**9c. AuditFormModal 接真实 API**
-- 当前：表单提交后只是 `router.push('/reports')`
-- 改为：提交 → 调 `POST /api/generate-report` → 拿到 `{ task_id, report_id }` → 跳转 `/reports` → 前端轮询 `/api/report-status?task_id=xxx` → 每 3 秒显示进度 → done 后渲染报告
-
-**9d. 恢复 isLocked 逻辑**
-- 当前 `ReportContent.tsx` 里 `isLocked` 硬编码 `return false`（方便调样式）
-- 改回：`isPaid` 为 false 时，前 2 个模块（Executive Summary、Page Level）免费可见，后 3 个（Key Issues、Six-Layer Model、Optimization Path）显示解锁遮罩
-
-#### P1 — 用户集成
-
-**10. Clerk 用户集成**
-- 当前所有 API 路由里 `user_id` 写死为 `"00000000-0000-0000-0000-000000000000"`
-- 改为从 Clerk session 获取真实 `clerk_user_id` → 查 users 表拿到 `user_id`
-- 涉及路由：`generate-report`、`reports`、`reports/[id]`、`send-report`、`report-status`
-
-#### P2 — 支付
+#### P0 — 支付
 
 **前置：注册 Lemon Squeezy**
 - 去 https://www.lemonsqueezy.com 注册
@@ -667,15 +640,33 @@ SUPABASE_SERVICE_ROLE_KEY=
 - 创建 `POST /api/reports/[id]/unlock`：将报告 status 从 `free_preview` 改为 `paid_full`
 
 **13. 审计次数动态获取**
-- 创建 `GET /api/user/credits`：返回当前用户 audit_credits
-- UserDropdown 显示可用次数
-- 生成报告后扣减 -1（在 generate-report 路由里）
-- 支付成功后 +N（在 webhook 里）
+- `GET /api/user/credits` 已完成（返回当前用户 audit_credits）
+- UserDropdown 显示可用次数（当前硬编码为 0，需改为动态获取）
+- 生成报告后扣减 -1（已在 generate-report 路由实现）
+- 支付成功后 +N（在 Lemon Squeezy webhook 里实现）
 
-#### P3 — 后续
+#### P1 — 部署上线
+
+**14. Vercel 部署**
+- Clerk 升级为 Production 模式，获取 `pk_live_` 密钥
+- 配置自定义域名 `trysearchtrust.com`
+- 环境变量全部配置到 Vercel
+- 删除 `src/lib/auth.ts` 中的调试日志（3 处 console.log）
+- 删除 `src/app/api/generate-report/route.ts` 中的 `PAGE_TYPE_MAP`（后端统一英文后）
+
+#### P2 — 后续
 
 - **12. PDF 导出**：等产品提供模板
-- **14. 部署上线**：全部完成后部署 Vercel
+- **16. Clerk Webhook 用户同步**：当前用户创建靠 `getCurrentUser()` 兜底逻辑，正式上线后应在 Clerk Dashboard 配置 `user.created` webhook 自动同步
+
+### 已验证通过的本地测试流程
+
+1. Google 登录 → `getCurrentUser()` 自动在 users 表创建用户（audit_credits = 5）
+2. 点击 Run a Trust Audit → 填写 URL → 提交 → 跳转 /reports 显示轮询进度
+3. 后端返回 done → 解析 score 存入 Supabase → 渲染完整报告（5 个 Tab）
+4. 前 2 个阶段免费可见，后 3 个阶段显示毛玻璃解锁遮罩
+5. 历史报告列表左侧固定定位，点击切换报告，首次进入有 loading 状态
+6. 解锁遮罩按钮跳转 /pricing 页面
 
 ---
 

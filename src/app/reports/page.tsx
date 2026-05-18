@@ -87,6 +87,7 @@ function ReportsPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<{ date: string; items: { id: string; url: string; reportId: string }[] }[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [polling, setPolling] = useState(false);
   const [pollProgress, setPollProgress] = useState<{ stage?: string; percent?: number; message?: string } | null>(null);
 
@@ -97,7 +98,10 @@ function ReportsPage() {
       if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data)) setHistory(data);
-    } catch {}
+    } catch {
+    } finally {
+      setHistoryLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -197,6 +201,20 @@ function ReportsPage() {
   };
 
   const hasReports = history.length > 0 && history.some((g) => g.items.length > 0);
+
+  // Show loading state while fetching history or first report
+  if (historyLoading || (!taskId && hasReports && !report && isLoading)) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
+        <BackHeader />
+        <div className="max-w-7xl mx-auto px-6 pt-12 pb-24">
+          <div className="flex items-center justify-center py-32">
+            <div className="w-8 h-8 border-3 border-[#A5D020] border-t-transparent rounded-full animate-spin" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show polling indicator
   if (polling) {

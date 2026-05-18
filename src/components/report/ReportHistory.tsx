@@ -21,10 +21,11 @@ interface ReportHistoryProps {
 export function ReportHistory({ reports, activeId, onSelect }: ReportHistoryProps) {
   return (
     <aside className="hidden lg:block w-64 flex-shrink-0">
-      <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-        <Clock className="w-4 h-4 text-[#A5D020]" /> History
-      </h3>
-      <div className="space-y-8">
+      <div className="sticky top-6">
+        <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-[#A5D020]" /> History
+        </h3>
+        <div className="space-y-8 max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
         {reports.map((group, gi) => (
           <div key={gi}>
             <p className="text-[12px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -51,6 +52,7 @@ export function ReportHistory({ reports, activeId, onSelect }: ReportHistoryProp
             </div>
           </div>
         ))}
+        </div>
       </div>
     </aside>
   );

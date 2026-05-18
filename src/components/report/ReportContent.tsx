@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Lock, Send, Download,
@@ -41,13 +42,15 @@ const LoadingState = ({ text = "Under detection..." }: { text?: string }) => (
   </div>
 );
 
-const UnlockOverlay = ({ title, description }: { title: string; description: string }) => (
+const UnlockOverlay = ({ title, description }: { title: string; description: string }) => {
+  const router = useRouter();
+  return (
   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[24px] overflow-hidden">
-    <div className="absolute inset-0 bg-white/40 backdrop-blur-md" />
+    <div className="absolute inset-0 bg-white/30 backdrop-blur-[3px]" />
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative bg-white p-8 md:p-10 rounded-[32px] shadow-2xl border border-gray-100 max-w-md text-center"
+      className="relative bg-white/90 backdrop-blur-sm p-8 md:p-10 rounded-[32px] shadow-2xl border border-white/60 max-w-md text-center"
     >
       <div className="w-12 h-12 bg-[#1D2531] rounded-full flex items-center justify-center mx-auto mb-6">
         <Lock className="text-[#A5D020] w-5 h-5" />
@@ -55,16 +58,17 @@ const UnlockOverlay = ({ title, description }: { title: string; description: str
       <h3 className="text-2xl font-bold text-[#1D2531] mb-3 tracking-tighter">{title}</h3>
       <p className="text-gray-500 text-[15px] leading-relaxed mb-8">{description}</p>
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <button className="bg-[#1D2531] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-black transition-all">
+        <button onClick={() => router.push('/pricing')} className="bg-[#1D2531] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-black transition-all">
           Unlock Full Report
         </button>
-        <button className="bg-white text-[#1D2531] border border-gray-200 px-8 py-3 rounded-full font-bold text-sm hover:bg-gray-50 transition-all">
+        <button onClick={() => router.push('/pricing')} className="bg-white text-[#1D2531] border border-gray-200 px-8 py-3 rounded-full font-bold text-sm hover:bg-gray-50 transition-all">
           View Pricing
         </button>
       </div>
     </motion.div>
   </div>
-);
+  );
+};
 
 function SectionSkeleton() {
   return (
@@ -584,7 +588,7 @@ function ModuleSection({
               title={`Unlock ${tab}`}
               description={`Get the complete ${tab.toLowerCase()} analysis, detailed breakdowns, and actionable recommendations for this page.`}
             />
-            <div className="opacity-20 blur-[3px] pointer-events-none select-none">
+            <div className="opacity-50 blur-[4px] pointer-events-none select-none">
               {data ? renderModule(tab, data) : <SectionSkeleton />}
             </div>
           </div>
