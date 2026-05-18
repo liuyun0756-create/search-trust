@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const supabase = createServerClient();
 
@@ -13,6 +19,7 @@ export async function GET(
       .from("reports")
       .select("*")
       .eq("id", id)
+      .eq("user_id", user.userId)
       .single();
 
     if (error || !data) {

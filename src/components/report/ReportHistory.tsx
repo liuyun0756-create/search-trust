@@ -4,7 +4,8 @@ import { Clock, ArrowUpRight } from "lucide-react";
 
 interface ReportItem {
   id: string;
-  url: string;
+  url?: string;
+  page_url?: string;
   reportId: string;
 }
 
@@ -40,7 +41,7 @@ export function ReportHistory({ reports, activeId, onSelect }: ReportHistoryProp
                       : "hover:bg-white border-transparent hover:border-gray-100"
                   }`}
                 >
-                  <p className="text-[11px] text-blue-500 font-medium truncate mb-1">{item.url}</p>
+                  <p className="text-[11px] text-blue-500 font-medium truncate mb-1">{item.page_url || item.url}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-gray-400 italic">Report ID: {item.reportId}</span>
                     <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 text-[#A5D020] transition-all" />

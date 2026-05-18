@@ -5,52 +5,60 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle, Info, ChevronRight } from 'lucide-react';
 
 const layerDetails = [
-  {
-    id: "L0",
+   {
+    id: "L0-A",
     title: "Qualification",
-    whatItAnswers: "这个页面有没有资格进入判断流程，还是本质上就不该竞争",
-    criteria: ["页面是否明确聚焦一个真实搜索意图", "是否属于有意义的本地页，而不是无效扩页", "是否有清晰的服务/位置/实体关系"],
-    failures: ["页面意图模糊", "服务与城市关系不成立", "更像批量占位页而不是真实入口页"],
+    whatItAnswers: "Does this page qualify to enter the evaluation process, or should it not be competing at all?",
+    criteria: ["Does the page clearly target a real search intent?", "Is it a meaningful local page rather than a filler expansion page?", "Is there a clear service / location / entity relationship?"],
+    failures: ["The page intent is vague or ambiguous", "The service-city relationship does not hold", "It reads more like a bulk placeholder than a real entry page"],
+    googleInterpretation: "This page may not represent a distinct local destination worth surfacing.",
+  },
+   {
+    id: "L0-B",
+    title: "Qualification",
+    whatItAnswers: "Does this page qualify to enter the evaluation process, or should it not be competing at all?",
+    criteria: ["Does the page clearly target a real search intent?", "Is it a meaningful local page rather than a filler expansion page?", "Is there a clear service / location / entity relationship?"],
+    failures: ["The page intent is vague or ambiguous", "The service-city relationship does not hold", "It reads more like a bulk placeholder than a real entry page"],
     googleInterpretation: "This page may not represent a distinct local destination worth surfacing.",
   },
   {
     id: "L1",
     title: "Specificity",
-    whatItAnswers: "页面是否足够具体，还是任何城市都能换词复用",
-    criteria: ["是否有本地细节", "是否有无法轻易复制的服务语境", "是否避免 generic city-template language"],
-    failures: ["通用描述过多", "城市名替换即可复用", "开头、段落、FAQ 都高度模板化"],
+    whatItAnswers: "Is the page specific enough, or could any city name be swapped in?",
+    criteria: ["Does it include local details?", "Does it contain service context that cannot be easily replicated?", "Does it avoid generic city-template language?"],
+    failures: ["Too much generic description", "Content is reusable with a simple city-name swap", "Headers, paragraphs, and FAQs are all highly templated"],
     googleInterpretation: "The page appears location-labeled rather than genuinely local.",
   },
   {
     id: "L2",
     title: "Real-World Anchors",
-    whatItAnswers: "页面有没有被真实世界托住",
-    criteria: ["具体地点", "服务情境", "运营时间线", "区域覆盖逻辑", "与真实本地环境的连接"],
-    failures: ['页面只说"我们服务这个城市"', "没有真实地点/场景/时间痕迹", "缺乏运营层面的现实感"],
+    whatItAnswers: "Is the page grounded in real-world evidence?",
+    criteria: ["Specific locations", "Service scenarios", "Operational timelines", "Coverage area logic", "Connections to the real local environment"],
+    failures: ["The page only says 'we serve this city'", "No traces of real locations, scenarios, or timelines", "Lacks operational realism"],
     googleInterpretation: "Claims are present, but grounding is weak.",
   },
   {
     id: "L3",
     title: "Responsibility",
-    whatItAnswers: '页面是否体现出"真实业务会为这件事负责"的结构',
+    whatItAnswers: "Does the page reflect a structure where a real business takes responsibility?",
     criteria: ["Clear business identity", "Operational legitimacy", "Contact / ownership / responsibility cues", "Service accountability signals"],
-    failures: ["全是宣称，没有承担关系", "没有清晰业务责任结构", "页面像 lead-gen shell"],
+    failures: ["All claims, no accountability", "No clear business responsibility structure", "The page looks like a lead-gen shell"],
     googleInterpretation: "The page describes services, but accountability remains unclear.",
   },
   {
     id: "L4",
     title: "Standalone Value",
-    whatItAnswers: "这个页面是否值得单独存在",
-    criteria: ["它是不是只是主页面的轻微改写版", "如果删掉这个页面，用户会失去什么", "它是否提供独立价值"],
-    failures: ["页面只是在重复站内已有内容", "没有独特用途或独特信息", "独立访问价值很低"],
+    whatItAnswers: "Does this page deserve to exist on its own?",
+    criteria: ["Is it just a slight rewrite of the main page?", "If this page were removed, what would users lose?", "Does it provide independent value?"],
+    failures: ["The page merely repeats existing site content", "No unique purpose or unique information", "Very low standalone visit value"],
     googleInterpretation: "This page may exist for coverage rather than value.",
   },
   {
     id: "L5",
     title: "Era Fit",
-    whatItAnswers: "页面是否适合当下搜索环境",
-    criteria: ["是否仍停留在旧 SEO 模板思维", "是否考虑 AI 概览、引用、实体理解", "是否结构清晰、可解释、可提取"],
-    failures: ["结构旧、堆关键词、缺少可提取信息", "不适合被 AI 系统引用", '页面对"现代搜索解析方式"不友好'],
+    whatItAnswers: "Is the page adapted to the current search environment?",
+    criteria: ["Is it still stuck in old-school SEO template thinking?", "Does it account for AI overviews, citations, and entity understanding?", "Is it structured clearly enough to be explainable and extractable?"],
+    failures: ["Outdated structure, keyword-stuffed, lacking extractable information", "Not suitable for AI system citation", "Unfriendly to modern search parsing methods"],
     googleInterpretation: "The page may be indexable, but not citation-ready or structurally competitive.",
   },
 ];
@@ -59,7 +67,7 @@ export function LayerDetailBreakdown() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section className="py-32 bg-white overflow-hidden">
+    <section className="py-24 bg-white overflow-hidden">
       <div className="container mx-auto max-w-7xl px-6">
         
         {/* Header */}
@@ -67,9 +75,7 @@ export function LayerDetailBreakdown() {
           <h2 className="text-[32px] md:text-[52px] font-bold text-[#0B0C0E] tracking-tight mb-6">
             Detailed Breakdown of Each Layer
           </h2>
-          <p className="text-gray-500 text-[18px] max-w-2xl mx-auto">
-            深入了解 Trust Collapse 模型的各个维度，识别导致排名不稳定的结构性风险。
-          </p>
+        
         </div>
 
         <div className="flex flex-col lg:flex-row gap-12 items-start">
@@ -112,7 +118,7 @@ export function LayerDetailBreakdown() {
               >
                 {/* 核心问题区域 */}
                 <div className="mb-12">
-                  <span className="text-[11px] font-bold text-[#A5D020] uppercase tracking-[0.2em] mb-4 block">核心问询 / Key Inquiry</span>
+                  <span className="text-[11px] font-bold text-[#A5D020] uppercase tracking-[0.2em] mb-4 block">Key Inquiry</span>
                   <h3 className="text-[24px] md:text-[28px] font-bold text-[#0B0C0E] leading-snug">
                     {layerDetails[activeTab].whatItAnswers}
                   </h3>
@@ -124,7 +130,7 @@ export function LayerDetailBreakdown() {
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 text-[#A5D020]">
                       <CheckCircle2 size={18} />
-                      <span className="text-[13px] font-black uppercase tracking-wider">核心信号</span>
+                      <span className="text-[13px] font-black uppercase tracking-wider">Key Signals</span>
                     </div>
                     <ul className="space-y-4">
                       {layerDetails[activeTab].criteria.map((item, i) => (
@@ -140,7 +146,7 @@ export function LayerDetailBreakdown() {
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 text-red-400">
                       <XCircle size={18} />
-                      <span className="text-[13px] font-black uppercase tracking-wider">失败表现</span>
+                      <span className="text-[13px] font-black uppercase tracking-wider">Failure Patterns</span>
                     </div>
                     <ul className="space-y-4">
                       {layerDetails[activeTab].failures.map((item, i) => (

@@ -26,32 +26,41 @@ const reasons = [
 
 export function WhyFrameworkExists() {
   return (
-    <section className="pt-24 bg-white">
+    <section className="py-24 bg-white">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        {/* 居中标题 */}
-        <div className="text-center mb-8">
-          <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B]">
+        {/* 顶部标题区域 */}
+        <div className="text-center mb-16">
+          <h2 className="text-[32px] md:text-[42px] font-bold text-[#1A1F2B] mb-4">
             Why this framework exists
           </h2>
         </div>
 
-        {/* 竖向列表 */}
-        <div className="max-w-3xl mx-auto space-y-6">
+        {/* 2x2 功能网格 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {reasons.map((item, index) => (
             <div
               key={index}
-              className="flex items-center gap-6"
+              className="bg-[#F8F9FA] rounded-[20px] p-8 flex items-start gap-6 transition-all hover:shadow-sm"
             >
-              {/* 圆形图标 */}
-              <div className="shrink-0 w-10 h-10 rounded-full bg-[#F0F5E0] flex items-center justify-center">
-                <item.icon size={20} strokeWidth={1.5} className="text-[#A5D020]" />
+              {/* 图标容器 */}
+              <div className="mt-1">
+                <item.icon
+                  size={24}
+                  strokeWidth={1.5}
+                  className="text-[#A5D020]"
+                />
               </div>
 
-              {/* 标题文字 */}
-              <span className="text-[16px] font-bold text-[#1A1F2B]">
-                {item.desc}
-              </span>
+              {/* 文字内容 */}
+              <div className="flex flex-col gap-2">
+                <h3 className="text-[18px] font-bold text-[#1A1F2B]">
+                  {item.title}
+                </h3>
+                <p className="text-[14px] leading-relaxed text-gray-500 font-medium">
+                  {item.desc}
+                </p>
+              </div>
             </div>
           ))}
         </div>

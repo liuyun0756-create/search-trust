@@ -51,7 +51,7 @@ export function Header() {
                 <motion.div
                   layoutId="activeTabBackground"
                   className="absolute inset-0 bg-[#E7EDF2] rounded-[8px]"
-                  transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                  transition={{ type: "tween", duration: 0.2 }}
                 />
               )}
               <span className="relative z-20">{link.label}</span>

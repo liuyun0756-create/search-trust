@@ -25,6 +25,9 @@ export const metadata: Metadata = {
     "SEO tool",
     "search trust",
   ],
+  icons: {
+    icon: "/images/small-logo.png",
+  },
   openGraph: {
     title: "SearchTrust — Local Page Trust Diagnosis",
     description:

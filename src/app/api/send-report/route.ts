@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServerClient } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/auth";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { reportId, email } = await request.json();
 
     if (!reportId || !email) {
@@ -21,6 +27,7 @@ export async function POST(request: NextRequest) {
       .from("reports")
       .select("*")
       .eq("id", reportId)
+      .eq("user_id", user.userId)
       .single();
 
     if (error || !report) {
@@ -38,7 +45,7 @@ export async function POST(request: NextRequest) {
     const { data, error: sendError } = await resend.emails.send({
       from: "SearchTrust <noreply@trysearchtrust.com>",
       to: email,
-      subject: `Trust Audit Report — ${report.url}`,
+      subject: `Trust Audit Report — ${report.page_url}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -71,7 +78,7 @@ export async function POST(request: NextRequest) {
             </div>
             <div class="content">
               <div class="meta">
-                <span class="tag">URL: ${report.url}</span>
+                <span class="tag">URL: ${report.page_url}</span>
                 <span class="tag">Page Type: ${report.page_type || "N/A"}</span>
                 <span class="tag">Report ID: ${report.report_id}</span>
               </div>

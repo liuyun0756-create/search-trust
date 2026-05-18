@@ -18,9 +18,10 @@ interface AuditFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: { url: string; gbpUrl: string; pageType: string }) => void;
+  submitting?: boolean;
 }
 
-export function AuditFormModal({ isOpen, onClose, onSubmit }: AuditFormModalProps) {
+export function AuditFormModal({ isOpen, onClose, onSubmit, submitting }: AuditFormModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [url, setUrl] = useState("");
   const [gbpUrl, setGbpUrl] = useState("");
@@ -41,7 +42,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit }: AuditFormModalProp
   }, [isOpen]);
 
   const handleSubmit = () => {
-    if (!url.trim()) return;
+    if (!url.trim() || submitting) return;
     onSubmit({ url: url.trim(), gbpUrl: gbpUrl.trim(), pageType });
   };
 
@@ -151,10 +152,10 @@ export function AuditFormModal({ isOpen, onClose, onSubmit }: AuditFormModalProp
 
               <button
                 onClick={handleSubmit}
-                disabled={!url.trim()}
+                disabled={!url.trim() || submitting}
                 className="w-full mt-8 flex items-center justify-center gap-2 bg-[#1D2531] text-white font-bold text-[15px] rounded-full px-6 py-4 transition-all hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed group"
               >
-                Run a Trust Audit
+                {submitting ? "Generating..." : "Run a Trust Audit"}
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
 

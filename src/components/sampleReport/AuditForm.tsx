@@ -13,7 +13,11 @@ export function AuditForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.url.trim() || !formData.pageType) {
+      return;
+    }
     setLoading(true);
+    // TODO: 对接后端 API
     setTimeout(() => {
       setLoading(false);
       alert('Trust Audit Started');

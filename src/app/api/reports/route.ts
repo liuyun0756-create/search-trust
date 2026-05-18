@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // TODO: 从 Clerk session 获取 user_id
-    const userId = "00000000-0000-0000-0000-000000000000";
+    const supabase = createServerClient();
 
     const { data, error } = await supabase
       .from("reports")
-      .select("id, report_id, url, status, created_at")
-      .eq("user_id", userId)
+      .select("id, report_id, page_url, status, created_at")
+      .eq("user_id", user.userId)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -34,7 +37,7 @@ export async function GET(request: NextRequest) {
         }
         group.items.push({
           id: report.id,
-          url: report.url,
+          url: report.page_url,
           reportId: report.report_id,
         });
         return acc;

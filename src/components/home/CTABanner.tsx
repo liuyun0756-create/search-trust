@@ -50,9 +50,9 @@ export function CTABanner() {
                 ))}
               </div>
               <span className="text-xl font-bold text-white tracking-tight">SearchTrust</span> */}
-              {/* <div className="flex items-center">
-                <img src="/images/logo.png" alt="SearchTrust Logo" className="w-[120px] h-auto md:w-[175px] md:h-[32px]" />
-              </div> */}
+              <div className="flex items-center">
+                <img src="/images/logo-footer.png" alt="SearchTrust Logo" className="w-[120px] h-auto md:w-[175px] md:h-[32px]" />
+              </div>
             </div>
             <p className="text-gray-500 text-sm mb-8 max-w-[240px] leading-relaxed">
               Trust intelligence for local pages. Diagnose. Fix. Rank.

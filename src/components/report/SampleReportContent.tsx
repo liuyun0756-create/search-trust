@@ -7,150 +7,116 @@ const SAMPLE_REPORT: Report = {
   id: "sample-001",
   report_id: "SAMPLE-001",
   user_id: "sample",
-  url: "https://simpleanalytics.com/pricing",
+  page_url: "https://simpleanalytics.com/pricing",
   page_type: "Service Page",
-  gbp_url: "Connected",
+  gbp_url: "https://www.google.com/maps/search/?api=1&query=SimpleAnalytics",
+  task_id: null,
   status: "paid_full",
-  trust_status: "Medium",
-  trust_status_desc: "FOUNDATIONAL TRUST IN PLACE",
-  ranking_potential: "Moderate",
-  ranking_potential_desc: "ABLE TO COMPETE, BUT NOT TIER 1",
-  risk_level: "Medium-High",
-  risk_level_desc: "LEGITIMACY SIGNALS FRAGMENTED",
-  stage_1_html: `
-    <div class="space-y-8">
-      <div>
-        <h2 class="text-2xl font-bold tracking-tighter mb-4">Executive Summary</h2>
-        <div class="p-8 bg-blue-50/50 rounded-3xl border border-blue-100">
-          <p class="text-lg font-medium leading-relaxed text-gray-800">
-            "Google can understand what you offer, but cannot consistently confirm who you are.
-            As a result, trust signals cannot accumulate properly."
-          </p>
-        </div>
-      </div>
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="space-y-4">
-          <h4 class="text-sm font-black uppercase text-gray-400 tracking-widest">Current Assessment</h4>
-          <p class="text-base font-medium leading-relaxed">
-            Your page sits above the basic participation threshold, but below the level typically associated with strong, trust-rich local landing pages.
-          </p>
-        </div>
-        <div class="space-y-4">
-          <h4 class="text-sm font-black uppercase text-gray-400 tracking-widest">Impact Pattern</h4>
-          <ul class="space-y-2">
-            <li class="flex items-center gap-3 text-sm font-bold">
-              <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Brand binding is weak
-            </li>
-            <li class="flex items-center gap-3 text-sm font-bold">
-              <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Local signal efficiency is low
-            </li>
-            <li class="flex items-center gap-3 text-sm font-bold">
-              <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Rankings lack stability
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  `,
-  stage_2_html: `
-    <div class="space-y-12">
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="p-6 rounded-3xl bg-gray-50 border border-white">
-          <h4 class="font-bold mb-2">Observed Strength</h4>
-          <p class="text-sm text-gray-500 leading-relaxed font-medium">
-            The page already aligns with a service intent and includes some degree of local relevance, giving it a chance to enter local search competition.
-          </p>
-        </div>
-        <div class="p-6 rounded-3xl bg-gray-50 border border-white">
-          <h4 class="font-bold mb-2">Main Limitation</h4>
-          <p class="text-sm text-gray-500 leading-relaxed font-medium">
-            The page still depends too much on general domain strength and does not yet establish itself as a strong independent local asset.
-          </p>
-        </div>
-        <div class="p-6 rounded-3xl bg-gray-50 border border-white">
-          <h4 class="font-bold mb-2">Likely Search Outcome</h4>
-          <p class="text-sm text-gray-500 leading-relaxed font-medium">
-            May appear in mid-range local results, but rankings will fluctuate depending on query specificity and competitor updates.
-          </p>
-        </div>
-        <div class="p-6 rounded-3xl bg-gray-50 border border-white">
-          <h4 class="font-bold mb-2">Competitive Interpretation</h4>
-          <p class="text-sm text-gray-500 leading-relaxed font-medium">
-            Outperforms thin or templated pages, but falls short of pages with strong local proof and entity consistency.
-          </p>
-        </div>
-      </div>
-    </div>
-  `,
-  stage_3_html: `
-    <div class="space-y-8">
-      <h2 class="text-2xl font-bold tracking-tighter mb-6">Key Issues Detected</h2>
-      <div class="space-y-4">
-        <div class="p-6 rounded-2xl bg-red-50 border border-red-100">
-          <h4 class="font-bold text-red-700 mb-2">1. Weak Entity Binding</h4>
-          <p class="text-sm text-gray-600 leading-relaxed">Google cannot consistently connect your brand to a verified business entity.</p>
-        </div>
-        <div class="p-6 rounded-2xl bg-orange-50 border border-orange-100">
-          <h4 class="font-bold text-orange-700 mb-2">2. Shallow Trust Accumulation</h4>
-          <p class="text-sm text-gray-600 leading-relaxed">Local signals are present but fragmented, preventing trust from building over time.</p>
-        </div>
-        <div class="p-6 rounded-2xl bg-yellow-50 border border-yellow-100">
-          <h4 class="font-bold text-yellow-700 mb-2">3. Limited Proof Depth</h4>
-          <p class="text-sm text-gray-600 leading-relaxed">The page lacks sufficient proof of service accountability and real-world operation.</p>
-        </div>
-      </div>
-    </div>
-  `,
-  stage_4_html: `
-    <div class="space-y-8">
-      <h2 class="text-2xl font-bold tracking-tighter mb-6">Six-Layer Model Diagnosis</h2>
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="p-6 rounded-2xl border border-green-200 bg-green-50">
-          <h4 class="font-bold text-green-700 mb-2">L1 — Content Relevance</h4>
-          <p class="text-sm text-gray-600">Page content aligns with search intent adequately.</p>
-        </div>
-        <div class="p-6 rounded-2xl border border-blue-200 bg-blue-50">
-          <h4 class="font-bold text-blue-700 mb-2">L2 — Structural Signals</h4>
-          <p class="text-sm text-gray-600">HTML structure supports crawlability but lacks semantic depth.</p>
-        </div>
-        <div class="p-6 rounded-2xl border border-orange-200 bg-orange-50">
-          <h4 class="font-bold text-orange-700 mb-2">L3 — Entity Consistency</h4>
-          <p class="text-sm text-gray-600">Brand and location entities are inconsistent across signals.</p>
-        </div>
-        <div class="p-6 rounded-2xl border border-red-200 bg-red-50">
-          <h4 class="font-bold text-red-700 mb-2">L4 — Trust Accumulation</h4>
-          <p class="text-sm text-gray-600">Signals are too fragmented for sustained trust to build.</p>
-        </div>
-        <div class="p-6 rounded-2xl border border-purple-200 bg-purple-50">
-          <h4 class="font-bold text-purple-700 mb-2">L5 — Local Authority</h4>
-          <p class="text-sm text-gray-600">Local authority signals are present but below competitive threshold.</p>
-        </div>
-        <div class="p-6 rounded-2xl border border-gray-200 bg-gray-50">
-          <h4 class="font-bold text-gray-700 mb-2">L6 — Competitive Position</h4>
-          <p class="text-sm text-gray-600">Page can compete in mid-range but not yet in top-tier local results.</p>
-        </div>
-      </div>
-    </div>
-  `,
-  stage_5_html: `
-    <div class="space-y-10">
-      <h2 class="text-2xl font-bold tracking-tighter mb-6">Optimization Path</h2>
-      <div class="space-y-6">
-        <div class="p-8 rounded-3xl bg-gray-50 border border-gray-100">
-          <h4 class="font-bold mb-3">Priority 1 — Strengthen Entity Binding</h4>
-          <p class="text-sm text-gray-600 leading-relaxed">Ensure NAP consistency, add structured data markup (LocalBusiness schema), and verify Google Business Profile.</p>
-        </div>
-        <div class="p-8 rounded-3xl bg-gray-50 border border-gray-100">
-          <h4 class="font-bold mb-3">Priority 2 — Build Trust Signals</h4>
-          <p class="text-sm text-gray-600 leading-relaxed">Add customer reviews, case studies, service guarantees, and verifiable business credentials to the page.</p>
-        </div>
-        <div class="p-8 rounded-3xl bg-gray-50 border border-gray-100">
-          <h4 class="font-bold mb-3">Priority 3 — Improve Local Depth</h4>
-          <p class="text-sm text-gray-600 leading-relaxed">Expand location-specific content, add local testimonials, community involvement, and area-specific service details.</p>
-        </div>
-      </div>
-    </div>
-  `,
+  trust_status: JSON.stringify({ label: "Trust Status", value: "Medium-Low", description: "The page has some local relevance, but its trust structure is still incomplete and ranking stability remains weak." }),
+  ranking_potential: JSON.stringify({ label: "Ranking Potential", value: "High", description: "The page has a solid foundation and, with further optimization, can move into a stronger competitive tier." }),
+  risk_level: JSON.stringify({ label: "Risk Level", value: "Medium", description: "The page has some weaknesses, but it still retains room for repair and optimization." }),
+  generated_at: "2026-05-15 15:05",
+  module_1_overview: {
+    primary_blocking_layer: "Entity Presence (L0-A)",
+    current_status: "Medium",
+    ranking_potential: "Strong competitive potential",
+    risk_level: "Medium-High risk",
+    main_conclusion:
+      "Your page qualifies for local search competition, but is not yet a high-trust local business page.",
+    explanation:
+      "The page has foundational capabilities, such as a clear topic and service direction, but shows visible gaps in entity presence and specificity. These gaps cause the page to be interpreted as lacking real-world identity traces, limiting trust accumulation and ranking stability in local search.",
+  },
+  module_2_page_level: {
+    page_level: "Moderately weak",
+    current_assessment:
+      "The page has some local search competition foundation, but trust structure is thin, especially in entity feel and specificity.",
+    existing_foundation:
+      "The page has built basic capabilities such as clear topic direction and good algorithm adaptation.",
+    main_limitation:
+      "The page has not yet established strong entity presence or real-world anchors.",
+    likely_search_outcome:
+      "In low-competition environments, the page may gain some ranking opportunities, but in high-competition settings, it will struggle against pages with higher trust.",
+    competitive_interpretation:
+      "Against stronger competitors, the trust gap will be amplified, especially in queries requiring entity verification and specific scenario support.",
+  },
+  module_3_key_problems: {
+    primary_trust_failure: {
+      blocking_layer: "Entity Presence (L0-A)",
+      description:
+        "The page reads as having only service claims without entity grounding — lacking basic identity information, more like a keyword entry than a business entry.",
+    },
+    concrete_issues: [
+      {
+        title: "Weak Entity Presence",
+        judgement: "Google cannot clearly determine whether a distinct local entity exists behind this page.",
+        explanation: "The page lacks parseable physical address and business hours, making it difficult for search systems to complete basic entity identification.",
+        impacts: ["Page lacks real-world anchor strength.", "Reduced map verifiability and local credibility signals."],
+        suggestions: ["Add complete street address with schema LocalBusiness + address structured data.", "Present consistent NAP information (Name / Address / Phone) in the footer."],
+      },
+      {
+        title: "Insufficient Page Specificity",
+        judgement: "Google cannot clearly determine whether this page exists due to real-world context.",
+        explanation: "Page content is highly generic, lacking local context language, landmark entities, and service radius descriptions.",
+        impacts: ["Page lacks local scenario feel and service details.", "Easily flagged as scalable, non-exclusive content."],
+        suggestions: ["Add local climate characteristics or common local problem descriptions.", "Describe proximity to landmarks and use real service cases."],
+      },
+    ],
+  },
+  module_4_eight_layers: {
+    layers: [
+      { layer_key: "foundation", layer_name: "Foundation", status: "Good", description: "The page has clear topic direction and service positioning." },
+      { layer_key: "entity_presence", layer_name: "Entity Presence", status: "Fair", description: "The page still has gaps in entity presence." },
+      { layer_key: "entity_consistency", layer_name: "Entity Consistency", status: "Good", description: "The page performs well in entity information consistency." },
+      { layer_key: "specificity", layer_name: "Specificity", status: "Fair", description: "Page content is too generic, lacking local context language." },
+      { layer_key: "real_world_connection", layer_name: "Real-World Connection", status: "Fair", description: "The page has weak connection to geographic space." },
+      { layer_key: "accountability", layer_name: "Accountability", status: "Weak", description: "The page focuses more on meeting search demand than taking real-world responsibility." },
+      { layer_key: "page_unique_value", layer_name: "Page Unique Value", status: "Good", description: "The page has some independent value." },
+      { layer_key: "algorithm_fit", layer_name: "Algorithm Fit", status: "Good", description: "The page performs well under current search algorithms." },
+    ],
+  },
+  module_5_optimization: {
+    primary_trust_blocker: {
+      blocking_layer: "Entity Presence (L0-A)",
+      summary: "The core reason for poor page performance is insufficient entity presence.",
+      direct_consequences: ["Page lacks real-world identity traces.", "Reduced map verifiability.", "Page reads more like a keyword entry than a business entry."],
+      why_cannot_skip: "Without first resolving entity presence, trust accumulation and optimization absorption will be significantly limited.",
+    },
+    must_execute_now: {
+      title: "Must Execute Now",
+      items: [
+        {
+          title: "1. Strengthen Entity Presence",
+          why_now: "Entity presence is the foundation of page trust structure.",
+          execution_focus: ["Add complete street address with LocalBusiness schema.", "Present consistent NAP information in footer.", "Add business hours module consistent with Google Business Profile."],
+          completion_signals: ["Page contains complete address and business hours.", "Google can identify entity information through structured data."],
+          expected_impact: ["Improved entity recognition.", "Enhanced local credibility and map verifiability."],
+        },
+         {
+          title: "2. Strengthen Entity Presence",
+          why_now: "Entity presence is the foundation of page trust structure.",
+          execution_focus: ["Add complete street address with LocalBusiness schema.", "Present consistent NAP information in footer.", "Add business hours module consistent with Google Business Profile."],
+          completion_signals: ["Page contains complete address and business hours.", "Google can identify entity information through structured data."],
+          expected_impact: ["Improved entity recognition.", "Enhanced local credibility and map verifiability."],
+        },
+         {
+          title: "3. Strengthen Entity Presence",
+          why_now: "Entity presence is the foundation of page trust structure.",
+          execution_focus: ["Add complete street address with LocalBusiness schema.", "Present consistent NAP information in footer.", "Add business hours module consistent with Google Business Profile."],
+          completion_signals: ["Page contains complete address and business hours.", "Google can identify entity information through structured data."],
+          expected_impact: ["Improved entity recognition.", "Enhanced local credibility and map verifiability."],
+        },
+      ],
+    },
+    roadmap: [
+      {
+        phase_title: "Enhance Page Specificity",
+        entry_condition: "Entity presence and consistency are basically stable.",
+        goal: "Improve local scenario feel and service details.",
+        key_actions: ["Add local climate or common local problem descriptions.", "Describe proximity to landmarks with real service cases.", "Specify service distance (mile/km) with real administrative areas."],
+        expected_outcomes: ["Significantly enhanced local scenario feel.", "Page understood as more exclusive and locally relevant."],
+      },
+    ],
+  },
   created_at: new Date().toISOString(),
 };
 

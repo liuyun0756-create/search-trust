@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Lock, Send, Download,
-  Globe, Loader2, ExternalLink
+  Globe, Loader2, ExternalLink,
+  ChevronRight, AlertTriangle, CheckCircle2, XCircle, Clock, ArrowRight
 } from 'lucide-react';
 import type { Report } from '@/types/database';
 
@@ -32,6 +33,15 @@ const STATUS_COLORS: Record<string, string> = {
   Medium: '#3B82F6', Moderate: '#A5D020',
   'Medium-High': '#EF4444', 'Medium-Low': '#F59E0B',
   'Good': '#22C55E', 'Fair': '#F59E0B', '良好': '#22C55E', '一般': '#F59E0B', '偏弱': '#EF4444',
+};
+
+const STATUS_BG: Record<string, string> = {
+  'Good': 'bg-green-50 border-green-200 text-green-700',
+  'Fair': 'bg-yellow-50 border-yellow-200 text-yellow-700',
+  'Weak': 'bg-red-50 border-red-200 text-red-700',
+  '良好': 'bg-green-50 border-green-200 text-green-700',
+  '一般': 'bg-yellow-50 border-yellow-200 text-yellow-700',
+  '偏弱': 'bg-red-50 border-red-200 text-red-700',
 };
 
 const LoadingState = ({ text = "Under detection..." }: { text?: string }) => (
@@ -90,7 +100,8 @@ function Module1Overview({ data }: { data: Record<string, any> }) {
     <div className="space-y-8">
       <div>
         <section className="text-[16px] font-bold text-[#1A212B] mb-2">Primary Blocking Layer：
-          <span className="text-[16px] font-bold text-orange-700">{data.primary_blocking_layer}</span>
+                  <span className="text-[16px] font-bold text-orange-700">{data.primary_blocking_layer}</span>
+
         </section>
       </div>
       {/* Main conclusion */}
@@ -121,8 +132,14 @@ function Module1Overview({ data }: { data: Record<string, any> }) {
 
       {/* Explanation */}
       <div className="space-y-3">
+        <h4 className="text-[13px] font-bold text-gray-400 uppercase tracking-wider">Explanation</h4>
         <p className="text-[15px] text-gray-600 leading-relaxed font-medium">{data.explanation}</p>
       </div>
+
+      {/* Primary blocking layer */}
+      {/* <div className="p-6 rounded-[16px] bg-orange-50 border border-orange-100">
+        <p className="text-[12px] font-bold text-orange-500 uppercase tracking-wider mb-2">Primary Blocking Layer</p>
+      </div> */}
     </div>
   );
 }
@@ -132,6 +149,7 @@ function Module1Overview({ data }: { data: Record<string, any> }) {
 // ============================================================
 function Module2PageLevel({ data }: { data: Record<string, any> }) {
   const cards = [
+    { label: 'Current Assessment', value: data.current_assessment },
     { label: 'Existing Foundation', value: data.existing_foundation },
     { label: 'Main Limitation', value: data.main_limitation },
     { label: 'Likely Search Outcome', value: data.likely_search_outcome },
@@ -140,23 +158,17 @@ function Module2PageLevel({ data }: { data: Record<string, any> }) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <section className="text-[16px]  text-[#1A212B] mb-2">
-          <span className="font-bold">current Assessment：</span>
-          <span className="text-[16px] ">{data?.current_assessment}</span>
-        </section>
-      </div>
       {/* Page level indicator */}
-      {/* <div className="p-6 rounded-[16px] bg-gray-50 border border-gray-100">
+      <div className="p-6 rounded-[16px] bg-gray-50 border border-gray-100">
         <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">Overall Level</p>
         <p className="text-[20px] font-bold text-[#1A212B]">{data.page_level}</p>
-      </div> */}
+      </div>
 
       {/* 2x2 + 1 grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {cards.map((card) => (
           <div key={card.label} className="p-6 rounded-[16px] bg-gray-50 border border-gray-100">
-            <h4 className="text-[13px] font-bold  uppercase tracking-wider mb-3">{card.label}</h4>
+            <h4 className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-3">{card.label}</h4>
             <p className="text-[14px] text-gray-600 leading-relaxed font-medium">{card.value}</p>
           </div>
         ))}
@@ -174,74 +186,56 @@ function Module3KeyProblems({ data }: { data: Record<string, any> }) {
 
   return (
     <div className="space-y-8">
-       <section className="text-[16px]  text-[#1A212B] mb-2">
-          <span className="text-[16px] ">Trust builds sequentially.Fixing the wrong layer first will limit the effectiveness of all subsequent work.</span>
-        </section>
       {/* Primary trust failure */}
       {failure && (
-        <div className="p-6 rounded-[16px] border border-gray-100">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              1
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Primary Trust Failure</div>
-          </div>
-           <div className="space-y-2">
-              <p className="text-[16px] font-bold text-[#1A212B] ">Current main blockage layer: {failure.blocking_layer}</p>
-              <p className="text-[14px] text-gray-600 leading-relaxed">{failure.description}</p>
-            </div>
+        <div className="p-6 rounded-[16px] bg-red-50 border border-red-100">
+          <p className="text-[12px] font-bold text-red-500 uppercase tracking-wider mb-2">Primary Trust Failure</p>
+          <p className="text-[14px] font-bold text-red-700 mb-2">{failure.blocking_layer}</p>
+          <p className="text-[14px] text-red-600 leading-relaxed">{failure.description}</p>
         </div>
       )}
 
-      {/* Concrete issues - wrapped in one border card */}
-      {issues.length > 0 && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-6">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              2
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Concrete Issue</div>
+      {/* Concrete issues */}
+      {issues.map((issue: any, i: number) => (
+        <div key={i} className="border border-gray-100 rounded-[16px] p-6 space-y-4">
+          <h4 className="text-[16px] font-bold text-[#1A212B]">{issue.title}</h4>
+          <div className="p-4 rounded-xl bg-gray-50">
+            <p className="text-[13px] font-bold text-gray-500 mb-1">Google's Judgement</p>
+            <p className="text-[14px] text-gray-700 leading-relaxed">{issue.judgement}</p>
           </div>
+          <p className="text-[14px] text-gray-600 leading-relaxed">{issue.explanation}</p>
 
-          {issues.map((issue: any, i: number) => (
-            <div key={i} className="space-y-4">
-              <h4 className="text-[16px] font-bold text-[#1A212B]">{i + 1}. {issue.title}</h4>
-              <p className="text-[14px] text-gray-600 leading-relaxed">{issue.judgement}</p>
-              <p className="text-[14px] text-gray-600 leading-relaxed">{issue.explanation}</p>
-
-              {issue.impacts?.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-[13px] font-bold text-gray-500">Impacts</p>
-                  <ul className="space-y-1.5">
-                    {issue.impacts.map((impact: string, j: number) => (
-                      <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-red-400 mt-2" />
-                        {impact}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {issue.suggestions?.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-[13px] font-bold text-gray-500">Suggestions</p>
-                  <ul className="space-y-1.5">
-                    {issue.suggestions.map((suggestion: string, j: number) => (
-                      <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#A5D020] mt-2" />
-                        {suggestion}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {i < issues.length - 1 && <div className="border-b border-gray-100" />}
+          {/* Impacts */}
+          {issue.impacts?.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Impacts</p>
+              <ul className="space-y-2">
+                {issue.impacts.map((impact: string, j: number) => (
+                  <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
+                    <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                    {impact}
+                  </li>
+                ))}
+              </ul>
             </div>
-          ))}
+          )}
+
+          {/* Suggestions */}
+          {issue.suggestions?.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Suggestions</p>
+              <ul className="space-y-2">
+                {issue.suggestions.map((suggestion: string, j: number) => (
+                  <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
+                    <CheckCircle2 size={16} className="text-[#A5D020] shrink-0 mt-0.5" />
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -252,33 +246,21 @@ function Module3KeyProblems({ data }: { data: Record<string, any> }) {
 function Module4EightLayers({ data }: { data: Record<string, any> }) {
   const layers: any[] = data.layers || [];
 
-  const statusTagClass: Record<string, string> = {
-    Good: 'bg-green-50 text-green-700',
-    Fair: 'bg-yellow-50 text-yellow-700',
-    Weak: 'bg-red-50 text-red-700',
-    Moderate: 'bg-[#F0F5E0] text-[#7B9A1E]',
-    'Medium-High': 'bg-orange-50 text-orange-700',
-  };
-
   return (
-    <section>
-      <section className="text-[16px]  text-[#1A212B] mb-2 pb-2">
-        <span className="text-[16px] ">Below is the full six-layer trust diagnosis used to interpret the current strength of the page.</span>
-      </section>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {layers.map((layer: any, i: number) => (
-          <div key={i} className="p-6 rounded-[16px] border border-gray-100 space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-[15px] font-bold text-[#1A212B]">Layer {i + 1}: {layer.layer_name}</h4>
-              <span className={`text-[12px] font-bold px-3 py-1 rounded-full ${statusTagClass[layer.status] || 'bg-gray-50 text-gray-600'}`}>
-                {layer.status}
-              </span>
+    <div className="space-y-4">
+      {layers.map((layer: any, i: number) => {
+        const statusClass = STATUS_BG[layer.status] || 'bg-gray-50 border-gray-200 text-gray-700';
+        return (
+          <div key={i} className={`p-6 rounded-[16px] border ${statusClass}`}>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-[15px] font-bold">{layer.layer_name}</h4>
+              <span className={`text-[12px] font-bold px-3 py-1 rounded-full ${statusClass}`}>{layer.status}</span>
             </div>
-            <p className="text-[14px] text-gray-600 leading-relaxed">{layer.description}</p>
+            <p className="text-[14px] leading-relaxed opacity-80">{layer.description}</p>
           </div>
-        ))}
-      </div>
-    </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -293,251 +275,124 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
   const expect30 = data.what_to_expect_30_days;
 
   return (
-    <div className="space-y-8">
-      {/* 1. Primary Trust Blocker */}
+    <div className="space-y-10">
+      {/* Primary blocker */}
       {blocker && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-4">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              1
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Primary Trust Blocker</div>
-          </div>
-          <p className="text-[16px] font-bold text-[#1A212B]">Current blocking layer: {blocker.blocking_layer}</p>
-          <p className="text-[14px] text-gray-600 leading-relaxed">{blocker.summary}</p>
-
-          {blocker.direct_consequences?.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[13px] font-bold text-gray-500">As a result:</p>
-              <ul className="space-y-1.5">
+        <div className="space-y-4">
+          <h3 className="text-[18px] font-bold text-[#1A212B]">Primary Trust Blocker</h3>
+          <div className="p-6 rounded-[16px] bg-red-50 border border-red-100">
+            <p className="text-[16px] font-bold text-red-700 mb-2">{blocker.blocking_layer}</p>
+            <p className="text-[14px] text-red-600 leading-relaxed mb-4">{blocker.summary}</p>
+            {blocker.direct_consequences?.length > 0 && (
+              <ul className="space-y-1">
                 {blocker.direct_consequences.map((c: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-[14px] text-gray-600">
-                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-red-400 mt-2" />
+                  <li key={i} className="flex items-start gap-2 text-[14px] text-red-600">
+                    <ChevronRight size={16} className="shrink-0 mt-0.5" />
                     {c}
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <p className="text-[13px] font-bold text-gray-500">Why this layer cannot be skipped:</p>
-            <p className="text-[14px] text-gray-600 leading-relaxed">{blocker.why_cannot_skip}</p>
+            )}
           </div>
+          <p className="text-[14px] text-gray-500 leading-relaxed italic">{blocker.why_cannot_skip}</p>
         </div>
       )}
 
-      {/* 2. Must Execute Now */}
+      {/* Must execute now */}
       {mustItems.length > 0 && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-6">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              2
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Must Execute Now</div>
-          </div>
-
+        <div className="space-y-4">
+          <h3 className="text-[18px] font-bold text-[#1A212B]">Must Execute Now</h3>
           {mustItems.map((item: any, i: number) => (
-            <div key={i} className="space-y-4">
-              <h4 className="text-[16px] font-bold text-[#1A212B]">Must Fix {i + 1}- {item.title}</h4>
-
-              <div className="space-y-1">
-                <p className="text-[13px] font-bold text-gray-500">Why now:</p>
-                <p className="text-[14px] text-gray-600 leading-relaxed">{item.why_now}</p>
-              </div>
-
+            <div key={i} className="p-6 rounded-[16px] bg-[#A5D020]/5 border border-[#A5D020]/20 space-y-4">
+              <h4 className="text-[15px] font-bold text-[#1A212B]">{item.title}</h4>
+              <p className="text-[14px] text-gray-600 leading-relaxed">{item.why_now}</p>
               {item.execution_focus?.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-[13px] font-bold text-gray-500">Execution focus:</p>
-                  <ul className="space-y-1.5">
-                    {item.execution_focus.map((action: string, j: number) => (
-                      <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#A5D020] mt-2" />
-                        {action}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <ul className="space-y-2">
+                  {item.execution_focus.map((action: string, j: number) => (
+                    <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
+                      <CheckCircle2 size={16} className="text-[#A5D020] shrink-0 mt-0.5" />
+                      {action}
+                    </li>
+                  ))}
+                </ul>
               )}
-
-              {item.completion_signals?.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-[13px] font-bold text-gray-500">Completion signals:</p>
-                  <ul className="space-y-1.5">
-                    {item.completion_signals.map((signal: string, j: number) => (
-                      <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#A5D020] mt-2" />
-                        {signal}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {item.expected_impact?.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-[13px] font-bold text-gray-500">Expected impact:</p>
-                  <ul className="space-y-1.5">
-                    {item.expected_impact.map((impact: string, j: number) => (
-                      <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#A5D020] mt-2" />
-                        {impact}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {i < mustItems.length - 1 && <div className="border-b border-gray-100" />}
             </div>
           ))}
         </div>
       )}
 
-      {/* 3. Roadmap */}
+      {/* Roadmap */}
       {roadmap.length > 0 && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-6">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              3
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Roadmap</div>
-          </div>
-
+        <div className="space-y-4">
+          <h3 className="text-[18px] font-bold text-[#1A212B]">Optimization Roadmap</h3>
           {roadmap.map((phase: any, i: number) => (
-            <div key={i} className="space-y-4">
-              <h4 className="text-[16px] font-bold text-[#1A212B]">Phase {i + 1}- {phase.phase_title}</h4>
-
-              <div className="space-y-1">
-                <p className="text-[13px] font-bold text-gray-500">Entry condition:</p>
-                <p className="text-[14px] text-gray-600 leading-relaxed">{phase.entry_condition}</p>
+            <div key={i} className="p-6 rounded-[16px] border border-gray-100 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
+                  {i + 1}
+                </span>
+                <h4 className="text-[15px] font-bold text-[#1A212B]">{phase.phase_title}</h4>
               </div>
-
-              <div className="space-y-1">
-                <p className="text-[13px] font-bold text-gray-500">Goal:</p>
-                <p className="text-[14px] text-gray-600 leading-relaxed">{phase.goal}</p>
-              </div>
-
+              <p className="text-[13px] text-gray-400 pl-10">Entry condition: {phase.entry_condition}</p>
+              <p className="text-[14px] text-gray-600 leading-relaxed pl-10">{phase.goal}</p>
               {phase.key_actions?.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-[13px] font-bold text-gray-500">Key actions:</p>
-                  <ul className="space-y-1.5">
-                    {phase.key_actions.map((action: string, j: number) => (
-                      <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#A5D020] mt-2" />
-                        {action}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <ul className="space-y-2 pl-10">
+                  {phase.key_actions.map((action: string, j: number) => (
+                    <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
+                      <ArrowRight size={14} className="text-[#A5D020] shrink-0 mt-1" />
+                      {action}
+                    </li>
+                  ))}
+                </ul>
               )}
-
-              {phase.expected_outcomes?.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-[13px] font-bold text-gray-500">Expected outcomes:</p>
-                  <ul className="space-y-1.5">
-                    {phase.expected_outcomes.map((outcome: string, j: number) => (
-                      <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#A5D020] mt-2" />
-                        {outcome}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {i < roadmap.length - 1 && <div className="border-b border-gray-100" />}
             </div>
           ))}
         </div>
       )}
 
-      {/* 4. If Fix Order Is Wrong */}
+      {/* Fix order warning */}
       {fixWarning && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-4">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              4
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">{fixWarning.title}</div>
+        <div className="p-6 rounded-[16px] bg-orange-50 border border-orange-100 space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={18} className="text-orange-500" />
+            <h4 className="text-[15px] font-bold text-orange-700">{fixWarning.title}</h4>
           </div>
-          <p className="text-[14px] text-gray-600 leading-relaxed">{fixWarning.intro}</p>
-          <div className="space-y-1">
-            <p className="text-[13px] font-bold text-gray-500">For this page:</p>
-            <p className="text-[14px] text-gray-600 leading-relaxed">{fixWarning.page_specific_risk}</p>
-          </div>
-          <p className="text-[14px] text-gray-600 leading-relaxed">{fixWarning.closing_warning}</p>
+          <p className="text-[14px] text-orange-600 leading-relaxed">{fixWarning.intro}</p>
+          <p className="text-[14px] text-orange-700 leading-relaxed font-medium">{fixWarning.page_specific_risk}</p>
+          <p className="text-[13px] text-orange-600 leading-relaxed italic">{fixWarning.closing_warning}</p>
         </div>
       )}
 
-      {/* 5. What You'll Likely See in the Next 30 Days */}
+      {/* 30 days expectation */}
       {expect30 && (
         <div className="p-6 rounded-[16px] border border-gray-100 space-y-4">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              5
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">{expect30.title}</div>
+          <div className="flex items-center gap-2">
+            <Clock size={18} className="text-gray-400" />
+            <h4 className="text-[15px] font-bold text-[#1A212B]">{expect30.title}</h4>
           </div>
-          <p className="text-[14px] text-gray-600 leading-relaxed">{expect30.intro}</p>
+          <p className="text-[14px] text-gray-500 leading-relaxed">{expect30.intro}</p>
 
-          {expect30.week_1_2?.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[13px] font-bold text-gray-500">Week 1–2:</p>
-              <ul className="space-y-1.5">
-                {expect30.week_1_2.map((item: string, j: number) => (
-                  <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-gray-400 mt-2" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {[
+            { label: 'Week 1-2', items: expect30.week_1_2 },
+            { label: 'Week 2-3', items: expect30.week_2_3 },
+            { label: 'Week 3-4', items: expect30.week_3_4 },
+            { label: 'End of 30 days', items: expect30.end_of_30_days },
+          ].map((phase) => (
+            phase.items?.length > 0 && (
+              <div key={phase.label} className="space-y-2 pl-4 border-l-2 border-gray-100">
+                <p className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">{phase.label}</p>
+                <ul className="space-y-1">
+                  {phase.items.map((item: string, j: number) => (
+                    <li key={j} className="text-[14px] text-gray-600 leading-relaxed">• {item}</li>
+                  ))}
+                </ul>
+              </div>
+            )
+          ))}
+
+          {expect30.closing_note && (
+            <p className="text-[13px] text-gray-400 italic">{expect30.closing_note}</p>
           )}
-
-          {expect30.week_2_3?.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[13px] font-bold text-gray-500">Week 2–3:</p>
-              <ul className="space-y-1.5">
-                {expect30.week_2_3.map((item: string, j: number) => (
-                  <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-gray-400 mt-2" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {expect30.week_3_4?.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[13px] font-bold text-gray-500">Week 3–4:</p>
-              <ul className="space-y-1.5">
-                {expect30.week_3_4.map((item: string, j: number) => (
-                  <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-gray-400 mt-2" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {expect30.end_of_30_days?.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[13px] font-bold text-gray-500">By the end of 30 days:</p>
-              <ul className="space-y-1.5">
-                {expect30.end_of_30_days.map((item: string, j: number) => (
-                  <li key={j} className="flex items-start gap-2 text-[14px] text-gray-600">
-                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-gray-400 mt-2" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <p className="text-[14px] text-gray-600 leading-relaxed">{expect30.closing_note}</p>
         </div>
       )}
     </div>
@@ -637,8 +492,10 @@ export function ReportContent({
   }, []);
 
   const isLocked = (tab: TabId) => {
-    if (isPaid) return false;
-    return tab !== 'Executive Summary' && tab !== 'Page Level';
+    // TODO: 样式调完后恢复锁逻辑
+    // if (isPaid) return false;
+    // return tab !== 'Executive Summary' && tab !== 'Page Level';
+    return false;
   };
 
   const scrollToSection = (tab: TabId) => {
@@ -653,43 +510,34 @@ export function ReportContent({
     }, 800);
   };
 
-  const generatedAt = report.generated_at
-    || (report.created_at
-      ? new Date(report.created_at).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })
-      : '');
+  const generatedAt = report.created_at
+    ? new Date(report.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : '';
 
-  // 后端返回 JSON 字符串，需 parse
-  const parseScoreField = (raw: string | null | undefined) => {
-    if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
-  };
-
-  const trustStatus = parseScoreField(report.trust_status);
-  const rankingPotential = parseScoreField(report.ranking_potential);
-  const riskLevel = parseScoreField(report.risk_level);
+  const overview = report.module_1_overview;
 
   const scoreCards = [
     {
-      label: trustStatus?.label || 'Trust Status',
-      val: trustStatus?.value || '—',
-      desc: trustStatus?.description || '',
-      color: STATUS_COLORS[trustStatus?.value || ''] || '#3B82F6',
+      label: 'Trust Status',
+      val: overview?.current_status || '—',
+      desc: overview?.main_conclusion || '',
+      color: STATUS_COLORS[overview?.current_status || ''] || '#3B82F6',
     },
     {
-      label: rankingPotential?.label || 'Ranking Potential',
-      val: rankingPotential?.value || '—',
-      desc: rankingPotential?.description || '',
-      color: STATUS_COLORS[rankingPotential?.value || ''] || '#A5D020',
+      label: 'Ranking Potential',
+      val: overview?.ranking_potential || '—',
+      desc: '',
+      color: STATUS_COLORS[overview?.ranking_potential || ''] || '#A5D020',
     },
     {
-      label: riskLevel?.label || 'Risk Level',
-      val: riskLevel?.value || '—',
-      desc: riskLevel?.description || '',
-      color: STATUS_COLORS[riskLevel?.value || ''] || '#EF4444',
+      label: 'Risk Level',
+      val: overview?.risk_level || '—',
+      desc: '',
+      color: STATUS_COLORS[overview?.risk_level || ''] || '#EF4444',
     },
   ];
 
@@ -793,7 +641,7 @@ export function ReportContent({
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <p className="text-[14px] font-bold text-gray-400 mb-4">{card.label}</p>
                 <h4 className="text-3xl font-black tracking-tighter mb-2" style={{ color: card.color }}>{card.val}</h4>
-                {card.desc && <p className="text-[11px]   tracking-widest line-clamp-3">{card.desc}</p>}
+                {card.desc && <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest line-clamp-3">{card.desc}</p>}
               </motion.div>
             )}
           </div>
