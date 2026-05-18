@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { FileSearch } from "lucide-react";
@@ -68,7 +68,15 @@ function PollingIndicator({ progress }: { progress: { stage?: string; percent?: 
   );
 }
 
-export default function ReportsPage() {
+export default function ReportsPageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F8F9FA]" />}>
+      <ReportsPage />
+    </Suspense>
+  );
+}
+
+function ReportsPage() {
   const searchParams = useSearchParams();
   const taskId = searchParams.get("task_id");
   const pendingReportId = searchParams.get("report_id");
