@@ -25,7 +25,7 @@ export function AuditForm() {
   };
 
   return (
-    <section className="py-20 bg-transparent relative z-10">
+    <section className="relative z-20 -mt-37">
       <div className="container mx-auto max-w-6xl px-6">
         <form 
           onSubmit={handleSubmit}

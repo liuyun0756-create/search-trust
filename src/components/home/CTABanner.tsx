@@ -5,7 +5,7 @@ import { RunAuditButton } from "@/components/common/RunAuditButton";
 
 export function CTABanner() {
   return (
-    <footer className="relative bg-[#0B0C0E] pt-24 pb-12">
+    <footer className="relative bg-[#0B0C0E] pt-20 pb-12">
       <div className="absolute inset-0 z-0 opacity-20">
         <img 
           src="/images/bottom-bg.png" 

@@ -21,7 +21,7 @@ const commonWays = [
 
 export function CommonWaysSection() {
   return (
-    <section className="py-24 bg-[#0B0C0E] overflow-hidden">
+    <section className="py-20 bg-[#0B0C0E] overflow-hidden">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* 标题 */}

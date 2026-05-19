@@ -71,7 +71,7 @@ bg-white/5 backdrop-blur-md border border-white/10
 
 | 场景 | 值 |
 |------|------|
-| 区块上下内边距 | `py-24` |
+| 区块上下内边距 | `py-20` |
 | 标题与内容间距 | `mb-16` / `mb-20` |
 | 卡片内边距 | `p-10` / `md:p-14` |
 | 卡片网格间距 | `gap-6` / `gap-8` |
@@ -133,7 +133,7 @@ bg-white/5 backdrop-blur-md border border-white/10
 ## 页面结构模板
 
 ```
-<section className="py-24 bg-[#F9FAFB]">  ← 或 bg-white / bg-[#0B0C0E]
+<section className="py-20 bg-[#F9FAFB]">  ← 或 bg-white / bg-[#0B0C0E]
   <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
     {/* 标题区 */}
@@ -163,7 +163,7 @@ Design a modern, professional B2B SaaS landing page with the following style:
 - Cards: Large rounded corners (24px), ultra-subtle shadows, thin gray borders (#F8F9FA or white)
 - Dark section cards: Glassmorphism — bg-white/5, backdrop-blur, border-white/10
 - Buttons: Dark primary (bg-[#1D2531] rounded-full), white CTA (bg-white rounded-xl), never green buttons for main CTAs
-- Layout: max-w-7xl container, py-24 sections, mb-16/mb-20 title spacing, grid layouts
+- Layout: max-w-7xl container, py-20 sections, mb-16/mb-20 title spacing, grid layouts
 - Effects: Framer Motion for nav tabs (spring animation), subtle hover shadows, smooth 300ms transitions
 - Mood: Restrained, sophisticated, trustworthy, technical — not flashy or playful
 - Spacing: Generous vertical padding, consistent margins, breathing room between elements

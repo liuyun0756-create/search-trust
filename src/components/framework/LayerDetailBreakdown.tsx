@@ -67,7 +67,7 @@ export function LayerDetailBreakdown() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section className="py-24 bg-white overflow-hidden">
+    <section className="py-20 bg-white overflow-hidden">
       <div className="container mx-auto max-w-7xl px-6">
         
         {/* Header */}

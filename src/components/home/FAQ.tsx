@@ -34,7 +34,7 @@ export function FAQ() {
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
-    <section className="py-24 bg-[#F7F9FA]">
+    <section className="py-20 bg-[#F7F9FA]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* 居中标题 */}

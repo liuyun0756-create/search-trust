@@ -49,7 +49,7 @@ const sampleReportFAQData = [
   },
 ];
 import { ReportCTA } from "@/components/sampleReport/ReportCTA";
-import {AuditForm} from "@/components/sampleReport/AuditForm";
+import {AuditForm} from "@/components/common/AuditForm";
 import {TrustCollapseModel} from "@/components/sampleReport/TrustCollapseModel";
 import {SampleReportInfo} from "@/components/sampleReport/SampleReportInfo";
 import {AuditPreview} from "@/components/sampleReport/AuditPreview";

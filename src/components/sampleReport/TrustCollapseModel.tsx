@@ -16,7 +16,7 @@ export function TrustCollapseModel() {
   ];
 
   return (
-    <section className="py-24 bg-white overflow-hidden">
+    <section className="py-20 bg-white overflow-hidden">
       <div className="container mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
           

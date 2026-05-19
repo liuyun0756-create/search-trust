@@ -5,7 +5,7 @@ import { RunAuditButton } from "@/components/common/RunAuditButton";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[600px] w-full overflow-hidden bg-[#F9F9F9] flex items-center">
+    <section className="relative min-h-[880px] w-full bg-[#F9F9F9] flex overflow-visible">
       {/* 背景纹理 - 使用图片或SVG抽象线条 */}
       <div
         className="absolute inset-0 opacity-40 pointer-events-none"
@@ -18,28 +18,28 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-tr from-white/80 via-transparent to-white/20" />
       </div>
 
-      <div className="container mx-auto max-w-7xl px-6 px-4 sm:px-6 lg:px-8 py-20 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+      <div className="container mx-auto max-w-8xl px-6 px-4 sm:px-6 lg:px-8 pt-20 pb-20 relative z-10">
+        <div className="flex flex-col lg:flex-row  justify-between gap-12">
 
           {/* 左侧文字区域 */}
           <div className="flex-1 max-w-2xl">
-            <div className="mb-6">
-              <span className="inline-block px-3 py-1 text-[10px] tracking-[0.2em] font-bold text-[#666] border border-gray-200 rounded bg-white/50 backdrop-blur-sm uppercase">
+            <div className="mb-6 pt-3">
+              <span className="inline-block px-3 py-1 text-[12px] tracking-[0.2em] font-bold text-[#4A4A5A] border border-gray-200 rounded bg-white/50 backdrop-blur-sm uppercase">
                 Search Trust Insight Engine
               </span>
             </div>
 
-            <h1 className="text-[44px] md:text-[56px] font-[800] leading-[1.1] text-[#1A1F2B] tracking-tight">
+            <h1 className="text-[44px] md:text-[52px] font-[800] leading-[72px] text-[#1D2531] tracking-tight">
               Find Why Google doesn’t 
-              trust <span className="text-[#A5D020]">Your Local Pages</span> and what to fix first
+              trust <span className="text-[#A5D020]">Your Local Pages</span> 
             </h1>
 
-            <div className="mt-8 space-y-4 max-w-lg">
-              <p className="text-[#6B7280] text-[15px] leading-relaxed">
-                SearchTrust analyzes a submitted local, city, service-area, or location page through a structured trust model and shows where trust breaks down, which layer matters most, and what to fix first.
+            <div className="mt-8 space-y-4 w-full">
+              <p className="text-[#657083] text-[16px] leading-relaxed">
+               AI Linter analyzes local pages through a 6-layer trust model to show where trust breaks, how Google may interpret the page, and what to fix first.
               </p>
-              <p className="text-[#9CA3AF] text-[13px] font-medium">
-Built for local pages that look optimized but still struggle to rank, hold visibility, or compete consistently.              </p>
+              <p className="text-[#657083] text-[16px] font-medium">
+                Built for SEO agencies, local SEO specialists, and teams managing scaled location pages.</p>
             </div>
 
             <div className="mt-10 flex flex-wrap gap-4">

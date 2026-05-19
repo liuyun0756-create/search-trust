@@ -18,7 +18,7 @@ export function SampleReportInfo() {
   };
 
   return (
-    <section className="pt-24 bg-white">
+    <section className="pt-20 bg-white">
       <div className="container mx-auto max-w-6xl px-6">
         {/* 标题区域  */}
         <div className="text-center max-w-3xl mx-auto mb-20">

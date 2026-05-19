@@ -13,7 +13,7 @@ const billingDetails = [
 
 export function BillingDetails() {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-20 bg-white">
       <div className="max-w-[1200px] mx-auto px-8 text-center">
         <h2 className="text-[42px] font-bold mb-20">Billing details</h2>
         <div className="flex flex-wrap justify-center gap-10 md:gap-16">

@@ -69,7 +69,7 @@ export function AuditPreview() {
   };
 
   return (
-    <section className="pt-24 bg-white">
+    <section className="pt-20 bg-white">
       <div className="container mx-auto max-w-6xl px-6">
         <h2 className="text-center text-[32px] md:text-[40px] font-bold text-[#1A1F2B] mb-12">
           See What a Local Trust Audit Looks Like

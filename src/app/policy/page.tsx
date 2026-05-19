@@ -372,7 +372,7 @@ export default function PolicyPage() {
       <BackHeader />
 
       {/* Main Content */}
-      <section className="py-24 max-w-7xl mx-auto px-6">
+      <section className="py-20 max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           
           {/* Sidebar Navigation */}

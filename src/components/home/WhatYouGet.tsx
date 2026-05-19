@@ -2,10 +2,12 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Shield, AlertTriangle, Star, Send } from 'lucide-react';
 
 interface CardItem {
   title: string;
   desc?: string;
+  icon?: React.ElementType;
 }
 
 interface WhatYouGetProps {
@@ -15,23 +17,27 @@ interface WhatYouGetProps {
 
 const defaultBenefits = [
   {
+    icon: Shield,
     title: "A six-layer trust diagnosis for one submitted page",
   },
   {
+    icon: AlertTriangle,
     title: "The dominant failure point holding the page back",
   },
   {
+    icon: Star,
     title: "Prioritized recommendations based on trust impact",
   },
   {
+    icon: Send,
     title: "Delivery by email within two hours of submission",
   }
 ];
 
 export function WhatYouGet({ title = "What you get", items = defaultBenefits }: WhatYouGetProps) {
   return (
-    <section className="py-24 bg-white">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="py-20 bg-[#F9F9F9]">
+      <div className="container mx-auto max-w-8xl px-4 sm:px-6 lg:px-8">
 
         {/* 居中标题 */}
         <div className="text-center mb-16">
@@ -40,8 +46,8 @@ export function WhatYouGet({ title = "What you get", items = defaultBenefits }: 
           </h2>
         </div>
 
-        {/* 四列卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* 2x2 网格 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {items.map((item, index) => (
             <motion.div
               key={index}
@@ -49,11 +55,16 @@ export function WhatYouGet({ title = "What you get", items = defaultBenefits }: 
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-[#F8F9FA] rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow"
+              className="flex items-center gap-4 bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow"
             >
-              <h3 className="text-[18px] font-bold text-[#1D2531] mb-3 leading-snug">
+              {item.icon && (
+                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
+                  <item.icon size={18} strokeWidth={1.5} className="text-[#A5D020]" />
+                </div>
+              )}
+              <span className="text-[16px] font-medium text-[#1D2531] leading-snug">
                 {item.title}
-              </h3>
+              </span>
             </motion.div>
           ))}
         </div>

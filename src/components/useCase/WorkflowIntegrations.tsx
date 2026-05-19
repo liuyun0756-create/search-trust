@@ -26,7 +26,7 @@ const data = [
 
 export function WorkflowIntegrations() {
   return (
-    <section className="pt-24 bg-[#F8F9FB]">
+    <section className="pt-20 bg-[#F8F9FB]">
       <div className="container mx-auto max-w-[1200px] px-8">
         
         {/* 标题部分 */}

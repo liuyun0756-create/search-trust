@@ -6,7 +6,7 @@ import { Clock, RotateCcw, ArrowRight } from 'lucide-react';
 
 export function DeliveryRefund() {
   return (
-    <section className="bg-[#FFFFFF] py-24 px-6">
+    <section className="bg-[#FFFFFF] py-20 px-6">
       <div className="max-w-7xl mx-auto space-y-32">
         
         {/* 1. Delivery Section: 文字左 + 图片右 */}

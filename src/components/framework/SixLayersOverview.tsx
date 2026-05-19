@@ -15,7 +15,7 @@ const layers = [
 
 export function SixLayersOverview() {
   return (
-    <section className="pt-24 bg-white overflow-hidden">
+    <section className="pt-20 bg-white overflow-hidden">
       <div className="container mx-auto max-w-4xl px-6">
         
         {/* 标题 */}

@@ -22,7 +22,7 @@ const competitors = [
 
 export function ComparisonTable() {
   return (
-    <section className="py-24 bg-[#F7F9FA]">
+    <section className="py-20 bg-[#F7F9FA]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-[32px] md:text-[40px] font-bold text-[#1A1F2B]">

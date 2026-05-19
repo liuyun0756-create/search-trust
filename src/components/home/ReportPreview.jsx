@@ -3,7 +3,7 @@ import { LogIn, FileText, AlertTriangle, CheckCircle2, Layout, ExternalLink } fr
 
 export function ReportPreview () {       
   return (
-    <section className="py-24 bg-[#F9FAFB]">
+    <section className="py-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* 标题 */}
         <div className="text-center mb-16">

@@ -11,7 +11,7 @@ export function ReportPreviewForm() {
   });
 
   return (
-    <section id="report-preview" className="py-24 bg-[#F9FAFB]">
+    <section id="report-preview" className="py-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B]">

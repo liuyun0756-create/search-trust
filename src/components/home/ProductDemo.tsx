@@ -47,7 +47,7 @@ const CurvedConnectors = () => {
 
 export function ProductDemo() {
   return (
-    <section className="relative min-h-[900px] w-full bg-[#0B0C0E] py-24 flex items-center overflow-hidden">
+    <section className="relative min-h-[900px] w-full bg-[#0B0C0E] py-20 flex items-center overflow-hidden">
       
       {/* 背景图层 - 修正了背景尺寸和位置 */}
       <div className="absolute inset-0 z-0 pointer-events-none">

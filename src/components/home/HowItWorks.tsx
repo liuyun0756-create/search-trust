@@ -3,7 +3,7 @@ import { Check } from 'lucide-react';
 
 export function HowItWorks() {
   return (
-    <section className="py-24 bg-white overflow-hidden">
+    <section className="py-20 bg-white overflow-hidden">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* 顶部标题区域 */}

@@ -27,7 +27,7 @@ export function TrustLayerDetail() {
   ];
 
   return (
-    <section className="py-24 bg-[#F9FAFB]">
+    <section className="py-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-6xl px-6">
         <h2 className="text-center text-[36px] font-bold text-[#1A1F2B] mb-16">
           Detailed Breakdown of Each Layer

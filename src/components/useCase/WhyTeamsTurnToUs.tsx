@@ -27,7 +27,7 @@ const painPoints = [
 
 export function WhyTeamsTurnToUs() {
   return (
-    <section className="pt-24 bg-[#F9FAFB]">
+    <section className="py-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <div className="inline-block px-3 py-1 rounded-full bg-[#F4F7E9] text-[#A5D020] text-[12px] font-bold mb-6">

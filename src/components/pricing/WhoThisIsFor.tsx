@@ -28,7 +28,7 @@ const userTypes = [
 
 export function WhoThisIsFor() {
   return (
-    <section className="py-24 bg-white rounded-t-[80px]">
+    <section className="pt-20 bg-white rounded-t-[80px]">
       <div className="max-w-[1300px] mx-auto px-8">
         <h2 className="text-[48px] font-bold text-center mb-24">Who this is for</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

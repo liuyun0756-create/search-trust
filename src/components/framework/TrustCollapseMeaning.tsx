@@ -23,7 +23,7 @@ const notItems = [
 
 export function TrustCollapseMeaning() {
   return (
-    <section className="pt-24 bg-white">
+    <section className="pt-20 bg-white">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* 标题区域 */}

@@ -26,7 +26,7 @@ const audiences = [
 
 export function WhoThisReportFor() {
   return (
-    <section className="pt-24 bg-[#F9FAFB]">
+    <section className="pt-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader title="Who this type of report is for" />
 

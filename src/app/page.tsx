@@ -11,7 +11,7 @@ import {CommonWaysSection} from "@/components/home/CommonWaysSection";
 import {ComparisonTable} from "@/components/home/ComparisonTable";
 import {ProductRoadmap} from "@/components/home/ProductRoadmap";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
-import {AuditForm} from "@/components/sampleReport/AuditForm";
+import {AuditForm} from "@/components/common/AuditForm";
 import {WhatYouGet} from "@/components/home/WhatYouGet";
 
 const homeFAQData = [

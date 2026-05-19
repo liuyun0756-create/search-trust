@@ -25,7 +25,7 @@ const insights = [
 
 export function KeyInsights() {
   return (
-    <section className="py-24 bg-[#F9FAFB]">
+    <section className="py-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
           tag="Key insights"
