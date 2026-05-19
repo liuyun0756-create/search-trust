@@ -17,9 +17,9 @@ export function ExampleFailTrust() {
           >
             Example: how a local page fails trust
           </motion.h2>
-          <p className="text-[16px] text-gray-500 font-medium max-w-xl mx-auto">
+          {/* <p className="text-[16px] text-gray-500 font-medium max-w-xl mx-auto">
             See how SearchTrust diagnoses trust failures and maps them to specific recovery actions.
-          </p>
+          </p> */}
         </div>
 
         <motion.div

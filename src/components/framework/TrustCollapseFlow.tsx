@@ -15,7 +15,7 @@ const collapseSteps = [
 
 export function TrustCollapseFlow() {
   return (
-    <section className="py-24 bg-white">
+    <section className="bg-white">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* 顶部标题区域 */}
@@ -28,9 +28,9 @@ export function TrustCollapseFlow() {
           >
             How trust collapses across layers
           </motion.h2>
-          <p className="text-[16px] text-gray-500 font-medium max-w-xl mx-auto">
+          {/* <p className="text-[16px] text-gray-500 font-medium max-w-xl mx-auto">
             Each layer builds on the one below. If a lower layer fails, everything above collapses.
-          </p>
+          </p> */}
         </div>
 
         {/* 2x3 功能网格 */}
@@ -53,12 +53,12 @@ export function TrustCollapseFlow() {
 
               {/* 文字内容 */}
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <span className="text-[11px] font-black text-[#A5D020] tracking-tight">{step.level}</span>
                   <h3 className="text-[16px] font-bold text-[#1A1F2B]">
                     {step.title}
                   </h3>
-                </div>
+                </div> */}
                 <p className="text-[14px] leading-relaxed text-gray-500 font-medium">
                   {step.desc}
                 </p>

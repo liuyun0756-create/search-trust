@@ -48,7 +48,7 @@ export function FrameworkInProduct() {
         </div>
 
         {/* 左图右卡片 */}
-        <div className="flex flex-col lg:flex-row gap-8 items-center max-w-5xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-8 items-stretch max-w-5xl mx-auto">
           {/* 左侧大图 */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -57,7 +57,7 @@ export function FrameworkInProduct() {
             className="lg:w-[45%] flex-shrink-0"
           >
             <div className="bg-[#F8F9FA] rounded-[24px] border border-gray-100 overflow-hidden h-full">
-              <img src="/images/framework-bg.png" alt="Framework in Product" className="w-full h-auto object-contain" />
+              <img src="/images/framework-bg.png" alt="Framework in Product" className="w-full h-full object-cover" />
             </div>
           </motion.div>
 
