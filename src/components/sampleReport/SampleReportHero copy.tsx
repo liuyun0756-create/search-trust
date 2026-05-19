@@ -7,7 +7,7 @@ import { ArrowRight, FileDown, ShieldCheck } from 'lucide-react';
 
 export function SampleReportHero() {
   return (
-    <section className="py-24 md:py-32 bg-[#0B0C0E] overflow-hidden relative">
+    <section className="py-24 md:py-24 bg-[#0B0C0E] overflow-hidden relative">
       {/* 品牌色背景光晕 - 使用 #A5D020 做极简点缀 */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#A5D020]/10 blur-[150px] rounded-full -mr-64 -mt-64 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 blur-[120px] rounded-full -ml-48 -mb-48 pointer-events-none" />

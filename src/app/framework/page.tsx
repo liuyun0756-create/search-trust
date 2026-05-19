@@ -6,6 +6,7 @@ import { LayerDetailBreakdown } from "@/components/framework/LayerDetailBreakdow
 import { TrustCollapseFlow } from "@/components/framework/TrustCollapseFlow";
 import { WhatFrameworkIsNot } from "@/components/framework/WhatFrameworkIsNot";
 import { FrameworkInProduct } from "@/components/framework/FrameworkInProduct";
+import { ExampleFailTrust } from "@/components/framework/ExampleFailTrust";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 
 const frameworkFAQData = [
@@ -56,6 +57,7 @@ export default function FrameworkPage() {
       <TrustCollapseFlow />
       <WhatFrameworkIsNot />
       <FrameworkInProduct />
+      <ExampleFailTrust />
       <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"} items={frameworkFAQData} />
     </>
   );

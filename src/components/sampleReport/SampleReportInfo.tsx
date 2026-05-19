@@ -18,7 +18,7 @@ export function SampleReportInfo() {
   };
 
   return (
-    <section className="py-20 bg-white">
+    <section className="pt-24 bg-white">
       <div className="container mx-auto max-w-6xl px-6">
         {/* 标题区域  */}
         <div className="text-center max-w-3xl mx-auto mb-20">

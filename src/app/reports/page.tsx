@@ -208,7 +208,7 @@ function ReportsPage() {
       <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
         <BackHeader />
         <div className="max-w-7xl mx-auto px-6 pt-12 pb-24">
-          <div className="flex items-center justify-center py-32">
+          <div className="flex items-center justify-center py-24">
             <div className="w-8 h-8 border-3 border-[#A5D020] border-t-transparent rounded-full animate-spin" />
           </div>
         </div>

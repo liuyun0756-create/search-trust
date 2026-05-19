@@ -8,11 +8,11 @@ export function AuditPreview() {
   const [activeTab, setActiveTab] = useState('summary');
 
   const tabs = [
-    { id: 'summary', label: '总体结论', icon: <ShieldCheck size={16} /> },
-    { id: 'level', label: '页面水平', icon: <Target size={16} /> },
-    { id: 'issues', label: '重点问题', icon: <AlertTriangle size={16} /> },
-    { id: 'layers', label: '六层架构', icon: <Layers size={16} /> },
-    { id: 'fixes', label: 'Trust 修复执行方案', icon: <Wrench size={16} /> },
+    { id: 'summary', label: 'Overall Summary', icon: <ShieldCheck size={16} /> },
+    { id: 'level', label: 'Page Level', icon: <Target size={16} /> },
+    { id: 'issues', label: 'Key Issues', icon: <AlertTriangle size={16} /> },
+    { id: 'layers', label: 'Six-Layer Model', icon: <Layers size={16} /> },
+    { id: 'fixes', label: 'Fix Plan', icon: <Wrench size={16} /> },
   ];
 
   const renderContent = () => {
@@ -28,15 +28,15 @@ export function AuditPreview() {
               <ul className="space-y-3">
                 <li className="flex items-center gap-3 text-[14px] font-medium text-gray-600">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
-                  当前状态：中等偏弱 / 中等 / 良好 
+                  Current Status: Medium-Low / Medium / Good
                 </li>
                 <li className="flex items-center gap-3 text-[14px] font-medium text-gray-600">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
-                  排名潜力：可参与竞争 / 有提升空间 / 具备较强竞争力 
+                  Ranking Potential: Competitive / Room for Growth / Strong Competitiveness
                 </li>
                 <li className="flex items-center gap-3 text-[14px] font-medium text-gray-600">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
-                  风险等级：中 / 中高 / 低 
+                  Risk Level: Medium / Medium-High / Low
                 </li>
               </ul>
             </div>
@@ -44,16 +44,16 @@ export function AuditPreview() {
             {/* 核心结论文字 */}
             <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-100">
               <p className="text-[15px] leading-relaxed text-gray-700 font-medium">
-                你的页面具备参与本地搜索竞争的基础条件，但目前还不是一个高信任的本地业务页面。
-                这页已经具备基本的服务相关性和本地指向性，但在实体信任、现实连接和页面独立价值上仍有明显短板。 
+                Your page meets the basic conditions to compete in local search, but it is not yet a high-trust local business page.
+                It has basic service relevance and local targeting, but still has clear shortcomings in entity trust, real-world connections, and standalone page value.
               </p>
             </div>
 
             {/* 可能遇到的问题列表 */}
             <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-100">
-              <h4 className="text-[14px] font-bold text-gray-900 mb-4">你当前更可能遇到的是：</h4>
+              <h4 className="text-[14px] font-bold text-gray-900 mb-4">What you are more likely experiencing:</h4>
               <ul className="space-y-3">
-                {['页面能收录，但排名不稳定', '某些词能进入结果页，但难以持续上升', '对网站整体权重依赖较高', '遇到本地信号更强的竞争页时容易被超过'].map((text, i) => (
+                {['Page gets indexed, but rankings are unstable', 'Some keywords appear in results, but struggle to climb steadily', 'Heavily dependent on overall site authority', 'Easily outranked by competitors with stronger local signals'].map((text, i) => (
                   <li key={i} className="flex items-start gap-3 text-[14px] text-gray-500 leading-snug">
                     <span className="mt-1.5 w-1 h-1 rounded-full bg-gray-400" />
                     {text} 
@@ -69,7 +69,7 @@ export function AuditPreview() {
   };
 
   return (
-    <section className="py-20 bg-white">
+    <section className="pt-24 bg-white">
       <div className="container mx-auto max-w-6xl px-6">
         <h2 className="text-center text-[32px] md:text-[40px] font-bold text-[#1A1F2B] mb-12">
           See What a Local Trust Audit Looks Like
@@ -80,7 +80,7 @@ export function AuditPreview() {
           <div className="lg:col-span-3 space-y-4">
             {[
               { label: 'URL', value: 'https://nxtlvlautospa.com/' },
-              { label: '类型', value: '本地服务页' },
+              { label: 'Type', value: 'Local Service Page' },
               { label: 'GBP URL', value: 'https://nxtlvlautospa.com/' },
             ].map((info, i) => (
               <div key={i} className="bg-[#F3F4F6] rounded-xl p-5 border border-gray-100">

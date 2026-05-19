@@ -171,7 +171,7 @@ export function ReportContent({
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="h-full flex items-center justify-center py-32"
+                className="h-full flex items-center justify-center py-24"
               >
                 <LoadingState text={`Analyzing ${activeTab}...`} />
               </motion.div>

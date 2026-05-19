@@ -25,7 +25,7 @@ export function UseCasesByTeam() {
 
   return (
     // 关键修正 1：背景色改为原型中的极淡冷灰色 #F8F9FB
-    <section className="py-32 bg-[#F8F9FB]">
+    <section className="pt-24 bg-[#F8F9FB]">
       <div className="container mx-auto max-w-[1300px] px-8">
         
         {/* 关键修正 2：标题颜色改为深灰蓝 #1A212B，增加字间距 */}

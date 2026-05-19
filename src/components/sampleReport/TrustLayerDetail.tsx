@@ -7,16 +7,16 @@ export function TrustLayerDetail() {
   const [activeLayer, setActiveLayer] = useState('L0');
 
   const layers = [
-    { 
-      id: 'L0', 
+    {
+      id: 'L0',
       name: 'Qualification',
-      question: '它回答什么',
-      questionDesc: '这个页面有没有资格进入判断流程，还是本质上就不该竞争',
-      contentTitle: '可写内容',
-      contents: ['页面是否明确聚焦一个真实搜索意图', '是否属于有意义的本地页，而不是无效扩展', '是否有清晰的服务/位置/实体关系'],
-      failureTitle: '页面失败表现',
-      failures: ['页面意图模糊', '服务与城市关系不成立', '更像批量占位页而不是真实入口页'],
-      googleLabel: 'Google 可能的解读',
+      question: 'What It Answers',
+      questionDesc: 'Does this page qualify to enter the evaluation process, or is it fundamentally not competitive?',
+      contentTitle: 'What Can Be Written',
+      contents: ['Does the page clearly focus on a real search intent', 'Is it a meaningful local page, not an invalid expansion', 'Is there a clear service/location/entity relationship'],
+      failureTitle: 'Page Failure Signs',
+      failures: ['Page intent is vague', 'Service-city relationship is unclear', 'Looks more like a bulk placeholder than a real entry page'],
+      googleLabel: "Google's Likely Interpretation",
       googleDesc: 'This page may not represent a distinct local destination worth surfacing'
     },
     { id: 'L1', name: 'Specificity' },

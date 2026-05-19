@@ -71,7 +71,7 @@ export default function SampleReportPage() {
       <AuditPreview />
       <WhatsInsideReport />
       <KeyInsights />
-      <TrustLayerDetail />
+      {/* <TrustLayerDetail /> */}
       <ReportDifference />
       {/* <TrustCollapseModel /> */}
       {/* <ReportPreviewForm /> */}

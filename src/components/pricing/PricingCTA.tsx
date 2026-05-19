@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 export function PricingCTA() {
   return (
-    <section className="py-32 px-6 bg-white">
+    <section className="py-24 px-6 bg-white">
       <div className="max-w-[1300px] mx-auto">
         <motion.div
           whileHover={{ scale: 1.01 }}
