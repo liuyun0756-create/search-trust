@@ -6,17 +6,17 @@ import { ArrowRight } from 'lucide-react';
 
 export function PricingHero() {
   return (
-    <section className="pt-32 pb-24 px-6 text-center">
+    <section className="pt-20 pb-24 px-6 text-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto mb-20"
+        className="max-w-4xl mx-auto mb-8"
       >
-        <h1 className="text-[56px] md:text-[72px] font-bold tracking-tighter leading-[1.1] mb-8">
-          Simple pricing for <br />
-          <span className="text-[#A5D020]">one</span> SearchTrust report
+        <h1 className="text-[26px] md:text-[40px] font-bold tracking-tighter leading-[1.1] mb-7 ">
+          Simple pricing for
+          <span className="text-[#A5D020] px-2">one</span>SearchTrust report
         </h1>
-        <p className="text-xl text-[#3E4651] opacity-60 font-medium">
+        <p className="text-[20px] text-[#838383] opacity-60 font-medium">
           No subscriptions. No hidden fees. Pure diagnostic clarity.
         </p>
       </motion.div>
@@ -25,50 +25,57 @@ export function PricingHero() {
         {/* Standard plan */}
         <motion.div
           whileHover={{ y: -10 }}
-          className="bg-[#EBECEF] rounded-[56px] p-12 flex flex-col justify-between border border-transparent hover:border-[#A5D020]/30 transition-all duration-500 shadow-sm"
+          className="bg-[#EBECEF] rounded-[32px] p-10 flex flex-col justify-between border border-transparent hover:border-[#A5D020]/30 transition-all duration-500 shadow-sm"
         >
           <div>
-            <div className="flex justify-between items-start mb-12">
-              <div>
-                <p className="text-[14px] font-black uppercase tracking-[0.2em] text-[#A5D020] mb-2">
-                  Standard
-                </p>
-                <h3 className="text-[32px] font-bold">One-time</h3>
-              </div>
-              <div className="text-right">
-                <span className="text-[48px] font-bold">$19</span>
-              </div>
+            <div className="mb-4">
+              <h3 className="text-[28px] font-bold mb-2">
+                <span>$19</span> <span className="text-[18px] font-medium text-[#3E4651]">one-time</span>
+              </h3>
+              <p className="text-[14px] text-[#838383] font-medium">A structured trust diagnosis for one submitted page.</p>
             </div>
-            <ul className="space-y-5 mb-12 text-[16px] font-semibold text-[#3E4651]">
+            <button className="w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 hover:bg-black transition-all my-6">
+              Buy One Report <ArrowRight className="w-5 h-5" />
+            </button>
+            <ul className="space-y-3 text-[14px] text-[#3E4651]">
               {[
-                'L0–L5 Trust Framework Evaluation',
-                'Dominant Failure Layer Identification',
-                'Delivered within 2 hours',
+                '1 page / 1 submitted URL',
+                'L0–L5 trust framework evaluation',
+                'Current trust status',
+                'Dominant failure layer',
+                'Key findings by layer',
+                'Prioritized improvement path',
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#A5D020] shrink-0" />
                   {item}
                 </li>
               ))}
             </ul>
           </div>
-          <button className="w-full bg-[#1A212B] text-white py-6 rounded-[24px] font-bold text-lg flex items-center justify-center gap-2 hover:bg-black transition-all">
-            Buy One Report <ArrowRight className="w-5 h-5" />
-          </button>
+          <div className="mt-6 space-y-1">
+            <p className="text-[11px] text-[#aaa] text-center">One-time payment. No recurring billing.</p>
+            <p className="text-[11px] text-[#aaa] text-center">Taxes may be added at checkout.</p>
+          </div>
         </motion.div>
 
-        {/* Coming soon cards */}
-        {['Team Packs', 'Agency Access'].map((title, i) => (
-          <div
-            key={i}
-            className="bg-[#EBECEF]/50 rounded-[56px] p-12 border border-dashed border-gray-300 flex flex-col justify-center items-center"
-          >
-            <h3 className="text-[28px] font-bold text-gray-300 mb-4">{title}</h3>
-            <span className="px-6 py-2 rounded-full bg-gray-200 text-gray-400 font-bold text-xs uppercase tracking-widest">
-              Coming Soon
-            </span>
-          </div>
-        ))}
+        {/* Team packs */}
+        <div className="bg-[#EBECEF]/50 rounded-[32px] p-10 border border-dashed border-gray-300 flex flex-col items-center justify-center text-center">
+          <h3 className="text-[28px] font-bold mb-2">Team packs</h3>
+          <p className="text-[14px] text-[#838383] font-medium mb-8">For teams reviewing multiple pages.</p>
+          <button className="w-full bg-gray-200 text-[#3E4651] py-4 rounded-[16px] font-medium text-[15px]">
+            Coming soon.
+          </button>
+        </div>
+
+        {/* Agency / team access */}
+        <div className="bg-[#EBECEF]/50 rounded-[32px] p-10 border border-dashed border-gray-300 flex flex-col items-center justify-center text-center">
+          <h3 className="text-[28px] font-bold mb-2">Agency / team access</h3>
+          <p className="text-[14px] text-[#838383] font-medium mb-8">For higher-volume workflows and broader rollout.</p>
+          <button className="w-full bg-gray-200 text-[#3E4651] py-4 rounded-[16px] font-medium text-[15px]">
+            Coming soon.
+          </button>
+        </div>
       </div>
     </section>
   );

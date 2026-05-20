@@ -1,4 +1,5 @@
 import { UseCasesHero } from "@/components/useCase/UseCasesHero";
+import { TrustedByTeams } from "@/components/useCase/TrustedByTeams";
 import { WhyTeamsTurnToUs } from "@/components/useCase/WhyTeamsTurnToUs";
 import { PrimaryUseCasesOverview } from "@/components/useCase/PrimaryUseCasesOverview";
 import { UseCasesByTeam } from "@/components/useCase/UseCasesByTeam";
@@ -46,6 +47,7 @@ export default function UseCasesPage() {
   return (
     <>
       <UseCasesHero />
+      <TrustedByTeams />
       <WhyTeamsTurnToUs />
       <PrimaryUseCasesOverview />
       <UseCasesByTeam />

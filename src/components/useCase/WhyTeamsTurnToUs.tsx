@@ -15,7 +15,7 @@ const painPoints = [
     icon: MessageCircleWarning,
     title: 'Teams struggle to explain why pages feel "off"',
     description:
-      'Many teams are not lacking SEO data — they lack the ability to explain trust failure in structural terms.',
+      "Many teams aren't short on SEO data — they're short on a way to explain trust failure.",
   },
   {
     icon: Wrench,
@@ -30,12 +30,15 @@ export function WhyTeamsTurnToUs() {
     <section className="py-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <div className="inline-block px-3 py-1 rounded-full bg-[#F4F7E9] text-[#A5D020] text-[12px] font-bold mb-6">
+          {/* <div className="inline-block px-3 py-1 rounded-full bg-[#F4F7E9] text-[#A5D020] text-[12px] font-bold mb-6">
+           
+          </div> */}
+          <h2 className="text-[36px] md:text-[44px] font-bold text-[#1A1F2B] mb-6 leading-[1.2]">
             Why teams turn to SearchTrust
-          </div>
-          <h2 className="text-[36px] md:text-[44px] font-bold text-[#1A1F2B] leading-[1.2]">
-            The problem isn&apos;t data — it&apos;s trust diagnosis
           </h2>
+          <p className="text-[16px] md:text-[18px] text-[#6B7280] leading-[1.2]">
+            Many teams aren't short on SEO data — they're short on a way to explain trust failure.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

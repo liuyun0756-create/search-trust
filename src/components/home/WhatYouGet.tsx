@@ -36,7 +36,7 @@ const defaultBenefits = [
 
 export function WhatYouGet({ title = "What you get", items = defaultBenefits }: WhatYouGetProps) {
   return (
-    <section className="py-20 bg-[#F9F9F9]">
+    <section className="pt-50 bg-[#F9F9F9]">
       <div className="container mx-auto max-w-8xl px-4 sm:px-6 lg:px-8">
 
         {/* 居中标题 */}

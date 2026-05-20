@@ -22,8 +22,8 @@ export function UseCasesHero() {
         <div className="absolute inset-0 bg-gradient-to-tr from-white/80 via-transparent to-white/20" />
       </div>
 
-      <div className="container mx-auto max-w-7xl px-6 px-4 sm:px-6 lg:px-8 py-20 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+      <div className=" mx-auto max-w-8xl px-6 px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+        <div className="flex flex-col lg:flex-row  justify-between gap-12">
 
           {/* 左侧文字区域 */}
           <div className="flex-1 max-w-2xl">
@@ -33,12 +33,12 @@ export function UseCasesHero() {
               </span>
             </div>
 
-            <h1 className="text-[44px] md:text-[56px] font-[800] leading-[1.1] text-[#1A1F2B] tracking-tight">
+            <h1 className="text-[44px] md:text-[52px] font-[800] leading-[72px] text-[#1D2531] tracking-tight">
               Use Cases for <br />
               <span className="text-[#A5D020]">SearchTrust</span>
             </h1>
 
-            <div className="mt-8 space-y-4 max-w-lg">
+            <div className="mt-8 space-y-4 w-full">
               <p className="text-[#6B7280] text-[15px] leading-relaxed">
                 From pre-publish local page reviews to diagnosing ranking stagnation,
                 SearchTrust helps teams understand where page trust breaks and what to fix first.

@@ -9,26 +9,26 @@ export function RelatedResources() {
     {
       title: "Framework",
       desc: "Deep dive into the 6-layer trust architecture.",
-      icon: <Layout className="w-6 h-6" />,
-      link: "#"
+      icon: Layout,
+      link: "/framework"
     },
     {
       title: "Sample Report",
       desc: "View a live demonstration of a full audit.",
-      icon: <FileText className="w-6 h-6" />,
-      link: "#"
+      icon: FileText,
+      link: "/sample-report"
     },
     {
       title: "Product Overview",
       desc: "Learn how Search Trust transforms your SEO.",
-      icon: <BookOpen className="w-6 h-6" />,
+      icon: BookOpen,
       link: "#"
     },
     {
       title: "Pricing",
       desc: "Flexible plans for agencies and businesses.",
-      icon: <Tag className="w-6 h-6" />,
-      link: "#"
+      icon: Tag,
+      link: "/pricing"
     }
   ];
 
@@ -61,12 +61,12 @@ export function RelatedResources() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               // 基础卡片色值参考 image_c2903c.png 的 #EBECEF
-              className="bg-[#EBECEF] rounded-[40px] p-10 flex flex-col justify-between min-h-[320px] transition-all group border border-transparent hover:border-[#E2E4E8] hover:shadow-2xl hover:shadow-gray-200/50"
+              className="bg-[#FFFFFF] rounded-[40px] p-10 flex flex-col justify-between min-h-[320px] transition-all group border border-transparent hover:border-[#E2E4E8] hover:shadow-2xl hover:shadow-gray-200/50"
             >
               <div className="space-y-6">
                 {/* 图标背景：使用品牌绿点缀 */}
-                <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-[#1A212B] group-hover:text-[#A5D020] transition-colors shadow-sm">
-                  {item.icon}
+                <div className="w-14 h-14 rounded-2xl bg-[#F4F7E9] flex items-center justify-center group-hover:bg-[#A5D020] transition-colors shadow-sm">
+                  <item.icon size={24} className="text-[#A5D020] group-hover:text-white transition-colors" />
                 </div>
                 
                 <div className="space-y-3">

@@ -28,7 +28,7 @@ export function KeyInsights() {
     <section className="py-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
-          tag="Key insights"
+        
           title="Key insights from this sample"
         />
 

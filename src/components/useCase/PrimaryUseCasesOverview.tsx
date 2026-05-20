@@ -151,12 +151,19 @@ export function PrimaryUseCasesOverview() {
     <section className="py-20 bg-white">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <div className="inline-block px-3 py-1 rounded-full bg-[#F4F7E9] text-[#A5D020] text-[12px] font-bold mb-6">
-            Primary Use Cases Overview
-          </div>
-          <h2 className="text-[36px] md:text-[44px] font-bold text-[#1A1F2B] leading-[1.2]">
+          {/* <div className="inline-block px-3 py-1 rounded-full bg-[#F4F7E9] text-[#A5D020] text-[12px] font-bold mb-6">
+            
+          </div> */}
+          {/* <h2 className="text-[36px] md:text-[44px] font-bold text-[#1A1F2B] leading-[1.2]">
             Six ways teams use SearchTrust
+          </h2> */}
+
+          <h2 className="text-[36px] md:text-[44px] font-bold text-[#1A1F2B] mb-6 leading-[1.2]">
+           Primary Use Cases Overview
           </h2>
+          <p className="text-[16px] md:text-[18px] text-[#6B7280] leading-[1.2]">
+             Six ways teams use SearchTrust
+          </p>
         </div>
 
         {/* Tab buttons */}

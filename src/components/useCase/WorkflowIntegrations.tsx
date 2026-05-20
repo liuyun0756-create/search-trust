@@ -103,9 +103,9 @@ export function WorkflowIntegrations() {
         </motion.div>
 
         {/* 底部提示 */}
-        <p className="mt-10 text-center text-[14px] text-gray-400 font-medium">
+        {/* <p className="mt-10 text-center text-[14px] text-gray-400 font-medium">
           → Search Trust provides the diagnostic "bridge" when traditional growth plateaus.
-        </p>
+        </p> */}
       </div>
     </section>
   );

@@ -6,7 +6,7 @@ import { Clock, RotateCcw, ArrowRight } from 'lucide-react';
 
 export function DeliveryRefund() {
   return (
-    <section className="bg-[#FFFFFF] py-20 px-6">
+    <section className="bg-[#FFFFFF] pt-20 px-6">
       <div className="max-w-7xl mx-auto space-y-32">
         
         {/* 1. Delivery Section: 文字左 + 图片右 */}
@@ -23,12 +23,14 @@ export function DeliveryRefund() {
             <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A212B] tracking-tighter leading-[1.1] mb-6">
               Delivery
             </h2>
-            <div className="space-y-6 max-w-lg">
+            <div className="space-y-4 max-w-lg">
               <p className="text-[18px] text-[#1A212B] font-bold leading-relaxed">
                 After payment, submit the URL you want reviewed.
+                Your report will be delivered via <span className="text-[#3B82F6]">e-mail within two hours</span>. 
+
               </p>
               <p className="text-[16px] text-[#6B7280] font-medium leading-relaxed">
-                Your report will be delivered via <span className="text-[#3B82F6]">e-mail within two hours</span>. Delivery times are estimates and may vary slightly based on demand or technical processing requirements.
+                Delivery times are estimates and may vary slightly based on demand or technical processing requirements.
               </p>
             </div>
           </motion.div>
@@ -70,7 +72,7 @@ export function DeliveryRefund() {
                 href="/policy" 
                 className="inline-flex items-center gap-2 text-[14px] font-black uppercase tracking-widest text-[#3B82F6] hover:text-[#A5D020] transition-all group"
               >
-                See our Refund Policy
+                See our Refund Policy for full details.
                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </a>
             </div>

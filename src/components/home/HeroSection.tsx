@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
+import {AuditForm} from "@/components/common/AuditForm";
+
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[880px] w-full bg-[#F9F9F9] flex overflow-visible">
+    <section className="relative min-h-[880px] w-full bg-[#F9F9F9] flex justify-center overflow-visible">
       {/* 背景纹理 - 使用图片或SVG抽象线条 */}
       <div
         className="absolute inset-0 opacity-40 pointer-events-none"
@@ -18,7 +20,7 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-tr from-white/80 via-transparent to-white/20" />
       </div>
 
-      <div className="container mx-auto max-w-8xl px-6 px-4 sm:px-6 lg:px-8 pt-20 pb-20 relative z-10">
+      <div className=" mx-auto max-w-8xl px-6 px-4 sm:px-6 lg:px-8 pt-20 pb-20 relative z-10">
         <div className="flex flex-col lg:flex-row  justify-between gap-12">
 
           {/* 左侧文字区域 */}
@@ -43,17 +45,17 @@ export function HeroSection() {
             </div>
 
             <div className="mt-10 flex flex-wrap gap-4">
-              <RunAuditButton className="px-8 py-3.5 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
+              <RunAuditButton className="px-8 py-3 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
                 Run a Trust Audit
               </RunAuditButton>
-              <Link href="/sample-case" target="_blank" className="px-8 py-3.5 bg-white text-[#1A1F2B] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:bg-gray-50 active:scale-95">
+              <Link href="/sample-case" target="_blank" className="px-8 py-3 bg-white text-[#1A1F2B] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:bg-gray-50 active:scale-95">
                 View Sample Report
               </Link>
             </div>
           </div>
 
           {/* 右侧图片空置区域 */}
-          <div className="flex-1 w-full flex justify-center">
+          <div className="flex-1 w-full flex justify-end">
             <div className="w-[600px] h-[560px] rounded-2xl border border-white/60 bg-white/30 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative overflow-hidden">
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#A5D020]/10 blur-[80px] rounded-full" />
               <div className="absolute inset-0 flex items-center justify-center text-gray-300 italic font-light">
@@ -64,8 +66,8 @@ export function HeroSection() {
 
         </div>
       </div>
+      <AuditForm floating />
     </section>
   );
 };
 
-// export default HeroSection;

@@ -49,11 +49,9 @@ export function WhatTeamsGet() {
     <section className="pt-20 bg-[#F9FAFB]">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <div className="inline-block px-3 py-1 rounded-full bg-[#F4F7E9] text-[#A5D020] text-[12px] font-bold mb-6">
-            What teams get from these use cases
-          </div>
+
           <h2 className="text-[36px] md:text-[44px] font-bold text-[#1A1F2B] leading-[1.2]">
-            Tangible outcomes, not just data
+            What teams get from these use cases
           </h2>
         </div>
 
@@ -65,10 +63,10 @@ export function WhatTeamsGet() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.08 }}
-              className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-md transition-shadow"
+              className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 hover:shadow-md transition-shadow group"
             >
-              <div className="w-12 h-12 rounded-2xl bg-[#F4F7E9] flex items-center justify-center mb-5">
-                <benefit.icon size={24} className="text-[#A5D020]" />
+              <div className="w-12 h-12 rounded-2xl bg-[#F4F7E9] flex items-center justify-center mb-5 group-hover:bg-[#A5D020] transition-colors">
+                <benefit.icon size={24} className="text-[#A5D020] group-hover:text-white transition-colors" />
               </div>
               <h3 className="text-[17px] font-bold text-[#1A1F2B] mb-3 leading-snug">
                 {benefit.title}

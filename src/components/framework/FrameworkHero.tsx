@@ -16,24 +16,24 @@ export function FrameworkHero() {
         <div className="absolute inset-0 bg-gradient-to-tr from-white/80 via-transparent to-white/20" />
       </div>
 
-      <div className="container mx-auto max-w-7xl px-6 px-4 sm:px-6 lg:px-8 py-20 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+      <div className=" mx-auto max-w-8xl px-6 px-4 sm:px-6 lg:px-8 pt-20 pb-20 relative z-10">
+        <div className="flex flex-col lg:flex-row  justify-between gap-12">
 
           {/* 左侧文字区域 */}
           <div className="flex-1 max-w-2xl">
-            <div className="mb-6">
+            <div className="mb-6 pt-3">
               <span className="inline-block px-3 py-1 text-[10px] tracking-[0.2em] font-bold text-[#666] border border-gray-200 rounded bg-white/50 backdrop-blur-sm uppercase">
                 The L0–L5 Trust Collapse Model
               </span>
             </div>
 
-            <h1 className="text-[44px] md:text-[56px] font-[800] leading-[1.1] text-[#1A1F2B] tracking-tight">
+            <h1 className="text-[44px] md:text-[52px] font-[800] leading-[72px] text-[#1D2531] tracking-tight">
               The L0–L5 Trust <br />
               Collapse <span className="text-[#A5D020]">Model</span>
             </h1>
 
-            <div className="mt-8 space-y-4 max-w-lg">
-              <p className="text-[#6B7280] text-[15px] leading-relaxed">
+            <div className="mt-8 space-y-4 w-full">
+              <p className="text-[#657083] text-[15px] leading-relaxed">
                 A structural framework for diagnosing whether a local page qualifies
                 as a trustworthy entry point for Google, local search, and AI–era
                 citation systems.
@@ -55,7 +55,7 @@ export function FrameworkHero() {
           </div>
 
           {/* 右侧图片区域 */}
-          <div className="flex-1 w-full flex justify-center">
+          <div className="flex-1 w-full flex justify-end">
             <div className="w-[600px] h-[612px] rounded-2xl border border-white/60 bg-white/30 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative overflow-hidden">
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#A5D020]/10 blur-[80px] rounded-full" />
               <div className="absolute inset-0 flex items-center justify-center">
