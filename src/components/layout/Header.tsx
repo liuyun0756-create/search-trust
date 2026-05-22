@@ -67,7 +67,7 @@ export function Header() {
               href="/sign-in"
               className="text-[14px] font-bold text-[#1D2531] hover:opacity-70 transition-opacity"
             >
-              Sign In1
+              Sign In
             </Link>
           )}
           <RunAuditButton className="rounded-full bg-[#1D2531] px-6 py-2.5 text-[14px] font-bold text-white transition-all hover:bg-black">
