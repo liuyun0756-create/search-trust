@@ -44,7 +44,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
-        <ClerkProvider>
+        <ClerkProvider
+          afterSignInUrl="/"          
+          afterSignUpUrl="/"          
+          afterSignOutUrl="/"        
+        >
           <AuditModalProvider>
           <Header />
           <main>{children}</main>
