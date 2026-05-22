@@ -15,12 +15,16 @@ export async function GET(
     const { id } = await params;
     const supabase = createServerClient();
 
-    const { data, error } = await supabase
+    // Support both Supabase id (UUID) and report_id (RPT-xxx)
+    const query = supabase
       .from("reports")
       .select("*")
-      .eq("id", id)
-      .eq("user_id", user.userId)
-      .single();
+      .eq("user_id", user.userId);
+
+    const isUUID = /^[0-9a-f]{8}-/.test(id);
+    const { data, error } = await (isUUID
+      ? query.eq("id", id).single()
+      : query.eq("report_id", id).single());
 
     if (error || !data) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });

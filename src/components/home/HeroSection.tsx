@@ -1,11 +1,38 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
-import {AuditForm} from "@/components/common/AuditForm";
+import { AuditForm } from "@/components/common/AuditForm";
+import { AuditFormModal } from "@/components/common/AuditFormModal";
+import { PaymentModal } from "@/components/common/PaymentModal";
 
+const DEV_MODE = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true";
 
 export function HeroSection() {
+  // --- Dev test flow state ---
+  const [devModalOpen, setDevModalOpen] = useState(false);
+  const [devPaymentOpen, setDevPaymentOpen] = useState(false);
+  const [devSubmitting] = useState(false);
+  const [devFormData, setDevFormData] = useState<{ url: string; gbpUrl: string; pageType: string } | null>(null);
+
+  const handleDevSubmit = useCallback((data: { url: string; gbpUrl: string; pageType: string }) => {
+    // Skip login + credits check, go straight to payment
+    setDevFormData(data);
+    setDevModalOpen(false);
+    setDevPaymentOpen(true);
+  }, []);
+
+  const handleDevPaymentSuccess = useCallback(() => {
+    setDevPaymentOpen(false);
+    // PaymentModal redirects to Dodo, return_url handles the rest
+  }, []);
+
+  const handleDevPaymentClose = useCallback(() => {
+    setDevPaymentOpen(false);
+    setDevFormData(null);
+  }, []);
+
   return (
     <section className="relative min-h-[880px] w-full bg-[#F9F9F9] flex justify-center overflow-visible">
       {/* 背景纹理 - 使用图片或SVG抽象线条 */}
@@ -32,8 +59,8 @@ export function HeroSection() {
             </div>
 
             <h1 className="text-[44px] md:text-[52px] font-[800] leading-[72px] text-[#1D2531] tracking-tight">
-              Find Why Google doesn’t 
-              trust <span className="text-[#A5D020]">Your Local Pages</span> 
+              Find Why Google doesn't
+              trust <span className="text-[#A5D020]">Your Local Pages</span>
             </h1>
 
             <div className="mt-8 space-y-4 w-full">
@@ -51,6 +78,16 @@ export function HeroSection() {
               <Link href="/sample-case" target="_blank" className="px-8 py-3 bg-white text-[#1A1F2B] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:bg-gray-50 active:scale-95">
                 View Sample Report
               </Link>
+
+              {/* === DEV TEST BUTTON === */}
+              {DEV_MODE && (
+                <button
+                  onClick={() => setDevModalOpen(true)}
+                  className="px-8 py-3 bg-red-500 text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-red-600 active:scale-95"
+                >
+                  [Dev] Test Payment Flow
+                </button>
+              )}
             </div>
           </div>
 
@@ -67,7 +104,24 @@ export function HeroSection() {
         </div>
       </div>
       <AuditForm floating />
+
+      {/* === DEV TEST MODALS === */}
+      {DEV_MODE && (
+        <>
+          <AuditFormModal
+            isOpen={devModalOpen}
+            onClose={() => { setDevModalOpen(false); setDevFormData(null); }}
+            onSubmit={handleDevSubmit}
+            submitting={devSubmitting}
+          />
+          <PaymentModal
+            isOpen={devPaymentOpen}
+            onClose={handleDevPaymentClose}
+            onSuccess={handleDevPaymentSuccess}
+            formData={devFormData}
+          />
+        </>
+      )}
     </section>
   );
 };
-

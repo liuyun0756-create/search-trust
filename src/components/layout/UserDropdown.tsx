@@ -4,10 +4,12 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, LogOut, FileText, Zap } from "lucide-react";
 import Link from "next/link";
+import { useAuditModal } from "@/components/common/AuditModalProvider";
 
 export function UserDropdown() {
   const { user } = useUser();
   const { signOut } = useClerk();
+  const { credits } = useAuditModal();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -64,7 +66,7 @@ export function UserDropdown() {
           <div className="px-4 py-2.5 border-b border-gray-50 flex items-center gap-2 text-[13px]">
             <Zap size={14} className="text-[#A5D020]" />
             <span className="text-gray-500">Audit Credits:</span>
-            <span className="font-bold text-[#1D2531]">0</span>
+            <span className="font-bold text-[#1D2531]">{credits ?? "..."}</span>
           </div>
           <Link
             href="/reports"

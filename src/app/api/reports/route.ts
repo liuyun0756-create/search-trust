@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
       .from("reports")
       .select("id, report_id, page_url, status, created_at")
       .eq("user_id", user.userId)
+      // Only show reports that have been completed with data
+      .in("status", ["free_preview", "paid_full"])
       .order("created_at", { ascending: false });
 
     if (error) {

@@ -2,6 +2,20 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useAuditModal } from '@/components/common/AuditModalProvider';
+import { submitAudit } from '@/lib/submit-audit';
+
+const PAGE_TYPES = [
+  { value: "Service Page", label: "Service Page" },
+  { value: "Location Page", label: "Location Page" },
+  { value: "City Page", label: "City Page" },
+  { value: "Service-Area Page", label: "Service-Area Page" },
+  { value: "Product Page", label: "Product Page" },
+  { value: "Blog Post", label: "Blog Post" },
+  { value: "Landing Page", label: "Landing Page" },
+];
 
 interface AuditFormProps {
   floating?: boolean;
@@ -12,20 +26,52 @@ export function AuditForm({ floating = false }: AuditFormProps) {
   const [formData, setFormData] = useState({
     url: '',
     gbpUrl: '',
-    pageType: ''
+    pageType: 'Service Page',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { isSignedIn } = useUser();
+  const router = useRouter();
+  const { openLogin, openAuditForm } = useAuditModal();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.url.trim() || !formData.pageType) {
-      return;
-    }
+    if (!formData.url.trim()) return;
+
     setLoading(true);
-    // TODO: 对接后端 API
-    setTimeout(() => {
+
+    try {
+      // Step 1: 判断登录
+      if (!isSignedIn) {
+        setLoading(false);
+        openLogin();
+        return;
+      }
+
+      // Step 2: 判断 credits
+      const creditsRes = await fetch("/api/user/credits");
+      if (creditsRes.ok) {
+        const { credits } = await creditsRes.json();
+        if (credits <= 0) {
+          setLoading(false);
+          // 跳转支付（使用 PaymentModal 通过 AuditModalProvider）
+          openAuditForm();
+          return;
+        }
+      }
+
+      // Step 3: 跑报告
+      const { task_id, report_id } = await submitAudit({
+        url: formData.url,
+        pageType: formData.pageType,
+        gbpUrl: formData.gbpUrl,
+      });
+      router.push(`/reports?task_id=${task_id}&report_id=${report_id}`);
+    } catch (err) {
+      console.error("Submit error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      alert('Trust Audit Started');
-    }, 1500);
+    }
   };
 
   const wrapperClass = floating
@@ -33,12 +79,8 @@ export function AuditForm({ floating = false }: AuditFormProps) {
     : "relative z-20 -mt-37 mx-auto max-w-6xl px-6 bg-white rounded-[24px] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100";
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className={wrapperClass}
-    >
+    <form onSubmit={handleSubmit} className={wrapperClass}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-
         {/* URL Input */}
         <div className="flex flex-col gap-3">
           <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
@@ -57,7 +99,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         {/* GBP URL Input */}
         <div className="flex flex-col gap-3">
           <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
-            GBPURL
+            GBP URL
           </label>
           <input
             type="url"
@@ -78,11 +120,11 @@ export function AuditForm({ floating = false }: AuditFormProps) {
               required
               value={formData.pageType}
               onChange={(e) => setFormData({...formData, pageType: e.target.value})}
-              className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] appearance-none focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all cursor-pointer text-gray-400"
+              className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] appearance-none focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all cursor-pointer"
             >
-              <option value="" disabled>required</option>
-              <option value="service">Service Page</option>
-              <option value="landing">Landing Page</option>
+              {PAGE_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>{type.label}</option>
+              ))}
             </select>
             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" size={18} />
           </div>
@@ -92,8 +134,8 @@ export function AuditForm({ floating = false }: AuditFormProps) {
       <div className="flex justify-center">
         <button
           type="submit"
-          disabled={loading}
-          className="px-8 py-3 bg-[#1A1F2B] text-white font-bold rounded-xl hover:bg-black hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-70"
+          disabled={loading || !formData.url.trim()}
+          className="px-8 py-3 bg-[#1A1F2B] text-white font-bold rounded-xl hover:bg-black hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {loading ? (
             <Loader2 className="animate-spin" size={20} />

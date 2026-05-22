@@ -7,7 +7,7 @@ const billingDetails = [
   { icon: CreditCard, label: 'One–time payment' },
   { icon: FileText, label: 'One report per purchase' },
   { icon: RefreshCcw, label: 'No automatic renewal' },
-  { icon: ShieldCheck, label: 'Secure checkout via Paddle' },
+  { icon: ShieldCheck, label: 'Secure checkout via Dodo' },
   { icon: Info, label: 'Taxes may be applied based on location' },
 ];
 

@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 
-const BACKEND_URL = "https://seo-backend-production-6f2b.up.railway.app/api/v1";
-
 function parseScore(raw: string): Record<string, any> | null {
   try {
     let cleaned = raw.trim();
-    // Remove ```json ... ``` wrapping
     if (cleaned.startsWith("```")) {
       cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     }
@@ -18,26 +15,28 @@ function parseScore(raw: string): Record<string, any> | null {
   }
 }
 
-export async function GET(request: NextRequest) {
+// POST — 由前端在 SSE done 后调用，保存报告结果 + 扣减 credits
+export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const taskId = searchParams.get("task_id");
+    const body = await request.json();
+    const { task_id, result, failed } = body;
 
-    if (!taskId) {
+    if (!task_id) {
       return NextResponse.json({ error: "task_id is required" }, { status: 400 });
     }
 
-    // Find report by task_id
     const supabase = createServerClient();
+
+    // Find report by task_id
     const { data: report, error: reportError } = await supabase
       .from("reports")
       .select("id, task_id, status")
-      .eq("task_id", taskId)
+      .eq("task_id", task_id)
       .eq("user_id", user.userId)
       .single();
 
@@ -45,47 +44,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
-    // Call backend to check task status
-    const backendRes = await fetch(`${BACKEND_URL}/task/${taskId}`);
-    if (!backendRes.ok) {
-      const errText = await backendRes.text();
-      console.error("Backend task status error:", errText);
-      return NextResponse.json({ error: "Backend request failed" }, { status: 502 });
+    // Failed: delete the empty report record, don't deduct credits
+    if (failed) {
+      await supabase.from("reports").delete().eq("id", report.id);
+      return NextResponse.json({ status: "failed", reportId: report.id });
     }
 
-    const backendData = await backendRes.json();
-    const status: string = backendData.status;
-    const progress = backendData.progress || null;
-
-    // Not done yet — return progress
-    if (status !== "done") {
-      // If failed, refund credit
-      if (status === "failed") {
-        await supabase
-          .from("users")
-          .update({ audit_credits: user.auditCredits + 1, updated_at: new Date().toISOString() })
-          .eq("id", user.userId);
-
-        await supabase
-          .from("reports")
-          .update({ status: "failed" })
-          .eq("id", report.id);
-      }
-
-      return NextResponse.json({
-        status,
-        progress,
-        reportId: report.id,
-      });
+    if (!result) {
+      return NextResponse.json({ error: "result is required" }, { status: 400 });
     }
 
-    // status === "done" — parse result and save to Supabase
-    const result = backendData.result || {};
+    // Parse result
     const rawScore = result.score || "";
     const parsed = parseScore(rawScore);
 
+    // Query user credits once — used for both status determination and deduction
+    const { data: userData } = await supabase
+      .from("users")
+      .select("audit_credits")
+      .eq("id", user.userId)
+      .single();
+
+    // Determine status: first report (free credit) → free_preview, paid credits → paid_full
+    // User starts with 1 free credit, so credits > 1 means they have paid credits
+    const reportStatus = (userData && userData.audit_credits > 1) ? "paid_full" : "free_preview";
+
     const updateData: Record<string, any> = {
-      status: "free_preview",
+      status: reportStatus,
       trust_status: result.trust_status || null,
       ranking_potential: result.ranking_potential || null,
       risk_level: result.risk_level || null,
@@ -111,11 +96,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to save report data" }, { status: 500 });
     }
 
-    return NextResponse.json({
-      status: "done",
-      progress,
-      reportId: report.id,
-    });
+    // Deduct credit after successful save (don't go below 0)
+    if (userData && userData.audit_credits > 0) {
+      await supabase
+        .from("users")
+        .update({ audit_credits: userData.audit_credits - 1, updated_at: new Date().toISOString() })
+        .eq("id", user.userId);
+    }
+
+    return NextResponse.json({ status: "done", reportId: report.id });
   } catch (error) {
     console.error("Report status error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

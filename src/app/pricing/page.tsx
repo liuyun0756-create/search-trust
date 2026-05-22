@@ -16,7 +16,7 @@ const pricingFAQData = [
   },
   {
     question: 'Is payment handled securely?',
-    answer: 'Yes. All payments are processed securely via Paddle.',
+    answer: 'Yes. All payments are processed securely via Dodo Payments.',
   },
 ];
 

@@ -641,8 +641,9 @@ export function ReportContent({
   }, []);
 
   const isLocked = (tab: TabId) => {
-    if (isPaid) return false;
-    return tab !== 'Executive Summary' && tab !== 'Page Level';
+    return false
+    // if (isPaid) return false;
+    // return tab !== 'Executive Summary' && tab !== 'Page Level';
   };
 
   const scrollToSection = (tab: TabId) => {
