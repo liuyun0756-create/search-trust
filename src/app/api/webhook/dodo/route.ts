@@ -19,13 +19,12 @@ export async function POST(request: Request) {
   });
   console.log("[DodoWebhook] All headers:", JSON.stringify(allHeaders, null, 2));
 
-  // Try both possible header names
-  const signature =
-    headerPayload.get("webhook-signature") ||
-    headerPayload.get("x-dodo-signature") ||
-    headerPayload.get("x-webhook-signature");
+  // Svix webhook headers
+  const webhookId = headerPayload.get("webhook-id");
+  const signature = headerPayload.get("webhook-signature");
+  const timestamp = headerPayload.get("webhook-timestamp");
 
-  console.log("[DodoWebhook] Signature found:", signature ? signature.substring(0, 20) + "..." : "MISSING");
+  console.log("[DodoWebhook] Signature found:", signature ? signature.substring(0, 30) + "..." : "MISSING");
 
   const WEBHOOK_SECRET = process.env.DODO_WEBHOOK_SECRET;
   console.log("[DodoWebhook] SECRET configured:", !!WEBHOOK_SECRET);
@@ -35,20 +34,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
   }
 
-  if (!signature) {
-    console.error("[DodoWebhook] No signature header found");
-    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  if (!signature || !webhookId || !timestamp) {
+    console.error("[DodoWebhook] Missing Svix headers:", { webhookId: !!webhookId, signature: !!signature, timestamp: !!timestamp });
+    return NextResponse.json({ error: "Missing signature headers" }, { status: 400 });
   }
 
-  // Verify signature
+  // Verify Svix signature: HMAC-SHA256(secret, "${webhook_id}.${timestamp}.${body}")
+  const signedContent = `${webhookId}.${timestamp}.${body}`;
   const expectedSig = crypto
     .createHmac("sha256", WEBHOOK_SECRET)
-    .update(body)
-    .digest("hex");
+    .update(signedContent)
+    .digest("base64");
 
-  console.log("[DodoWebhook] Expected sig:", expectedSig.substring(0, 20) + "...");
-
-  // Dodo may send multiple signatures separated by spaces or in "t,signature" format
+  // Svix sends multiple signatures space-separated, format: "v1,sig1 v1,sig2 ..."
   const sigs = signature.split(" ").map((s) => {
     const parts = s.split(",");
     return parts.length > 1 ? parts[parts.length - 1] : s;
@@ -60,7 +58,6 @@ export async function POST(request: Request) {
       crypto.timingSafeEqual(Buffer.from(s), Buffer.from(expectedSig))
     );
   } catch {
-    // Length mismatch — try direct comparison for debugging
     console.log("[DodoWebhook] timingSafeEqual failed, lengths:", sigs[0]?.length, "vs", expectedSig.length);
     isValid = sigs.some((s) => s === expectedSig);
   }

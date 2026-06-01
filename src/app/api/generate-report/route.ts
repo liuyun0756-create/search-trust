@@ -52,6 +52,10 @@ export async function POST(request: NextRequest) {
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
+
+    if (!gbp_url) {
+      return NextResponse.json({ error: "GBP URL is required" }, { status: 400 });
+    }
     console.log("/analyze接口，后端Received report generation request:", { url, page_type, gbp_url });
     // 1. 调后端创建任务
     const analyzeRes = await fetch(`${BACKEND_URL}/analyze`, {

@@ -50,8 +50,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "failed", reportId: report.id });
     }
 
-    if (!result) {
-      return NextResponse.json({ error: "result is required" }, { status: 400 });
+    if (!result || !result.page_url) {
+      // Empty result — treat as failed, delete the empty report
+      await supabase.from("reports").delete().eq("id", report.id);
+      return NextResponse.json({ status: "failed", reason: "empty_result" });
     }
 
     // Parse result

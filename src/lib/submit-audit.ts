@@ -5,7 +5,7 @@ export async function submitAudit({
 }: {
   url: string;
   pageType: string;
-  gbpUrl?: string;
+  gbpUrl: string;
 }): Promise<{ task_id: string; report_id: string }> {
   const res = await fetch("/api/generate-report", {
     method: "POST",

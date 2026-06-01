@@ -145,7 +145,7 @@ function ReportsPage() {
           const result = await submitAudit({
             url: auditUrl,
             pageType: auditPageType,
-            gbpUrl: auditGbpUrl || undefined,
+            gbpUrl: auditGbpUrl || "",
           });
           console.log("[PaymentReturn] submitAudit result:", result);
           // Redirect to SSE streaming page
@@ -207,6 +207,26 @@ function ReportsPage() {
     setSseProgress(null);
 
     const handleDone = async (result: any) => {
+      // Handle empty result from backend (task done but no data)
+      if (!result || !result.page_url) {
+        console.error("[SSE] Task done but result is empty:", result);
+        setSseActive(false);
+
+        // Mark as failed — delete the empty report record
+        try {
+          await fetch("/api/report-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task_id: taskId, result: null, failed: true }),
+          });
+        } catch {}
+
+        alert("Report generation returned empty results. Your credit has not been deducted.");
+        await loadHistory();
+        window.history.replaceState({}, "", "/reports");
+        return;
+      }
+
       // Parse score JSON from SSE result
       const parsed = result?.score ? parseScore(result.score) : null;
 

@@ -6,16 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
 import { submitAudit } from '@/lib/submit-audit';
-
-const PAGE_TYPES = [
-  { value: "Service Page", label: "Service Page" },
-  { value: "Location Page", label: "Location Page" },
-  { value: "City Page", label: "City Page" },
-  { value: "Service-Area Page", label: "Service-Area Page" },
-  { value: "Product Page", label: "Product Page" },
-  { value: "Blog Post", label: "Blog Post" },
-  { value: "Landing Page", label: "Landing Page" },
-];
+import { PAGE_TYPES } from '@/lib/constants';
 
 interface AuditFormProps {
   floating?: boolean;
@@ -102,8 +93,9 @@ export function AuditForm({ floating = false }: AuditFormProps) {
             GBP URL
           </label>
           <input
+            required
             type="url"
-            placeholder="optional / recommended"
+            placeholder="required"
             value={formData.gbpUrl}
             onChange={(e) => setFormData({...formData, gbpUrl: e.target.value})}
             className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all placeholder:text-gray-300"
@@ -123,7 +115,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
               className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] appearance-none focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all cursor-pointer"
             >
               {PAGE_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>{type.label}</option>
+                <option key={type} value={type}>{type}</option>
               ))}
             </select>
             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" size={18} />

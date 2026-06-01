@@ -1,0 +1,26 @@
+export const PAGE_TYPES = [
+  "Service Page",
+  "Service-Area Page",
+  "Location Page",
+  "City Page",
+  "Product Page",
+  "Landing Page",
+  "Entity-Destination Page",
+  "Venue Page",
+  "Event-Calendar Page",
+  "Events Page",
+  "Menu Page",
+  "Inventory-List Page",
+  "About-Us Page",
+  "Team Page",
+  "Contact-Us Page",
+  "Blog Page",
+  "Blog Post",
+  "FAQ Page",
+  "Q&A Page",
+  "Category Page",
+  "Tag Page",
+  "Index Page",
+] as const;
+
+export type PageType = (typeof PAGE_TYPES)[number];

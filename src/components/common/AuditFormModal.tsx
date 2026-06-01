@@ -3,16 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Globe, MapPin, LayoutTemplate, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const PAGE_TYPES = [
-  "Service Page",
-  "Location Page",
-  "City Page",
-  "Service-Area Page",
-  "Product Page",
-  "Blog Post",
-  "Landing Page",
-];
+import { PAGE_TYPES } from "@/lib/constants";
 
 interface AuditFormModalProps {
   isOpen: boolean;
@@ -111,11 +102,12 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting }: AuditF
                 {/* GBP URL */}
                 <div>
                   <label className="text-[12px] font-black uppercase tracking-widest text-gray-400 mb-2 block">
-                    GBP URL <span className="text-gray-300">(optional)</span>
+                    GBP URL <span className="text-[#A5D020]">*</span>
                   </label>
                   <div className="relative">
                     <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
                     <input
+                      required
                       type="url"
                       value={gbpUrl}
                       onChange={(e) => setGbpUrl(e.target.value)}
