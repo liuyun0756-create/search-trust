@@ -8,6 +8,8 @@ import { useAuditModal } from '@/components/common/AuditModalProvider';
 import { submitAudit } from '@/lib/submit-audit';
 import { PAGE_TYPES } from '@/lib/constants';
 
+const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
+
 interface AuditFormProps {
   floating?: boolean;
 }
@@ -33,6 +35,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
     try {
       // Step 1: 判断登录
       if (!isSignedIn) {
+        sessionStorage.setItem(PENDING_AUDIT_STORAGE_KEY, JSON.stringify(formData));
         setLoading(false);
         openLogin();
         return;
@@ -43,6 +46,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
       if (creditsRes.ok) {
         const { credits } = await creditsRes.json();
         if (credits <= 0) {
+          sessionStorage.setItem(PENDING_AUDIT_STORAGE_KEY, JSON.stringify(formData));
           setLoading(false);
           // 跳转支付（使用 PaymentModal 通过 AuditModalProvider）
           openAuditForm();
@@ -126,7 +130,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
       <div className="flex justify-center">
         <button
           type="submit"
-          disabled={loading || !formData.url.trim()}
+          disabled={loading || !formData.url.trim() || !formData.gbpUrl.trim()}
           className="px-8 py-3 bg-[#1A1F2B] text-white font-bold rounded-xl hover:bg-black hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {loading ? (

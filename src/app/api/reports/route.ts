@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 
+function parseReportDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const normalized = value.includes("T") ? value : value.replace(" ", "T");
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -13,10 +20,10 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("reports")
-      .select("id, report_id, external_report_id, page_url, status, created_at")
+      .select("id, report_id, external_report_id, page_url, status, generated_at, completed_at, created_at")
       .eq("user_id", user.userId)
-      // Show completed reports and the current pending report during generation
-      .in("status", ["pending", "free_preview", "paid_full"])
+      // Show completed, failed, and the current pending report during generation
+      .in("status", ["pending", "free_preview", "paid_full", "failed"])
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -33,7 +40,11 @@ export async function GET(request: NextRequest) {
     // 按日期分组，适配前端 ReportHistory 组件格式
     const grouped = (data || []).reduce(
       (acc, report) => {
-        const date = new Date(report.created_at).toLocaleDateString("en-US", {
+        const displayDate = parseReportDate(report.generated_at)
+          || parseReportDate(report.completed_at)
+          || parseReportDate(report.created_at)
+          || new Date(report.created_at);
+        const date = displayDate.toLocaleDateString("en-US", {
           year: "numeric",
           month: "long",
           day: "numeric",
@@ -47,10 +58,11 @@ export async function GET(request: NextRequest) {
           id: report.id,
           url: report.page_url,
           reportId: report.external_report_id || report.report_id,
+          status: report.status,
         });
         return acc;
       },
-      [] as { date: string; items: { id: string; url: string; reportId: string }[] }[]
+      [] as { date: string; items: { id: string; url: string; reportId: string; status: string }[] }[]
     );
 
     return NextResponse.json(grouped);

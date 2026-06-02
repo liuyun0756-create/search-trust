@@ -49,16 +49,32 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const externalReportId = body.external_report_id;
+    const updateData: Record<string, string> = {};
 
-    if (!externalReportId || typeof externalReportId !== "string") {
-      return NextResponse.json({ error: "external_report_id is required" }, { status: 400 });
+    if (typeof body.external_report_id === "string" && body.external_report_id.trim()) {
+      updateData.external_report_id = body.external_report_id.trim();
+    }
+    if (typeof body.page_url === "string" && body.page_url.trim()) {
+      updateData.page_url = body.page_url.trim();
+    }
+    if (typeof body.page_type === "string" && body.page_type.trim()) {
+      updateData.page_type = body.page_type.trim();
+    }
+    if (typeof body.gbp_url === "string" && body.gbp_url.trim()) {
+      updateData.gbp_url = body.gbp_url.trim();
+    }
+    if (typeof body.generated_at === "string" && body.generated_at.trim()) {
+      updateData.generated_at = body.generated_at.trim();
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: "No valid report fields to update" }, { status: 400 });
     }
 
     const supabase = createServerClient();
     const query = supabase
       .from("reports")
-      .update({ external_report_id: externalReportId })
+      .update(updateData)
       .eq("user_id", user.userId)
       .select("*");
 

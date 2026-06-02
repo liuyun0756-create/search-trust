@@ -7,6 +7,7 @@ interface ReportItem {
   url?: string;
   page_url?: string;
   reportId: string;
+  status?: string;
 }
 
 interface ReportHistoryProps {
@@ -60,7 +61,13 @@ export function ReportHistory({ reports, activeId, onSelect, isLoading = false }
                   <p className="text-[11px] text-blue-500 font-medium truncate mb-1">{item.page_url || item.url}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-gray-400 italic">Report ID: {item.reportId}</span>
-                    <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 text-[#A5D020] transition-all" />
+                    {item.status === "failed" ? (
+                      <span className="text-[9px] font-black uppercase tracking-wider text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+                        Failed
+                      </span>
+                    ) : (
+                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 text-[#A5D020] transition-all" />
+                    )}
                   </div>
                 </div>
               ))}

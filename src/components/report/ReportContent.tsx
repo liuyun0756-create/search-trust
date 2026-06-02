@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Lock, Send, Download,
-  Globe, Loader2, ExternalLink
+  Globe, Loader2, ExternalLink, AlertTriangle
 } from 'lucide-react';
 import type { Report } from '@/types/database';
+import { useAuditModal } from '@/components/common/AuditModalProvider';
 
 type TabId = 'Executive Summary' | 'Page Level' | 'Key Issues' | 'Six-Layer Model' | 'Optimization Path';
 
@@ -39,6 +40,50 @@ const LoadingState = ({ text = "Under detection..." }: { text?: string }) => (
   <div className="flex flex-col items-center justify-center py-12 space-y-4">
     <Loader2 className="w-8 h-8 text-[#A5D020] animate-spin" />
     <p className="text-[13px] font-bold text-[#6B7280] tracking-tight uppercase">{text}</p>
+  </div>
+);
+
+const HeaderSkeleton = () => (
+  <section className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm mb-8">
+    <div className="flex flex-col md:flex-row justify-between items-start gap-6 animate-pulse">
+      <div className="min-w-0 flex-1 w-full">
+        <div className="h-9 w-72 bg-gray-100 rounded-xl mb-4" />
+        <div className="h-5 w-80 max-w-full bg-gray-100 rounded-lg mb-6" />
+        <div className="flex flex-wrap gap-3 mb-3">
+          <div className="h-8 w-44 bg-gray-100 rounded-full" />
+          <div className="h-8 w-40 bg-gray-100 rounded-full" />
+          <div className="h-8 w-48 bg-gray-100 rounded-full" />
+        </div>
+        <div className="h-20 w-full bg-gray-100 rounded-2xl" />
+      </div>
+      <div className="hidden md:block w-56 shrink-0 space-y-3">
+        <div className="h-12 bg-gray-100 rounded-xl" />
+        <div className="h-12 bg-gray-100 rounded-xl" />
+      </div>
+    </div>
+  </section>
+);
+
+const FailedState = ({ onRetry }: { onRetry: () => void }) => (
+  <div className="bg-white rounded-[24px] border border-red-100 shadow-sm p-10 md:p-12 mb-8">
+    <div className="max-w-2xl">
+      <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-5">
+        <AlertTriangle className="w-6 h-6" />
+      </div>
+      <h2 className="text-[24px] font-bold tracking-tighter text-[#1A212B] mb-3">
+        Report generation stopped
+      </h2>
+      <p className="text-[14px] text-[#6B7280] font-medium leading-relaxed mb-6">
+        The backend stream closed before returning report data, so this report could not be completed. Your audit credit has not been deducted.
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="bg-[#1D2531] text-white px-6 py-3 rounded-xl font-bold text-[14px] hover:bg-black transition-all"
+      >
+        Run a New Audit
+      </button>
+    </div>
   </div>
 );
 
@@ -616,6 +661,9 @@ export function ReportContent({
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const isClickScrolling = useRef(false);
+  const { openAuditForm } = useAuditModal();
+  const isFailed = report.status === 'failed';
+  const showFailed = isFailed && !isLoading;
 
   // 滚动时自动高亮对应的 tab
   useEffect(() => {
@@ -727,6 +775,9 @@ export function ReportContent({
   return (
     <main className="flex-1 min-w-0">
       {/* Top Report Info Card */}
+      {isLoading ? (
+        <HeaderSkeleton />
+      ) : (
       <section className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="min-w-0 flex-1">
@@ -802,9 +853,12 @@ export function ReportContent({
           )}
         </div>
       </section>
+      )}
+
+      {showFailed && <FailedState onRetry={openAuditForm} />}
 
       {/* Score Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {!showFailed && <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {scoreCards.map((card, i) => (
           <div key={i} className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm h-48 relative">
             {isLoading ? <LoadingState /> : (
@@ -816,10 +870,10 @@ export function ReportContent({
             )}
           </div>
         ))}
-      </div>
+      </div>}
 
       {/* Sticky Tab Bar */}
-      <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
+      {!showFailed && <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
         <div className="flex bg-[#F8F9FA] p-2 gap-1 overflow-x-auto rounded-[24px]">
           {TABS.map((tab) => (
             <button
@@ -840,10 +894,10 @@ export function ReportContent({
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* All Sections */}
-      <div className="space-y-8">
+      {!showFailed && <div className="space-y-8">
         {TABS.map((tab) => (
           <ModuleSection
             key={tab}
@@ -853,7 +907,7 @@ export function ReportContent({
             isLoading={isLoading}
           />
         ))}
-      </div>
+      </div>}
     </main>
   );
 }
