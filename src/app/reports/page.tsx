@@ -14,6 +14,7 @@ import { submitAudit } from "@/lib/submit-audit";
 import type { Report } from "@/types/database";
 
 const BACKEND_URL = "https://seo-backend-production-6f2b.up.railway.app/api/v1";
+const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 
 function mergeReportMeta(report: Report, meta: Record<string, any>): Report {
   return {
@@ -162,6 +163,7 @@ function ReportsPage() {
   // Handle payment success redirect — auto-submit audit if form data is present
   useEffect(() => {
     if (searchParams.get("payment") !== "success") return;
+    sessionStorage.removeItem(PENDING_AUDIT_STORAGE_KEY);
     // Wait for Clerk session to be ready after external redirect
     if (!isLoaded) return;
 

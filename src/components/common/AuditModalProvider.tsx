@@ -144,6 +144,10 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
   // Clerk/OAuth 回来后页面可能已刷新，因此从 sessionStorage 恢复并自动继续。
   useEffect(() => {
     if (!isLoaded || !isSignedIn || submitting || continuingPendingAudit || paymentOpen || restoredPendingRef.current) return;
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("payment") === "success") return;
+    }
     const pendingAudit = pendingFormData || readPendingAudit();
     if (!pendingAudit) return;
 

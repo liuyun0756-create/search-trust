@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { X, CreditCard, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
+
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,6 +31,7 @@ export function PaymentModal({ isOpen, onClose, formData }: PaymentModalProps) {
       const { checkout_url } = await res.json();
 
       if (checkout_url) {
+        sessionStorage.removeItem(PENDING_AUDIT_STORAGE_KEY);
         window.location.href = checkout_url;
       }
     } catch (err) {
