@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Find report by task_id
     const { data: report, error: reportError } = await supabase
       .from("reports")
-      .select("id, task_id, status")
+      .select("id, task_id, status, access_type")
       .eq("task_id", task_id)
       .eq("user_id", user.userId)
       .single();
@@ -44,15 +44,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
-    // Failed: delete the empty report record, don't deduct credits
+    const canRecoverFailedReport = report.status === "failed" && result?.score;
+
+    // Idempotency: a completed report should not be saved or charged again.
+    if (report.status !== "pending" && !canRecoverFailedReport) {
+      return NextResponse.json({ status: report.status, reportId: report.id, idempotent: true });
+    }
+
+    // Failed: mark the report failed, don't deduct credits
     if (failed) {
-      await supabase.from("reports").delete().eq("id", report.id);
+      await supabase.from("reports").update({ status: "failed" }).eq("id", report.id);
       return NextResponse.json({ status: "failed", reportId: report.id });
     }
 
-    if (!result || !result.page_url) {
-      // Empty result — treat as failed, delete the empty report
-      await supabase.from("reports").delete().eq("id", report.id);
+    if (!result || !result.score) {
+      // Empty result — treat as failed
+      await supabase.from("reports").update({ status: "failed" }).eq("id", report.id);
       return NextResponse.json({ status: "failed", reason: "empty_result" });
     }
 
@@ -67,18 +74,21 @@ export async function POST(request: NextRequest) {
       .eq("id", user.userId)
       .single();
 
-    // Determine status: first report (free credit) → free_preview, paid credits → paid_full
-    // User starts with 1 free credit, so credits > 1 means they have paid credits
-    const reportStatus = (userData && userData.audit_credits > 1) ? "paid_full" : "free_preview";
+    const reportStatus = report.access_type === "free_trial" ? "free_preview" : "paid_full";
 
     const updateData: Record<string, any> = {
       status: reportStatus,
+      completed_at: new Date().toISOString(),
+      external_report_id: result.report_id || null,
       trust_status: result.trust_status || null,
       ranking_potential: result.ranking_potential || null,
       risk_level: result.risk_level || null,
       generated_at: result.generated_at || null,
-      page_url: result.page_url || null,
     };
+
+    if (result.page_url) updateData.page_url = result.page_url;
+    if (result.page_type) updateData.page_type = result.page_type;
+    if (result.gbp_url) updateData.gbp_url = result.gbp_url;
 
     if (parsed) {
       if (parsed.module_1_overview) updateData.module_1_overview = parsed.module_1_overview;
@@ -88,14 +98,17 @@ export async function POST(request: NextRequest) {
       if (parsed.module_5_optimization) updateData.module_5_optimization = parsed.module_5_optimization;
     }
 
-    const { error: updateError } = await supabase
+    const { data: completedReport, error: updateError } = await supabase
       .from("reports")
       .update(updateData)
-      .eq("id", report.id);
+      .eq("id", report.id)
+      .in("status", canRecoverFailedReport ? ["pending", "failed"] : ["pending"])
+      .select("id")
+      .single();
 
-    if (updateError) {
+    if (updateError || !completedReport) {
       console.error("Supabase update error:", updateError);
-      return NextResponse.json({ error: "Failed to save report data" }, { status: 500 });
+      return NextResponse.json({ status: "already_processed", reportId: report.id, idempotent: true });
     }
 
     // Deduct credit after successful save (don't go below 0)

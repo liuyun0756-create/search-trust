@@ -70,7 +70,6 @@ export function UserDropdown() {
           </div>
           <Link
             href="/reports"
-            target="_blank"
             onClick={() => setOpen(false)}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-[14px] text-gray-600 hover:bg-gray-50 transition-colors"
           >

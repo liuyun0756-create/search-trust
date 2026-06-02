@@ -114,13 +114,13 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
   const runReport = async (data: { url: string; gbpUrl: string; pageType: string }) => {
     setSubmitting(true);
     try {
-      const { task_id, report_id } = await submitAudit({
+      const { report_id } = await submitAudit({
         url: data.url,
         pageType: data.pageType,
         gbpUrl: data.gbpUrl,
       });
       setAuditFormOpen(false);
-      router.push(`/reports?task_id=${task_id}&report_id=${report_id}`);
+      router.push(`/reports?report_id=${report_id}`);
     } catch (error) {
       console.error("Submit error:", error);
       alert(error instanceof Error ? error.message : "Something went wrong. Please try again.");

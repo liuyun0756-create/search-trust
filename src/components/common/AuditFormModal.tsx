@@ -33,7 +33,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting }: AuditF
   }, [isOpen]);
 
   const handleSubmit = () => {
-    if (!url.trim() || submitting) return;
+    if (!url.trim() || !gbpUrl.trim() || submitting) return;
     onSubmit({ url: url.trim(), gbpUrl: gbpUrl.trim(), pageType });
   };
 
@@ -144,7 +144,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting }: AuditF
 
               <button
                 onClick={handleSubmit}
-                disabled={!url.trim() || submitting}
+                disabled={!url.trim() || !gbpUrl.trim() || submitting}
                 className="w-full mt-8 flex items-center justify-center gap-2 bg-[#1D2531] text-white font-bold text-[15px] rounded-full px-6 py-4 transition-all hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed group"
               >
                 {submitting ? "Generating..." : "Run a Trust Audit"}

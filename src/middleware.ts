@@ -11,6 +11,10 @@ const isPublicRoute = createRouteMatcher([
   "/reports",
   "/api/webhook/(.*)",
   "/api/generate-report",
+  "/api/report-status",
+  "/api/report-meta",
+  "/api/reports(.*)",
+  "/api/checkout(.*)",
   "/api/user/credits",
 ]);
 

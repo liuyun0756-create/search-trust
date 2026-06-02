@@ -13,15 +13,21 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("reports")
-      .select("id, report_id, page_url, status, created_at")
+      .select("id, report_id, external_report_id, page_url, status, created_at")
       .eq("user_id", user.userId)
-      // Only show reports that have been completed with data
-      .in("status", ["free_preview", "paid_full"])
+      // Show completed reports and the current pending report during generation
+      .in("status", ["pending", "free_preview", "paid_full"])
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Supabase query error:", error);
-      return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "Failed to fetch reports",
+          detail: process.env.NODE_ENV === "production" ? undefined : error.message,
+        },
+        { status: 500 }
+      );
     }
 
     // 按日期分组，适配前端 ReportHistory 组件格式
@@ -40,7 +46,7 @@ export async function GET(request: NextRequest) {
         group.items.push({
           id: report.id,
           url: report.page_url,
-          reportId: report.report_id,
+          reportId: report.external_report_id || report.report_id,
         });
         return acc;
       },

@@ -11,12 +11,15 @@ export interface User {
 export interface Report {
   id: string;
   report_id: string;
+  external_report_id?: string | null;
   user_id: string;
   page_url: string;
   page_type: string | null;
   gbp_url: string | null;
   task_id: string | null;
-  status: "free_preview" | "paid_full";
+  status: "pending" | "free_preview" | "paid_full" | "failed";
+  access_type?: "free_trial" | "paid_credit" | "unlocked";
+  completed_at?: string | null;
   trust_status: string | null;
   ranking_potential: string | null;
   risk_level: string | null;
@@ -43,7 +46,7 @@ export interface Order {
 export type GenerateReportRequest = {
   url: string;
   page_type: string;
-  gbp_url?: string;
+  gbp_url: string;
 };
 
 export type GenerateReportResponse = {

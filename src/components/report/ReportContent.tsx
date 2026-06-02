@@ -729,31 +729,44 @@ export function ReportContent({
       {/* Top Report Info Card */}
       <section className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-[32px] font-bold tracking-tighter">Trust Audit Report</h1>
               <span className="bg-[#A5D020]/10 text-[#A5D020] px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter">Beta</span>
             </div>
-            <div className="flex items-center gap-2 text-blue-500 font-bold text-[15px] mb-6">
-              <Globe className="w-4 h-4" />
-              <a href={report.page_url} target="_blank" rel="noopener noreferrer" className="hover:underline">{report.page_url}</a>
-              <ExternalLink className="w-3 h-3" />
+            <div className="flex items-center gap-2 text-blue-500 font-bold text-[15px] mb-6 min-w-0">
+              <Globe className="w-4 h-4 shrink-0" />
+              <a href={report.page_url} target="_blank" rel="noopener noreferrer" className="hover:underline truncate min-w-0">{report.page_url}</a>
+              <ExternalLink className="w-3 h-3 shrink-0" />
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 min-w-0">
               {[
                 ...(report.page_type ? [`Page Type: ${report.page_type}`] : []),
-                ...(report.gbp_url ? [`GBP URL: ${report.gbp_url}`] : []),
                 ...(generatedAt ? [`Generated: ${generatedAt}`] : []),
-                `Report ID: ${report.report_id}`,
+                `Report ID: ${report.external_report_id || report.report_id}`,
               ].map(tag => (
                 <span key={tag} className="px-4 py-1.5 bg-[#F8F9FA] rounded-full text-[12px] font-bold text-gray-500 border border-gray-50">
                   {tag}
                 </span>
               ))}
+              {report.gbp_url && (
+                <div className="w-full max-w-full rounded-2xl bg-[#F8F9FA] border border-gray-50 px-4 py-3 text-[12px] font-bold text-gray-500">
+                  <span className="block text-gray-500 mb-1">GBP URL:</span>
+                  <a
+                    href={report.gbp_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block max-h-10 overflow-hidden break-all leading-5 text-gray-600 hover:text-blue-500 hover:underline"
+                    title={report.gbp_url}
+                  >
+                    {report.gbp_url}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
           {isPaid && (
-            <div className="flex flex-col gap-3 w-full md:w-auto">
+            <div className="flex flex-col gap-3 w-full md:w-56 md:shrink-0">
               <button className="bg-[#1D2531] text-white flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold hover:shadow-lg transition-all">
                 <Download className="w-4 h-4" /> Export PDF
               </button>
