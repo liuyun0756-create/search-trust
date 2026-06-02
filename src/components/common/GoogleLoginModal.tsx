@@ -8,9 +8,10 @@ import { useClerk } from "@clerk/nextjs";
 interface GoogleLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSignInStart?: () => void;
 }
 
-export function GoogleLoginModal({ isOpen, onClose }: GoogleLoginModalProps) {
+export function GoogleLoginModal({ isOpen, onClose, onSignInStart }: GoogleLoginModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const { openSignIn } = useClerk();
 
@@ -80,7 +81,7 @@ export function GoogleLoginModal({ isOpen, onClose }: GoogleLoginModalProps) {
               {/* Google Button - 升级为高级白色卡片样式 */}
               <button
                 className="w-full flex items-center justify-between bg-white hover:bg-gray-50 text-[#1A212B] font-bold text-[15px] rounded-[20px] px-6 py-5 transition-all border border-gray-100 shadow-sm hover:shadow-md group"
-                onClick={() => { onClose(); openSignIn(); }}
+                onClick={() => { onSignInStart?.(); openSignIn(); }}
               >
                 <div className="flex items-center gap-4">
                   <GoogleIcon />

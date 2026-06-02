@@ -147,7 +147,7 @@ function ReportsPage() {
   const [activeReportId, setActiveReportId] = useState<string | undefined>(selectedReportId || undefined);
   const [report, setReport] = useState<Report | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [history, setHistory] = useState<{ date: string; items: { id: string; url: string; reportId: string }[] }[]>([]);
+  const [history, setHistory] = useState<{ date: string; items: { id: string; url: string; reportId: string; status?: string }[] }[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [sseActive, setSseActive] = useState(false);
   const [sseProgress, setSseProgress] = useState<{ stage?: string; percent?: number; message?: string } | null>(null);
@@ -155,6 +155,7 @@ function ReportsPage() {
   const [paymentReturnLoading, setPaymentReturnLoading] = useState(false);
   const processedPaymentRef = useRef<string | null>(null);
   const requestedMetaRef = useRef<Set<string>>(new Set());
+  const reportCacheRef = useRef<Map<string, Report>>(new Map());
   const taskId = report?.status === "pending" ? report.task_id : null;
   const pendingReportId = report?.status === "pending" ? report.report_id : selectedReportId;
 
@@ -245,11 +246,20 @@ function ReportsPage() {
   const fetchReport = useCallback(async (id: string) => {
     if (!isLoaded) return;
 
+    const cached = reportCacheRef.current.get(id);
+    if (cached) {
+      setReport(cached);
+      setActiveReportId(cached.id);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await fetch(`/api/reports/${id}`);
       if (!res.ok) throw new Error("Failed to fetch report");
       const data = await res.json();
+      reportCacheRef.current.set(data.id, data);
+      reportCacheRef.current.set(data.report_id, data);
       setReport(data);
       setActiveReportId(data.id);
     } catch (error) {
@@ -282,7 +292,14 @@ function ReportsPage() {
       const res = await fetch(`/api/report-meta?${params.toString()}`);
       if (!res.ok) return;
       const meta = await res.json();
-      setReport((prev) => prev?.report_id === baseReport.report_id ? mergeReportMeta(prev, meta) : prev);
+      setReport((prev) => {
+        const isCurrentReport = prev?.id === baseReport.id || prev?.report_id === baseReport.report_id;
+        if (!isCurrentReport) return prev;
+        const merged = mergeReportMeta(prev, meta);
+        reportCacheRef.current.set(merged.id, merged);
+        reportCacheRef.current.set(merged.report_id, merged);
+        return merged;
+      });
       if (meta.report_id) {
         setHistory((prev) => prev.map((group) => ({
           ...group,
@@ -293,13 +310,19 @@ function ReportsPage() {
         fetch(`/api/reports/${baseReport.report_id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ external_report_id: meta.report_id }),
-        }).catch(() => {});
+          body: JSON.stringify({
+            external_report_id: meta.report_id,
+            page_url: meta.page_url || meta.url,
+            page_type: meta.page_type,
+            gbp_url: meta.gbp_url,
+            generated_at: meta.generated_at,
+          }),
+        }).then(() => loadHistory()).catch(() => {});
       }
     } catch (error) {
       console.error("Failed to fetch report meta:", error);
     }
-  }, []);
+  }, [loadHistory]);
 
   useEffect(() => {
     if (!report || report.external_report_id) return;
@@ -314,6 +337,19 @@ function ReportsPage() {
     loadReportMeta,
   ]);
 
+  useEffect(() => {
+    if (!report || report.external_report_id) return;
+    const historyItem = history.flatMap((group) => group.items).find((item) => item.id === report.id);
+    if (!historyItem || !historyItem.reportId || historyItem.reportId === report.report_id) return;
+    setReport((prev) => {
+      if (prev?.id !== report.id) return prev;
+      const updated = { ...prev, external_report_id: historyItem.reportId };
+      reportCacheRef.current.set(updated.id, updated);
+      reportCacheRef.current.set(updated.report_id, updated);
+      return updated;
+    });
+  }, [history, report?.id, report?.report_id, report?.external_report_id]);
+
   // SSE logic: when task_id is in URL
   useEffect(() => {
     if (!taskId) return;
@@ -326,6 +362,7 @@ function ReportsPage() {
       if (!result || !result.score) {
         console.error("[SSE] Task done but result is empty:", result);
         setSseActive(false);
+        setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
 
         // Mark as failed — delete the empty report record
         try {
@@ -336,7 +373,6 @@ function ReportsPage() {
           });
         } catch {}
 
-        alert("Report generation returned empty results. Your credit has not been deducted.");
         await loadHistory();
         return;
       }
@@ -370,6 +406,8 @@ function ReportsPage() {
           module_5_optimization: parsed?.module_5_optimization || null,
           created_at: prev?.created_at || new Date().toISOString(),
         };
+        reportCacheRef.current.set(completedReport.id, completedReport);
+        reportCacheRef.current.set(completedReport.report_id, completedReport);
         return completedReport;
       });
       setSseActive(false);
@@ -411,6 +449,7 @@ function ReportsPage() {
           eventSource.close();
           setSseActive(false);
           taskDone = true;
+          setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
 
           try {
             await fetch("/api/report-status", {
@@ -420,7 +459,6 @@ function ReportsPage() {
             });
           } catch {}
 
-          alert("Report generation failed. Your credit has not been deducted.");
           await loadHistory();
           return;
         }
@@ -463,6 +501,7 @@ function ReportsPage() {
             body: JSON.stringify({ task_id: taskId, result: null, failed: true }),
           });
         } catch {}
+        setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
       }
 
       // Reload history but keep the current report surface visible.
@@ -491,6 +530,7 @@ function ReportsPage() {
 
   const handleSelect = (id: string) => {
     setActiveReportId(id);
+    if (report?.id !== id) setReport(null);
     router.replace(`/reports?report_id=${id}`);
     fetchReport(id);
   };
