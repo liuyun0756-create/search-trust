@@ -51,12 +51,12 @@ export function AuditForm({ floating = false }: AuditFormProps) {
       }
 
       // Step 3: 跑报告
-      const { task_id, report_id } = await submitAudit({
+      const { report_id } = await submitAudit({
         url: formData.url,
         pageType: formData.pageType,
         gbpUrl: formData.gbpUrl,
       });
-      router.push(`/reports?task_id=${task_id}&report_id=${report_id}`);
+      router.push(`/reports?report_id=${report_id}`);
     } catch (err) {
       console.error("Submit error:", err);
       alert("Something went wrong. Please try again.");

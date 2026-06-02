@@ -16,9 +16,10 @@ interface ReportHistoryProps {
   }[];
   activeId?: string;
   onSelect?: (id: string) => void;
+  isLoading?: boolean;
 }
 
-export function ReportHistory({ reports, activeId, onSelect }: ReportHistoryProps) {
+export function ReportHistory({ reports, activeId, onSelect, isLoading = false }: ReportHistoryProps) {
   return (
     <aside className="hidden lg:block w-64 flex-shrink-0">
       <div className="sticky top-6">
@@ -26,7 +27,21 @@ export function ReportHistory({ reports, activeId, onSelect }: ReportHistoryProp
           <Clock className="w-4 h-4 text-[#A5D020]" /> History
         </h3>
         <div className="space-y-8 max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
-        {reports.map((group, gi) => (
+        {isLoading && (
+          <div className="space-y-3">
+            <div className="h-3 w-28 bg-gray-200 rounded" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="p-3 rounded-xl border border-gray-100 bg-white">
+                <div className="h-3 w-full bg-gray-100 rounded mb-2" />
+                <div className="h-2.5 w-24 bg-gray-100 rounded" />
+              </div>
+            ))}
+          </div>
+        )}
+        {!isLoading && reports.length === 0 && (
+          <p className="text-[12px] font-bold text-gray-400">No reports yet</p>
+        )}
+        {!isLoading && reports.map((group, gi) => (
           <div key={gi}>
             <p className="text-[12px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-gray-300" /> {group.date}

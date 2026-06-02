@@ -1,7 +1,6 @@
 export const PAGE_TYPES = [
   "Service Page",
   "Service-Area Page",
-  "Location Page",
   "City Page",
   "Product Page",
   "Landing Page",
