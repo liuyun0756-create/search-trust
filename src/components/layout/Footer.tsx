@@ -24,7 +24,7 @@ const footerLinks = {
 export function Footer() {
   return (
     <footer className="relative overflow-hidden bg-bg-dark text-text-white">
-      {/* Grid pattern overlay */}
+      {/* 1Grid pattern overlay */}
       <div className="bg-grid-dark absolute inset-0" />
 
       {/* Radial glow */}
