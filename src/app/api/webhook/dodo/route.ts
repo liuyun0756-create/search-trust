@@ -1,7 +1,65 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
-import crypto from "crypto";
+import { Webhook } from "svix";
+
+function normalizeWebhookSecret(secret: string) {
+  return secret.trim().replace(/^["']|["']$/g, "");
+}
+
+async function findExistingOrder(supabase: ReturnType<typeof createServerClient>, paymentId: string) {
+  const paymentIdQuery = await supabase
+    .from("orders")
+    .select("id, status")
+    .eq("payment_id", paymentId)
+    .maybeSingle();
+
+  if (!paymentIdQuery.error) {
+    return { data: paymentIdQuery.data, key: "payment_id" as const };
+  }
+
+  const orderIdQuery = await supabase
+    .from("orders")
+    .select("id, status")
+    .eq("order_id", paymentId)
+    .maybeSingle();
+
+  return { data: orderIdQuery.data, key: "order_id" as const };
+}
+
+async function upsertPaidOrder({
+  supabase,
+  key,
+  paymentId,
+  userId,
+  payment,
+}: {
+  supabase: ReturnType<typeof createServerClient>;
+  key: "payment_id" | "order_id";
+  paymentId: string;
+  userId: string;
+  payment: any;
+}) {
+  const baseOrder = {
+    [key]: paymentId,
+    user_id: userId,
+    amount: payment.total_amount || payment.settlement_amount || payment.amount || 1900,
+    status: "paid",
+    credits_purchased: 1,
+    paid_at: new Date().toISOString(),
+  };
+
+  const result = await supabase.from("orders").upsert(
+    key === "payment_id"
+      ? { ...baseOrder, currency: payment.currency || payment.settlement_currency || "USD" }
+      : baseOrder,
+    { onConflict: key }
+  );
+
+  if (!result.error) return result;
+
+  return supabase.from("orders").upsert(baseOrder, { onConflict: key });
+}
 
 export async function POST(request: Request) {
   console.log("[DodoWebhook] POST received");
@@ -19,14 +77,15 @@ export async function POST(request: Request) {
   });
   console.log("[DodoWebhook] All headers:", JSON.stringify(allHeaders, null, 2));
 
-  // Svix webhook headers
   const webhookId = headerPayload.get("webhook-id");
   const signature = headerPayload.get("webhook-signature");
   const timestamp = headerPayload.get("webhook-timestamp");
 
   console.log("[DodoWebhook] Signature found:", signature ? signature.substring(0, 30) + "..." : "MISSING");
 
-  const WEBHOOK_SECRET = process.env.DODO_WEBHOOK_SECRET;
+  const WEBHOOK_SECRET = process.env.DODO_WEBHOOK_SECRET
+    ? normalizeWebhookSecret(process.env.DODO_WEBHOOK_SECRET)
+    : "";
   console.log("[DodoWebhook] SECRET configured:", !!WEBHOOK_SECRET);
 
   if (!WEBHOOK_SECRET) {
@@ -39,44 +98,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing signature headers" }, { status: 400 });
   }
 
-  // Verify Svix signature: HMAC-SHA256(secret, "${webhook_id}.${timestamp}.${body}")
-  const signedContent = `${webhookId}.${timestamp}.${body}`;
-  const expectedSig = crypto
-    .createHmac("sha256", WEBHOOK_SECRET)
-    .update(signedContent)
-    .digest("base64");
-
-  // Svix sends multiple signatures space-separated, format: "v1,sig1 v1,sig2 ..."
-  const sigs = signature.split(" ").map((s) => {
-    const parts = s.split(",");
-    return parts.length > 1 ? parts[parts.length - 1] : s;
-  });
-
-  let isValid = false;
+  const wh = new Webhook(WEBHOOK_SECRET);
+  let event: any;
   try {
-    isValid = sigs.some((s) =>
-      crypto.timingSafeEqual(Buffer.from(s), Buffer.from(expectedSig))
-    );
-  } catch {
-    console.log("[DodoWebhook] timingSafeEqual failed, lengths:", sigs[0]?.length, "vs", expectedSig.length);
-    isValid = sigs.some((s) => s === expectedSig);
-  }
-
-  if (!isValid) {
-    console.error("[DodoWebhook] Signature verification failed");
-    console.error("[DodoWebhook] Received sigs:", JSON.stringify(sigs));
-    console.error("[DodoWebhook] Expected sig:", expectedSig);
+    event = wh.verify(body, {
+      "webhook-id": webhookId,
+      "webhook-signature": signature,
+      "webhook-timestamp": timestamp,
+    });
+  } catch (error) {
+    console.error("[DodoWebhook] Signature verification failed:", error);
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
   console.log("[DodoWebhook] Signature verified OK");
-
-  let event: any;
-  try {
-    event = JSON.parse(body);
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
 
   const eventType = event.type || event.event_type;
   console.log("[DodoWebhook] Event type:", eventType);
@@ -86,6 +121,11 @@ export async function POST(request: Request) {
 
     const clerkUserId = event.data?.metadata?.clerk_user_id;
     const paymentId = event.data?.payment_id || event.data?.id;
+
+    if (!paymentId) {
+      console.error("[DodoWebhook] No payment_id in payment data", event.data);
+      return NextResponse.json({ error: "Missing payment_id" }, { status: 400 });
+    }
 
     if (!clerkUserId) {
       console.error("[DodoWebhook] No clerk_user_id in payment metadata", event.data);
@@ -105,6 +145,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const { data: existingOrder, key: orderKey } = await findExistingOrder(supabase, paymentId);
+
+    if (existingOrder?.status === "paid") {
+      console.log("[DodoWebhook] Payment already processed:", paymentId);
+      return NextResponse.json({ received: true, already_processed: true });
+    }
+
+    const orderResult = await upsertPaidOrder({
+      supabase,
+      key: orderKey,
+      paymentId,
+      userId: user.id,
+      payment: event.data,
+    });
+
+    if (orderResult.error) {
+      console.error("[DodoWebhook] Failed to save order:", orderResult.error);
+      return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
+    }
+
     const { error } = await supabase
       .from("users")
       .update({
@@ -117,15 +177,6 @@ export async function POST(request: Request) {
       console.error("[DodoWebhook] Failed to update credits:", error);
       return NextResponse.json({ error: "Failed to update credits" }, { status: 500 });
     }
-
-    await supabase.from("orders").upsert({
-      payment_id: paymentId,
-      user_id: user.id,
-      amount: event.data?.amount || 1900,
-      currency: event.data?.currency || "USD",
-      status: "paid",
-      credits_purchased: 1,
-    });
 
     console.log(`[DodoWebhook] Payment succeeded: +1 credit for ${clerkUserId}, order saved`);
   }
@@ -156,10 +207,8 @@ export async function POST(request: Request) {
       }
 
       const paymentId = event.data?.payment_id || event.data?.id;
-      await supabase
-        .from("orders")
-        .update({ status: "refunded" })
-        .eq("payment_id", paymentId);
+      const { key } = await findExistingOrder(supabase, paymentId);
+      await supabase.from("orders").update({ status: "refunded" }).eq(key, paymentId);
     }
 
     console.log(`[DodoWebhook] Payment refunded: -1 credit for ${clerkUserId}`);
