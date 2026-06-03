@@ -26,6 +26,7 @@ interface ReportContentProps {
   report: Report;
   isPaid?: boolean;
   isLoading?: boolean;
+  isHeaderLoading?: boolean;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -656,6 +657,7 @@ export function ReportContent({
   report,
   isPaid = false,
   isLoading = false,
+  isHeaderLoading = false,
 }: ReportContentProps) {
   const [activeTab, setActiveTab] = useState<TabId>('Executive Summary');
   const [email, setEmail] = useState('');
@@ -775,7 +777,7 @@ export function ReportContent({
   return (
     <main className="flex-1 min-w-0">
       {/* Top Report Info Card */}
-      {isLoading ? (
+      {isHeaderLoading ? (
         <HeaderSkeleton />
       ) : (
       <section className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm mb-8">

@@ -7,9 +7,9 @@ import { GoogleLoginModal } from "@/components/common/GoogleLoginModal";
 import { AuditFormModal } from "@/components/common/AuditFormModal";
 import { PaymentModal } from "@/components/common/PaymentModal";
 import { submitAudit } from "@/lib/submit-audit";
-import { Loader2 } from "lucide-react";
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
+const OPEN_AUDIT_AFTER_LOGIN_KEY = "searchtrust_open_audit_after_login";
 
 type AuditFormData = { url: string; gbpUrl: string; pageType: string };
 
@@ -17,7 +17,7 @@ interface AuditModalContextType {
   openLogin: () => void;
   openAuditForm: () => void;
   credits: number | null;
-  refreshCredits: () => Promise<void>;
+  refreshCredits: (options?: { force?: boolean }) => Promise<number | null>;
 }
 
 const AuditModalContext = createContext<AuditModalContextType | null>(null);
@@ -36,21 +36,19 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
+  const creditsLoadedRef = useRef(false);
+  const creditsRequestRef = useRef<Promise<number | null> | null>(null);
   // 缓存表单数据，等登录/支付完成后继续
   const [pendingFormData, setPendingFormData] = useState<AuditFormData | null>(null);
-  const [continuingPendingAudit, setContinuingPendingAudit] = useState(false);
-  const restoredPendingRef = useRef(false);
 
   const savePendingAudit = useCallback((data: AuditFormData) => {
     setPendingFormData(data);
-    restoredPendingRef.current = false;
     if (typeof window === "undefined") return;
     sessionStorage.setItem(PENDING_AUDIT_STORAGE_KEY, JSON.stringify(data));
   }, []);
 
   const clearPendingAudit = useCallback(() => {
     setPendingFormData(null);
-    restoredPendingRef.current = false;
     if (typeof window === "undefined") return;
     sessionStorage.removeItem(PENDING_AUDIT_STORAGE_KEY);
   }, []);
@@ -72,23 +70,49 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const refreshCredits = useCallback(async () => {
-    try {
-      const res = await fetch("/api/user/credits");
-      if (res.ok) {
+  const refreshCredits = useCallback(async (options?: { force?: boolean }) => {
+    if (!options?.force && creditsLoadedRef.current) return credits;
+    if (creditsRequestRef.current) return creditsRequestRef.current;
+
+    creditsRequestRef.current = (async () => {
+      try {
+        const res = await fetch("/api/user/credits");
+        if (!res.ok) return credits;
         const data = await res.json();
-        if (data.credits != null) setCredits(data.credits);
+        const nextCredits = typeof data.credits === "number" ? data.credits : null;
+        creditsLoadedRef.current = true;
+        setCredits(nextCredits);
+        return nextCredits;
+      } catch {
+        return credits;
+      } finally {
+        creditsRequestRef.current = null;
       }
-    } catch {}
-  }, []);
+    })();
+
+    return creditsRequestRef.current;
+  }, [credits]);
 
   // Fetch credits on sign-in
   useEffect(() => {
     if (isSignedIn) refreshCredits();
+    if (isLoaded && !isSignedIn) {
+      creditsLoadedRef.current = false;
+      setCredits(null);
+    }
   }, [isSignedIn, refreshCredits]);
 
   const openLogin = useCallback(() => setLoginOpen(true), []);
-  const openAuditForm = useCallback(() => setAuditFormOpen(true), []);
+  const openAuditForm = useCallback(() => {
+    if (isLoaded && isSignedIn) {
+      setAuditFormOpen(true);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
+    }
+    setLoginOpen(true);
+  }, [isLoaded, isSignedIn]);
 
   // 调后端跑报告
   const runReport = useCallback(async (data: AuditFormData) => {
@@ -114,7 +138,10 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
   const handleSubmit = useCallback(async (data: AuditFormData) => {
     // Step 1: 判断登录
     if (!isSignedIn) {
-      savePendingAudit(data);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
+      }
+      clearPendingAudit();
       setAuditFormOpen(false);
       setLoginOpen(true);
       return;
@@ -122,16 +149,13 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
 
     // Step 2: 判断 credits
     try {
-      const creditsRes = await fetch("/api/user/credits");
-      if (creditsRes.ok) {
-        const { credits } = await creditsRes.json();
-        if (credits <= 0) {
-          // 弹支付弹窗
-          savePendingAudit(data);
-          setAuditFormOpen(false);
-          setPaymentOpen(true);
-          return;
-        }
+      const availableCredits = creditsLoadedRef.current ? credits : await refreshCredits();
+      if (availableCredits != null && availableCredits <= 0) {
+        // 弹支付弹窗
+        savePendingAudit(data);
+        setAuditFormOpen(false);
+        setPaymentOpen(true);
+        return;
       }
     } catch {
       // credits 查询失败，继续执行（API 会兜底校验）
@@ -139,38 +163,24 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
 
     // Step 3: 跑报告
     await runReport(data);
-  }, [isSignedIn, runReport, savePendingAudit]);
+  }, [clearPendingAudit, credits, isSignedIn, refreshCredits, runReport, savePendingAudit]);
 
-  // Clerk/OAuth 回来后页面可能已刷新，因此从 sessionStorage 恢复并自动继续。
+  // Clerk/OAuth 回来后页面可能已刷新，因此只恢复到表单，不自动生成报告。
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || submitting || continuingPendingAudit || paymentOpen || restoredPendingRef.current) return;
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("payment") === "success") return;
-    }
-    const pendingAudit = pendingFormData || readPendingAudit();
-    if (!pendingAudit) return;
+    if (!isLoaded || !isSignedIn) return;
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem(OPEN_AUDIT_AFTER_LOGIN_KEY) !== "1") return;
 
-    restoredPendingRef.current = true;
-    setContinuingPendingAudit(true);
+    sessionStorage.removeItem(OPEN_AUDIT_AFTER_LOGIN_KEY);
+    clearPendingAudit();
     setLoginOpen(false);
-    setAuditFormOpen(false);
-    handleSubmit(pendingAudit).finally(() => setContinuingPendingAudit(false));
-  }, [
-    isLoaded,
-    isSignedIn,
-    submitting,
-    continuingPendingAudit,
-    paymentOpen,
-    pendingFormData,
-    readPendingAudit,
-    handleSubmit,
-  ]);
+    setAuditFormOpen(true);
+  }, [clearPendingAudit, isLoaded, isSignedIn]);
 
   // 支付成功回调
   const handlePaymentSuccess = useCallback(async () => {
     setPaymentOpen(false);
-    await refreshCredits();
+    await refreshCredits({ force: true });
     const data = pendingFormData || readPendingAudit();
     if (data) {
       await runReport(data);
@@ -190,6 +200,9 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
         onClose={() => {
           setLoginOpen(false);
           clearPendingAudit();
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem(OPEN_AUDIT_AFTER_LOGIN_KEY);
+          }
         }}
         onSignInStart={() => setLoginOpen(false)}
       />
@@ -205,21 +218,6 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
         onSuccess={handlePaymentSuccess}
         formData={pendingFormData}
       />
-      {continuingPendingAudit && !paymentOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#0B0C0E]/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-sm rounded-[28px] bg-white border border-gray-100 shadow-2xl p-8 text-center">
-            <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-[#F8F9FA] border border-gray-100 flex items-center justify-center">
-              <Loader2 className="w-7 h-7 text-[#A5D020] animate-spin" />
-            </div>
-            <h2 className="text-[22px] font-bold tracking-tighter text-[#1A212B] mb-2">
-              Continuing your audit
-            </h2>
-            <p className="text-[14px] text-[#6B7280] font-medium leading-relaxed">
-              We saved your form details and are starting the report now.
-            </p>
-          </div>
-        </div>
-      )}
     </AuditModalContext.Provider>
   );
 }

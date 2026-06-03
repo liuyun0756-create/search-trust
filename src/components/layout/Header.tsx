@@ -4,10 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import { motion } from "framer-motion";
-import { useUser } from "@clerk/nextjs";
-import { RunAuditButton } from "@/components/common/RunAuditButton";
-import { UserDropdown } from "./UserDropdown";
+import { HeaderUserActions } from "./HeaderUserActions";
 
 const navLinks = [
   { id: "home", href: "/", label: "Home" },
@@ -21,8 +18,6 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isSignedIn } = useUser();
-  const isAuthenticated = isSignedIn;
 
   if (pathname === "/sample-case" || pathname === "/reports" || pathname === "/policy") return null;
 
@@ -43,37 +38,16 @@ export function Header() {
             <Link
               key={link.id}
               href={link.href}
-              className={`relative px-5 py-2 text-[14px] font-bold transition-colors duration-200 z-10 ${
-                activeTab === link.id ? "text-[#1D2531]" : "text-[#657083] hover:text-[#1D2531]"
+              className={`relative px-5 py-2 text-[14px] font-bold rounded-[8px] transition-colors duration-200 z-10 ${
+                activeTab === link.id ? "bg-[#E7EDF2] text-[#1D2531]" : "text-[#657083] hover:text-[#1D2531]"
               }`}
             >
-              {activeTab === link.id && (
-                <motion.div
-                  layoutId="activeTabBackground"
-                  className="absolute inset-0 bg-[#E7EDF2] rounded-[8px]"
-                  transition={{ type: "tween", duration: 0.2 }}
-                />
-              )}
               <span className="relative z-20">{link.label}</span>
             </Link>
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-6">
-          {isAuthenticated ? (
-            <UserDropdown />
-          ) : (
-            <Link
-              href="/sign-in"
-              className="text-[14px] font-bold text-[#1D2531] hover:opacity-70 transition-opacity"
-            >
-              Sign In
-            </Link>
-          )}
-          <RunAuditButton className="rounded-full bg-[#1D2531] px-6 py-2.5 text-[14px] font-bold text-white transition-all hover:bg-black">
-            Run a Trust Audit
-          </RunAuditButton>
-        </div>
+        <HeaderUserActions />
 
         <button className="md:hidden p-2 text-[#1D2531]" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -93,14 +67,7 @@ export function Header() {
             </Link>
           ))}
           <hr className="border-gray-100 my-2" />
-          {isAuthenticated ? (
-            <UserDropdown />
-          ) : (
-            <Link href="/sign-in" className="text-left text-[16px] font-bold text-[#1D2531]" onClick={() => setMobileOpen(false)}>Sign In</Link>
-          )}
-          <RunAuditButton className="w-full rounded-full bg-[#1D2531] py-4 text-[16px] font-bold text-white">
-            Run a Trust Audit
-          </RunAuditButton>
+          <HeaderUserActions mobile onNavigate={() => setMobileOpen(false)} />
         </div>
       )}
     </header>

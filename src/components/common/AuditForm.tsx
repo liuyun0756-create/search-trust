@@ -9,6 +9,7 @@ import { submitAudit } from '@/lib/submit-audit';
 import { PAGE_TYPES } from '@/lib/constants';
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
+const OPEN_AUDIT_AFTER_LOGIN_KEY = "searchtrust_open_audit_after_login";
 
 interface AuditFormProps {
   floating?: boolean;
@@ -24,7 +25,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
 
   const { isSignedIn } = useUser();
   const router = useRouter();
-  const { openLogin, openAuditForm } = useAuditModal();
+  const { openLogin, openAuditForm, credits, refreshCredits } = useAuditModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,23 +36,21 @@ export function AuditForm({ floating = false }: AuditFormProps) {
     try {
       // Step 1: 判断登录
       if (!isSignedIn) {
-        sessionStorage.setItem(PENDING_AUDIT_STORAGE_KEY, JSON.stringify(formData));
+        sessionStorage.removeItem(PENDING_AUDIT_STORAGE_KEY);
+        sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
         setLoading(false);
         openLogin();
         return;
       }
 
       // Step 2: 判断 credits
-      const creditsRes = await fetch("/api/user/credits");
-      if (creditsRes.ok) {
-        const { credits } = await creditsRes.json();
-        if (credits <= 0) {
-          sessionStorage.setItem(PENDING_AUDIT_STORAGE_KEY, JSON.stringify(formData));
-          setLoading(false);
-          // 跳转支付（使用 PaymentModal 通过 AuditModalProvider）
-          openAuditForm();
-          return;
-        }
+      const availableCredits = credits ?? await refreshCredits();
+      if (availableCredits != null && availableCredits <= 0) {
+        sessionStorage.setItem(PENDING_AUDIT_STORAGE_KEY, JSON.stringify(formData));
+        setLoading(false);
+        // 跳转支付（使用 PaymentModal 通过 AuditModalProvider）
+        openAuditForm();
+        return;
       }
 
       // Step 3: 跑报告

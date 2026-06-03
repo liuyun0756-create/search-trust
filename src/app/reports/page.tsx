@@ -193,7 +193,7 @@ function ReportsPage() {
             throw new Error(err.error || "Payment could not be confirmed yet");
           }
 
-          await refreshCredits();
+          await refreshCredits({ force: true });
 
           const result = await submitAudit({
             url: auditUrl,
@@ -421,7 +421,7 @@ function ReportsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task_id: taskId, result }),
       }).then(() => {
-        refreshCredits();
+        refreshCredits({ force: true });
       }).catch((err) => {
         console.error("Failed to save report result:", err);
       });
@@ -595,7 +595,8 @@ function ReportsPage() {
           <ReportContent
             report={report}
             isPaid={report.status === "paid_full"}
-            isLoading={isLoading || (sseActive && !reportHasModules)}
+            isHeaderLoading={isLoading}
+            isLoading={sseActive && !reportHasModules}
           />
         ) : historyLoading ? (
           <DetailLoadingState />
