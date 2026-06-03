@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import React from "react";
+import { renderToBuffer } from "@react-pdf/renderer";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
+import { ReportPDFDocument } from "@/components/report/pdf/ReportPDFDocument";
+import type { Report } from "@/types/database";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+function sanitizeFileName(value: string) {
+  return value.replace(/[^a-zA-Z0-9-_]/g, "-").replace(/-+/g, "-");
+}
+
+function parseScoreValue(raw: string | null | undefined) {
+  if (!raw) return "—";
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed.value || raw;
+  } catch {
+    return raw;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +37,10 @@ export async function POST(request: NextRequest) {
         { error: "Report ID and email are required" },
         { status: 400 }
       );
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
     }
 
     // 从数据库获取报告
@@ -41,9 +63,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const typedReport = report as Report;
+    const reportDisplayId = typedReport.external_report_id || typedReport.report_id;
+    const fileName = `SearchTrust-${sanitizeFileName(reportDisplayId)}.pdf`;
+    const document = React.createElement(ReportPDFDocument, { report: typedReport }) as React.ReactElement<any>;
+    const pdfBuffer = await renderToBuffer(document);
+    const appUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://trysearchtrust.com";
+
     // 发送邮件
     const { data, error: sendError } = await resend.emails.send({
-      from: "SearchTrust <noreply@trysearchtrust.com>",
+      from: process.env.REPORT_FROM_EMAIL || "SearchTrust <reports@trysearchtrust.com>",
       to: email,
       subject: `Trust Audit Report — ${report.page_url}`,
       html: `
@@ -80,24 +109,27 @@ export async function POST(request: NextRequest) {
               <div class="meta">
                 <span class="tag">URL: ${report.page_url}</span>
                 <span class="tag">Page Type: ${report.page_type || "N/A"}</span>
-                <span class="tag">Report ID: ${report.report_id}</span>
+                <span class="tag">Report ID: ${reportDisplayId}</span>
               </div>
               <div class="scores">
                 <div class="score-card">
                   <div class="score-label">Trust Status</div>
-                  <div class="score-value" style="color: #3B82F6">${report.trust_status || "—"}</div>
+                  <div class="score-value" style="color: #3B82F6">${parseScoreValue(report.trust_status)}</div>
                 </div>
                 <div class="score-card">
                   <div class="score-label">Ranking Potential</div>
-                  <div class="score-value" style="color: #A5D020">${report.ranking_potential || "—"}</div>
+                  <div class="score-value" style="color: #A5D020">${parseScoreValue(report.ranking_potential)}</div>
                 </div>
                 <div class="score-card">
                   <div class="score-label">Risk Level</div>
-                  <div class="score-value" style="color: #EF4444">${report.risk_level || "—"}</div>
+                  <div class="score-value" style="color: #EF4444">${parseScoreValue(report.risk_level)}</div>
                 </div>
               </div>
+              <p style="color: #6B7280; font-size: 14px; line-height: 1.6; text-align: center; margin: 0 0 16px;">
+                The full PDF report is attached to this email.
+              </p>
               <div style="text-align: center;">
-                <a href="https://yourdomain.com/reports" class="btn">View Full Report</a>
+                <a href="${appUrl}/reports?report_id=${report.id}" class="btn">View Full Report</a>
               </div>
             </div>
             <div class="footer">
@@ -108,6 +140,13 @@ export async function POST(request: NextRequest) {
         </body>
         </html>
       `,
+      attachments: [
+        {
+          filename: fileName,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
     });
 
     if (sendError) {

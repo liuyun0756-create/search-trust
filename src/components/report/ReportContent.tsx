@@ -662,6 +662,7 @@ export function ReportContent({
   const [activeTab, setActiveTab] = useState<TabId>('Executive Summary');
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [pdfStatus, setPdfStatus] = useState<'idle' | 'downloading'>('idle');
   const isClickScrolling = useRef(false);
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
@@ -774,6 +775,34 @@ export function ReportContent({
     }
   };
 
+  const handleDownloadPDF = async () => {
+    if (pdfStatus === 'downloading') return;
+    setPdfStatus('downloading');
+    try {
+      const res = await fetch(`/api/reports/${report.id}/pdf`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'PDF export failed');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const reportId = report.external_report_id || report.report_id;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SearchTrust-${reportId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF export error:', error);
+      alert(error instanceof Error ? error.message : 'PDF export failed');
+    } finally {
+      setPdfStatus('idle');
+    }
+  };
+
   return (
     <main className="flex-1 min-w-0">
       {/* Top Report Info Card */}
@@ -820,8 +849,17 @@ export function ReportContent({
           </div>
           {isPaid && (
             <div className="flex flex-col gap-3 w-full md:w-56 md:shrink-0">
-              <button className="bg-[#1D2531] text-white flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold hover:shadow-lg transition-all">
-                <Download className="w-4 h-4" /> Export PDF
+              <button
+                onClick={handleDownloadPDF}
+                disabled={pdfStatus === 'downloading' || report.status === 'pending'}
+                className="bg-[#1D2531] text-white flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {pdfStatus === 'downloading' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {pdfStatus === 'downloading' ? 'Preparing...' : 'Export PDF'}
               </button>
               <div className="relative group">
                 <input
