@@ -10,9 +10,10 @@ interface AuditFormModalProps {
   onClose: () => void;
   onSubmit: (data: { url: string; gbpUrl: string; pageType: string }) => void;
   submitting?: boolean;
+  initialValues?: { url: string; gbpUrl: string; pageType: string } | null;
 }
 
-export function AuditFormModal({ isOpen, onClose, onSubmit, submitting }: AuditFormModalProps) {
+export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialValues }: AuditFormModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [url, setUrl] = useState("");
   const [gbpUrl, setGbpUrl] = useState("");
@@ -21,16 +22,16 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting }: AuditF
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      setUrl("");
-      setGbpUrl("");
-      setPageType("Service Page");
+      setUrl(initialValues?.url || "");
+      setGbpUrl(initialValues?.gbpUrl || "");
+      setPageType(initialValues?.pageType || "Service Page");
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isOpen]);
+  }, [initialValues, isOpen]);
 
   const handleSubmit = () => {
     if (!url.trim() || !gbpUrl.trim() || submitting) return;

@@ -2,14 +2,8 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
-import { submitAudit } from '@/lib/submit-audit';
 import { PAGE_TYPES } from '@/lib/constants';
-
-const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
-const OPEN_AUDIT_AFTER_LOGIN_KEY = "searchtrust_open_audit_after_login";
 
 interface AuditFormProps {
   floating?: boolean;
@@ -23,43 +17,20 @@ export function AuditForm({ floating = false }: AuditFormProps) {
     pageType: 'Service Page',
   });
 
-  const { isSignedIn } = useUser();
-  const router = useRouter();
-  const { openLogin, openAuditForm, credits, refreshCredits } = useAuditModal();
+  const { submitAuditForm } = useAuditModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.url.trim()) return;
+    if (!formData.url.trim() || !formData.gbpUrl.trim()) return;
 
     setLoading(true);
 
     try {
-      // Step 1: 判断登录
-      if (!isSignedIn) {
-        sessionStorage.removeItem(PENDING_AUDIT_STORAGE_KEY);
-        sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
-        setLoading(false);
-        openLogin();
-        return;
-      }
-
-      // Step 2: 判断 credits
-      const availableCredits = credits ?? await refreshCredits();
-      if (availableCredits != null && availableCredits <= 0) {
-        sessionStorage.setItem(PENDING_AUDIT_STORAGE_KEY, JSON.stringify(formData));
-        setLoading(false);
-        // 跳转支付（使用 PaymentModal 通过 AuditModalProvider）
-        openAuditForm();
-        return;
-      }
-
-      // Step 3: 跑报告
-      const { report_id } = await submitAudit({
-        url: formData.url,
+      await submitAuditForm({
+        url: formData.url.trim(),
         pageType: formData.pageType,
-        gbpUrl: formData.gbpUrl,
+        gbpUrl: formData.gbpUrl.trim(),
       });
-      router.push(`/reports?report_id=${report_id}`);
     } catch (err) {
       console.error("Submit error:", err);
       alert("Something went wrong. Please try again.");

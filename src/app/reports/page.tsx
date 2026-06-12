@@ -84,39 +84,6 @@ function DetailLoadingState({ text = "Loading report..." }: { text?: string }) {
   );
 }
 
-function SSEIndicator({ progress }: { progress: { stage?: string; percent?: number; message?: string } | null }) {
-  return (
-    <div className="flex-1 flex items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center max-w-md"
-      >
-        <div className="w-16 h-16 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center mx-auto mb-6">
-          <div className="w-6 h-6 border-3 border-[#A5D020] border-t-transparent rounded-full animate-spin" />
-        </div>
-        <h2 className="text-[22px] font-bold tracking-tighter text-[#1A212B] mb-2">
-          Generating your report
-        </h2>
-        <p className="text-[14px] text-[#6B7280] font-medium">
-          {progress?.message || "Analyzing page trust signals..."}
-        </p>
-        {progress?.percent != null && (
-          <div className="mt-4 mx-auto max-w-xs">
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#A5D020] rounded-full transition-all duration-500"
-                style={{ width: `${progress.percent}%` }}
-              />
-            </div>
-            <p className="mt-1.5 text-[12px] text-gray-400">{progress.percent}%</p>
-          </div>
-        )}
-      </motion.div>
-    </div>
-  );
-}
-
 export default function ReportsPageWrapper() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#F8F9FA]" />}>
@@ -546,18 +513,7 @@ function ReportsPage() {
     report?.module_5_optimization
   );
 
-  if (paymentReturnLoading || (isPaymentReturn && !selectedReportId)) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
-        <BackHeader />
-        <div className="max-w-7xl mx-auto px-6 pt-12 pb-24">
-          <SSEIndicator progress={{ percent: 5, message: "Confirming payment and starting your report..." }} />
-        </div>
-      </div>
-    );
-  }
-
-  if (!historyLoading && !hasReports && !report) {
+  if (!paymentReturnLoading && !isPaymentReturn && !historyLoading && !hasReports && !report) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
         <BackHeader />
@@ -600,8 +556,16 @@ function ReportsPage() {
           />
         ) : historyLoading ? (
           <DetailLoadingState />
-        ) : isLoading || sseActive ? (
-          <DetailLoadingState text={sseActive ? sseProgress?.message || "Generating report..." : "Loading report..."} />
+        ) : paymentReturnLoading || isPaymentReturn || isLoading || sseActive ? (
+          <DetailLoadingState
+            text={
+              paymentReturnLoading || isPaymentReturn
+                ? "Confirming payment and starting your report..."
+                : sseActive
+                  ? sseProgress?.message || "Generating report..."
+                  : "Loading report..."
+            }
+          />
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400">
             <p className="text-sm font-bold">Select a report to view</p>

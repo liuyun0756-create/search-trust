@@ -16,6 +16,7 @@ type AuditFormData = { url: string; gbpUrl: string; pageType: string };
 interface AuditModalContextType {
   openLogin: () => void;
   openAuditForm: () => void;
+  submitAuditForm: (data: AuditFormData) => Promise<void>;
   credits: number | null;
   refreshCredits: (options?: { force?: boolean }) => Promise<number | null>;
 }
@@ -128,11 +129,18 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       router.push(`/reports?report_id=${report_id}`);
     } catch (error) {
       console.error("Submit error:", error);
+      const message = error instanceof Error ? error.message : "";
+      if (message.includes("No audit credits available")) {
+        savePendingAudit(data);
+        setAuditFormOpen(false);
+        setPaymentOpen(true);
+        return;
+      }
       alert(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
-  }, [clearPendingAudit, router]);
+  }, [clearPendingAudit, router, savePendingAudit]);
 
   // 核心流程：填信息 → 判断登录 → 判断 credits → 跑报告/弹支付
   const handleSubmit = useCallback(async (data: AuditFormData) => {
@@ -141,7 +149,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined") {
         sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
       }
-      clearPendingAudit();
+      savePendingAudit(data);
       setAuditFormOpen(false);
       setLoginOpen(true);
       return;
@@ -163,19 +171,26 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
 
     // Step 3: 跑报告
     await runReport(data);
-  }, [clearPendingAudit, credits, isSignedIn, refreshCredits, runReport, savePendingAudit]);
+  }, [credits, isSignedIn, refreshCredits, runReport, savePendingAudit]);
 
-  // Clerk/OAuth 回来后页面可能已刷新，因此只恢复到表单，不自动生成报告。
+  // Clerk/OAuth 回来后页面可能已刷新；如果之前已有表单数据，回填表单让用户确认后再提交。
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem(OPEN_AUDIT_AFTER_LOGIN_KEY) !== "1") return;
 
     sessionStorage.removeItem(OPEN_AUDIT_AFTER_LOGIN_KEY);
-    clearPendingAudit();
     setLoginOpen(false);
+
+    const pending = readPendingAudit();
+    if (pending) {
+      setPendingFormData(pending);
+      setAuditFormOpen(true);
+      return;
+    }
+
     setAuditFormOpen(true);
-  }, [clearPendingAudit, isLoaded, isSignedIn]);
+  }, [handleSubmit, isLoaded, isSignedIn, readPendingAudit]);
 
   // 支付成功回调
   const handlePaymentSuccess = useCallback(async () => {
@@ -193,7 +208,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
   }, [clearPendingAudit]);
 
   return (
-    <AuditModalContext.Provider value={{ openLogin, openAuditForm, credits, refreshCredits }}>
+    <AuditModalContext.Provider value={{ openLogin, openAuditForm, submitAuditForm: handleSubmit, credits, refreshCredits }}>
       {children}
       <GoogleLoginModal
         isOpen={loginOpen}
@@ -208,9 +223,10 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       />
       <AuditFormModal
         isOpen={auditFormOpen}
-        onClose={() => { setAuditFormOpen(false); setPendingFormData(null); }}
+        onClose={() => { setAuditFormOpen(false); clearPendingAudit(); }}
         onSubmit={handleSubmit}
         submitting={submitting}
+        initialValues={pendingFormData}
       />
       <PaymentModal
         isOpen={paymentOpen}
