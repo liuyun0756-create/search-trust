@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { RunAuditButton } from '@/components/common/RunAuditButton';
 
 export function PricingHero() {
   return (
@@ -34,9 +35,9 @@ export function PricingHero() {
               </h3>
               <p className="text-[14px] text-[#838383] font-medium">A structured trust diagnosis for one submitted page.</p>
             </div>
-            <button className="w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 hover:bg-black transition-all my-6">
+            <RunAuditButton className="w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 hover:bg-black transition-all my-6">
               Buy One Report <ArrowRight className="w-5 h-5" />
-            </button>
+            </RunAuditButton>
             <ul className="space-y-3 text-[14px] text-[#3E4651]">
               {[
                 '1 page / 1 submitted URL',

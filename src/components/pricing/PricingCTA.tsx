@@ -1,8 +1,8 @@
 "use client";
 
-import Link from 'next/link';
 import React from 'react';
 import { motion } from 'framer-motion';
+import { RunAuditButton } from '@/components/common/RunAuditButton';
 
 export function PricingCTA() {
   return (
@@ -29,19 +29,17 @@ export function PricingCTA() {
               <span className="text-bar-highlight">SearchTrust diagnoses trust breakdown</span>
               {' '}on a real page.
             </h2>
-            <Link
-              href="/sample-case"
-              target="_blank"
+            <RunAuditButton
               className="inline-flex items-center justify-center rounded-xl bg-[#1A1F2B] px-8 py-4 font-bold text-white transition-colors hover:bg-black"
             >
               Buy One Report
-            </Link>
+            </RunAuditButton>
           </div>
         </motion.div>
 
         <p className="mt-12 text-center text-[13px] text-[#3E4651] opacity-40 font-medium max-w-2xl mx-auto leading-relaxed">
           Policy note: By purchasing, you agree to our Terms of Service and Refund Policy.
-          Payments are processed by Paddle, our merchant of record.
+          Payments are processed securely via Dodo Payments.
         </p>
       </div>
     </section>
