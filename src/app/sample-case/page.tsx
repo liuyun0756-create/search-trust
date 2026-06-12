@@ -16,15 +16,9 @@ export default function SampleCasePage() {
             <ArrowLeft size={16} />
             Back to SearchTrust
           </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-[#1D2531] rounded-[3px] grid grid-cols-2 gap-[2px] p-[2px]">
-              <div className="bg-white/40 rounded-[1px]"></div>
-              <div className="bg-white rounded-[1px]"></div>
-              <div className="bg-white rounded-[1px]"></div>
-              <div className="bg-white/40 rounded-[1px]"></div>
-            </div>
-            <span className="text-[14px] font-bold text-[#1D2531] tracking-tight">SearchTrust</span>
-          </div>
+          <Link href="/" className="flex items-center">
+            <img src="/images/logo.png" alt="SearchTrust" className="h-6 md:h-8 w-auto" />
+          </Link>
         </div>
       </div>
       <SampleReportContent />

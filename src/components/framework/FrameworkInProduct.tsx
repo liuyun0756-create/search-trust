@@ -57,7 +57,7 @@ export function FrameworkInProduct() {
             className="lg:w-[45%] flex-shrink-0"
           >
             <div className="bg-[#F8F9FA] rounded-[24px] border border-gray-100 overflow-hidden h-full">
-              <img src="/images/framework-bg.png" alt="Framework in Product" className="w-full h-full object-cover" />
+              <img src="/images/framework-flow.svg" alt="Framework in Product" className="w-full h-full object-contain" />
             </div>
           </motion.div>
 

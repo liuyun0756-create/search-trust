@@ -13,20 +13,17 @@ const painPoints = [
   {
     icon: Layers,
     title: 'Local templates scale faster than trust',
-    description:
-      'Teams publish hundreds of city pages that look different on the surface but fail the same trust signals underneath.',
+    description: '',
   },
   {
     icon: MessageCircleWarning,
     title: 'Teams struggle to explain why pages feel "off"',
-    description:
-      "Many teams aren't short on SEO data — they're short on a way to explain trust failure.",
+    description: '',
   },
   {
     icon: Wrench,
     title: 'Existing tools don\'t diagnose local trust collapse',
-    description:
-      'Standard SEO tools verify whether things were done, but cannot explain whether a page is genuinely specific, grounded, or independently valuable.',
+    description: '',
   },
 ];
 

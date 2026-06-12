@@ -15,6 +15,10 @@ const pricingFAQData = [
     answer: 'No. Each purchase covers one single URL.',
   },
   {
+    question: 'Do I need a contract?',
+    answer: 'No contract is required for a single report purchase.',
+  },
+  {
     question: 'Is payment handled securely?',
     answer: 'Yes. All payments are processed securely via Dodo Payments.',
   },

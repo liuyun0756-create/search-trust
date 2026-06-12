@@ -22,15 +22,6 @@ export function WhatFrameworkIsNot() {
         
         {/* 标题区域 */}
         <div className="text-center mb-24">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 border border-gray-200 mb-6"
-          >
-            <span className="text-[11px] font-bold text-gray-500 tracking-[0.2em] uppercase">Scope & Boundaries</span>
-          </motion.div>
-          
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

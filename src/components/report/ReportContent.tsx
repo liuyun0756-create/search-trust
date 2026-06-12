@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Lock, Send, Download,
-  Globe, Loader2, ExternalLink, AlertTriangle
+  Lock, Download,
+  Loader2, AlertTriangle,
+  Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
+  ShieldCheck, BarChart3, TriangleAlert, ChevronDown
 } from 'lucide-react';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
@@ -138,13 +140,13 @@ function SectionSkeleton() {
 function Module1Overview({ data }: { data: Record<string, any> }) {
   return (
     <div className="space-y-8">
-      <div>
-        <section className="text-[16px] font-bold text-[#1A212B] mb-2">Primary Blocking Layer：
-          <span className="text-[16px] font-bold text-orange-700">{data.primary_blocking_layer}</span>
+      <div className="rounded-[18px] border border-[#E6EDDA] bg-[#FBFDF5] px-5 py-4">
+        <section className="text-[15px] font-black text-[#1A212B]">Primary Blocking Layer：
+          <span className="text-[15px] font-black text-orange-700">{data.primary_blocking_layer}</span>
         </section>
       </div>
       {/* Main conclusion */}
-      <div className="p-8 bg-blue-50/50 rounded-[24px] border border-blue-100">
+      <div className="rounded-[22px] border border-blue-100 bg-blue-50/50 p-8 shadow-[0_12px_30px_rgba(59,130,246,0.06)]">
         <p className="text-[17px] font-medium leading-relaxed text-gray-800 italic">
           "{data.main_conclusion}"
         </p>
@@ -182,7 +184,7 @@ function Module1Overview({ data }: { data: Record<string, any> }) {
 // ============================================================
 function Module2PageLevel({ data }: { data: Record<string, any> }) {
   const cards = [
-    { label: 'Existing Foundation', value: data.existing_foundation },
+    { label: 'Observed Strength', value: data.existing_foundation },
     { label: 'Main Limitation', value: data.main_limitation },
     { label: 'Likely Search Outcome', value: data.likely_search_outcome },
     { label: 'Competitive Interpretation', value: data.competitive_interpretation },
@@ -301,6 +303,17 @@ function Module3KeyProblems({ data }: { data: Record<string, any> }) {
 // ============================================================
 function Module4EightLayers({ data }: { data: Record<string, any> }) {
   const layers: any[] = data.layers || [];
+  const visibleLayers = layers
+    .map((layer, index) => ({ ...layer, originalIndex: index }))
+    .filter((layer) => layer.originalIndex !== 1 && layer.originalIndex !== 2);
+  const layerTitles: Record<number, string> = {
+    0: 'L0-Relevance',
+    3: 'L1-Entity Clarity',
+    4: 'L2-Proof Signals',
+    5: 'L3-Local Fit',
+    6: 'L4-Strutural Trust',
+    7: 'L5-Standalone Value',
+  };
 
   const statusTagClass: Record<string, string> = {
     Good: 'bg-green-50 text-green-700',
@@ -316,10 +329,12 @@ function Module4EightLayers({ data }: { data: Record<string, any> }) {
         <span className="text-[16px] ">Below is the full six-layer trust diagnosis used to interpret the current strength of the page.</span>
       </section>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {layers.map((layer: any, i: number) => (
-          <div key={i} className="p-6 rounded-[16px] border border-gray-100 space-y-3">
+        {visibleLayers.map((layer: any) => (
+          <div key={layer.originalIndex} className="p-6 rounded-[16px] border border-gray-100 space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-[15px] font-bold text-[#1A212B]">Layer {i + 1}: {layer.layer_name}</h4>
+              <h4 className="text-[15px] font-bold text-[#1A212B]">
+                {layerTitles[layer.originalIndex] || `Layer ${layer.originalIndex + 1}: ${layer.layer_name}`}
+              </h4>
               <span className={`text-[12px] font-bold px-3 py-1 rounded-full ${statusTagClass[layer.status] || 'bg-gray-50 text-gray-600'}`}>
                 {layer.status}
               </span>
@@ -329,6 +344,51 @@ function Module4EightLayers({ data }: { data: Record<string, any> }) {
         ))}
       </div>
     </section>
+  );
+}
+
+function OptimizationStepCard({
+  number,
+  title,
+  children,
+}: {
+  number: string;
+  title: string;
+  children: ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="relative overflow-hidden rounded-[20px] border border-[#E4EDD2] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+      <div className="mb-5 rounded-[16px] border border-[#E8F1D6] bg-[#F8FAF2] px-4 py-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#A5D020] text-[13px] font-black text-[#1A212B] shadow-sm">
+            {number}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8BAA2B]">Step {number}</p>
+            <div className="mt-1 text-[16px] font-black leading-tight text-[#1A212B]">{title}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`space-y-4 overflow-hidden pr-1 transition-all duration-300 ${expanded ? 'max-h-[1200px]' : 'max-h-[180px]'}`}>
+        {children}
+      </div>
+
+      {!expanded && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white via-white/95 to-white/0" />
+      )}
+
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        className="relative z-10 mt-5 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-[12px] font-bold text-[#1A212B] shadow-sm transition-all hover:border-[#A5D020] hover:bg-[#F8FAF5]"
+      >
+        {expanded ? 'Collapse' : 'Expand'}
+        <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      </button>
+    </div>
   );
 }
 
@@ -343,16 +403,10 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
   const expect30 = data.what_to_expect_30_days;
 
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-1 gap-5">
       {/* 1. Primary Trust Blocker */}
       {blocker && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-4">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              1
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Primary Trust Blocker</div>
-          </div>
+        <OptimizationStepCard number="1" title="Primary Trust Blocker">
           <p className="text-[16px] font-bold text-[#1A212B]">Current blocking layer: {blocker.blocking_layer}</p>
           <p className="text-[14px] text-gray-600 leading-relaxed">{blocker.summary}</p>
 
@@ -374,19 +428,12 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
             <p className="text-[13px] font-bold text-gray-500">Why this layer cannot be skipped:</p>
             <p className="text-[14px] text-gray-600 leading-relaxed">{blocker.why_cannot_skip}</p>
           </div>
-        </div>
+        </OptimizationStepCard>
       )}
 
       {/* 2. Must Execute Now */}
       {mustItems.length > 0 && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-6">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              2
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Must Execute Now</div>
-          </div>
-
+        <OptimizationStepCard number="2" title="Must Execute Now">
           {mustItems.map((item: any, i: number) => (
             <div key={i} className="space-y-4">
               <h4 className="text-[16px] font-bold text-[#1A212B]">Must Fix {i + 1}- {item.title}</h4>
@@ -441,19 +488,12 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
               {i < mustItems.length - 1 && <div className="border-b border-gray-100" />}
             </div>
           ))}
-        </div>
+        </OptimizationStepCard>
       )}
 
       {/* 3. Roadmap */}
       {roadmap.length > 0 && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-6">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              3
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Roadmap</div>
-          </div>
-
+        <OptimizationStepCard number="3" title="Roadmap">
           {roadmap.map((phase: any, i: number) => (
             <div key={i} className="space-y-4">
               <h4 className="text-[16px] font-bold text-[#1A212B]">Phase {i + 1}- {phase.phase_title}</h4>
@@ -499,36 +539,24 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
               {i < roadmap.length - 1 && <div className="border-b border-gray-100" />}
             </div>
           ))}
-        </div>
+        </OptimizationStepCard>
       )}
 
       {/* 4. If Fix Order Is Wrong */}
       {fixWarning && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-4">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              4
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">{fixWarning.title}</div>
-          </div>
+        <OptimizationStepCard number="4" title={fixWarning.title}>
           <p className="text-[14px] text-gray-600 leading-relaxed">{fixWarning.intro}</p>
           <div className="space-y-1">
             <p className="text-[13px] font-bold text-gray-500">For this page:</p>
             <p className="text-[14px] text-gray-600 leading-relaxed">{fixWarning.page_specific_risk}</p>
           </div>
           <p className="text-[14px] text-gray-600 leading-relaxed">{fixWarning.closing_warning}</p>
-        </div>
+        </OptimizationStepCard>
       )}
 
       {/* 5. What You'll Likely See in the Next 30 Days */}
       {expect30 && (
-        <div className="p-6 rounded-[16px] border border-gray-100 space-y-4">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              5
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">{expect30.title}</div>
-          </div>
+        <OptimizationStepCard number="5" title={expect30.title}>
           <p className="text-[14px] text-gray-600 leading-relaxed">{expect30.intro}</p>
 
           {expect30.week_1_2?.length > 0 && (
@@ -588,7 +616,7 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
           )}
 
           <p className="text-[14px] text-gray-600 leading-relaxed">{expect30.closing_note}</p>
-        </div>
+        </OptimizationStepCard>
       )}
     </div>
   );
@@ -623,28 +651,35 @@ function ModuleSection({
 }) {
   return (
     <div id={SECTION_IDS[tab]} className="scroll-mt-24">
-      <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8 md:p-12 relative min-h-[300px]">
-        <h2 className="text-[20px] font-bold text-[#1A212B] mb-6">{tab}</h2>
+      <div className="relative min-h-[300px] overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.06)]">
+        <div className="border-b border-gray-100 bg-[#F8FAF5] px-8 py-5 md:px-12">
+          <div className="flex items-center gap-3">
+            <div className="h-6 w-1.5 rounded-full bg-[#A5D020]" />
+            <h2 className="text-[22px] font-black tracking-tight text-[#1A212B]">{tab}</h2>
+          </div>
+        </div>
 
-        {isLoading ? (
-          <LoadingState text={`Analyzing ${tab}...`} />
-        ) : isLocked ? (
-          <div className="relative min-h-[300px]">
-            <UnlockOverlay
-              title={`Unlock ${tab}`}
-              description={`Get the complete ${tab.toLowerCase()} analysis, detailed breakdowns, and actionable recommendations for this page.`}
-            />
-            <div className="opacity-50 blur-[4px] pointer-events-none select-none">
-              {data ? renderModule(tab, data) : <SectionSkeleton />}
+        <div className="p-8 md:p-12">
+          {isLoading ? (
+            <LoadingState text={`Analyzing ${tab}...`} />
+          ) : isLocked ? (
+            <div className="relative min-h-[300px]">
+              <UnlockOverlay
+                title={`Unlock ${tab}`}
+                description={`Get the complete ${tab.toLowerCase()} analysis, detailed breakdowns, and actionable recommendations for this page.`}
+              />
+              <div className="opacity-50 blur-[4px] pointer-events-none select-none">
+                {data ? renderModule(tab, data) : <SectionSkeleton />}
+              </div>
             </div>
-          </div>
-        ) : data ? (
-          renderModule(tab, data)
-        ) : (
-          <div className="text-center py-12 text-gray-400">
-            <p className="text-sm font-bold">No data available for this section.</p>
-          </div>
-        )}
+          ) : data ? (
+            renderModule(tab, data)
+          ) : (
+            <div className="text-center py-12 text-gray-400">
+              <p className="text-sm font-bold">No data available for this section.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -717,6 +752,27 @@ export function ReportContent({
           day: 'numeric',
         })
       : '');
+  const displayReportId = report.external_report_id || report.report_id;
+  const isSampleReport = displayReportId?.toLowerCase().includes('sample');
+
+  const handleShareReport = async () => {
+    const shareUrl = typeof window !== 'undefined' ? window.location.href : report.page_url;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `SearchTrust ${isSampleReport ? 'Sample ' : ''}Report`,
+          url: shareUrl,
+        });
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Report link copied.');
+    } catch (error) {
+      if ((error as Error)?.name !== 'AbortError') {
+        console.error('Share error:', error);
+      }
+    }
+  };
 
   // 后端返回 JSON 字符串，需 parse
   const parseScoreField = (raw: string | null | undefined) => {
@@ -734,18 +790,27 @@ export function ReportContent({
       val: trustStatus?.value || '—',
       desc: trustStatus?.description || '',
       color: STATUS_COLORS[trustStatus?.value || ''] || '#3B82F6',
+      icon: ShieldCheck,
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-500',
     },
     {
       label: rankingPotential?.label || 'Ranking Potential',
       val: rankingPotential?.value || '—',
       desc: rankingPotential?.description || '',
       color: STATUS_COLORS[rankingPotential?.value || ''] || '#A5D020',
+      icon: BarChart3,
+      iconBg: 'bg-indigo-50',
+      iconColor: 'text-indigo-500',
     },
     {
       label: riskLevel?.label || 'Risk Level',
       val: riskLevel?.value || '—',
       desc: riskLevel?.description || '',
       color: STATUS_COLORS[riskLevel?.value || ''] || '#EF4444',
+      icon: TriangleAlert,
+      iconBg: 'bg-red-50',
+      iconColor: 'text-red-500',
     },
   ];
 
@@ -809,88 +874,100 @@ export function ReportContent({
       {isHeaderLoading ? (
         <HeaderSkeleton />
       ) : (
-      <section className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-[32px] font-bold tracking-tighter">Trust Audit Report</h1>
-              <span className="bg-[#A5D020]/10 text-[#A5D020] px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter">Beta</span>
-            </div>
-            <div className="flex items-center gap-2 text-blue-500 font-bold text-[15px] mb-6 min-w-0">
-              <Globe className="w-4 h-4 shrink-0" />
-              <a href={report.page_url} target="_blank" rel="noopener noreferrer" className="hover:underline truncate min-w-0">{report.page_url}</a>
-              <ExternalLink className="w-3 h-3 shrink-0" />
-            </div>
-            <div className="flex flex-wrap gap-3 min-w-0">
-              {[
-                ...(report.page_type ? [`Page Type: ${report.page_type}`] : []),
-                ...(generatedAt ? [`Generated: ${generatedAt}`] : []),
-                `Report ID: ${report.external_report_id || report.report_id}`,
-              ].map(tag => (
-                <span key={tag} className="px-4 py-1.5 bg-[#F8F9FA] rounded-full text-[12px] font-bold text-gray-500 border border-gray-50">
-                  {tag}
-                </span>
-              ))}
-              {report.gbp_url && (
-                <div className="w-full max-w-full rounded-2xl bg-[#F8F9FA] border border-gray-50 px-4 py-3 text-[12px] font-bold text-gray-500">
-                  <span className="block text-gray-500 mb-1">GBP URL:</span>
-                  <a
-                    href={report.gbp_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block max-h-10 overflow-hidden break-all leading-5 text-gray-600 hover:text-blue-500 hover:underline"
-                    title={report.gbp_url}
-                  >
-                    {report.gbp_url}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
+      <section className="mb-8 rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+        <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <h1 className="text-[30px] font-black leading-tight tracking-tight text-[#1A1F2B] md:text-[40px]">
+            Trust Audit Report{isSampleReport ? ' (Sample)' : ''}
+          </h1>
+
           {isPaid && (
-            <div className="flex flex-col gap-3 w-full md:w-56 md:shrink-0">
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
                 onClick={handleDownloadPDF}
                 disabled={pdfStatus === 'downloading' || report.status === 'pending'}
-                className="bg-[#1D2531] text-white flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#171B22] px-6 py-3 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_14px_28px_rgba(15,23,42,0.16)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {pdfStatus === 'downloading' ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Download className="w-4 h-4" />
+                  <Download className="h-4 w-4" />
                 )}
                 {pdfStatus === 'downloading' ? 'Preparing...' : 'Export PDF'}
               </button>
-              <div className="relative group">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Send to email"
-                  className="w-full bg-[#F8F9FA] border border-gray-100 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20"
-                />
-                <button
-                  onClick={handleSendEmail}
-                  disabled={emailStatus === 'sending' || !email}
-                  className={`absolute right-2 top-2 p-1.5 rounded-lg transition-all shadow-sm ${
-                    emailStatus === 'sent'
-                      ? 'bg-green-50 text-green-500'
-                      : emailStatus === 'error'
-                      ? 'bg-red-50 text-red-500'
-                      : 'bg-white border border-gray-100 text-gray-400 hover:text-[#A5D020]'
-                  }`}
-                >
-                  {emailStatus === 'sending' ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : emailStatus === 'sent' ? (
-                    <span className="text-xs font-bold">✓</span>
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleShareReport}
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl border border-[#1A1F2B]/60 bg-white px-6 py-3 text-[14px] font-bold text-[#1A1F2B] transition-all hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-[#F7F9F2]"
+              >
+                <Share2 className="h-4 w-4" />
+                Share
+              </button>
             </div>
           )}
+        </div>
+
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#A5D020] bg-[#FBFFF1] px-4 py-3 text-[14px] font-medium text-[#6B7280]">
+          <a
+            href={report.page_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-w-0 flex-1 truncate hover:text-[#1A1F2B]"
+            title={report.page_url}
+          >
+            {report.page_url}
+          </a>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard?.writeText(report.page_url)}
+            className="shrink-0 rounded-lg p-1.5 text-[#657083] transition-colors hover:bg-white hover:text-[#1A1F2B]"
+            aria-label="Copy report URL"
+          >
+            <Copy className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid overflow-hidden rounded-2xl border border-gray-200 bg-white md:grid-cols-4">
+          {[
+            {
+              icon: FileText,
+              label: 'Page Type',
+              value: report.page_type || 'Service Page',
+              tone: 'text-blue-500',
+            },
+            {
+              icon: Link2,
+              label: 'GBP URL Status',
+              value: report.gbp_url ? 'Connected' : 'Not provided',
+              tone: report.gbp_url ? 'text-emerald-500' : 'text-gray-500',
+            },
+            {
+              icon: CalendarDays,
+              label: 'Generated',
+              value: generatedAt || '—',
+              tone: 'text-[#1A1F2B]',
+            },
+            {
+              icon: BadgeInfo,
+              label: 'Report ID',
+              value: displayReportId,
+              tone: 'text-[#1A1F2B]',
+            },
+          ].map((item, index) => (
+            <div
+              key={item.label}
+              className={`flex items-center gap-4 px-5 py-5 ${
+                index > 0 ? 'border-t border-gray-200 md:border-l md:border-t-0' : ''
+              }`}
+            >
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 ${item.tone}`}>
+                <item.icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="mb-1.5 text-[12px] font-bold text-[#8A96A8]">{item.label}</p>
+                <p className={`truncate text-[12px] font-bold ${item.tone}`}>{item.value}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
       )}
@@ -899,38 +976,53 @@ export function ReportContent({
 
       {/* Score Cards */}
       {!showFailed && <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {scoreCards.map((card, i) => (
-          <div key={i} className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm h-48 relative">
-            {isLoading ? <LoadingState /> : (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <p className="text-[14px] font-bold text-gray-400 mb-4">{card.label}</p>
-                <h4 className="text-3xl font-black tracking-tighter mb-2" style={{ color: card.color }}>{card.val}</h4>
-                {card.desc && <p className="text-[11px]   tracking-widest line-clamp-3">{card.desc}</p>}
-              </motion.div>
-            )}
-          </div>
-        ))}
+        {scoreCards.map((card, i) => {
+          const Icon = card.icon;
+
+          return (
+            <div key={i} className="relative min-h-[235px] rounded-[22px] border border-gray-200 bg-white p-6 shadow-sm">
+              {isLoading ? <LoadingState /> : (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex h-full flex-col">
+                  <div className="mb-5 flex items-center gap-3">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${card.iconBg} ${card.iconColor}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <p className="text-[17px] font-bold leading-tight tracking-tight text-[#1A1F2B]">{card.label}</p>
+                      <BadgeInfo className="h-4 w-4 shrink-0 text-[#9AA6B8]" />
+                    </div>
+                  </div>
+
+                  <h4 className="mb-5 text-[32px] font-black leading-none tracking-tight" style={{ color: card.color }}>
+                    {card.val}
+                  </h4>
+
+                  {card.desc && (
+                    <p className="text-[15px] font-medium leading-7 text-[#465264]">
+                      {card.desc}
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </div>
+          );
+        })}
       </div>}
 
       {/* Sticky Tab Bar */}
       {!showFailed && <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
-        <div className="flex bg-[#F8F9FA] p-2 gap-1 overflow-x-auto rounded-[24px]">
+        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-5">
           {TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => scrollToSection(tab)}
-              className={`relative px-6 py-3.5 rounded-xl text-[14px] font-bold whitespace-nowrap transition-all ${
-                activeTab === tab ? 'text-[#1A212B]' : 'text-gray-400 hover:text-gray-600'
+              className={`relative rounded-xl px-4 py-3.5 text-[14px] font-bold whitespace-nowrap transition-all ${
+                activeTab === tab
+                  ? 'bg-[#1A1F2B] text-white shadow-sm'
+                  : 'bg-white text-gray-400 hover:bg-white hover:text-[#1A1F2B]'
               }`}
             >
               {tab}
-              {activeTab === tab && (
-                <motion.div
-                  layoutId="tab-bg"
-                  className="absolute inset-0 bg-white shadow-sm rounded-xl -z-10 border border-gray-100"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
             </button>
           ))}
         </div>

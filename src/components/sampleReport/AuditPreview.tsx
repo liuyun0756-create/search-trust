@@ -435,7 +435,7 @@ export function AuditPreview() {
             className="space-y-6"
           >
             {/* 状态简报卡片 */}
-            <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-100">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100">
               <ul className="space-y-3">
                 <li className="flex items-center gap-3 text-[14px] font-medium text-gray-600">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
@@ -453,7 +453,7 @@ export function AuditPreview() {
             </div>
 
             {/* 核心结论文字 */}
-            <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-100">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100">
               <p className="text-[15px] leading-relaxed text-gray-700 font-medium">
                 Your page meets the basic conditions to compete in local search, but it is not yet a high-trust local business page.
                 It has basic service relevance and local targeting, but still has clear shortcomings in entity trust, real-world connections, and standalone page value.
@@ -461,7 +461,7 @@ export function AuditPreview() {
             </div>
 
             {/* 可能遇到的问题列表 */}
-            <div className="bg-[#F8F9FA] rounded-2xl p-6 border border-gray-100">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100">
               <h4 className="text-[14px] font-bold text-gray-900 mb-4">What you are more likely experiencing:</h4>
               <ul className="space-y-3">
                 {['Page gets indexed, but rankings are unstable', 'Some keywords appear in results, but struggle to climb steadily', 'Heavily dependent on overall site authority', 'Easily outranked by competitors with stronger local signals'].map((text, i) => (
@@ -646,34 +646,31 @@ export function AuditPreview() {
   return (
     <section className="py-20 bg-white">
       <div className="container mx-auto max-w-6xl px-6">
-        <h2 className="text-center text-[32px] md:text-[40px] font-bold text-[#1A1F2B] mb-12">
+        <h2 className="text-center text-[32px] md:text-[40px] font-bold text-[#1A1F2B] mb-8">
           See What a Local Trust Audit Looks Like
         </h2>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* 左侧：固定信息栏 */}
-          <div className="lg:col-span-3 space-y-4">
-            {[
-              { label: 'URL', value: 'https://nxtlvlautospa.com/' },
-              { label: 'Type', value: 'Local Service Page' },
-              { label: 'GBP URL', value: 'https://nxtlvlautospa.com/' },
-            ].map((info, i) => (
-              <div key={i} className="bg-[#F3F4F6] rounded-xl p-5 border border-gray-100">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">{info.label}</p>
-                <p className="text-[13px] font-bold text-gray-800 break-all">{info.value}</p>
-              </div>
-            ))}
-          </div>
+        <div className="mb-8 grid grid-cols-1 gap-3 rounded-[22px] border border-gray-100 bg-gray-50/70 p-3 md:grid-cols-3">
+          {[
+            { label: 'URL', value: 'https://nxtlvlautospa.com/' },
+            { label: 'Page type', value: 'Local Service Page' },
+            { label: 'GBP URL', value: 'https://nxtlvlautospa.com/' },
+          ].map((info) => (
+            <div key={info.label} className="rounded-2xl bg-white px-5 py-4">
+              <p className="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">{info.label}</p>
+              <p className="break-all text-[13px] font-bold text-[#1A1F2B]">{info.value}</p>
+            </div>
+          ))}
+        </div>
 
-          {/* 右侧：交互标签页 */}
-          <div className="lg:col-span-9">
+        <div>
             {/* Tab 导航 */}
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 mb-6">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-5 py-3 rounded-xl text-[14px] font-bold transition-all ${
+                  className={`flex w-full items-center justify-center gap-2 px-4 py-3 rounded-xl text-[14px] font-bold transition-all ${
                     activeTab === tab.id 
                     ? 'bg-[#2D2E32] text-white shadow-lg shadow-gray-200' 
                     : 'bg-white border border-gray-100 text-gray-400 hover:border-gray-300'
@@ -691,7 +688,6 @@ export function AuditPreview() {
                 {renderContent()}
               </AnimatePresence>
             </div>
-          </div>
         </div>
       </div>
     </section>

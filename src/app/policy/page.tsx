@@ -381,9 +381,6 @@ export default function PolicyPage() {
           {/* Sidebar Navigation */}
           <aside className="lg:col-span-4 xl:col-span-3">
             <div className="sticky top-24 space-y-2">
-              <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#3B82F6] mb-6 ml-2">
-                Navigation
-              </p>
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -404,11 +401,14 @@ export default function PolicyPage() {
                       </div>
                       <span className="text-[15px] font-bold">{tab.label}</span>
                     </div>
-                    {isActive && (
-                      <motion.div layoutId="active-nav-indicator">
-                        <ChevronRight size={16} className="text-[#A5D020]" />
-                      </motion.div>
-                    )}
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center">
+                      <ChevronRight
+                        size={16}
+                        className={`transition-colors duration-200 ${
+                          isActive ? 'text-[#A5D020]' : 'text-gray-300 group-hover:text-gray-400'
+                        }`}
+                      />
+                    </div>
                   </button>
                 );
               })}

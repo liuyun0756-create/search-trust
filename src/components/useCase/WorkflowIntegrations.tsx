@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2 } from 'lucide-react';
 
 const workflowStages = [
   { stage: '上线前信任审查', desc: 'Before launch, check whether the page can earn trust.' },
@@ -48,20 +47,11 @@ export function WorkflowIntegrations() {
                   <div className="absolute left-[calc(100%-8px)] top-[23px] hidden h-px w-8 bg-[#DDE8B9] xl:block" />
                 )}
 
-                <div className={`relative h-full rounded-2xl border p-5 transition-all ${
-                  index === 4
-                    ? 'border-[#A5D020]/40 bg-[#F4F7E9] shadow-[0_16px_32px_rgba(165,208,32,0.12)]'
-                    : 'border-gray-100 bg-[#F8F9FA]'
-                }`}>
+                <div className="relative h-full rounded-2xl border border-gray-100 bg-[#F8F9FA] p-5 transition-all">
                   <div className="mb-5 flex items-center gap-3">
-                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[13px] font-black ${
-                      index === 4
-                        ? 'bg-[#1A1F2B] text-white'
-                        : 'bg-white text-[#86B800] ring-1 ring-[#A5D020]/20'
-                    }`}>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[13px] font-black text-[#86B800] ring-1 ring-[#A5D020]/20">
                       {String(index + 1).padStart(2, '0')}
                     </span>
-                    {index === 4 && <CheckCircle2 size={18} className="text-[#86B800]" />}
                   </div>
 
                   <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">

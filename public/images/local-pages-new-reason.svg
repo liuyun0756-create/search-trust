@@ -1,0 +1,149 @@
+<svg width="1180" height="1420" viewBox="0 0 1180 1420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1180" height="1420" fill="#FAFCF5"/>
+  <defs>
+    <filter id="card" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#142033" flood-opacity="0.09"/>
+    </filter>
+    <linearGradient id="centerGlow" x1="330" y1="420" x2="850" y2="890" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBFFF1"/>
+      <stop offset="1" stop-color="#F3F9E7"/>
+    </linearGradient>
+    <linearGradient id="greenIcon" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#B7E52A"/>
+      <stop offset="1" stop-color="#78B800"/>
+    </linearGradient>
+    <linearGradient id="orangeIcon" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FDBA35"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="214" cy="192" r="170" fill="#A5D020" opacity="0.06"/>
+  <circle cx="905" cy="228" r="190" fill="#A5D020" opacity="0.05"/>
+  <circle cx="568" cy="708" r="380" fill="#A5D020" opacity="0.06"/>
+
+  <g stroke="#A5D020" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 16" opacity="0.68">
+    <path d="M508 423C470 344 426 281 375 234"/>
+    <path d="M681 424C723 334 773 270 833 232"/>
+    <path d="M384 650H324"/>
+    <path d="M795 650H856"/>
+    <path d="M484 882C420 948 357 1005 296 1052"/>
+    <path d="M587 904V1032"/>
+    <path d="M698 882C762 951 826 1004 890 1042"/>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="90" y="96" width="452" height="242" rx="34" fill="white"/>
+    <circle cx="162" cy="166" r="42" fill="#EFF7D7"/>
+    <path d="M148 181C158 176 164 165 164 151C169 163 177 171 191 173C179 177 170 185 168 199C163 187 158 181 148 181Z" stroke="#86B800" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M188 138V154M180 146H196" stroke="#86B800" stroke-width="5" stroke-linecap="round"/>
+    <text x="220" y="151" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800">AI era:</text>
+    <text x="220" y="193" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800">stricter ranking review</text>
+    <text x="220" y="245" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500">Higher bar for quality,</text>
+    <text x="220" y="280" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500">relevance, and local</text>
+    <text x="220" y="315" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500">trustworthiness.</text>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="595" y="96" width="496" height="242" rx="34" fill="white"/>
+    <circle cx="672" cy="166" r="42" fill="#EFF7D7"/>
+    <rect x="654" y="143" width="36" height="48" rx="5" stroke="#86B800" stroke-width="6"/>
+    <path d="M665 158H679M665 172H679M665 186H679" stroke="#86B800" stroke-width="5" stroke-linecap="round"/>
+    <text x="740" y="151" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800">Content alone</text>
+    <text x="740" y="193" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800">is not enough</text>
+    <text x="740" y="245" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500">Helpful content matters,</text>
+    <text x="740" y="280" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500">but it no longer guarantees</text>
+    <text x="740" y="315" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500">visibility.</text>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="374" y="424" width="432" height="456" rx="34" fill="url(#centerGlow)" stroke="#D1E9A5" stroke-width="2"/>
+    <path d="M590 465L635 487V536C635 573 614 598 590 608C566 598 545 573 545 536V487L590 465Z" fill="url(#greenIcon)"/>
+    <path d="M566 536L584 554L616 516" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="590" y="602" text-anchor="middle" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="43" font-weight="900">Local pages</text>
+    <text x="590" y="660" text-anchor="middle" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="43" font-weight="900">fail for a new</text>
+    <text x="590" y="718" text-anchor="middle" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="43" font-weight="900">reason</text>
+    <text x="590" y="782" text-anchor="middle" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">It is not just the content -</text>
+    <text x="590" y="817" text-anchor="middle" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">Google is stricter about</text>
+    <text x="590" y="852" text-anchor="middle" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">trust, review, and ranking</text>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="60" y="424" width="244" height="410" rx="34" fill="white"/>
+    <circle cx="178" cy="498" r="42" fill="#EFF7D7"/>
+    <path d="M178 462L216 480V520C216 552 197 573 178 582C159 573 140 552 140 520V480L178 462Z" stroke="#86B800" stroke-width="7" fill="none"/>
+    <path d="M159 518L174 533L199 502" stroke="#86B800" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="100" y="616" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="850">Trust signals</text>
+    <text x="100" y="650" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="850">matter more</text>
+    <path d="M92 682H272" stroke="#E3E7EC" stroke-width="2"/>
+    <g fill="none" stroke="#86B800" stroke-width="4">
+      <circle cx="102" cy="726" r="12"/><path d="M96 726L101 731L110 720" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="102" cy="768" r="12"/><path d="M96 768L101 773L110 762" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="102" cy="810" r="12"/><path d="M96 810L101 815L110 804" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="130" y="734" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">Reviews</text>
+    <text x="130" y="776" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">Cite mentions</text>
+    <text x="130" y="818" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">Ratings</text>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="836" y="424" width="284" height="410" rx="34" fill="white"/>
+    <circle cx="960" cy="498" r="42" fill="#FFF3D7"/>
+    <rect x="940" y="474" width="40" height="48" rx="5" stroke="#F59E0B" stroke-width="6"/>
+    <path d="M951 489H969M951 503H969M951 517H969" stroke="#F59E0B" stroke-width="5" stroke-linecap="round"/>
+    <text x="868" y="617" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="850">Template pages</text>
+    <text x="868" y="651" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="850">are scrutinized</text>
+    <path d="M868 682H1060" stroke="#E3E7EC" stroke-width="2"/>
+    <text x="868" y="734" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">Doorway-like and</text>
+    <text x="868" y="772" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">generic pages face</text>
+    <text x="868" y="810" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="500">more risk.</text>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="60" y="930" width="322" height="314" rx="34" fill="white"/>
+    <circle cx="144" cy="1006" r="42" fill="#EFF7D7"/>
+    <path d="M112 1040H176M122 1040V1000H148V1040M154 1040V980H182V1040M132 1000V984H150M164 980V964H182" stroke="#86B800" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="182" y="1008" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="850">Entity</text>
+    <text x="182" y="1045" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="850">consistency</text>
+    <path d="M182 1074H320" stroke="#E3E7EC" stroke-width="2"/>
+    <text x="96" y="1125" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">Name, address, phone,</text>
+    <text x="96" y="1160" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">categories, and details</text>
+    <text x="96" y="1195" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">must be consistent</text>
+    <text x="96" y="1230" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">across the web.</text>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="414" y="930" width="322" height="314" rx="34" fill="white"/>
+    <circle cx="488" cy="1006" r="42" fill="#EFF7D7"/>
+    <path d="M488 965C515 965 532 985 532 1008C532 1039 488 1075 488 1075C488 1075 444 1039 444 1008C444 985 461 965 488 965Z" stroke="#86B800" stroke-width="7" fill="none"/>
+    <circle cx="488" cy="1007" r="13" stroke="#86B800" stroke-width="7"/>
+    <text x="548" y="1027" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="850">Real local proof</text>
+    <path d="M548 1074H690" stroke="#E3E7EC" stroke-width="2"/>
+    <text x="452" y="1125" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">Photos, local mentions,</text>
+    <text x="452" y="1160" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">service areas, and real</text>
+    <text x="452" y="1195" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">customer feedback</text>
+    <text x="452" y="1230" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">build credibility.</text>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="768" y="930" width="352" height="314" rx="34" fill="white"/>
+    <circle cx="850" cy="1006" r="42" fill="#FFF3D7"/>
+    <circle cx="840" cy="994" r="24" stroke="#F59E0B" stroke-width="7"/>
+    <path d="M858 1012L884 1038" stroke="#F59E0B" stroke-width="7" stroke-linecap="round"/>
+    <text x="912" y="1008" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="850">Google is more</text>
+    <text x="912" y="1045" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="850">cautious</text>
+    <path d="M912 1074H1066" stroke="#E3E7EC" stroke-width="2"/>
+    <text x="806" y="1125" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">More checks, better</text>
+    <text x="806" y="1160" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">systems, and lower</text>
+    <text x="806" y="1195" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">tolerance for low-value</text>
+    <text x="806" y="1230" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">or manipulative pages.</text>
+  </g>
+
+  <g filter="url(#card)">
+    <rect x="94" y="1292" width="992" height="86" rx="22" fill="#FAFDF2" stroke="#DDEFB7"/>
+    <circle cx="158" cy="1335" r="31" fill="url(#greenIcon)"/>
+    <path d="M142 1348V1327M158 1348V1316M174 1348V1304M137 1348H180M140 1328L155 1318L168 1325L180 1306" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="224" y="1328" fill="#151C2C" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="850">Believability over scale</text>
+    <text x="224" y="1362" fill="#536073" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="500">Smaller, trustworthy, well-documented sites win over large, generic ones.</text>
+  </g>
+</svg>

@@ -13,13 +13,13 @@ const SAMPLE_REPORT: Report = {
   task_id: null,
   status: "paid_full",
   trust_status: JSON.stringify({ label: "Trust Status", value: "Medium-Low", description: "The page has some local relevance, but its trust structure is still incomplete and ranking stability remains weak." }),
-  ranking_potential: JSON.stringify({ label: "Ranking Potential", value: "High", description: "The page has a solid foundation and, with further optimization, can move into a stronger competitive tier." }),
+  ranking_potential: JSON.stringify({ label: "Ranking Potential", value: "Low potential", description: "The page has a foundation to improve from, but current trust gaps limit its competitive upside." }),
   risk_level: JSON.stringify({ label: "Risk Level", value: "Medium", description: "The page has some weaknesses, but it still retains room for repair and optimization." }),
   generated_at: "2026-05-15 15:05",
   module_1_overview: {
     primary_blocking_layer: "Entity Presence (L0-A)",
-    current_status: "Medium",
-    ranking_potential: "Strong competitive potential",
+    current_status: "Medium-Low",
+    ranking_potential: "Low potential",
     risk_level: "Medium-High risk",
     main_conclusion:
       "Your page qualifies for local search competition, but is not yet a high-trust local business page.",
@@ -125,10 +125,6 @@ export function SampleReportContent() {
     <section className="bg-[#F8F9FA] py-20">
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-gray-100 shadow-sm mb-6">
-            <div className="w-2 h-2 rounded-full bg-[#A5D020]" />
-            <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">Sample Report</span>
-          </div>
           <h2 className="text-[36px] font-bold text-[#1A212B] tracking-tighter mb-3">
             Full Trust Audit Example
           </h2>

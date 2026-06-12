@@ -6,16 +6,8 @@ import { CheckCircle2, XCircle, Info, ChevronRight } from 'lucide-react';
 
 const layerDetails = [
    {
-    id: "L0-A",
-    title: "Qualification",
-    whatItAnswers: "Does this page qualify to enter the evaluation process, or should it not be competing at all?",
-    criteria: ["Does the page clearly target a real search intent?", "Is it a meaningful local page rather than a filler expansion page?", "Is there a clear service / location / entity relationship?"],
-    failures: ["The page intent is vague or ambiguous", "The service-city relationship does not hold", "It reads more like a bulk placeholder than a real entry page"],
-    googleInterpretation: "This page may not represent a distinct local destination worth surfacing.",
-  },
-   {
-    id: "L0-B",
-    title: "Qualification",
+    id: "L0",
+    title: "Relevance",
     whatItAnswers: "Does this page qualify to enter the evaluation process, or should it not be competing at all?",
     criteria: ["Does the page clearly target a real search intent?", "Is it a meaningful local page rather than a filler expansion page?", "Is there a clear service / location / entity relationship?"],
     failures: ["The page intent is vague or ambiguous", "The service-city relationship does not hold", "It reads more like a bulk placeholder than a real entry page"],
@@ -23,7 +15,7 @@ const layerDetails = [
   },
   {
     id: "L1",
-    title: "Specificity",
+    title: "Entity Clarity",
     whatItAnswers: "Is the page specific enough, or could any city name be swapped in?",
     criteria: ["Does it include local details?", "Does it contain service context that cannot be easily replicated?", "Does it avoid generic city-template language?"],
     failures: ["Too much generic description", "Content is reusable with a simple city-name swap", "Headers, paragraphs, and FAQs are all highly templated"],
@@ -31,7 +23,7 @@ const layerDetails = [
   },
   {
     id: "L2",
-    title: "Real-World Anchors",
+    title: "Proof Signals",
     whatItAnswers: "Is the page grounded in real-world evidence?",
     criteria: ["Specific locations", "Service scenarios", "Operational timelines", "Coverage area logic", "Connections to the real local environment"],
     failures: ["The page only says 'we serve this city'", "No traces of real locations, scenarios, or timelines", "Lacks operational realism"],
@@ -39,7 +31,7 @@ const layerDetails = [
   },
   {
     id: "L3",
-    title: "Responsibility",
+    title: "Local Fit",
     whatItAnswers: "Does the page reflect a structure where a real business takes responsibility?",
     criteria: ["Clear business identity", "Operational legitimacy", "Contact / ownership / responsibility cues", "Service accountability signals"],
     failures: ["All claims, no accountability", "No clear business responsibility structure", "The page looks like a lead-gen shell"],
@@ -47,7 +39,7 @@ const layerDetails = [
   },
   {
     id: "L4",
-    title: "Standalone Value",
+    title: "Structural Trust",
     whatItAnswers: "Does this page deserve to exist on its own?",
     criteria: ["Is it just a slight rewrite of the main page?", "If this page were removed, what would users lose?", "Does it provide independent value?"],
     failures: ["The page merely repeats existing site content", "No unique purpose or unique information", "Very low standalone visit value"],
@@ -55,7 +47,7 @@ const layerDetails = [
   },
   {
     id: "L5",
-    title: "Era Fit",
+    title: "Standalone Value",
     whatItAnswers: "Is the page adapted to the current search environment?",
     criteria: ["Is it still stuck in old-school SEO template thinking?", "Does it account for AI overviews, citations, and entity understanding?", "Is it structured clearly enough to be explainable and extractable?"],
     failures: ["Outdated structure, keyword-stuffed, lacking extractable information", "Not suitable for AI system citation", "Unfriendly to modern search parsing methods"],

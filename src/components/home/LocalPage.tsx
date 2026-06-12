@@ -43,27 +43,27 @@ export function LocalPage() {
         </div>
 
         {/* 左图右内容 */}
-        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-16 max-w-7xl mx-auto items-stretch px-4">
-          <div className="min-h-[420px] rounded-[28px] bg-white relative overflow-hidden shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-gray-100">
+        <div className="grid grid-cols-1 lg:grid-cols-[500px_minmax(0,1fr)] gap-12 lg:gap-16 max-w-7xl mx-auto items-stretch px-4">
+          <div className="h-[500px] w-full rounded-[28px] bg-[#FAFCF5] relative overflow-hidden shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-gray-100">
             <img
-              src="/images/local-trust-problem-summary.svg"
+              src="/images/local-pages-new-reason.svg"
               alt="Local page trust problem summary"
-              className="h-full w-full object-cover object-left-top"
+              className="h-full w-full object-contain"
             />
           </div>
 
-          <div className="flex flex-col justify-between gap-9 py-2">
+          <div className="flex h-auto flex-col justify-between gap-6 py-1 lg:h-[500px]">
             {features.map((item) => (
               <div key={item.title}>
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F0F5E0] text-[#7FA40F] shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-                    <item.icon size={19} strokeWidth={1.8} />
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F0F5E0] text-[#7FA40F] shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                    <item.icon size={17} strokeWidth={1.8} />
                   </div>
-                  <h3 className="text-[26px] md:text-[30px] font-bold text-[#111827] tracking-tight">
+                  <h3 className="text-[24px] md:text-[26px] font-bold text-[#111827] tracking-tight">
                     {item.title}
                   </h3>
                 </div>
-                <p className="text-[18px] md:text-[20px] leading-relaxed text-[#111827] font-normal">
+                <p className="text-[16px] md:text-[17px] leading-relaxed text-[#111827] font-normal">
                   {item.description}
                 </p>
               </div>

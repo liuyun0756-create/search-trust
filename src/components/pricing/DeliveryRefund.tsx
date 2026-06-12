@@ -48,7 +48,7 @@ export function DeliveryRefund() {
         </div>
 
         {/* 2. Refund Policy Section: 图片左 + 文字右 */}
-        <div className="flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-10">
+        <div className="flex flex-col lg:min-h-[400px] lg:flex-row-reverse items-center gap-12 lg:gap-10">
           <motion.div 
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -84,7 +84,7 @@ export function DeliveryRefund() {
             viewport={{ once: true }}
             className="flex-1 w-full"
           >
-            <div className="w-full max-w-[760px] aspect-[960/492] rounded-[32px] overflow-hidden">
+            <div className="w-full max-w-[598px] h-[273px] rounded-[32px] overflow-hidden">
               <img src="/images/refund-bg.png" alt="Refund Policy" className="w-full h-full object-cover" />
             </div>
           </motion.div>

@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CTABanner } from "@/components/home/CTABanner";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AuditModalProvider } from "@/components/common/AuditModalProvider";
+import { FooterPreCTA } from "@/components/layout/FooterPreCTA";
 
 
 const inter = Inter({
@@ -49,6 +50,7 @@ export default function RootLayout({
           <Header />
           <main>{children}</main>
           {/* <Footer /> */}
+          <FooterPreCTA />
           <CTABanner />
           </AuditModalProvider>
         </ClerkProvider>

@@ -61,7 +61,7 @@ export function FAQAccordion({
                   openIndex === index ? 'opacity-100' : 'opacity-0'
                 }`} />
                 <button
-                  onClick={() => setOpenIndex(openIndex === index ? -1 : index)}
+                  onClick={() => setOpenIndex(index)}
                   className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-50/50 transition-colors"
                 >
                   <span className="text-[16px] font-bold text-[#1A1F2B] pr-4">
@@ -74,10 +74,10 @@ export function FAQAccordion({
                   </div>
                 </button>
 
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                <div className={`overflow-hidden transition-all duration-500 ease-out ${
                   openIndex === index ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
                 }`}>
-                  <div className="px-6 pb-6">
+                  <div className="min-h-[46px] px-6 pb-6">
                     <p className="text-[14px] leading-relaxed text-gray-500 font-medium">
                       {faq.answer}
                     </p>

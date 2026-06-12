@@ -54,7 +54,7 @@ const tabs = [
     id: 'client-reporting',
     icon: BarChart3,
     label: 'Diagnose indexed-but-stuck pages',
-    shortLabel: 'Diagnose indexed-but-stuck pages',
+    shortLabel: 'Diagnose indexed-\nbut-stuck pages',
     description:
       'The page is indexed, technically fine, and maybe even has some links — but it still does not gain meaningful rankings or local visibility.',
     currentPractice: [
@@ -88,7 +88,7 @@ const tabs = [
     id: 'ai-review',
     icon: Bot,
     label: 'Review AI-generated city pages at scale',
-    shortLabel: 'Review AI-generated city pages at scale',
+    shortLabel: 'Review AI-generated\ncity pages at scale',
     description:
       'You can now generate dozens or hundreds of city pages quickly — but speed does not tell you which pages look believable and which look like doorway-style expansion.',
     audiences: ['Affiliate marketers', 'SEO agencies', 'Scaled content teams', 'Lead-gen operators'],
@@ -123,7 +123,7 @@ const tabs = [
     id: 'multi-location',
     icon: MapPinCheckInside,
     label: 'Improve client reporting for agencies',
-    shortLabel: 'Improve client reporting for agencies',
+    shortLabel: 'Improve client reporting\nfor agencies',
     description:
       'You know a local page is underperforming because it feels weak, templated, or unconvincing — but it is hard to explain that in a client-friendly way.',
     currentPractice: [
@@ -156,7 +156,7 @@ const tabs = [
     id: 'doorway-risk',
     icon: ShieldAlert,
     label: 'Validate multi-location page quality',
-    shortLabel: 'Validate multi-location page quality',
+    shortLabel: 'Validate multi-location\npage quality',
     description:
       'You know a local page is underperforming because it feels weak, templated, or unconvincing — but it is hard to explain that in a client-friendly way.',
     audiences: ['Multi-location businesses', 'Franchise brands', 'Regional service businesses'],
@@ -242,19 +242,19 @@ export function PrimaryUseCasesOverview() {
         </div>
 
         {/* Tab buttons */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
+        <div className="grid grid-cols-1 gap-3 mb-12 sm:grid-cols-2 lg:grid-cols-6">
           {tabs.map((tab, index) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(index)}
-              className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-[14px] font-bold transition-all ${
+              className={`flex h-[64px] w-full items-center justify-center gap-2 rounded-xl px-3 py-3 text-center text-[11px] font-bold transition-all ${
                 activeTab === index
                   ? 'bg-[#1A1F2B] text-white shadow-lg'
                   : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-gray-200'
               }`}
             >
-              <tab.icon size={16} />
-              <span className="hidden whitespace-pre-line text-left leading-tight sm:inline">{tab.shortLabel}</span>
+              <tab.icon size={16} className="shrink-0" />
+              <span className="whitespace-pre-line leading-tight">{tab.shortLabel}</span>
             </button>
           ))}
         </div>
@@ -274,21 +274,9 @@ export function PrimaryUseCasesOverview() {
               <h3 className="text-[24px] md:text-[28px] font-bold text-[#1A1F2B] mb-4">
                 {current.label}
               </h3>
-              <p className="text-[16px] text-[#6B7280] leading-relaxed max-w-3xl font-medium">
+              <p className="text-[16px] text-[#6B7280] leading-relaxed max-w-[1100px] font-medium">
                 {current.description}
               </p>
-              {hasExpandedUseCase && (
-                <div className="mt-6 flex flex-wrap gap-3">
-                  {audiences.map((audience) => (
-                    <span
-                      key={audience}
-                      className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-300 bg-white/70 px-6 text-[14px] font-medium text-[#374151]"
-                    >
-                      {audience}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             {hasExpandedUseCase ? (
@@ -308,15 +296,28 @@ export function PrimaryUseCasesOverview() {
                       </div>
                     )}
 
-                    <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
-                      <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
-                        How SearchTrust helps
-                      </h4>
-                      <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                        {current.howHelps.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
+                    <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
+                      <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
+                        <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                          Best for
+                        </h4>
+                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                          {audiences.map((audience) => (
+                            <li key={audience}>{audience}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
+                        <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                          How SearchTrust helps
+                        </h4>
+                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                          {current.howHelps.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
 

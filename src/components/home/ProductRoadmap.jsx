@@ -60,7 +60,7 @@ export function ProductRoadmap() {
               onClick={() => setActiveIndex(index)}
               className={`relative overflow-hidden rounded-[24px] p-8 min-h-[320px] flex flex-col justify-end border cursor-pointer ${
                 activeIndex === index
-                ? 'bg-[#1A1F2B] border-[#1A1F2B] shadow-[0_18px_48px_rgba(15,23,42,0.18)]'
+                ? 'bg-[#F2F8DE] border-[#A5D020]/60 shadow-[0_18px_48px_rgba(165,208,32,0.18)]'
                 : 'bg-[#F8F9FA] border-gray-100 hover:shadow-lg hover:border-gray-200'
               } focus:outline-none`}
             >
@@ -83,7 +83,7 @@ export function ProductRoadmap() {
               <div className="absolute top-8 left-8">
                 <span className={`px-4 py-1.5 rounded-full text-[12px] font-bold tracking-wide ${
                   activeIndex === index
-                  ? 'bg-[#A5D020] text-[#1A1F2B]'
+                  ? 'bg-white text-[#6E9800] ring-1 ring-[#A5D020]/30'
                   : 'bg-[#A5D020] text-white'
                 }`}>
                   {item.phase}
@@ -93,12 +93,12 @@ export function ProductRoadmap() {
               {/* 底部文字内容 */}
               <div className="relative z-10">
                 <h3 className={`text-[20px] font-bold mb-3 leading-tight ${
-                  activeIndex === index ? 'text-white' : 'text-[#1A1F2B]'
+                  activeIndex === index ? 'text-[#1A1F2B]' : 'text-[#1A1F2B]'
                 }`}>
                   {item.title}
                 </h3>
                 <p className={`text-[14px] leading-relaxed font-medium ${
-                  activeIndex === index ? 'text-gray-400' : 'text-gray-500'
+                  activeIndex === index ? 'text-[#526236]' : 'text-gray-500'
                 }`}>
                   {item.desc}
                 </p>
