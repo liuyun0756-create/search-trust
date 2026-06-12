@@ -96,7 +96,8 @@ function ReportsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedReportId = searchParams.get("report_id");
-  const isPaymentReturn = searchParams.get("payment") === "success";
+  const paymentReturnParam = searchParams.get("payment");
+  const isPaymentReturn = paymentReturnParam === "success" || paymentReturnParam === "return";
   const { isSignedIn, isLoaded } = useUser();
   const { refreshCredits } = useAuditModal();
 
@@ -120,6 +121,7 @@ function ReportsPage() {
   const [sseActive, setSseActive] = useState(false);
   const [sseProgress, setSseProgress] = useState<{ stage?: string; percent?: number; message?: string } | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentReturnLoading, setPaymentReturnLoading] = useState(false);
   const processedPaymentRef = useRef<string | null>(null);
   const requestedMetaRef = useRef<Set<string>>(new Set());
@@ -129,7 +131,8 @@ function ReportsPage() {
 
   // Handle payment success redirect — auto-submit audit if form data is present
   useEffect(() => {
-    if (searchParams.get("payment") !== "success") return;
+    const paymentParam = searchParams.get("payment");
+    if (paymentParam !== "success" && paymentParam !== "return") return;
     sessionStorage.removeItem(PENDING_AUDIT_STORAGE_KEY);
     // Wait for Clerk session to be ready after external redirect
     if (!isLoaded) return;
@@ -138,8 +141,17 @@ function ReportsPage() {
     const auditPageType = searchParams.get("audit_page_type");
     const auditGbpUrl = searchParams.get("audit_gbp_url");
     const paymentId = searchParams.get("payment_id");
+    const paymentStatus = searchParams.get("status");
 
-    console.log("[PaymentReturn]", { auditUrl, auditPageType, auditGbpUrl, paymentId, isSignedIn, isLoaded });
+    console.log("[PaymentReturn]", { auditUrl, auditPageType, auditGbpUrl, paymentId, paymentStatus, isSignedIn, isLoaded });
+
+    if (paymentStatus && paymentStatus !== "succeeded") {
+      setPaymentReturnLoading(false);
+      setPaymentError("Payment was not completed. No report was generated.");
+      router.replace("/pricing?payment=failed");
+      const timer = setTimeout(() => setPaymentError(null), 5000);
+      return () => clearTimeout(timer);
+    }
 
     if (paymentId && processedPaymentRef.current === paymentId) return;
     if (paymentId) processedPaymentRef.current = paymentId;
@@ -157,6 +169,12 @@ function ReportsPage() {
 
           if (!confirmRes.ok) {
             const err = await confirmRes.json().catch(() => ({}));
+            if (err.status && err.status !== "succeeded") {
+              setPaymentError("Payment was not completed. No report was generated.");
+              router.replace("/pricing?payment=failed");
+              setTimeout(() => setPaymentError(null), 5000);
+              return;
+            }
             throw new Error(err.error || "Payment could not be confirmed yet");
           }
 
@@ -172,10 +190,9 @@ function ReportsPage() {
         } catch (err) {
           console.error("Auto-submit after payment failed:", err);
           const msg = err instanceof Error ? err.message : "Unknown error";
-          alert("Payment succeeded but audit failed to start: " + msg);
-          router.replace("/reports");
-          setPaymentSuccess(true);
-          setTimeout(() => setPaymentSuccess(false), 4000);
+          setPaymentError(`Payment could not start the report: ${msg}`);
+          router.replace("/pricing?payment=failed");
+          setTimeout(() => setPaymentError(null), 5000);
         } finally {
           setPaymentReturnLoading(false);
         }
@@ -183,9 +200,9 @@ function ReportsPage() {
     } else {
       // Payment returned without form data or not signed in
       console.warn("[PaymentReturn] Missing data or not signed in, showing toast only");
-      setPaymentSuccess(true);
-      const timer = setTimeout(() => setPaymentSuccess(false), 4000);
-      router.replace("/reports");
+      setPaymentError("Payment return was incomplete. No report was generated.");
+      const timer = setTimeout(() => setPaymentError(null), 5000);
+      router.replace("/pricing?payment=failed");
       return () => clearTimeout(timer);
     }
   }, [searchParams, isLoaded, isSignedIn, refreshCredits, router]);
@@ -536,6 +553,16 @@ function ReportsPage() {
           >
             <CheckCircle size={16} className="text-[#A5D020]" />
             <span className="text-sm font-bold">Payment successful! Credit added.</span>
+          </motion.div>
+        )}
+        {paymentError && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-red-600 text-white px-5 py-3 rounded-full shadow-lg"
+          >
+            <span className="text-sm font-bold">{paymentError}</span>
           </motion.div>
         )}
       </AnimatePresence>

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const formData: { url?: string; pageType?: string; gbpUrl?: string } = body.formData || {};
 
     // Encode form data into return_url so we can auto-submit after payment
-    const returnParams = new URLSearchParams({ payment: "success" });
+    const returnParams = new URLSearchParams({ payment: "return" });
     if (formData.url) returnParams.set("audit_url", formData.url);
     if (formData.pageType) returnParams.set("audit_page_type", formData.pageType);
     if (formData.gbpUrl) returnParams.set("audit_gbp_url", formData.gbpUrl);

@@ -3,6 +3,7 @@ import { WhoThisIsFor } from "@/components/pricing/WhoThisIsFor";
 import { BillingDetails } from "@/components/pricing/BillingDetails";
 import { DeliveryRefund } from "@/components/pricing/DeliveryRefund";
 import { PricingCTA } from "@/components/pricing/PricingCTA";
+import { PricingPaymentNotice } from "@/components/pricing/PricingPaymentNotice";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 
 const pricingFAQData = [
@@ -33,6 +34,7 @@ export const metadata = {
 export default function PricingPage() {
   return (
     <div className="bg-[#F8F9FB] min-h-screen selection:bg-[#A5D020]/30">
+      <PricingPaymentNotice />
       <PricingHero />
       <WhoThisIsFor />
       <BillingDetails />
