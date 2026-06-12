@@ -24,7 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 28,
+    padding: 26,
     fontSize: 10,
     color: "#1A212B",
     fontFamily: "Helvetica",
@@ -33,18 +33,18 @@ const styles = StyleSheet.create({
   headerCard: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E8EAEE",
-    borderRadius: 18,
-    padding: 22,
-    marginBottom: 18,
+    borderColor: "#EEF0F3",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 700,
     letterSpacing: -0.4,
   },
@@ -60,36 +60,51 @@ const styles = StyleSheet.create({
   },
   pageUrl: {
     color: "#1D73FF",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 700,
+  },
+  urlBox: {
+    borderWidth: 1,
+    borderColor: "#A5D020",
+    backgroundColor: "#FBFFF1",
+    borderRadius: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
     marginBottom: 14,
   },
-  metaRow: {
+  infoGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 10,
-  },
-  pill: {
-    backgroundColor: "#F5F7FA",
-    color: "#657083",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
     borderRadius: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 11,
-    fontSize: 9,
-    fontWeight: 700,
-    marginRight: 8,
-    marginBottom: 8,
+    overflow: "hidden",
   },
-  gbpBox: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 12,
-    padding: 12,
+  infoItem: {
+    width: "25%",
+    padding: 10,
+    borderRightWidth: 1,
+    borderRightColor: "#E5E7EB",
   },
-  eyebrow: {
-    color: "#6B7280",
-    fontSize: 9,
+  infoItemLast: {
+    borderRightWidth: 0,
+  },
+  infoIcon: {
+    width: 18,
+    height: 18,
+    borderRadius: 6,
+    backgroundColor: "#EFF6FF",
+    marginBottom: 7,
+  },
+  infoLabel: {
+    color: "#8A96A8",
+    fontSize: 7.5,
     fontWeight: 700,
     marginBottom: 4,
+  },
+  infoValue: {
+    color: "#1A212B",
+    fontSize: 8.5,
+    fontWeight: 700,
   },
   bodyText: {
     color: "#4B5563",
@@ -103,41 +118,71 @@ const styles = StyleSheet.create({
   scoreCard: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E8EAEE",
+    borderColor: "#E5E7EB",
     borderRadius: 18,
-    padding: 16,
-    width: "31.8%",
-    minHeight: 108,
-    marginRight: 9,
+    padding: 13,
+    width: "32%",
+    minHeight: 112,
+    marginRight: 7,
+  },
+  scoreTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 9,
+  },
+  scoreIcon: {
+    width: 18,
+    height: 18,
+    borderRadius: 8,
+    marginRight: 7,
   },
   scoreLabel: {
-    color: "#9CA3AF",
-    fontSize: 10,
+    color: "#1A1F2B",
+    fontSize: 9,
     fontWeight: 700,
-    marginBottom: 12,
+    flex: 1,
   },
   scoreValue: {
-    fontSize: 21,
+    fontSize: 16,
     fontWeight: 700,
     marginBottom: 8,
+    lineHeight: 1.15,
   },
   scoreDesc: {
-    color: "#4B5563",
-    fontSize: 8.5,
-    lineHeight: 1.35,
+    color: "#465264",
+    fontSize: 8,
+    lineHeight: 1.45,
   },
   section: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E8EAEE",
-    borderRadius: 18,
-    padding: 22,
-    marginBottom: 16,
+    borderColor: "#E5E7EB",
+    borderRadius: 20,
+    marginBottom: 18,
+    overflow: "hidden",
+  },
+  sectionHeader: {
+    backgroundColor: "#F8FAF5",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEF0F3",
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sectionAccent: {
+    width: 5,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: "#A5D020",
+    marginRight: 10,
+  },
+  sectionBody: {
+    padding: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 700,
-    marginBottom: 14,
   },
   statement: {
     backgroundColor: "#F3F8FF",
@@ -205,6 +250,42 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
+  },
+  stepCard: {
+    borderWidth: 1,
+    borderColor: "#E4EDD2",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
+  },
+  stepHeader: {
+    borderWidth: 1,
+    borderColor: "#E8F1D6",
+    backgroundColor: "#F8FAF2",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  stepBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 24,
+    backgroundColor: "#A5D020",
+    color: "#1A212B",
+    fontSize: 10,
+    fontWeight: 700,
+    textAlign: "center",
+    paddingTop: 6,
+    marginRight: 9,
+  },
+  stepEyebrow: {
+    color: "#8BAA2B",
+    fontSize: 7.5,
+    fontWeight: 700,
+    marginBottom: 3,
   },
   blockHeader: {
     flexDirection: "row",
@@ -369,6 +450,47 @@ function NumberedBlock({
   );
 }
 
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionAccent} />
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
+      <View style={styles.sectionBody}>{children}</View>
+    </View>
+  );
+}
+
+function StepCard({
+  number,
+  title,
+  children,
+}: {
+  number: number;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.stepCard}>
+      <View style={styles.stepHeader}>
+        <Text style={styles.stepBadge}>{number}</Text>
+        <View>
+          <Text style={styles.stepEyebrow}>STEP {number}</Text>
+          <Text style={styles.blockTitle}>{title}</Text>
+        </View>
+      </View>
+      {children}
+    </View>
+  );
+}
+
 function GenericObject({ data }: { data: Record<string, unknown> }) {
   return (
     <View>
@@ -403,8 +525,7 @@ function Module1({ data }: { data: Record<string, any> }) {
     ["Risk Level", data.risk_level],
   ];
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Executive Summary</Text>
+    <Section title="Executive Summary">
       <Field label="Primary Blocking Layer" value={data.primary_blocking_layer} />
       {data.main_conclusion && (
         <View style={styles.statement}>
@@ -419,7 +540,7 @@ function Module1({ data }: { data: Record<string, any> }) {
         </View>
       ))}
       <Field label="Explanation" value={data.explanation} />
-    </View>
+    </Section>
   );
 }
 
@@ -431,15 +552,14 @@ function Module2({ data }: { data: Record<string, any> }) {
     ["Competitive Interpretation", data.competitive_interpretation],
   ];
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Page Level</Text>
+    <Section title="Page Level">
       <Field label="Current Assessment" value={data.current_assessment} />
       <View style={styles.cardGrid}>
         {cards.map(([label, value]) => value && (
           <MiniCard key={label} title={label}>{text(value)}</MiniCard>
         ))}
       </View>
-    </View>
+    </Section>
   );
 }
 
@@ -447,8 +567,7 @@ function Module3({ data }: { data: Record<string, any> }) {
   const failure = data.primary_trust_failure;
   const issues: any[] = data.concrete_issues || [];
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Key Issues</Text>
+    <Section title="Key Issues">
       <Text style={[styles.bodyText, { marginBottom: 12 }]}>
         Trust builds sequentially. Fixing the wrong layer first will limit the effectiveness of all subsequent work.
       </Text>
@@ -482,23 +601,36 @@ function Module3({ data }: { data: Record<string, any> }) {
           ))}
         </NumberedBlock>
       )}
-    </View>
+    </Section>
   );
 }
 
 function Module4({ data }: { data: Record<string, any> }) {
   const layers: any[] = data.layers || [];
+  const visibleLayers = layers
+    .map((layer, index) => ({ ...layer, originalIndex: index }))
+    .filter((layer) => layer.originalIndex !== 1 && layer.originalIndex !== 2);
+  const layerTitles: Record<number, string> = {
+    0: "L0-Relevance",
+    3: "L1-Entity Clarity",
+    4: "L2-Proof Signals",
+    5: "L3-Local Fit",
+    6: "L4-Strutural Trust",
+    7: "L5-Standalone Value",
+  };
+
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Six-Layer Model</Text>
+    <Section title="Six-Layer Model">
       <Text style={[styles.bodyText, { marginBottom: 12 }]}>
         Below is the full six-layer trust diagnosis used to interpret the current strength of the page.
       </Text>
       <View style={styles.cardGrid}>
-        {layers.map((layer, index) => (
+        {visibleLayers.map((layer, index) => (
           <View key={index} style={styles.miniCard}>
             <View style={styles.layerHeader}>
-              <Text style={[styles.miniTitle, { width: "70%" }]}>Layer {index + 1}: {text(layer.layer_name)}</Text>
+              <Text style={[styles.miniTitle, { width: "70%" }]}>
+                {layerTitles[layer.originalIndex] || `Layer ${layer.originalIndex + 1}: ${text(layer.layer_name)}`}
+              </Text>
               <Text style={[styles.tag, { backgroundColor: "#F5F7FA", color: getStatusColor(layer.status) }]}>
                 {text(layer.status)}
               </Text>
@@ -507,8 +639,8 @@ function Module4({ data }: { data: Record<string, any> }) {
           </View>
         ))}
       </View>
-      {layers.length === 0 && <GenericObject data={data} />}
-    </View>
+      {visibleLayers.length === 0 && <GenericObject data={data} />}
+    </Section>
   );
 }
 
@@ -520,19 +652,18 @@ function Module5({ data }: { data: Record<string, any> }) {
   const expect30 = data.what_to_expect_30_days;
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Optimization Path</Text>
+    <Section title="Optimization Path">
       {blocker && (
-        <NumberedBlock number={1} title="Primary Trust Blocker">
+        <StepCard number={1} title="Primary Trust Blocker">
           <Field label="Current Blocking Layer" value={blocker.blocking_layer} />
           <Field label="Summary" value={blocker.summary} />
           <Text style={styles.label}>Direct Consequences</Text>
           <BulletList items={blocker.direct_consequences} tone="red" />
           <Field label="Why This Layer Cannot Be Skipped" value={blocker.why_cannot_skip} />
-        </NumberedBlock>
+        </StepCard>
       )}
       {mustItems.length > 0 && (
-        <NumberedBlock number={2} title="Must Execute Now">
+        <StepCard number={2} title="Must Execute Now">
           {mustItems.map((item, index) => (
             <View key={index}>
               <Text style={styles.subTitle}>Must Fix {index + 1} - {text(item.title)}</Text>
@@ -546,10 +677,10 @@ function Module5({ data }: { data: Record<string, any> }) {
               {index < mustItems.length - 1 && <View style={styles.divider} />}
             </View>
           ))}
-        </NumberedBlock>
+        </StepCard>
       )}
       {roadmap.length > 0 && (
-        <NumberedBlock number={3} title="Roadmap">
+        <StepCard number={3} title="Roadmap">
           {roadmap.map((phase, index) => (
             <View key={index}>
               <Text style={styles.subTitle}>Phase {index + 1} - {text(phase.phase_title)}</Text>
@@ -562,17 +693,17 @@ function Module5({ data }: { data: Record<string, any> }) {
               {index < roadmap.length - 1 && <View style={styles.divider} />}
             </View>
           ))}
-        </NumberedBlock>
+        </StepCard>
       )}
       {fixWarning && (
-        <NumberedBlock number={4} title={text(fixWarning.title) || "If Fix Order Is Wrong"}>
+        <StepCard number={4} title={text(fixWarning.title) || "If Fix Order Is Wrong"}>
           <Field label="Intro" value={fixWarning.intro} />
           <Field label="Page Specific Risk" value={fixWarning.page_specific_risk} />
           <Field label="Closing Warning" value={fixWarning.closing_warning} />
-        </NumberedBlock>
+        </StepCard>
       )}
       {expect30 && (
-        <NumberedBlock number={5} title={text(expect30.title) || "What To Expect In The Next 30 Days"}>
+        <StepCard number={5} title={text(expect30.title) || "What To Expect In The Next 30 Days"}>
           <Field label="Intro" value={expect30.intro} />
           <Text style={styles.label}>Week 1-2</Text>
           <BulletList items={expect30.week_1_2} tone="gray" />
@@ -580,10 +711,12 @@ function Module5({ data }: { data: Record<string, any> }) {
           <BulletList items={expect30.week_2_3} tone="gray" />
           <Text style={styles.label}>Week 3-4</Text>
           <BulletList items={expect30.week_3_4} tone="gray" />
+          <Text style={styles.label}>End Of 30 Days</Text>
+          <BulletList items={expect30.end_of_30_days} tone="gray" />
           <Field label="Closing Note" value={expect30.closing_note} />
-        </NumberedBlock>
+        </StepCard>
       )}
-    </View>
+    </Section>
   );
 }
 
@@ -602,6 +735,12 @@ function ReportSections({ report }: { report: Report }) {
 export function ReportPDFDocument({ report }: { report: Report }) {
   const reportId = report.external_report_id || report.report_id;
   const generatedAt = formatGeneratedAt(report);
+  const infoItems = [
+    { label: "Page Type", value: report.page_type || "Service Page", color: "#3B82F6" },
+    { label: "GBP URL Status", value: report.gbp_url ? "Connected" : "Not provided", color: report.gbp_url ? "#22C55E" : "#6B7280" },
+    { label: "Generated", value: generatedAt || "-", color: "#1A212B" },
+    { label: "Report ID", value: reportId, color: "#1A212B" },
+  ];
   const scoreCards = [
     parseScore(report.trust_status, "Trust Status", "#3B82F6"),
     parseScore(report.ranking_potential, "Ranking Potential", "#8DBB16"),
@@ -616,24 +755,41 @@ export function ReportPDFDocument({ report }: { report: Report }) {
             <Text style={styles.title}>Trust Audit Report</Text>
             <Text style={styles.beta}>BETA</Text>
           </View>
-          <Text style={styles.pageUrl}>{report.page_url}</Text>
-          <View style={styles.metaRow}>
-            {report.page_type && <Text style={styles.pill}>Page Type: {report.page_type}</Text>}
-            {generatedAt && <Text style={styles.pill}>Generated: {generatedAt}</Text>}
-            <Text style={styles.pill}>Report ID: {reportId}</Text>
+
+          <View style={styles.urlBox}>
+            <Text style={styles.pageUrl}>{report.page_url}</Text>
           </View>
-          {report.gbp_url && (
-            <View style={styles.gbpBox}>
-              <Text style={styles.eyebrow}>GBP URL:</Text>
-              <Text style={styles.bodyText}>{report.gbp_url}</Text>
-            </View>
-          )}
+
+          <View style={styles.infoGrid}>
+            {infoItems.map((item, index) => (
+              <View
+                key={item.label}
+                style={[
+                  styles.infoItem,
+                  index === infoItems.length - 1 ? styles.infoItemLast : {},
+                ]}
+              >
+                <View style={[styles.infoIcon, { backgroundColor: index === 1 ? "#ECFDF5" : "#EFF6FF" }]} />
+                <Text style={styles.infoLabel}>{item.label}</Text>
+                <Text style={[styles.infoValue, { color: item.color }]}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         <View style={styles.scoreRow}>
-          {scoreCards.map((card) => (
-            <View key={card.label} style={styles.scoreCard}>
-              <Text style={styles.scoreLabel}>{card.label}</Text>
+          {scoreCards.map((card, index) => (
+            <View
+              key={card.label}
+              style={[
+                styles.scoreCard,
+                index === scoreCards.length - 1 ? { marginRight: 0 } : {},
+              ]}
+            >
+              <View style={styles.scoreTopRow}>
+                <View style={[styles.scoreIcon, { backgroundColor: index === 2 ? "#FEF2F2" : index === 1 ? "#EEF2FF" : "#EFF6FF" }]} />
+                <Text style={styles.scoreLabel}>{card.label}</Text>
+              </View>
               <Text style={[styles.scoreValue, { color: card.color }]}>{card.value}</Text>
               {card.description && <Text style={styles.scoreDesc}>{card.description}</Text>}
             </View>
