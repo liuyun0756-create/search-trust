@@ -26,7 +26,7 @@ export function DeliveryRefund() {
             <div className="space-y-4 max-w-lg">
               <p className="text-[18px] text-[#1A212B] font-bold leading-relaxed">
                 After payment, submit the URL you want reviewed.
-                Your report will be delivered via <span className="text-[#3B82F6]">e-mail within two hours</span>. 
+                Your report will be delivered via <span className="text-[#A5D020] underline decoration-[#A5D020] decoration-2 underline-offset-4">e-mail within two hours</span>. 
 
               </p>
               <p className="text-[16px] text-[#6B7280] font-medium leading-relaxed">
@@ -48,12 +48,12 @@ export function DeliveryRefund() {
         </div>
 
         {/* 2. Refund Policy Section: 图片左 + 文字右 */}
-        <div className="flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-20">
+        <div className="flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-10">
           <motion.div 
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="flex-1"
+            className="flex-1 lg:-ml-4"
           >
             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-sm text-[#A5D020] border border-gray-100">
               <RotateCcw size={24} strokeWidth={2.5} />
@@ -70,7 +70,7 @@ export function DeliveryRefund() {
               </p>
               <a 
                 href="/policy" 
-                className="inline-flex items-center gap-2 text-[14px] font-black uppercase tracking-widest text-[#3B82F6] hover:text-[#A5D020] transition-all group"
+                className="inline-flex items-center gap-2 text-[14px] font-black uppercase tracking-widest text-[#A5D020] hover:text-[#7FA40F] transition-all group"
               >
                 See our Refund Policy for full details.
                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -84,7 +84,7 @@ export function DeliveryRefund() {
             viewport={{ once: true }}
             className="flex-1 w-full"
           >
-            <div className="w-[960px] h-[492px] rounded-[32px] overflow-hidden">
+            <div className="w-full max-w-[760px] aspect-[960/492] rounded-[32px] overflow-hidden">
               <img src="/images/refund-bg.png" alt="Refund Policy" className="w-full h-full object-cover" />
             </div>
           </motion.div>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileCheck,
+  ArrowRight,
   BarChart3,
   Bot,
   MapPinCheckInside,
@@ -19,133 +20,207 @@ const tabs = [
     id: 'pre-publish',
     icon: FileCheck,
     label: 'Audit local pages before publishing',
-    shortLabel: 'Pre-publish review',
+    shortLabel: 'Audit local pages\nbefore publishing',
     description:
       'You\'re about to publish a city page, service-area page, or location landing page — but you don\'t know whether it looks like a credible local destination or just another scalable template.',
+    audiences: ['SEO agencies', 'Local SEO specialists', 'In-house local content teams'],
     currentPractice: [
-      'Manually review copy for quality',
-      'Check keywords and meta tags',
-      'Verify city name, FAQ, and map presence',
-      'Guess whether it feels "too templated"',
+      'Manually review copy',
+      'Check keywords and meta data',
+      'Check whether city name / FAQ / map are present',
+      'Guess by experience whether it is "too templated"',
+    ],
+    whyNotEnoughIntro:
+      'These checks can only verify whether the page was completed, but cannot explain:',
+    whyNotEnough: [
+      'Whether the page represents a real entity',
+      'Whether it has real-world anchors',
+      'Whether it deserves to exist independently',
     ],
     howHelps: [
-      'Analyze which trust layer dominates the page',
-      'Determine if the page is just location-labeled',
-      'Identify lack of specificity, real anchors, and standalone value',
-      'Provide low-cost fix suggestions before publishing',
+      'Analyze the page\'s dominant failure layer',
+      'Determine whether the page is only location-labeled',
+      'Find gaps in specificity, real-world anchors, and standalone value',
+      'Give low-cost fix recommendations before launch',
     ],
     outputs: ['Trust status', 'Dominant layer', 'Risk list', 'Fix priorities'],
+    benefits: [
+      'Reduce low-trust pages before launch',
+      'Lower late-stage rework',
+      'Raise the publishing quality threshold',
+    ],
   },
   {
     id: 'client-reporting',
     icon: BarChart3,
-    label: 'Improve client reporting for agencies',
-    shortLabel: 'Client reporting',
+    label: 'Diagnose indexed-but-stuck pages',
+    shortLabel: 'Diagnose indexed-but-stuck pages',
     description:
-      'Your client asks why their local pages aren\'t ranking. You have traffic data and keyword positions — but no structural explanation for why Google might not trust those pages.',
+      'The page is indexed, technically fine, and maybe even has some links — but it still does not gain meaningful rankings or local visibility.',
     currentPractice: [
-      'Show keyword ranking changes',
-      'Report on traffic and impressions',
-      'List technical issues found by crawlers',
-      'Provide generic content improvement tips',
+      'Check keyword rankings',
+      'Check Search Console',
+      'Add more content',
+      'Change the title and H1',
+      'Wait longer',
+    ],
+    whyNotEnoughIntro:
+      'These actions do not answer:',
+    whyNotEnough: [
+      'Does Google see this page as a real local entry point?',
+      'Where has the page lost trust?',
+      'Is the page structurally unstable?',
     ],
     howHelps: [
-      'Layer-based diagnosis that explains the "why"',
-      'Structured reports clients can actually understand',
-      'Clear prioritization of what matters most',
-      'Evidence-based recommendations, not opinions',
+      'Detect the trust fracture layer',
+      'Explain how Google may interpret the page',
+      'Distinguish "not enough content" from "the structure is not trusted"',
+      'Give the repair action that should happen first',
     ],
-    outputs: ['Layer breakdown', 'Trust score', 'Priority fixes', 'Client-ready report'],
+    outputs: [],
+    benefits: [
+      'Reduce ineffective trial and error',
+      'Identify the core issue faster',
+      'Help teams stop the habit of "keep adding content and see"',
+    ],
   },
   {
     id: 'ai-review',
     icon: Bot,
     label: 'Review AI-generated city pages at scale',
-    shortLabel: 'AI page review',
+    shortLabel: 'Review AI-generated city pages at scale',
     description:
-      'You\'re using AI to generate hundreds of local pages. They read well individually — but structurally, they might share the same weaknesses across every location.',
+      'You can now generate dozens or hundreds of city pages quickly — but speed does not tell you which pages look believable and which look like doorway-style expansion.',
+    audiences: ['Affiliate marketers', 'SEO agencies', 'Scaled content teams', 'Lead-gen operators'],
     currentPractice: [
-      'Spot-check a few samples manually',
-      'Run grammar and readability tools',
-      'Check for duplicate content',
-      'Hope the AI got the local details right',
+      'Only check grammar and duplication',
+      'Manually sample-review pages',
+      'Judge whether the page "reads okay"',
+      'Check keyword coverage',
+    ],
+    whyNotEnoughIntro:
+      'These practices cannot structurally judge:',
+    whyNotEnough: [
+      'Whether the page is overly templated',
+      'Whether city-replacement traces are too strong',
+      'Whether real-world anchors are missing',
+      'Whether the page lacks independent value',
     ],
     howHelps: [
-      'Detect programmatic risk signals at scale',
-      'Identify template patterns that Google may flag',
-      'Run trust QA on every generated page',
-      'Ensure each page has genuine local grounding',
+      'Find programmatic risk signals',
+      'Identify generic local page patterns',
+      'Locate the most common trust gaps',
+      'Build a basic trust QA layer for scaled content',
     ],
-    outputs: ['Template risk score', 'Pattern detection', 'Trust QA pass/fail', 'Batch fix list'],
+    outputs: [],
+    benefits: [
+      'Reduce batch page risk',
+      'Raise the floor for template production',
+      'Create a trust-review standard for content factories',
+    ],
   },
   {
     id: 'multi-location',
     icon: MapPinCheckInside,
-    label: 'Validate multi-location page quality',
-    shortLabel: 'Multi-location QA',
+    label: 'Improve client reporting for agencies',
+    shortLabel: 'Improve client reporting for agencies',
     description:
-      'You manage pages for dozens or hundreds of locations. Ensuring consistency and differentiation across all of them is nearly impossible without structural analysis.',
+      'You know a local page is underperforming because it feels weak, templated, or unconvincing — but it is hard to explain that in a client-friendly way.',
     currentPractice: [
-      'Manually compare a few location pages',
-      'Check that NAP data is consistent',
-      'Verify each page has unique content',
-      'Rely on local managers to flag issues',
+      'Say "the content is not local enough"',
+      'Say "we need stronger E-E-A-T"',
+      'Say "page quality is average"',
+      'Give many vague recommendations',
+    ],
+    whyNotEnoughIntro:
+      'Clients still ask:',
+    whyNotEnough: [
+      'Where exactly is the gap?',
+      'Why can other pages rank?',
+      'Which part should be fixed first?',
     ],
     howHelps: [
-      'Location page consistency analysis',
-      'Differentiation scoring between pages',
-      'Quality standards enforcement at scale',
-      'Local entity alignment verification',
+      'Explain the issue with layer-based diagnosis',
+      'Provide a more structured and visual report',
+      'Help explain why this page looks like a template page',
+      'Give repair actions with clearer priority',
     ],
-    outputs: ['Consistency report', 'Differentiation score', 'Quality benchmark', 'Location comparison'],
+    outputs: [],
+    benefits: [
+      'Improve client communication quality',
+      'Strengthen agency professionalism',
+      'Reduce vague explanations like "the content is not enough"',
+    ],
   },
   {
     id: 'doorway-risk',
     icon: ShieldAlert,
-    label: 'Reduce doorway and programmatic page risk',
-    shortLabel: 'Doorway risk',
+    label: 'Validate multi-location page quality',
+    shortLabel: 'Validate multi-location page quality',
     description:
-      'Your site has dozens of city + service combinations. Some may qualify as doorway pages — similar content swapped with city names. Google has been cracking down on these patterns.',
+      'You know a local page is underperforming because it feels weak, templated, or unconvincing — but it is hard to explain that in a client-friendly way.',
+    audiences: ['Multi-location businesses', 'Franchise brands', 'Regional service businesses'],
     currentPractice: [
-      'Manually review page similarity',
-      'Try to add "unique" sections to each page',
-      'Hope Google doesn\'t apply a doorway penalty',
-      'Remove pages reactively after traffic drops',
+      'Content similarity is high',
+      'Only the place name changes',
+      'Page value is not independent',
+      'Local binding is weak',
+    ],
+    whyNotEnoughIntro:
+      'When multiple location pages exist at the same time, common problems include:',
+    whyNotEnough: [
+      'Content similarity is high',
+      'Only the place name changes',
+      'Page value is not independent',
+      'Local binding is weak',
     ],
     howHelps: [
-      'Detect template-swap patterns automatically',
-      'Measure standalone value for each page',
-      'Identify city-replacement patterns that trigger penalties',
-      'Provide proactive risk reduction strategies',
+      'Determine whether different location pages are truly differentiated',
+      'Find pages that are only renamed as local pages',
+      'Help establish quality standards for location pages',
     ],
-    outputs: ['Doorway risk score', 'Template detection', 'Standalone value', 'Risk reduction plan'],
+    outputs: [],
+    benefits: [
+      'Improve location page consistency',
+      'Reduce batch location page risk',
+      'Help brands unify local page standards',
+    ],
   },
   {
     id: 'stuck-pages',
     icon: SearchX,
-    label: 'Diagnose indexed-but-stuck pages',
-    shortLabel: 'Stuck pages',
+    label: 'Reduce doorway and programmatic page risk',
+    shortLabel: 'Reduce doorway\nprogrammatic risk',
     description:
-      'Your pages are indexed and optimized — but they\'re not gaining traction. Rankings are flat, impressions don\'t convert to clicks, and you can\'t explain why.',
-    currentPractice: [
-      'Check search console for technical issues',
-      'Add more content or internal links',
-      'Build more backlinks',
-      'Wait and hope rankings improve',
-    ],
+      'After page scale expands, many problems are no longer about whether the content is good, but whether the whole system looks like a set of low-value expansion pages.',
+    audiences: ['affiliate teams', 'mass-page operators', 'agencies doing scale local SEO', 'internal growth teams'],
+    currentPractice: [],
+    whyNotEnoughIntro: '',
+    whyNotEnough: [],
     howHelps: [
-      'Submit URL for structural trust analysis',
-      'Map the page against the L0–L5 framework',
-      'Identify which trust layer is collapsing',
-      'Get prioritized output for what to fix first',
+      'Detect templated traces',
+      'Analyze whether standalone value is insufficient',
+      'Find city-replacement structures',
+      'Help teams establish pre-publish red-line standards',
     ],
-    outputs: ['Trust diagnosis', 'Layer mapping', 'Collapse reason', 'Fix priority'],
+    outputs: [],
+    benefits: [],
   },
 ];
 
 export function PrimaryUseCasesOverview() {
   const [activeTab, setActiveTab] = useState(0);
   const current = tabs[activeTab];
+  const hasExpandedUseCase =
+    'whyNotEnough' in current &&
+    'benefits' in current &&
+    Boolean(current.whyNotEnough);
+  const audiences = 'audiences' in current ? current.audiences ?? [] : [];
+  const whyNotEnough = 'whyNotEnough' in current ? current.whyNotEnough ?? [] : [];
+  const benefits = 'benefits' in current ? current.benefits ?? [] : [];
+  const hasCurrentPractice = current.currentPractice.length > 0;
+  const hasWhyNotEnough = whyNotEnough.length > 0 || Boolean('whyNotEnoughIntro' in current && current.whyNotEnoughIntro);
+  const hasBenefits = benefits.length > 0;
 
   return (
     <section className="py-20 bg-white">
@@ -179,7 +254,7 @@ export function PrimaryUseCasesOverview() {
               }`}
             >
               <tab.icon size={16} />
-              <span className="hidden sm:inline">{tab.shortLabel}</span>
+              <span className="hidden whitespace-pre-line text-left leading-tight sm:inline">{tab.shortLabel}</span>
             </button>
           ))}
         </div>
@@ -202,11 +277,122 @@ export function PrimaryUseCasesOverview() {
               <p className="text-[16px] text-[#6B7280] leading-relaxed max-w-3xl font-medium">
                 {current.description}
               </p>
+              {hasExpandedUseCase && (
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {audiences.map((audience) => (
+                    <span
+                      key={audience}
+                      className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-300 bg-white/70 px-6 text-[14px] font-medium text-[#374151]"
+                    >
+                      {audience}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Left: Current vs How it helps */}
-              <div className="lg:col-span-8 space-y-6">
+            {hasExpandedUseCase ? (
+              <>
+                <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
+                  <div className="space-y-7">
+                    {hasCurrentPractice && (
+                      <div className="rounded-[22px] border border-gray-100 bg-white p-6">
+                        <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                          Current common practice
+                        </h4>
+                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                          {current.currentPractice.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
+                      <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                        How SearchTrust helps
+                      </h4>
+                      <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                        {current.howHelps.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="space-y-7">
+                    {hasWhyNotEnough && (
+                      <div className="rounded-[22px] border border-gray-100 bg-white p-6">
+                        <h4 className="mb-3 text-[18px] font-bold text-[#1A1F2B]">
+                          Why this is not enough
+                        </h4>
+                        {'whyNotEnoughIntro' in current && current.whyNotEnoughIntro && (
+                          <p className="mb-3 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                            {current.whyNotEnoughIntro}
+                          </p>
+                        )}
+                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                          {whyNotEnough.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {current.outputs.length > 0 && (
+                      <div className="rounded-[22px] border border-gray-100 bg-white p-6">
+                        <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                          Output
+                        </h4>
+                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                          {current.outputs.map((output) => (
+                            <li key={output}>{output}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {hasBenefits && (
+                <div className="mt-9">
+                  <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                    Expected benefits
+                  </h4>
+                  <div className="flex flex-wrap gap-3">
+                    {benefits.map((benefit) => (
+                      <span
+                        key={benefit}
+                        className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#A5D020]/25 bg-white px-5 text-[14px] font-bold text-[#1A1F2B]"
+                      >
+                        {benefit}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                )}
+
+                <div className="mt-10 flex flex-wrap justify-end gap-4">
+                  <a
+                    href="/pricing"
+                    className="inline-flex min-w-[220px] items-center justify-center rounded-xl bg-[#1A1F2B] px-8 py-4 text-[15px] font-bold text-white transition-colors hover:bg-black"
+                  >
+                    Run a Trust Audit
+                  </a>
+                  <a
+                    href="/sample-case"
+                    target="_blank"
+                    className="inline-flex min-w-[220px] items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-8 py-4 text-[15px] font-bold text-[#4B5563] transition-colors hover:border-gray-400 hover:text-[#1A1F2B]"
+                  >
+                    View Sample Report
+                    <ArrowRight size={16} />
+                  </a>
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Left: Current vs How it helps */}
+                <div className="lg:col-span-8 space-y-6">
                 {/* Current practice */}
                 <div className="bg-white rounded-[20px] p-6 border border-gray-100">
                   <div className="flex items-center gap-2 mb-4">
@@ -244,10 +430,10 @@ export function PrimaryUseCasesOverview() {
                     ))}
                   </ul>
                 </div>
-              </div>
+                </div>
 
-              {/* Right: Outputs */}
-              <div className="lg:col-span-4">
+                {/* Right: Outputs */}
+                <div className="lg:col-span-4">
                 <div className="bg-[#1A1F2B] rounded-[20px] p-6 text-white h-full">
                   <div className="flex items-center gap-2 mb-6">
                     <ListChecks size={16} className="text-[#A5D020]" />
@@ -268,7 +454,8 @@ export function PrimaryUseCasesOverview() {
                   </div>
                 </div>
               </div>
-            </div>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

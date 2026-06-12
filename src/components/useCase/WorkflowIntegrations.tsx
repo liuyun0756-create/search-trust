@@ -2,26 +2,16 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  ReferenceDot 
-} from 'recharts';
+import { CheckCircle2 } from 'lucide-react';
 
-// 模拟数据：代表 SEO 可见性的波动
-const data = [
-  { name: 'Start', visibility: 30, stage: '上线前信任审查' },
-  { name: 'Step 1', visibility: 45, stage: '页面发布' },
-  { name: 'Step 2', visibility: 40, stage: '监测排名 / GSC' },
-  { name: 'Step 3', visibility: 35, stage: '若可见性停滞' },
-  { name: 'Step 4', visibility: 65, stage: '运行信任诊断' },
-  { name: 'Step 5', visibility: 85, stage: '优先修复' },
-  { name: 'Step 6', visibility: 95, stage: '再次检测' },
+const workflowStages = [
+  { stage: '上线前信任审查', desc: 'Before launch, check whether the page can earn trust.' },
+  { stage: '页面发布', desc: 'Publish the local, city, or service-area page.' },
+  { stage: '监测排名 / GSC', desc: 'Watch rankings, impressions, and Search Console signals.' },
+  { stage: '若可见性停滞', desc: 'If visibility stalls, avoid guessing from surface metrics.' },
+  { stage: '运行信任诊断', desc: 'Run SearchTrust to identify the structural trust gap.' },
+  { stage: '优先修复', desc: 'Fix the highest-impact trust layer first.' },
+  { stage: '再次检测', desc: 'Re-check the page and continue the improvement loop.' },
 ];
 
 export function WorkflowIntegrations() {
@@ -41,62 +31,49 @@ export function WorkflowIntegrations() {
           </motion.h2>
         </div>
 
-        {/* 统计图容器：模仿 image_835154.png 中的波浪线，但进行 UI 升级 */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="bg-white rounded-[48px] p-10 md:p-16 shadow-sm border border-[#EBECEF]"
+          className="rounded-[32px] border border-[#EBECEF] bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.04)] md:p-10"
         >
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <defs>
-                  <linearGradient id="colorVis" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#A5D020" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#A5D020" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F1F3" />
-                <XAxis dataKey="name" hide />
-                <YAxis hide domain={[0, 100]} />
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-[#1A212B] text-white p-4 rounded-2xl shadow-xl border border-gray-800">
-                          <p className="text-[14px] font-bold">{payload[0].payload.stage}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="visibility" 
-                  stroke="#A5D020" 
-                  strokeWidth={4} 
-                  fillOpacity={1} 
-                  fill="url(#colorVis)" 
-                  animationDuration={2000}
-                />
-                
-                {/* 在特定节点打点，模拟 image_835154.png 中的流程介入点 */}
-                <ReferenceDot x="Step 4" y={65} r={8} fill="#1A212B" stroke="#white" strokeWidth={3} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-7">
+            {workflowStages.map((step, index) => (
+              <div key={step.stage} className="relative">
+                {index < workflowStages.length - 1 && (
+                  <div className="absolute left-[22px] top-[52px] h-[calc(100%+16px)] w-px bg-[#DDE8B9] md:hidden" />
+                )}
+                {index < workflowStages.length - 1 && (
+                  <div className="absolute left-[calc(100%-8px)] top-[23px] hidden h-px w-8 bg-[#DDE8B9] xl:block" />
+                )}
 
-          {/* 下方流程文字索引 */}
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {data.map((step, index) => (
-              <div key={index} className="flex flex-col gap-2">
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Step 0{index + 1}</span>
-                <p className="text-[13px] font-bold text-[#3E4651] leading-tight">
-                  {step.stage}
-                </p>
+                <div className={`relative h-full rounded-2xl border p-5 transition-all ${
+                  index === 4
+                    ? 'border-[#A5D020]/40 bg-[#F4F7E9] shadow-[0_16px_32px_rgba(165,208,32,0.12)]'
+                    : 'border-gray-100 bg-[#F8F9FA]'
+                }`}>
+                  <div className="mb-5 flex items-center gap-3">
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[13px] font-black ${
+                      index === 4
+                        ? 'bg-[#1A1F2B] text-white'
+                        : 'bg-white text-[#86B800] ring-1 ring-[#A5D020]/20'
+                    }`}>
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    {index === 4 && <CheckCircle2 size={18} className="text-[#86B800]" />}
+                  </div>
+
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
+                    Step {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <h3 className="mb-3 text-[15px] font-bold leading-snug text-[#1A1F2B]">
+                    {step.stage}
+                  </h3>
+                  <p className="text-[12px] font-medium leading-relaxed text-[#6B7280]">
+                    {step.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

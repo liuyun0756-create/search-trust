@@ -35,6 +35,7 @@ export function HowItWorksSteps() {
           <h2 className="text-[40px] md:text-[48px] font-bold text-[#1A1F2B] tracking-tight">
             How it works
           </h2>
+          <div className="section-title-bar" />
         </div>
 
         {/* 四列布局容器 */}

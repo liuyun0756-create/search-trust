@@ -29,7 +29,7 @@ export function FrameworkHero() {
 
             <h1 className="text-[44px] md:text-[52px] font-[800] leading-[72px] text-[#1D2531] tracking-tight">
               The L0–L5 Trust <br />
-              Collapse <span className="text-[#A5D020]">Model</span>
+              Collapse <span className="text-bar-highlight text-[#1D2531]">Model</span>
             </h1>
 
             <div className="mt-8 space-y-4 w-full">
@@ -38,9 +38,9 @@ export function FrameworkHero() {
                 as a trustworthy entry point for Google, local search, and AI–era
                 citation systems.
               </p>
-              <div className="flex items-start gap-3">
-                <div className="mt-1.5 w-3 h-3 rounded-full bg-[#F59E0B] shadow-[0_0_12px_rgba(245,158,11,0.4)] shrink-0" />
-                <p className="text-[14px] text-[#F59E0B]/90 font-medium leading-snug">
+              <div className="flex max-w-full items-start gap-3 rounded-2xl border border-[#A5D020]/20 bg-[#F4F7E9] px-4 py-3">
+                <div className="mt-1 flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#A5D020]" />
+                <p className="text-[11px] md:text-[12px] text-[#4B5563] font-bold leading-snug uppercase tracking-[0.08em]">
                   This framework is designed to explain why a page may fail trust before it fails visibility.
                 </p>
               </div>

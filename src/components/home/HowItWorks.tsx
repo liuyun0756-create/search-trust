@@ -8,11 +8,12 @@ export function HowItWorks() {
         
         {/* 顶部标题区域 */}
         <div className="text-center mb-20">
-          <h2 className="text-[36px] md:text-[44px] font-[700] text-[#1A1F2B] leading-[1.2] mb-6">
+          <h2 className="text-[36px] md:text-[44px] font-[700] text-[#1A1F2B] leading-[1.2]">
             Most SEO tools measure performance <br />
             They don’t explain trust failure
           </h2>
-          <p className="text-[#6B7280] text-[15px] md:text-[16px] max-w-4xl mx-auto font-medium">
+          <div className="section-title-bar" />
+          <p className="mt-6 text-[#6B7280] text-[15px] md:text-[16px] max-w-4xl mx-auto font-medium">
             Traditional SEO tools tell you what changed Search Trust tells you why Google may still not trust the page.
           </p>
         </div>
@@ -75,4 +76,3 @@ export function HowItWorks() {
     </section>
   );
 };
-

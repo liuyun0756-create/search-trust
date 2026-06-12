@@ -72,9 +72,10 @@ export function ProductDemo() {
           {/* 左侧：标题与文案 */}
           <div className="lg:sticky lg:top-24 w-full h-full max-w-[640px] flex flex-col">
             <div className="flex-1">
-              <h2 className="text-[40px] md:text-[44px] font-extrabold text-white leading-[1.1] mb-8 tracking-tighter">
+              <h2 className="text-[40px] md:text-[44px] font-extrabold text-white leading-[1.1] tracking-tighter">
                 The L0—L5 Trust Collapse Model
               </h2>
+              <div className="mb-8 h-1.5 w-[72px] rounded-full bg-[#A5D020]" />
               <p className="text-gray-400 text-[18px] leading-relaxed max-w-md font-medium">
                 A structural framework for diagnosing whether a page qualifies as a real local entity entry point.
               </p>

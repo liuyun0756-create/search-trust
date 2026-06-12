@@ -1,30 +1,41 @@
 "use client";
 
+import Link from 'next/link';
 import React from 'react';
 import { motion } from 'framer-motion';
 
 export function PricingCTA() {
   return (
-    <section className="py-20 px-6 bg-white">
-      <div className="max-w-[1300px] mx-auto">
+    <section className="relative overflow-hidden bg-[#F7F9F2] px-6 py-20">
+      <div className="absolute inset-0 z-0 opacity-[0.08]">
+        <img
+          src="/images/bottom-bg.png"
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      </div>
+      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,rgba(165,208,32,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(26,31,43,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
+      <div className="absolute inset-x-0 top-0 z-0 h-px bg-gradient-to-r from-transparent via-[#A5D020]/40 to-transparent" />
+      <div className="absolute left-1/2 top-8 z-0 h-72 w-72 -translate-x-1/2 rounded-full bg-[#A5D020]/16 blur-[100px]" />
+
+      <div className="relative z-10 mx-auto max-w-[1300px]">
         <motion.div
           whileHover={{ scale: 1.01 }}
-          className="bg-[#1A212B] rounded-[64px] p-12 md:p-20 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-12"
+          className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-white bg-white/78 p-12 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md md:p-20"
         >
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#A5D020] opacity-[0.08] blur-[120px] -mr-48 -mt-48" />
-
-          <div className="relative z-10 max-w-2xl">
-            <h2 className="text-white text-[40px] md:text-[48px] font-bold leading-[1.2] tracking-tight">
+          <div className="relative z-10">
+            <h2 className="mx-auto mb-8 max-w-4xl text-[30px] font-bold leading-tight tracking-tight text-[#1A1F2B] md:text-[44px]">
               Purchase your first report and see how{' '}
-              <span className="text-[#A5D020]">SearchTrust</span> diagnoses trust
-              breakdown on a real page.
+              <span className="text-bar-highlight">SearchTrust diagnoses trust breakdown</span>
+              {' '}on a real page.
             </h2>
-          </div>
-
-          <div className="relative z-10 flex flex-col items-center gap-6">
-            <button className="bg-[#A5D020] text-[#1A212B] px-12 py-8 rounded-[32px] font-black text-xl hover:scale-105 transition-transform shadow-[0_20px_40px_-10px_rgba(165,208,32,0.3)]">
+            <Link
+              href="/sample-case"
+              target="_blank"
+              className="inline-flex items-center justify-center rounded-xl bg-[#1A1F2B] px-8 py-4 font-bold text-white transition-colors hover:bg-black"
+            >
               Buy One Report
-            </button>
+            </Link>
           </div>
         </motion.div>
 

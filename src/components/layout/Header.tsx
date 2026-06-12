@@ -39,7 +39,7 @@ export function Header() {
               key={link.id}
               href={link.href}
               className={`relative px-5 py-2 text-[14px] font-bold rounded-[8px] transition-colors duration-200 z-10 ${
-                activeTab === link.id ? "bg-[#E7EDF2] text-[#1D2531]" : "text-[#657083] hover:text-[#1D2531]"
+                activeTab === link.id ? "bg-[#1A1F2B] text-white" : "text-[#657083] hover:text-[#1D2531]"
               }`}
             >
               <span className="relative z-20">{link.label}</span>
@@ -60,7 +60,7 @@ export function Header() {
             <Link
               key={link.id}
               href={link.href}
-              className={`text-left text-[16px] font-bold ${activeTab === link.id ? "text-[#1D2531]" : "text-[#657083]"}`}
+              className={`rounded-lg px-4 py-3 text-left text-[16px] font-bold ${activeTab === link.id ? "bg-[#1A1F2B] text-white" : "text-[#657083]"}`}
               onClick={() => setMobileOpen(false)}
             >
               {link.label}

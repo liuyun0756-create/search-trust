@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { Target } from "lucide-react";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
 import { AuditForm } from "@/components/common/AuditForm";
 import { AuditFormModal } from "@/components/common/AuditFormModal";
@@ -59,16 +60,24 @@ export function HeroSection() {
             </div>
 
             <h1 className="text-[44px] md:text-[52px] font-[800] leading-[72px] text-[#1D2531] tracking-tight">
-              Find Why Google doesn't
-              trust <span className="text-[#A5D020]">Your Local Pages</span>
+              Find why Google doesn&apos;t
+              trust <span className="text-[#A5D020]">your local page</span>
+              <br />
+              and what to fix first
             </h1>
 
             <div className="mt-8 space-y-4 w-full">
               <p className="text-[#657083] text-[16px] leading-relaxed">
-               AI Linter analyzes local pages through a 6-layer trust model to show where trust breaks, how Google may interpret the page, and what to fix first.
+                SearchTrust analyzes a submitted local, city, service-area, or location page through a structured trust model and shows where trust breaks down, which layer matters most, and what to fix first.
               </p>
-              <p className="text-[#657083] text-[16px] font-medium">
-                Built for SEO agencies, local SEO specialists, and teams managing scaled location pages.</p>
+              <div className="flex items-start gap-3 rounded-2xl border border-[#A5D020]/20 bg-[#F4F7E9] px-4 py-3">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#7FA40F] shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+                  <Target size={15} strokeWidth={2} />
+                </div>
+                <p className="text-[#4B5563] text-[15px] font-semibold leading-relaxed">
+                  Built for local pages that look optimized but still struggle to rank, hold visibility, or compete consistently.
+                </p>
+              </div>
             </div>
 
             <div className="mt-10 flex flex-wrap gap-4">

@@ -48,7 +48,6 @@ const sampleReportFAQData = [
     answer: "Refunds may be available before processing begins. Once report processing has started or the report has been delivered, purchases are generally non-refundable. Please see our Refund Policy for full details.",
   },
 ];
-import { ReportCTA } from "@/components/sampleReport/ReportCTA";
 import {AuditForm} from "@/components/common/AuditForm";
 import {TrustCollapseModel} from "@/components/sampleReport/TrustCollapseModel";
 import {SampleReportInfo} from "@/components/sampleReport/SampleReportInfo";
@@ -78,7 +77,6 @@ export default function SampleReportPage() {
       {/* <WhatMakesDifferent /> */}
       <WhoThisReportFor />
       <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"} items={sampleReportFAQData} />
-      <ReportCTA />
     </>
   );
 }

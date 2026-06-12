@@ -70,17 +70,20 @@ export function FrameworkInProduct() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-[#F8F9FA] rounded-[20px] p-6 border border-gray-100 hover:shadow-sm transition-all flex flex-col gap-3"
+                className="group relative overflow-hidden rounded-[24px] border border-gray-100 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#A5D020]/35 hover:shadow-[0_16px_42px_rgba(15,23,42,0.08)] flex flex-col gap-4"
               >
-                {/* <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
-                  <feature.icon size={18} strokeWidth={1.5} className="text-[#A5D020]" />
-                </div> */}
-                <h3 className="text-[15px] font-bold text-[#1A1F2B]">
-                  {feature.title}
-                </h3>
-                <p className="text-[13px] leading-relaxed text-gray-500 font-medium">
-                  {feature.desc}
-                </p>
+                <div className="absolute inset-x-0 top-0 h-1.5 bg-[#A5D020]" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F0F5E0] text-[#A5D020] transition-transform duration-300 group-hover:scale-105">
+                  <feature.icon size={19} strokeWidth={1.7} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-[15px] font-bold text-[#1A1F2B]">
+                    {feature.title}
+                  </h3>
+                  <p className="text-[13px] leading-relaxed text-gray-500 font-medium">
+                    {feature.desc}
+                  </p>
+                </div>
               </motion.div>
             ))}
           </div>

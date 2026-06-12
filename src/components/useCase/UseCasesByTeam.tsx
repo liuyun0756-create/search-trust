@@ -46,21 +46,23 @@ export function UseCasesByTeam() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ y: -8 }}
-              className="bg-white rounded-[32px] p-8 flex flex-col items-center min-h-[380px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-[#A5D020]/40 hover:shadow-[0_8px_30px_rgba(165,208,32,0.08)] transition-all duration-300 group"
+              whileHover={{ y: -4 }}
+              className="group relative min-h-[300px] overflow-hidden rounded-2xl border border-gray-100 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.04)] transition-all duration-300 hover:border-[#A5D020]/40 hover:shadow-[0_18px_44px_rgba(15,23,42,0.07)]"
             >
-              <div className="w-14 h-14 rounded-2xl bg-[#F4F7E9] flex items-center justify-center mb-8 group-hover:bg-[#A5D020] transition-colors duration-300">
-                <useCase.icon size={24} className="text-[#A5D020] group-hover:text-white transition-colors duration-300" />
+              <div className="absolute inset-x-0 top-0 h-1 bg-[#A5D020]" />
+
+              <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F4F7E9] ring-1 ring-[#A5D020]/15 transition-colors duration-300 group-hover:bg-[#EEF6D4]">
+                <useCase.icon size={22} className="text-[#86B800] transition-colors duration-300" />
               </div>
 
-              <h3 className="text-[20px] font-bold text-[#1A212B] mb-8 text-center leading-[1.2]">
+              <h3 className="mb-7 text-[20px] font-bold leading-snug text-[#1A212B]">
                 {useCase.title}
               </h3>
 
               <ul className="space-y-4 w-full">
                 {useCase.items.map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-[15px] text-[#3E4651] font-medium leading-[1.5]">
-                    <span className="w-[5px] h-[5px] rounded-full bg-[#A5D020] shrink-0 group-hover:scale-125 transition-transform" />
+                  <li key={i} className="flex items-start gap-3 text-[15px] text-[#4B5563] font-medium leading-relaxed">
+                    <span className="mt-2 h-[5px] w-[5px] shrink-0 rounded-full bg-[#A5D020]" />
                     <span className="tracking-tight">{item}</span>
                   </li>
                 ))}

@@ -29,9 +29,10 @@ export function InsightEngine() {
         {/* 标题部分 */}
         <div className="text-center mb-16">
           <h2 className="text-[32px] md:text-[42px] font-[700] text-[#1A1F2B] leading-tight max-w-3xl mx-auto">
-            A way to explain why a local page feels 
-            optimized but still doesn’t rank
+            A way to explain why a local page feels{" "}
+            <span className="text-bar-highlight">optimized but still doesn’t rank</span>
           </h2>
+          <div className="section-title-bar" />
         </div>
 
         {/* 三个卡片网格 */}
@@ -84,4 +85,3 @@ export function InsightEngine() {
     </section>
   );
 };
-

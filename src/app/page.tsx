@@ -13,6 +13,7 @@ import {ProductRoadmap} from "@/components/home/ProductRoadmap";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 import {AuditForm} from "@/components/common/AuditForm";
 import {WhatYouGet} from "@/components/home/WhatYouGet";
+import { ProductDefinition } from "@/components/home/ProductDefinition";
 
 const homeFAQData = [
   {
@@ -50,6 +51,7 @@ export default function Home() {
       <WhatYouGet />
       <InsightEngine />
       <LocalPage />
+      <ProductDefinition />
       <HowItWorks />
       <ProductDemo />
       <HowItWorksSteps />

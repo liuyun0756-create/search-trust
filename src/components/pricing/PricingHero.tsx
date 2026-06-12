@@ -16,8 +16,8 @@ export function PricingHero() {
           Simple pricing for
           <span className="text-[#A5D020] px-2">one</span>SearchTrust report
         </h1>
-        <p className="text-[20px] text-[#838383] opacity-60 font-medium">
-          No subscriptions. No hidden fees. Pure diagnostic clarity.
+        <p className="text-[20px] text-[#6B7280] font-medium">
+          Purchase a one-time trust audit for a single submitted URL. No subscription required.
         </p>
       </motion.div>
 

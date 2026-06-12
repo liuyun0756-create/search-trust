@@ -31,12 +31,13 @@ export function AuditSection() {
         
         {/* 顶部标题区域 */}
         <div className="text-center mb-16">
-          <h2 className="text-[32px] md:text-[42px] font-bold text-[#1A1F2B] mb-4">
+          <h2 className="text-[32px] md:text-[42px] font-bold text-[#1A1F2B]">
             How teams use Search Trust
           </h2>
-          <p className="text-[28px] md:text-[36px] font-bold text-[#1A1F2B]">
+          <p className="mt-4 text-[28px] md:text-[36px] font-bold text-[#1A1F2B]">
             Audit local pages before publishing
           </p>
+          <div className="section-title-bar" />
         </div>
 
         {/* 2x2 功能网格 */}

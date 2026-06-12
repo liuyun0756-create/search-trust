@@ -43,7 +43,7 @@ export function WhatsInsideReport() {
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader title="What's inside the report" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
           {sections.map((s, index) => (
             <motion.div
               key={s.title}
@@ -51,18 +51,20 @@ export function WhatsInsideReport() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ y: -8 }}
-              className="bg-white rounded-[32px] p-8 flex flex-col items-center min-h-[280px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-[#A5D020]/40 hover:shadow-[0_8px_30px_rgba(165,208,32,0.08)] transition-all duration-300 group"
+              whileHover={{ y: -4 }}
+              className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-7 min-h-[230px] shadow-[0_16px_40px_rgba(15,23,42,0.04)] transition-all duration-300 hover:border-[#A5D020]/40 hover:shadow-[0_18px_44px_rgba(15,23,42,0.07)]"
             >
-              <div className="w-14 h-14 rounded-2xl bg-[#F4F7E9] flex items-center justify-center mb-8 group-hover:bg-[#A5D020] transition-colors duration-300">
-                <s.icon size={24} className="text-[#A5D020] group-hover:text-white transition-colors duration-300" />
+              <div className="absolute inset-x-0 top-0 h-1 bg-[#A5D020]" />
+
+              <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F4F7E9] ring-1 ring-[#A5D020]/15 transition-colors duration-300 group-hover:bg-[#EEF6D4]">
+                <s.icon size={22} className="text-[#86B800] transition-colors duration-300" />
               </div>
 
-              <h3 className="text-[20px] font-bold text-[#1A212B] mb-4 text-center leading-[1.2]">
+              <h3 className="mb-3 text-[19px] font-bold leading-snug text-[#1A212B]">
                 {s.title}
               </h3>
 
-              <p className="text-[15px] text-[#3E4651] font-medium leading-[1.5] text-center">
+              <p className="text-[15px] font-medium leading-relaxed text-[#4B5563]">
                 {s.desc}
               </p>
             </motion.div>

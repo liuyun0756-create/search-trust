@@ -16,35 +16,50 @@ interface FAQAccordionProps {
 }
 
 export function FAQAccordion({
-  tag = 'FAQ',
   title = 'Frequently asked questions',
   items,
   className = '',
 }: FAQAccordionProps) {
   const [openIndex, setOpenIndex] = useState(0);
+  const titleWords = title.replace(/\n/g, ' ').split(' ');
+  const accentWord = titleWords.pop();
+  const leadingTitle = titleWords.join(' ');
 
   return (
-    <section className={`py-20 bg-[#F7F9FA] ${className}`}>
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className={`relative overflow-hidden py-24 bg-[#F7F9FA] ${className}`}>
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,249,250,0))] pointer-events-none" />
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
 
         {/* 居中标题 */}
-        <div className="text-center mb-8">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-[#F4F7E9] text-[#A5D020] text-[12px] font-bold mb-4">
-            {tag}
-          </div>
-          <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B]">
-            {title}
+        <div className="text-center mb-12">
+          <h2 className="text-[36px] md:text-[46px] font-bold text-[#1A1F2B] leading-[1.12] tracking-tight">
+            {leadingTitle}
+            {leadingTitle && ' '}
+            <span className="text-bar-highlight">{accentWord}</span>
           </h2>
+          <div className="mx-auto mt-6 flex w-full max-w-[520px] items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-gray-200" />
+            <div className="h-2 w-24 rounded-full bg-[#A5D020]" />
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-gray-200" />
+          </div>
         </div>
 
         {/* 白色卡片容器 + 手风琴列表 */}
-        <div className="max-w-3xl mx-auto rounded-[24px] ">
+        <div className="max-w-3xl mx-auto rounded-[24px] bg-white/70 p-3 shadow-[0_18px_50px_rgba(15,23,42,0.06)] ring-1 ring-gray-100 backdrop-blur-sm">
           <div className="space-y-3">
             {items.map((faq, index) => (
               <div
                 key={index}
-                className={`border rounded-[16px] overflow-hidden transition-all duration-300 ${openIndex === index ? 'bg-white border-gray-200' : 'border-gray-100'}`}
+                className={`relative border rounded-[18px] overflow-hidden transition-all duration-300 ${
+                  openIndex === index
+                    ? 'bg-white border-gray-200 shadow-[0_10px_30px_rgba(15,23,42,0.05)]'
+                    : 'bg-white/75 border-gray-100 hover:bg-white'
+                }`}
               >
+                <div className={`absolute left-0 top-0 h-full w-1 bg-[#A5D020] transition-opacity duration-300 ${
+                  openIndex === index ? 'opacity-100' : 'opacity-0'
+                }`} />
                 <button
                   onClick={() => setOpenIndex(openIndex === index ? -1 : index)}
                   className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-50/50 transition-colors"

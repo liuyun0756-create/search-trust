@@ -10,6 +10,7 @@ export function ReportPreview () {
           <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B]">
             See what a Trust Collapse Report looks like
           </h2>
+          <div className="section-title-bar" />
         </div>
 
         {/* 预览容器 */}
@@ -22,4 +23,3 @@ export function ReportPreview () {
     </section>
   );
 };
-

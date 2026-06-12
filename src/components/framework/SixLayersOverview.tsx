@@ -21,7 +21,7 @@ export function SixLayersOverview() {
         {/* 标题 */}
         <div className="text-center mb-20">
           <h2 className="text-[36px] md:text-[52px] font-bold text-[#0B0C0E] tracking-tight mb-4">
-            The six layers of page trust
+            The six layers of <span className="text-bar-highlight">page trust</span>
           </h2>
           <div className="w-12 h-1 bg-[#A5D020] mx-auto rounded-full" />
         </div>

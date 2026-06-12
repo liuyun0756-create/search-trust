@@ -13,11 +13,13 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]['id'];
 
-// Data structure remains same as provided in your source
-const policyContent: Record<TabId, { title: string; effective: string; sections: { heading: string; body: string }[] }> = {
+const policyContent: Record<TabId, { title: string; effective: string; intro?: string; sections: { heading: string; body: string }[] }> = {
   terms: {
     title: 'Terms of Service',
     effective: 'April 14, 2026',
+    intro: `These Terms of Service ("Terms") govern your access to and use of trysearchtrust.com and the products and services provided by SearchTrust ("we", "us", or "our"), including SearchTrust.
+
+By accessing our website, purchasing a report, or using our services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use the website or purchase our services.`,
     sections: [
       {
         heading: '1. Our service',
@@ -269,6 +271,7 @@ Website: trysearchtrust.com`,
   refunds: {
     title: 'Refund Policy',
     effective: 'April 14, 2026',
+    intro: 'This Refund Policy explains when refunds may be available for purchases made through trysearchtrust.com for SearchTrust.',
     sections: [
       {
         heading: '1. Scope',
@@ -389,13 +392,13 @@ export default function PolicyPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full group flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 border ${
                       isActive 
-                        ? 'bg-white border-[#F1F5F9] shadow-sm text-[#1D2531]' 
+                        ? 'bg-[#1A1F2B] border-[#1A1F2B] shadow-[0_12px_24px_rgba(15,23,42,0.12)] text-white' 
                         : 'border-transparent text-[#6B7280] hover:bg-gray-100 hover:text-[#1D2531]'
                     }`}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isActive ? 'bg-[#A5D020]/10 text-[#A5D020]' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
+                        isActive ? 'bg-white/10 text-[#A5D020]' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
                       }`}>
                         <tab.icon size={18} strokeWidth={2.5} />
                       </div>
@@ -409,20 +412,6 @@ export default function PolicyPage() {
                   </button>
                 );
               })}
-
-              {/* Support Card */}
-              <div className="mt-12 p-6 rounded-[24px] bg-[#0B0C0E] text-white relative overflow-hidden">
-                <div className="absolute bottom-0 right-0 w-24 h-24 bg-[#A5D020]/10 blur-2xl rounded-full translate-x-1/2 translate-y-1/2" />
-                <h4 className="text-lg font-bold mb-2 relative z-10">Need help?</h4>
-                <p className="text-sm text-gray-400 mb-6 relative z-10 leading-snug">Questions about our legal terms or a refund request?</p>
-                <a 
-                  href="mailto:liu6685756@gmail.com" 
-                  className="inline-flex items-center text-[#A5D020] text-sm font-bold hover:underline gap-1 group"
-                >
-                  Contact Support 
-                  <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                </a>
-              </div>
             </div>
           </aside>
 
@@ -440,10 +429,15 @@ export default function PolicyPage() {
                   <h2 className="text-[32px] md:text-[40px] font-bold tracking-tight text-[#1D2531] mb-2 uppercase">
                     {current.title}
                   </h2>
-                  <div className="flex items-center gap-2 text-[14px] text-[#3B82F6] font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
+                  <div className="flex items-center gap-2 text-[14px] text-[#A5D020] font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
                     Effective {current.effective}
                   </div>
+                  {current.intro && (
+                    <div className="mt-6 max-w-3xl text-[16px] font-medium leading-relaxed text-[#4B5563] whitespace-pre-line">
+                      {current.intro}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-16">
@@ -461,33 +455,11 @@ export default function PolicyPage() {
                     </div>
                   ))}
                 </div>
-
-                {/* Internal Page Links - Footer logic */}
-                <div className="mt-20 pt-10 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6">
-                  <p className="text-[13px] text-gray-400 font-bold">
-                    © 2026 SearchTrust. Technical SEO Analysis.
-                  </p>
-                  <div className="flex gap-6">
-                    <button className="text-[13px] text-[#3B82F6] font-bold hover:underline underline-offset-4">Terms</button>
-                    <button className="text-[13px] text-[#3B82F6] font-bold hover:underline underline-offset-4">Privacy</button>
-                    <button className="text-[13px] text-[#3B82F6] font-bold hover:underline underline-offset-4">Refunds</button>
-                  </div>
-                </div>
               </motion.div>
             </AnimatePresence>
           </main>
         </div>
       </section>
-
-      {/* 3. Global Footer Simple */}
-      <footer className="py-12 border-t border-gray-100 bg-white">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-            <div className="w-10 h-10 bg-[#0B0C0E] rounded-xl mx-auto flex items-center justify-center mb-4">
-                <span className="text-[#A5D020] font-black text-xl italic">S</span>
-            </div>
-            <p className="text-[14px] text-gray-400 font-medium">Restrained. Trustworthy. Technical.</p>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Download } from 'lucide-react';
 import {AuditForm} from "@/components/common/AuditForm";
 
 
@@ -41,9 +41,9 @@ export function SampleReportHero() {
               <p className="text-[#657083] text-[16px] leading-relaxed">
                 Explore a sample local page trust audit and see how SearchTrust diagnoses trust breakdown across six structural layers.
               </p>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.5)]" />
-                <p className="text-[13px] text-gray-500 font-bold italic">
+              <div className="flex max-w-full items-start gap-3 rounded-2xl border border-[#A5D020]/20 bg-[#F4F7E9] px-4 py-3">
+                <div className="mt-1 flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#A5D020]" />
+                <p className="text-[13px] text-[#4B5563] font-bold leading-snug">
                   This sample is illustrative. Some details may be simplified or anonymized.
                 </p>
               </div>
@@ -53,6 +53,10 @@ export function SampleReportHero() {
               <Link href="/sample-case" target="_blank" className="inline-flex items-center gap-2 px-8 py-3 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
                 View Sample Report
                 <ArrowRight size={18} />
+              </Link>
+              <Link href="/sample-case" target="_blank" className="inline-flex items-center gap-2 px-8 py-3 bg-white text-[#4B5563] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:border-[#A5D020]/60 hover:bg-[#F8FCEB] active:scale-95">
+                <Download size={20} strokeWidth={2.4} />
+                Download Sample PDF
               </Link>
             </div>
           </div>

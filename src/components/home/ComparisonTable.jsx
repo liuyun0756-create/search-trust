@@ -28,6 +28,7 @@ export function ComparisonTable() {
           <h2 className="text-[32px] md:text-[40px] font-bold text-[#1A1F2B]">
             How SearchTrust differs from other SEO tools
           </h2>
+          <div className="section-title-bar" />
         </div>
 
         <div className="max-w-6xl mx-auto overflow-x-auto">

@@ -73,7 +73,7 @@ export function LayerDetailBreakdown() {
         {/* Header */}
         <div className="text-left md:text-center mb-24">
           <h2 className="text-[32px] md:text-[52px] font-bold text-[#0B0C0E] tracking-tight mb-6">
-            Detailed Breakdown of Each Layer
+            Detailed Breakdown of <span className="text-bar-highlight">Each Layer</span>
           </h2>
         
         </div>

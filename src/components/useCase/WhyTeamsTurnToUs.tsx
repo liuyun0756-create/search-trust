@@ -2,9 +2,14 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Layers, MessageCircleWarning, Wrench } from 'lucide-react';
+import { Layers, MessageCircleWarning, Search, Wrench } from 'lucide-react';
 
 const painPoints = [
+  {
+    icon: Search,
+    title: 'Pages are indexed but not gaining traction',
+    description: '',
+  },
   {
     icon: Layers,
     title: 'Local templates scale faster than trust',
@@ -41,7 +46,7 @@ export function WhyTeamsTurnToUs() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {painPoints.map((point, index) => (
             <motion.div
               key={point.title}
@@ -57,9 +62,11 @@ export function WhyTeamsTurnToUs() {
               <h3 className="text-[18px] font-bold text-[#1A1F2B] mb-4 leading-snug">
                 {point.title}
               </h3>
-              <p className="text-[15px] text-[#6B7280] leading-relaxed font-medium">
-                {point.description}
-              </p>
+              {point.description && (
+                <p className="text-[15px] text-[#6B7280] leading-relaxed font-medium">
+                  {point.description}
+                </p>
+              )}
             </motion.div>
           ))}
         </div>

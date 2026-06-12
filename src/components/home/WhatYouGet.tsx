@@ -41,9 +41,10 @@ export function WhatYouGet({ title = "What you get", items = defaultBenefits }: 
 
         {/* 居中标题 */}
         <div className="text-center mb-16">
-          <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B] mb-4">
+          <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B]">
             {title}
           </h2>
+          <div className="section-title-bar" />
         </div>
 
         {/* 2x2 网格 */}

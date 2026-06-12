@@ -29,6 +29,7 @@ export function CommonWaysSection() {
           <h2 className="text-[32px] md:text-[40px] font-bold text-white tracking-tight">
             Common ways teams use Search Trust
           </h2>
+          <div className="section-title-bar" />
         </div>
 
         {/* 列表容器 */}

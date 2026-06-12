@@ -29,13 +29,13 @@ export function TrustCollapseMeaning() {
         {/* 标题区域 */}
         <div className="text-center mb-8">
           <h2 className="text-[32px] md:text-[42px] font-bold text-[#1A1F2B]">
-            What trust collapse means
+            What <span className="text-bar-highlight">trust collapse</span> means
           </h2>
         </div>
 
         {/* 引用 */}
         <div className="max-w-3xl mx-auto mb-8 text-center">
-          <p className="text-[16px] md:text-[18px] text-gray-500 leading-relaxed font-medium italic">
+          <p className="text-[16px] md:text-[18px] text-gray-500 leading-relaxed font-medium">
             Trust collapse happens when a page stops being interpreted as a credible, grounded,
             accountable local entry point — even if it contains keywords, content, and optimization signals.
           </p>

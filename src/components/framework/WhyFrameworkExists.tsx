@@ -32,7 +32,7 @@ export function WhyFrameworkExists() {
         {/* 居中标题 */}
         <div className="text-center mb-8">
           <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B]">
-            Why this framework exists
+            Why this <span className="text-bar-highlight">framework</span> exists
           </h2>
         </div>
 

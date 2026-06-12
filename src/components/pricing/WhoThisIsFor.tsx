@@ -35,14 +35,16 @@ export function WhoThisIsFor() {
           {userTypes.map((user, i) => (
             <div
               key={i}
-              className="bg-[#F8F9FB] rounded-[40px] p-10 flex flex-col gap-8 border border-transparent hover:border-[#EBECEF] transition-all group"
+              className="group relative min-h-[280px] overflow-hidden rounded-2xl border border-gray-100 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.04)] transition-all duration-300 hover:border-[#A5D020]/40 hover:shadow-[0_18px_44px_rgba(15,23,42,0.07)]"
             >
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-[#A5D020] group-hover:bg-[#A5D020] group-hover:text-white transition-colors">
+              <div className="absolute inset-x-0 top-0 h-1 bg-[#A5D020]" />
+
+              <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F4F7E9] text-[#86B800] ring-1 ring-[#A5D020]/15 transition-colors duration-300 group-hover:bg-[#EEF6D4]">
                 <user.icon className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-[20px] font-bold mb-4">{user.title}</h4>
-                <p className="text-[15px] text-[#3E4651] opacity-60 leading-relaxed">{user.desc}</p>
+                <h4 className="mb-4 text-[20px] font-bold leading-snug text-[#1A212B]">{user.title}</h4>
+                <p className="text-[15px] font-medium leading-relaxed text-[#4B5563]">{user.desc}</p>
               </div>
             </div>
           ))}

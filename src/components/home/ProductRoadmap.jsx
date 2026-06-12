@@ -39,10 +39,10 @@ export function ProductRoadmap() {
 
         {/* 顶部标题 */}
         <div className="text-center mb-16">
-          <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B] mb-4">
-            Where the product is going
+          <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B]">
+            Where the product is <span className="text-bar-highlight">going</span>
           </h2>
-          <p className="text-[16px] text-gray-500 font-medium">
+          <p className="mt-6 text-[16px] text-gray-500 font-medium">
             Built to move from page trust diagnosis to search trust intelligence.
           </p>
         </div>
@@ -60,10 +60,14 @@ export function ProductRoadmap() {
               onClick={() => setActiveIndex(index)}
               className={`relative overflow-hidden rounded-[24px] p-8 min-h-[320px] flex flex-col justify-end border cursor-pointer ${
                 activeIndex === index
-                ? 'bg-[#1A1F2B] border-[#1A1F2B] shadow-xl'
+                ? 'bg-[#1A1F2B] border-[#1A1F2B] shadow-[0_18px_48px_rgba(15,23,42,0.18)]'
                 : 'bg-[#F8F9FA] border-gray-100 hover:shadow-lg hover:border-gray-200'
-              }`}
+              } focus:outline-none`}
             >
+              {activeIndex === index && (
+                <div className="absolute inset-x-0 top-0 h-1.5 bg-[#A5D020]" />
+              )}
+
               {/* 卡片背景装饰纹理 */}
               {activeIndex !== index && (
                 <div className="absolute top-0 right-0 w-full h-full opacity-[0.03] pointer-events-none">
@@ -79,8 +83,8 @@ export function ProductRoadmap() {
               <div className="absolute top-8 left-8">
                 <span className={`px-4 py-1.5 rounded-full text-[12px] font-bold tracking-wide ${
                   activeIndex === index
-                  ? 'bg-white/8 text-white border border-white/10'
-                  : 'bg-[#A5D020] text-[#FFFFFF]'
+                  ? 'bg-[#A5D020] text-[#1A1F2B]'
+                  : 'bg-[#A5D020] text-white'
                 }`}>
                   {item.phase}
                 </span>

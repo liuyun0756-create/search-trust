@@ -1,0 +1,60 @@
+<svg width="960" height="760" viewBox="0 0 960 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="760" rx="42" fill="#F8FAF5"/>
+  <rect x="1" y="1" width="958" height="758" rx="41" stroke="#E6EDE0" stroke-width="2"/>
+  <path d="M0 0H960V124H0V0Z" fill="#EEF5E4"/>
+  <circle cx="68" cy="62" r="13" fill="#A5D020"/>
+  <circle cx="106" cy="62" r="13" fill="#DDE8C9"/>
+  <circle cx="144" cy="62" r="13" fill="#DDE8C9"/>
+  <rect x="205" y="45" width="310" height="34" rx="17" fill="white"/>
+  <text x="235" y="67" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#1A1F2B">Local page trust problem summary</text>
+  <rect x="686" y="42" width="184" height="40" rx="20" fill="#1A1F2B"/>
+  <text x="724" y="67" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="white">Trust pressure</text>
+
+  <rect x="64" y="172" width="310" height="178" rx="28" fill="white"/>
+  <rect x="64" y="172" width="310" height="178" rx="28" stroke="#E7ECEF"/>
+  <circle cx="112" cy="222" r="25" fill="#F0F5E0"/>
+  <path d="M112 209V235M99 222H125M103 213L121 231M121 213L103 231" stroke="#7FA40F" stroke-width="4" stroke-linecap="round"/>
+  <text x="151" y="216" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#1A1F2B">AI city pages</text>
+  <text x="151" y="248" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#657083">Pages scale fast, but feel</text>
+  <text x="151" y="273" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#657083">generic and interchangeable.</text>
+  <rect x="96" y="303" width="230" height="12" rx="6" fill="#EEF2F5"/>
+  <rect x="96" y="326" width="162" height="12" rx="6" fill="#EEF2F5"/>
+
+  <rect x="412" y="172" width="484" height="178" rx="28" fill="white"/>
+  <rect x="412" y="172" width="484" height="178" rx="28" stroke="#E7ECEF"/>
+  <circle cx="460" cy="222" r="25" fill="#F0F5E0"/>
+  <path d="M460 208L475 216V229C475 238 467 244 460 247C453 244 445 238 445 229V216L460 208Z" stroke="#7FA40F" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M453 227L458 232L468 220" stroke="#7FA40F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="499" y="216" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#1A1F2B">Stricter evaluation</text>
+  <text x="499" y="248" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#657083">Doorway-like local pages face higher</text>
+  <text x="499" y="273" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#657083">quality, grounding, and trust filters.</text>
+  <rect x="499" y="303" width="308" height="12" rx="6" fill="#EEF2F5"/>
+  <rect x="499" y="326" width="230" height="12" rx="6" fill="#EEF2F5"/>
+
+  <rect x="64" y="392" width="832" height="226" rx="32" fill="white"/>
+  <rect x="64" y="392" width="832" height="226" rx="32" stroke="#E7ECEF"/>
+  <text x="104" y="445" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="850" fill="#1A1F2B">Where trust breaks down</text>
+  <rect x="104" y="478" width="220" height="92" rx="22" fill="#FBFCF7" stroke="#E6EDE0"/>
+  <circle cx="132" cy="510" r="11" fill="#A5D020"/>
+  <text x="158" y="515" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#1A1F2B">Weak entity grounding</text>
+  <rect x="158" y="533" width="118" height="10" rx="5" fill="#E9EEF2"/>
+  <rect x="158" y="552" width="90" height="10" rx="5" fill="#E9EEF2"/>
+
+  <rect x="370" y="478" width="220" height="92" rx="22" fill="#FBFCF7" stroke="#E6EDE0"/>
+  <circle cx="398" cy="510" r="11" fill="#F59E0B"/>
+  <text x="424" y="515" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#1A1F2B">Template footprint</text>
+  <rect x="424" y="533" width="122" height="10" rx="5" fill="#E9EEF2"/>
+  <rect x="424" y="552" width="76" height="10" rx="5" fill="#E9EEF2"/>
+
+  <rect x="636" y="478" width="220" height="92" rx="22" fill="#FBFCF7" stroke="#E6EDE0"/>
+  <circle cx="664" cy="510" r="11" fill="#EF4444"/>
+  <text x="690" y="515" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#1A1F2B">Low local proof</text>
+  <rect x="690" y="533" width="114" height="10" rx="5" fill="#E9EEF2"/>
+  <rect x="690" y="552" width="88" height="10" rx="5" fill="#E9EEF2"/>
+
+  <path d="M170 650C260 693 390 702 480 650C570 598 700 607 790 650" stroke="#A5D020" stroke-width="12" stroke-linecap="round" opacity="0.22"/>
+  <path d="M170 650C260 693 390 702 480 650C570 598 700 607 790 650" stroke="#A5D020" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="170" cy="650" r="12" fill="#A5D020"/>
+  <circle cx="480" cy="650" r="12" fill="#A5D020"/>
+  <circle cx="790" cy="650" r="12" fill="#A5D020"/>
+</svg>

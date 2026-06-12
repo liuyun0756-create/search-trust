@@ -1,5 +1,4 @@
 import { UseCasesHero } from "@/components/useCase/UseCasesHero";
-import { TrustedByTeams } from "@/components/useCase/TrustedByTeams";
 import { WhyTeamsTurnToUs } from "@/components/useCase/WhyTeamsTurnToUs";
 import { PrimaryUseCasesOverview } from "@/components/useCase/PrimaryUseCasesOverview";
 import { UseCasesByTeam } from "@/components/useCase/UseCasesByTeam";
@@ -33,7 +32,6 @@ const useCasesFAQData = [
     answer: 'Yes, especially for reviewing page differentiation and local grounding. Multi-location brands can audit across all location pages to ensure consistency and standalone value.',
   },
 ];
-import { UseCasesCTA } from "@/components/useCase/UseCasesCTA";
 import {WorkflowIntegrations} from "@/components/useCase/WorkflowIntegrations";
 import { RelatedResources } from "@/components/useCase/RelatedResources";
 
@@ -47,7 +45,6 @@ export default function UseCasesPage() {
   return (
     <>
       <UseCasesHero />
-      <TrustedByTeams />
       <WhyTeamsTurnToUs />
       <PrimaryUseCasesOverview />
       <UseCasesByTeam />
@@ -57,7 +54,6 @@ export default function UseCasesPage() {
             <RelatedResources />
 
       <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"}  items={useCasesFAQData} />
-      <UseCasesCTA />
     </>
   );
 }
