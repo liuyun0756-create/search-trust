@@ -4,13 +4,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const workflowStages = [
-  { stage: '上线前信任审查', desc: 'Before launch, check whether the page can earn trust.' },
-  { stage: '页面发布', desc: 'Publish the local, city, or service-area page.' },
-  { stage: '监测排名 / GSC', desc: 'Watch rankings, impressions, and Search Console signals.' },
-  { stage: '若可见性停滞', desc: 'If visibility stalls, avoid guessing from surface metrics.' },
-  { stage: '运行信任诊断', desc: 'Run SearchTrust to identify the structural trust gap.' },
-  { stage: '优先修复', desc: 'Fix the highest-impact trust layer first.' },
-  { stage: '再次检测', desc: 'Re-check the page and continue the improvement loop.' },
+  { stage: 'Pre-launch audit', desc: 'Before launch, check whether the page can earn trust.' },
+  { stage: 'Publish page', desc: 'Publish the local, city, or service-area page.' },
+  { stage: 'Monitor rankings', desc: 'Watch rankings, impressions, and Search Console signals.' },
+  { stage: 'Visibility stalls', desc: 'If visibility stalls, avoid guessing from surface metrics.' },
+  { stage: 'Run diagnosis', desc: 'Run SearchTrust to identify the structural trust gap.' },
+  { stage: 'Prioritize fixes', desc: 'Fix the highest-impact trust layer first.' },
+  { stage: 'Re-check', desc: 'Re-check the page and continue the improvement loop.' },
 ];
 
 export function WorkflowIntegrations() {

@@ -50,14 +50,15 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         <div className="flex flex-col gap-3">
           <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
             URL
+            <span className="ml-1 text-[#EF4444]">*</span>
           </label>
           <input
             required
             type="url"
-            placeholder="required"
+            placeholder="Enter the page URL to audit"
             value={formData.url}
             onChange={(e) => setFormData({...formData, url: e.target.value})}
-            className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all placeholder:text-gray-300"
+            className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all placeholder:text-[#4B5563]"
           />
         </div>
 
@@ -80,6 +81,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         <div className="flex flex-col gap-3">
           <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
             Page Type
+            <span className="ml-1 text-[#EF4444]">*</span>
           </label>
           <div className="relative">
             <select

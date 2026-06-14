@@ -23,7 +23,6 @@ const tabs = [
     shortLabel: 'Audit local pages\nbefore publishing',
     description:
       'You\'re about to publish a city page, service-area page, or location landing page — but you don\'t know whether it looks like a credible local destination or just another scalable template.',
-    audiences: ['SEO agencies', 'Local SEO specialists', 'In-house local content teams'],
     currentPractice: [
       'Manually review copy',
       'Check keywords and meta data',
@@ -91,7 +90,6 @@ const tabs = [
     shortLabel: 'Review AI-generated\ncity pages at scale',
     description:
       'You can now generate dozens or hundreds of city pages quickly — but speed does not tell you which pages look believable and which look like doorway-style expansion.',
-    audiences: ['Affiliate marketers', 'SEO agencies', 'Scaled content teams', 'Lead-gen operators'],
     currentPractice: [
       'Only check grammar and duplication',
       'Manually sample-review pages',
@@ -159,7 +157,6 @@ const tabs = [
     shortLabel: 'Validate multi-location\npage quality',
     description:
       'You know a local page is underperforming because it feels weak, templated, or unconvincing — but it is hard to explain that in a client-friendly way.',
-    audiences: ['Multi-location businesses', 'Franchise brands', 'Regional service businesses'],
     currentPractice: [
       'Content similarity is high',
       'Only the place name changes',
@@ -193,7 +190,6 @@ const tabs = [
     shortLabel: 'Reduce doorway\nprogrammatic risk',
     description:
       'After page scale expands, many problems are no longer about whether the content is good, but whether the whole system looks like a set of low-value expansion pages.',
-    audiences: ['affiliate teams', 'mass-page operators', 'agencies doing scale local SEO', 'internal growth teams'],
     currentPractice: [],
     whyNotEnoughIntro: '',
     whyNotEnough: [],
@@ -211,16 +207,61 @@ const tabs = [
 export function PrimaryUseCasesOverview() {
   const [activeTab, setActiveTab] = useState(0);
   const current = tabs[activeTab];
+  const hasAudienceModule = current.id === 'ai-review' || current.id === 'stuck-pages';
   const hasExpandedUseCase =
     'whyNotEnough' in current &&
     'benefits' in current &&
-    Boolean(current.whyNotEnough);
-  const audiences = 'audiences' in current ? current.audiences ?? [] : [];
+    (Boolean(current.whyNotEnough?.length) || hasAudienceModule || current.currentPractice.length > 0);
   const whyNotEnough = 'whyNotEnough' in current ? current.whyNotEnough ?? [] : [];
   const benefits = 'benefits' in current ? current.benefits ?? [] : [];
   const hasCurrentPractice = current.currentPractice.length > 0;
   const hasWhyNotEnough = whyNotEnough.length > 0 || Boolean('whyNotEnoughIntro' in current && current.whyNotEnoughIntro);
   const hasBenefits = benefits.length > 0;
+  const audienceModule = current.id === 'ai-review'
+    ? {
+        title: 'Best for',
+        items: ['Affiliate marketers', 'SEO agencies', 'Scaled content teams', 'Lead-gen operators'],
+      }
+    : current.id === 'stuck-pages'
+      ? {
+          title: 'Best for',
+          items: ['affiliate teams', 'mass-page operators', 'agencies doing scale local SEO', 'internal growth teams'],
+        }
+      : null;
+  const audienceOnLeft = current.id === 'stuck-pages';
+  const hasRightColumn = hasWhyNotEnough || current.outputs.length > 0 || audienceOnLeft;
+  const localizedWhyModules: Record<string, { title: string; intro: string; items: string[] }> = {
+    'pre-publish': {
+      title: 'Why this is not enough',
+      intro: 'These checks only confirm that the page was completed, but they cannot explain:',
+      items: ['Whether the page is truly specific', 'Whether it has real-world anchors', 'Whether it deserves to exist on its own'],
+    },
+    'client-reporting': {
+      title: 'Why this is not enough',
+      intro: 'These actions do not answer:',
+      items: [
+        'Does Google see this page as a real local entry point?',
+        'Where did the page lose trust?',
+        'Is the structure itself unstable?',
+      ],
+    },
+  };
+  const localizedWhyModule = localizedWhyModules[current.id];
+  const whyModuleTitle = localizedWhyModule?.title || 'Why this is not enough';
+  const whyModuleIntro = localizedWhyModule?.intro || ('whyNotEnoughIntro' in current ? current.whyNotEnoughIntro : '');
+  const whyModuleItems = localizedWhyModule?.items || whyNotEnough;
+  const audienceCard = audienceModule ? (
+    <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
+      <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+        {audienceModule.title}
+      </h4>
+      <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+        {audienceModule.items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
 
   return (
     <section className="py-20 bg-white">
@@ -262,7 +303,7 @@ export function PrimaryUseCasesOverview() {
         {/* Tab content */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={current.id}
+            key={`${current.id}-use-case-with-right-context`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -281,7 +322,7 @@ export function PrimaryUseCasesOverview() {
 
             {hasExpandedUseCase ? (
               <>
-                <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
+                <div className={`grid grid-cols-1 gap-7 ${hasRightColumn ? 'lg:grid-cols-2' : ''}`}>
                   <div className="space-y-7">
                     {hasCurrentPractice && (
                       <div className="rounded-[22px] border border-gray-100 bg-white p-6">
@@ -296,18 +337,25 @@ export function PrimaryUseCasesOverview() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
-                      <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
-                        <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
-                          Best for
-                        </h4>
-                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                          {audiences.map((audience) => (
-                            <li key={audience}>{audience}</li>
-                          ))}
-                        </ul>
-                      </div>
+                    {audienceOnLeft && audienceCard}
 
+                    {!audienceOnLeft && (
+                    <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
+                      <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                        How SearchTrust helps
+                      </h4>
+                      <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                        {current.howHelps.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    )}
+                  </div>
+
+                  {hasRightColumn && (
+                  <div className="space-y-7">
+                    {audienceOnLeft && (
                       <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
                         <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
                           How SearchTrust helps
@@ -318,22 +366,20 @@ export function PrimaryUseCasesOverview() {
                           ))}
                         </ul>
                       </div>
-                    </div>
-                  </div>
+                    )}
 
-                  <div className="space-y-7">
                     {hasWhyNotEnough && (
                       <div className="rounded-[22px] border border-gray-100 bg-white p-6">
                         <h4 className="mb-3 text-[18px] font-bold text-[#1A1F2B]">
-                          Why this is not enough
+                          {whyModuleTitle}
                         </h4>
-                        {'whyNotEnoughIntro' in current && current.whyNotEnoughIntro && (
+                        {whyModuleIntro && (
                           <p className="mb-3 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                            {current.whyNotEnoughIntro}
+                            {whyModuleIntro}
                           </p>
                         )}
                         <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                          {whyNotEnough.map((item) => (
+                          {whyModuleItems.map((item) => (
                             <li key={item}>{item}</li>
                           ))}
                         </ul>
@@ -352,7 +398,10 @@ export function PrimaryUseCasesOverview() {
                         </ul>
                       </div>
                     )}
+
+                    {!audienceOnLeft && audienceCard}
                   </div>
+                  )}
                 </div>
 
                 {hasBenefits && (

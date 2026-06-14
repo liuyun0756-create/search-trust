@@ -7,7 +7,7 @@ import {
   Lock, Download,
   Loader2, AlertTriangle,
   Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
-  ShieldCheck, BarChart3, TriangleAlert, ChevronDown
+  ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon
 } from 'lucide-react';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
@@ -220,6 +220,26 @@ function Module2PageLevel({ data }: { data: Record<string, any> }) {
 // ============================================================
 // Module 3: Key Issues
 // ============================================================
+function KeyIssueStepHeader({ number, title }: { number: string; title: string }) {
+  return (
+    <div className="mb-4 rounded-[16px] border border-[#E2EFC8] bg-[#FBFDF5] px-4 py-3 shadow-[0_6px_18px_rgba(15,23,42,0.035)]">
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#A5D020] text-[19px] font-black text-[#1A212B] shadow-[0_6px_12px_rgba(165,208,32,0.22)]">
+          {number}
+        </span>
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#8BAA2B]">
+            Step {number}
+          </p>
+          <h3 className="text-[19px] font-black leading-tight text-[#1A212B] md:text-[22px]">
+            {title}
+          </h3>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Module3KeyProblems({ data }: { data: Record<string, any> }) {
   const failure = data.primary_trust_failure;
   const issues: any[] = data.concrete_issues || [];
@@ -232,12 +252,7 @@ function Module3KeyProblems({ data }: { data: Record<string, any> }) {
       {/* Primary trust failure */}
       {failure && (
         <div className="p-6 rounded-[16px] border border-gray-100">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              1
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Primary Trust Failure</div>
-          </div>
+          <KeyIssueStepHeader number="1" title="Primary Trust Failure" />
            <div className="space-y-2">
               <p className="text-[16px] font-bold text-[#1A212B] ">Current main blockage layer: {failure.blocking_layer}</p>
               <p className="text-[14px] text-gray-600 leading-relaxed">{failure.description}</p>
@@ -248,12 +263,7 @@ function Module3KeyProblems({ data }: { data: Record<string, any> }) {
       {/* Concrete issues - wrapped in one border card */}
       {issues.length > 0 && (
         <div className="p-6 rounded-[16px] border border-gray-100 space-y-6">
-          <div className="flex items-start gap-2 pb-2">
-            <span className="shrink-0 w-7 h-7 rounded-full bg-[#1D2531] text-white text-[12px] font-bold flex items-center justify-center">
-              2
-            </span>
-            <div className="text-[16px] font-bold text-[#1A212B]">Concrete Issue</div>
-          </div>
+          <KeyIssueStepHeader number="2" title="Concrete Issue" />
 
           {issues.map((issue: any, i: number) => (
             <div key={i} className="space-y-4">
@@ -698,6 +708,7 @@ export function ReportContent({
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'downloading'>('idle');
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const isClickScrolling = useRef(false);
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
@@ -755,23 +766,25 @@ export function ReportContent({
   const displayReportId = report.external_report_id || report.report_id;
   const isSampleReport = displayReportId?.toLowerCase().includes('sample');
 
-  const handleShareReport = async () => {
-    const shareUrl = typeof window !== 'undefined' ? window.location.href : report.page_url;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `SearchTrust ${isSampleReport ? 'Sample ' : ''}Report`,
-          url: shareUrl,
-        });
-        return;
-      }
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Report link copied.');
-    } catch (error) {
-      if ((error as Error)?.name !== 'AbortError') {
-        console.error('Share error:', error);
-      }
-    }
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : report.page_url;
+  const shareTitle = `SearchTrust ${isSampleReport ? 'Sample ' : ''}Report`;
+  const socialShareLinks = [
+    {
+      label: 'X',
+      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`,
+    },
+    {
+      label: 'LinkedIn',
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+    },
+    {
+      label: 'Facebook',
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+    },
+  ];
+
+  const handleShareReport = () => {
+    setShareModalOpen(true);
   };
 
   // 后端返回 JSON 字符串，需 parse
@@ -870,6 +883,77 @@ export function ReportContent({
 
   return (
     <main className="flex-1 min-w-0">
+      {shareModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/45 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[24px] border border-gray-100 bg-white p-6 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-[22px] font-black text-[#1A212B]">Share report</h2>
+                <p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-500">
+                  Send this report by email or share it on social media.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShareModalOpen(false)}
+                className="rounded-full border border-gray-100 p-2 text-gray-400 transition-all hover:bg-gray-50 hover:text-[#1A212B]"
+                aria-label="Close share dialog"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">
+                Email address
+              </label>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="name@example.com"
+                  className="min-w-0 flex-1 rounded-xl border border-gray-200 px-4 py-3 text-[14px] font-medium text-[#1A212B] outline-none transition-all placeholder:text-gray-400 focus:border-[#A5D020] focus:ring-4 focus:ring-[#A5D020]/10"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendEmail}
+                  disabled={!email || emailStatus === 'sending'}
+                  className="rounded-xl bg-[#1A212B] px-5 py-3 text-[14px] font-bold text-white transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {emailStatus === 'sending' ? 'Sending...' : 'Send'}
+                </button>
+              </div>
+              {emailStatus === 'sent' && (
+                <p className="text-[13px] font-bold text-green-600">Report sent.</p>
+              )}
+              {emailStatus === 'error' && (
+                <p className="text-[13px] font-bold text-red-500">Unable to send. Please try again.</p>
+              )}
+            </div>
+
+            <div className="mt-6 border-t border-gray-100 pt-5">
+              <p className="mb-3 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">
+                Share to social
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                {socialShareLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[13px] font-bold text-[#1A212B] transition-all hover:border-[#A5D020] hover:bg-[#F8FAF2]"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Report Info Card */}
       {isHeaderLoading ? (
         <HeaderSkeleton />

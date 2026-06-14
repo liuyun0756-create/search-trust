@@ -21,30 +21,30 @@ Where Search Trust fits in your workflow
 What teams get from these use cases
 Related resources
 FAQ
-"→ 上线前信任审查
-→ 页面发布
-→ 监测排名 / GSC
-→ 若可见性停滞
-→ 运行信任诊断
-→ 优先修复
-→ 再次检测"
-很多团队并不是缺乏 SEO 数据，而是缺乏对“信任失败”的解释能力
+"→ Pre-launch trust review
+→ Page publication
+→ Monitor rankings / GSC
+→ Visibility stalls
+→ Run trust diagnosis
+→ Prioritize fixes
+→ Re-check"
+Many teams are not short on SEO data — they are short on a way to explain trust failure.
 Local templates scale faster than trust
 Teams struggle to explain why pages feel “off”
 Existing tools don’t diagnose local trust collapse
 SEO agencies
 Local SEO specialists
 In-house local content teams
-"为什么不够
-这些检查只能验证“页面有没有做”，却不能解释：
-页面是否真的具体
-是否有现实锚点
-是否值得单独存在"
-"减少上线低
-信任页面"
-降低后期返工
-"提高页面发
-布质量门槛"
+"Why this is not enough
+These checks only confirm that the page was completed, but they cannot explain:
+Whether the page is truly specific
+Whether it has real-world anchors
+Whether it deserves to exist on its own"
+"Reduce low-trust
+pages before launch"
+Lower late-stage rework
+"Raise the publishing
+quality threshold"
 "pre-publish QA
 stuck page diagnosis
 client reporting"
@@ -88,33 +88,33 @@ Privacy
 Refunds
 Terms
 © 2026 SearchTrust. All rights reserved.
-社交媒体
+Social media
 Blog
 Pages are indexed but not gaining traction
 "Audit local pages 
 before publishing"
 Audit local pages before publishing
 You’re about to publish a city page, service-area page, or location landing page — but you don’t know whether it looks like a credible local destination or just another scalable template.
-"当前常见做法
-手动 review 文案
-检查关键词和 meta
-看看有没有 city name / FAQ / map
-凭经验感觉是否“太模板化”"
+"Current common practice
+Manually review copy
+Check keywords and meta data
+Check whether city name / FAQ / map are present
+Guess by experience whether it is too templated"
 Improve client reporting for agencies
 Diagnose indexed-but-stuck pages
 Validate multi-location page quality
 Review AI-generated city pages at scale
 "Reduce doorway 
 programmatic risk"
-"AI Linter 如何帮助
-分析页面所在的主导失败层
-判断页面是否只是 location-labeled
-找出具体性、现实锚点、独立价值不足的问题
-在上线前给出低成本修复建议"
-"产出
+"How SearchTrust helps
+Analyze the page's dominant failure layer
+Determine whether the page is only location-labeled
+Find gaps in specificity, real-world anchors, and standalone value
+Give low-cost fix recommendations before launch"
+"Output
 Trust status
 Dominant layer
 Risk list
 Fix priorities"
-预期收益
+Expected benefits
 Beta

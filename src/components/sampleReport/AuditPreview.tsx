@@ -8,22 +8,39 @@ export function AuditPreview() {
   const [activeTab, setActiveTab] = useState('summary');
   const [activeFixTab, setActiveFixTab] = useState('blocker');
 
+  const statusColors: Record<string, string> = {
+    'Medium-Low': '#F59E0B',
+    'Low potential': '#A5D020',
+    'Medium-High risk': '#EF4444',
+  };
+
+  const executiveSummary = {
+    primary_blocking_layer: 'Entity Presence (L0-A)',
+    current_status: 'Medium-Low',
+    ranking_potential: 'Low potential',
+    risk_level: 'Medium-High risk',
+    main_conclusion:
+      'Your page qualifies for local search competition, but is not yet a high-trust local business page.',
+    explanation:
+      'The page has foundational capabilities, such as a clear topic and service direction, but shows visible gaps in entity presence and specificity. These gaps cause the page to be interpreted as lacking real-world identity traces, limiting trust accumulation and ranking stability in local search.',
+  };
+
   const pageLevelCards = [
     {
       title: 'Observed Strength',
-      desc: 'The page already aligns with a service intent and includes some degree of local relevance, giving it a chance to enter local search competition.',
+      desc: 'The page has built basic capabilities such as clear topic direction and good algorithm adaptation.',
     },
     {
       title: 'Main Limitation',
-      desc: 'The page still depends too much on general domain strength and does not yet establish itself as a strong independent local asset.',
+      desc: 'The page has not yet established strong entity presence or real-world anchors.',
     },
     {
       title: 'Likely Search Outcome',
-      desc: 'Rankings may appear for certain local phrases, but performance can plateau or fluctuate under stronger market pressure.',
+      desc: 'In low-competition environments, the page may gain some ranking opportunities, but in high-competition settings, it will struggle against pages with higher trust.',
     },
     {
       title: 'Competitive Interpretation',
-      desc: 'Against weaker competitors, this page may hold visibility. Against stronger pages with deeper trust signals, it can be overtaken.',
+      desc: 'Against stronger competitors, the trust gap will be amplified, especially in queries requiring entity verification and specific scenario support.',
     },
   ];
 
@@ -88,39 +105,39 @@ export function AuditPreview() {
 
   const layerCards = [
     {
-      title: 'Layer 1: Relevance',
-      status: 'Moderate',
-      desc: 'The page clearly targets a service theme, but semantic coverage is not deep enough to fully reinforce topical authority at the page level.',
+      title: 'L0-Relevance',
+      status: 'Good',
+      desc: 'The page has clear topic direction and service positioning.',
     },
     {
-      title: 'Layer 2: Entity Clarity',
-      status: 'Weak-Moderate',
-      desc: 'Business identity exists, but the page does not strongly express who the provider is, why it is legitimate, and how it connects to the local market.',
+      title: 'L1-Entity Clarity',
+      status: 'Fair',
+      desc: 'Page content is too generic, lacking local context language.',
     },
     {
-      title: 'Layer 3: Proof Signals',
+      title: 'L2-Proof Signals',
+      status: 'Fair',
+      desc: 'The page has weak connection to geographic space.',
+    },
+    {
+      title: 'L3-Local Fit',
       status: 'Weak',
-      desc: 'Reviews, projects, testimonials, outcomes, and other trust-validating signals are too limited to create strong confidence.',
+      desc: 'The page focuses more on meeting search demand than taking real-world responsibility.',
     },
     {
-      title: 'Layer 4: Local Fit',
-      status: 'Moderate',
-      desc: 'The page includes local intent, but geographic fit is not reinforced strongly enough through local references, context, and service-area signals.',
+      title: 'L4-Strutural Trust',
+      status: 'Good',
+      desc: 'The page has some independent value.',
     },
     {
-      title: 'Layer 5: Structural Trust',
-      status: 'Moderate',
-      desc: 'Page structure is generally acceptable, but some content patterns appear too generic and do not build enough confidence through specificity.',
-    },
-    {
-      title: 'Layer 6: Standalone Value',
-      status: 'Weak-Moderate',
-      desc: 'The page has basic utility, but does not yet deliver enough unique, independently valuable substance to justify strong trust on its own.',
+      title: 'L5-Standalone Value',
+      status: 'Good',
+      desc: 'The page performs well under current search algorithms.',
     },
   ];
 
   const tabs = [
-    { id: 'summary', label: 'Overall Summary', icon: <ShieldCheck size={16} /> },
+    { id: 'summary', label: 'Executive Summary', icon: <ShieldCheck size={16} /> },
     { id: 'level', label: 'Page Level', icon: <Target size={16} /> },
     { id: 'issues', label: 'Key Issues', icon: <AlertTriangle size={16} /> },
     { id: 'layers', label: 'Six-Layer Model', icon: <Layers size={16} /> },
@@ -150,6 +167,59 @@ export function AuditPreview() {
       {children}
     </h4>
   );
+
+  const renderExecutiveSummary = () => {
+    const metrics = [
+      ['Current Status:', executiveSummary.current_status],
+      ['Ranking Potential:', executiveSummary.ranking_potential],
+      ['Risk Level:', executiveSummary.risk_level],
+    ];
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-8 rounded-[24px] border border-gray-100 bg-white p-6 md:p-8"
+      >
+        <div className="rounded-[18px] border border-[#E6EDDA] bg-[#FBFDF5] px-5 py-4">
+          <section className="text-[15px] font-black text-[#1A212B]">
+            Primary Blocking Layer:{' '}
+            <span className="text-[15px] font-black text-orange-700">
+              {executiveSummary.primary_blocking_layer}
+            </span>
+          </section>
+        </div>
+
+        <div className="rounded-[22px] border border-blue-100 bg-blue-50/50 p-8 shadow-[0_12px_30px_rgba(59,130,246,0.06)]">
+          <p className="text-[17px] font-medium italic leading-relaxed text-gray-800">
+            "{executiveSummary.main_conclusion}"
+          </p>
+        </div>
+
+        <ul className="space-y-3">
+          {metrics.map(([label, value]) => (
+            <li key={label} className="flex items-center gap-3">
+              <span
+                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: statusColors[value] || '#3B82F6' }}
+              />
+              <span className="text-[14px] font-medium text-gray-500">{label}</span>
+              <span
+                className="text-[14px] font-bold"
+                style={{ color: statusColors[value] || '#3B82F6' }}
+              >
+                {value}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <p className="text-[15px] font-medium leading-relaxed text-gray-600">
+          {executiveSummary.explanation}
+        </p>
+      </motion.div>
+    );
+  };
 
   const renderOptimizationContent = () => {
     const contentClass = "text-[15px] leading-relaxed text-[#1A1F2B]";
@@ -429,80 +499,35 @@ export function AuditPreview() {
   const renderContent = () => {
     switch (activeTab) {
       case 'summary':
-        return (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            {/* 状态简报卡片 */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3 text-[14px] font-medium text-gray-600">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
-                  Current Status: Medium-Low / Medium / Good
-                </li>
-                <li className="flex items-center gap-3 text-[14px] font-medium text-gray-600">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
-                  Ranking Potential: Competitive / Room for Growth / Strong Competitiveness
-                </li>
-                <li className="flex items-center gap-3 text-[14px] font-medium text-gray-600">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
-                  Risk Level: Medium / Medium-High / Low
-                </li>
-              </ul>
-            </div>
-
-            {/* 核心结论文字 */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <p className="text-[15px] leading-relaxed text-gray-700 font-medium">
-                Your page meets the basic conditions to compete in local search, but it is not yet a high-trust local business page.
-                It has basic service relevance and local targeting, but still has clear shortcomings in entity trust, real-world connections, and standalone page value.
-              </p>
-            </div>
-
-            {/* 可能遇到的问题列表 */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h4 className="text-[14px] font-bold text-gray-900 mb-4">What you are more likely experiencing:</h4>
-              <ul className="space-y-3">
-                {['Page gets indexed, but rankings are unstable', 'Some keywords appear in results, but struggle to climb steadily', 'Heavily dependent on overall site authority', 'Easily outranked by competitors with stronger local signals'].map((text, i) => (
-                  <li key={i} className="flex items-start gap-3 text-[14px] text-gray-500 leading-snug">
-                    <span className="mt-1.5 w-1 h-1 rounded-full bg-gray-400" />
-                    {text} 
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </motion.div>
-        );
+        return renderExecutiveSummary();
       case 'level':
         return (
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-[28px] border border-gray-200 bg-white p-6 md:p-8"
+            className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.05)]"
           >
-            <h3 className="text-[28px] md:text-[34px] font-bold text-[#1A1F2B] mb-6">
-              Page Level
-            </h3>
+            <div className="p-7 md:p-10">
+              <p className="mb-8 text-[16px] font-medium leading-relaxed text-[#1A212B] md:text-[18px]">
+                <span className="font-black">current Assessment: </span>
+                The page has some local search competition foundation, but trust structure is thin,
+                especially in entity feel and specificity.
+              </p>
 
-            <p className="text-[16px] md:text-[18px] leading-relaxed text-[#1A1F2B] mb-8">
-              <span className="font-bold">Current Assessment:</span>{' '}
-              This page sits above the basic participation threshold, but below the level typically associated with strong, trust-rich local landing pages
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {pageLevelCards.map((card) => (
-                <div
-                  key={card.title}
-                  className="rounded-[22px] border border-gray-200 bg-[#F8F9FA] p-6 md:p-7 shadow-[0_8px_24px_rgba(15,23,42,0.03)]"
-                >
-                  <h4 className="text-[18px] font-bold text-[#1A1F2B] mb-4">
-                    {card.title}
-                  </h4>
-                  <p className="text-[15px] md:text-[16px] leading-relaxed text-[#374151] font-medium">
-                    {card.desc}
-                  </p>
-                </div>
-              ))}
+              <div className="grid grid-cols-1 gap-7 md:grid-cols-2">
+                {pageLevelCards.map((card) => (
+                  <div
+                    key={card.title}
+                    className="rounded-[22px] border border-gray-200 bg-[#F8F9FA] p-7 shadow-[0_8px_24px_rgba(15,23,42,0.03)] md:p-9"
+                  >
+                    <h4 className="mb-5 text-[18px] font-black uppercase tracking-[0.08em] text-black">
+                      {card.title}
+                    </h4>
+                    <p className="text-[20px] font-medium leading-relaxed text-[#4B5563] md:text-[22px]">
+                      {card.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         );
@@ -567,39 +592,42 @@ export function AuditPreview() {
           </motion.div>
         );
       case 'layers':
+        const statusTagClass: Record<string, string> = {
+          Good: 'bg-green-50 text-green-700',
+          Fair: 'bg-yellow-50 text-yellow-700',
+          Weak: 'bg-red-50 text-red-700',
+        };
+
         return (
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="space-y-7"
+            className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.05)]"
           >
-            <div>
-              <h3 className="text-[28px] md:text-[34px] font-bold text-[#1A1F2B] mb-5">
-                Six-Layer Model
-              </h3>
-              <p className="text-[16px] md:text-[18px] leading-relaxed text-[#4B5563]">
+            <div className="p-7 md:p-10">
+              <p className="mb-8 text-[20px] font-medium leading-relaxed text-[#1A212B] md:text-[24px]">
                 Below is the full six-layer trust diagnosis used to interpret the current strength of the page.
               </p>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {layerCards.map((layer) => (
-                <div
-                  key={layer.title}
-                  className="rounded-[24px] border border-gray-200 bg-white p-6 md:p-7"
-                >
-                  <div className="mb-5 flex items-start justify-between gap-4">
-                    <h4 className="text-[20px] font-bold text-[#1A1F2B] leading-snug">
-                      {layer.title}
-                    </h4>
-                    <span className="shrink-0 rounded-full border border-gray-200 bg-white px-4 py-2 text-[13px] font-bold text-[#4B5563]">
-                      {layer.status}
-                    </span>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                {layerCards.map((layer) => (
+                  <div
+                    key={layer.title}
+                    className="rounded-[18px] border border-gray-100 bg-white p-6"
+                  >
+                    <div className="mb-5 flex items-start justify-between gap-4">
+                      <h4 className="text-[20px] font-black leading-snug text-[#1A212B]">
+                        {layer.title}
+                      </h4>
+                      <span className={`shrink-0 rounded-full px-4 py-2 text-[15px] font-black ${statusTagClass[layer.status] || 'bg-gray-50 text-gray-600'}`}>
+                        {layer.status}
+                      </span>
+                    </div>
+                    <p className="text-[16px] font-medium leading-relaxed text-[#4B5563]">
+                      {layer.desc}
+                    </p>
                   </div>
-                  <p className="text-[16px] leading-relaxed text-[#4B5563] font-medium">
-                    {layer.desc}
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </motion.div>
         );
@@ -625,14 +653,21 @@ export function AuditPreview() {
               ))}
             </div>
 
-            <div className="rounded-[24px] border border-gray-200 bg-white p-6 md:p-8">
-              <div className="mb-7 flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A1F2B] text-[16px] font-bold text-white">
-                  {activeOptimizationTab.label.split('.')[0]}
-                </span>
-                <h3 className="text-[22px] md:text-[26px] font-bold text-[#1A1F2B]">
-                  {activeOptimizationTab.title}
-                </h3>
+            <div className="rounded-[24px] border border-[#DCEBBC] bg-white p-4 md:p-6">
+              <div className="mb-7 rounded-[20px] border border-[#E2EFC8] bg-[#FBFDF5] px-5 py-5 shadow-[0_8px_22px_rgba(15,23,42,0.04)] md:px-7">
+                <div className="flex items-center gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#A5D020] text-[22px] font-black text-[#1A212B] shadow-[0_8px_16px_rgba(165,208,32,0.24)]">
+                    {activeOptimizationTab.label.split('.')[0]}
+                  </span>
+                  <div>
+                    <p className="mb-0.5 text-[13px] font-black uppercase tracking-[0.24em] text-[#8BAA2B]">
+                      STEP {activeOptimizationTab.label.split('.')[0]}
+                    </p>
+                    <h3 className="text-[22px] font-black leading-tight text-[#1A212B] md:text-[26px]">
+                      {activeOptimizationTab.title}
+                    </h3>
+                  </div>
+                </div>
               </div>
               {renderOptimizationContent()}
             </div>

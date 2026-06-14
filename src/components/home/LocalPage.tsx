@@ -59,11 +59,11 @@ export function LocalPage() {
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F0F5E0] text-[#7FA40F] shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
                     <item.icon size={17} strokeWidth={1.8} />
                   </div>
-                  <h3 className="text-[24px] md:text-[26px] font-bold text-[#111827] tracking-tight">
+                  <h3 className="text-[21px] md:text-[23px] font-bold text-[#111827] tracking-tight">
                     {item.title}
                   </h3>
                 </div>
-                <p className="text-[16px] md:text-[17px] leading-relaxed text-[#111827] font-normal">
+                <p className="text-[14px] md:text-[15px] leading-relaxed text-[#111827] font-normal">
                   {item.description}
                 </p>
               </div>
