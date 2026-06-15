@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 
-const BACKEND_URL = "https://seo-backend-production-6f2b.up.railway.app/api/v1";
+const BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
 const DEV_MODE = process.env.DEV_BYPASS_AUTH === "true";
 
 // TODO: 后端统一成英文后删除此映射

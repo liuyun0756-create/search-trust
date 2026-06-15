@@ -13,7 +13,7 @@ import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { submitAudit } from "@/lib/submit-audit";
 import type { Report } from "@/types/database";
 
-const BACKEND_URL = "https://seo-backend-production-6f2b.up.railway.app/api/v1";
+const BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 
 function mergeReportMeta(report: Report, meta: Record<string, any>): Report {

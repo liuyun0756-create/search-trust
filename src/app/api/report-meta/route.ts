@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.REPORT_API_BASE_URL || "https://seo-backend-production-6f2b.up.railway.app/api/v1";
+const BACKEND_URL = process.env.REPORT_API_BASE_URL || "https://searchtrust-rd-production.up.railway.app/api/v1";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

@@ -176,8 +176,8 @@ Next.js (Vercel)
 
 | 接口 | 地址 | 作用 |
 |------|------|------|
-| 创建任务 | `POST https://seo-backend-production-6f2b.up.railway.app/api/v1/analyze` | 传 `{ url, page_type, language, gbp_url? }` → 返回 `{ task_id }` |
-| 查询结果 | `GET https://seo-backend-production-6f2b.up.railway.app/api/v1/task/{task_id}` | 返回 `{ status, progress, result, error }` |
+| 创建任务 | `POST https://searchtrust-rd-production.up.railway.app/api/v1/analyze` | 传 `{ url, page_type, language, gbp_url? }` → 返回 `{ task_id }` |
+| 查询结果 | `GET https://searchtrust-rd-production.up.railway.app/api/v1/task/{task_id}` | 返回 `{ status, progress, result, error }` |
 
 **报告的生命周期：**
 
@@ -367,8 +367,8 @@ CREATE INDEX idx_orders_order_id ON orders (order_id);
 
 | 接口 | 地址 | 说明 |
 |------|------|------|
-| 创建任务 | `POST https://seo-backend-production-6f2b.up.railway.app/api/v1/analyze` | 传 `{ url, page_type, language }` → 返回 `{ task_id }` |
-| 查询结果 | `GET https://seo-backend-production-6f2b.up.railway.app/api/v1/task/{task_id}` | 返回 `{ status, progress, result, error }` |
+| 创建任务 | `POST https://searchtrust-rd-production.up.railway.app/api/v1/analyze` | 传 `{ url, page_type, language }` → 返回 `{ task_id }` |
+| 查询结果 | `GET https://searchtrust-rd-production.up.railway.app/api/v1/task/{task_id}` | 返回 `{ status, progress, result, error }` |
 
 **创建任务请求参数：**
 
@@ -584,7 +584,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxx
 CLERK_SECRET_KEY=sk_test_xxx
 
 # 后端老师的报告生成接口
-REPORT_API_BASE_URL=https://seo-backend-production-6f2b.up.railway.app/api/v1
+REPORT_API_BASE_URL=https://searchtrust-rd-production.up.railway.app/api/v1
 
 # Lemon Squeezy（待配置）
 LEMONSQUEEZY_API_KEY=

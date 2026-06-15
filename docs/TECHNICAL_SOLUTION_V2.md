@@ -430,7 +430,7 @@ ALTER TABLE reports ALTER COLUMN gbp_url SET NOT NULL;
 function connectSSE(taskId: string): Promise<SSEResult> {
   return new Promise((resolve, reject) => {
     const eventSource = new EventSource(
-      `https://seo-backend-production-6f2b.up.railway.app/api/v1/task/${taskId}/stream`
+      `https://searchtrust-rd-production.up.railway.app/api/v1/task/${taskId}/stream`
     );
 
     eventSource.onmessage = (event) => {
@@ -587,7 +587,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxx
 CLERK_SECRET_KEY=sk_test_xxx
 
 # 后端报告生成接口
-REPORT_API_BASE_URL=https://seo-backend-production-6f2b.up.railway.app/api/v1
+REPORT_API_BASE_URL=https://searchtrust-rd-production.up.railway.app/api/v1
 
 # Dodo Payments（待配置）
 NEXT_PUBLIC_DODO_PUBLIC_KEY=
