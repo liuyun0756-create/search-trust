@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { PricingHero } from "@/components/pricing/PricingHero";
 import { WhoThisIsFor } from "@/components/pricing/WhoThisIsFor";
 import { BillingDetails } from "@/components/pricing/BillingDetails";
@@ -34,7 +35,9 @@ export const metadata = {
 export default function PricingPage() {
   return (
     <div className="bg-[#F8F9FB] min-h-screen selection:bg-[#A5D020]/30">
-      <PricingPaymentNotice />
+      <Suspense fallback={null}>
+        <PricingPaymentNotice />
+      </Suspense>
       <PricingHero />
       <WhoThisIsFor />
       <BillingDetails />
