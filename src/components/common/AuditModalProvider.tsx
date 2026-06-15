@@ -60,10 +60,10 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     if (!raw) return null;
     try {
       const parsed = JSON.parse(raw) as Partial<AuditFormData>;
-      if (!parsed.url || !parsed.gbpUrl || !parsed.pageType) return null;
+      if (!parsed.url || !parsed.pageType) return null;
       return {
         url: parsed.url,
-        gbpUrl: parsed.gbpUrl,
+        gbpUrl: parsed.gbpUrl || "",
         pageType: parsed.pageType,
       };
     } catch {

@@ -43,13 +43,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { url, page_type, gbp_url } = body;
     const normalizedPageType = PAGE_TYPE_MAP[page_type] || page_type;
+    const normalizedGbpUrl = typeof gbp_url === "string" ? gbp_url.trim() : "";
 
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
-    }
-
-    if (!gbp_url) {
-      return NextResponse.json({ error: "GBP URL is required" }, { status: 400 });
     }
 
     if (user.auditCredits <= 0) {
@@ -97,7 +94,7 @@ export async function POST(request: NextRequest) {
       user_id: user.userId,
       page_url: url,
       page_type: normalizedPageType,
-      gbp_url,
+      gbp_url: normalizedGbpUrl,
       status: "pending",
       access_type: accessType,
     });
@@ -113,7 +110,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("/analyze接口，后端Received report generation request:", { url, page_type: normalizedPageType, gbp_url });
+    console.log("/analyze接口，后端Received report generation request:", { url, page_type: normalizedPageType, gbp_url: normalizedGbpUrl });
     // 1. 调后端创建任务
     const analyzeRes = await fetch(`${BACKEND_URL}/analyze`, {
       method: "POST",
@@ -122,7 +119,7 @@ export async function POST(request: NextRequest) {
         url,
         page_type: normalizedPageType,
         language: "English",
-        gbp_url,
+        gbp_url: normalizedGbpUrl,
       }),
     });
 

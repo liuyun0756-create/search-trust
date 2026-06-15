@@ -21,7 +21,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.url.trim() || !formData.gbpUrl.trim()) return;
+    if (!formData.url.trim() || !formData.pageType.trim()) return;
 
     setLoading(true);
 
@@ -68,9 +68,8 @@ export function AuditForm({ floating = false }: AuditFormProps) {
             GBP URL
           </label>
           <input
-            required
             type="url"
-            placeholder="required"
+            placeholder="Enter the GBP URL"
             value={formData.gbpUrl}
             onChange={(e) => setFormData({...formData, gbpUrl: e.target.value})}
             className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all placeholder:text-gray-300"
@@ -102,7 +101,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
       <div className="flex justify-center">
         <button
           type="submit"
-          disabled={loading || !formData.url.trim() || !formData.gbpUrl.trim()}
+          disabled={loading || !formData.url.trim() || !formData.pageType.trim()}
           className="px-8 py-3 bg-[#1A1F2B] text-white font-bold rounded-xl hover:bg-black hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {loading ? (

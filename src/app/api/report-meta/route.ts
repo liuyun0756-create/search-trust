@@ -8,15 +8,15 @@ export async function GET(request: NextRequest) {
   const pageType = searchParams.get("page_type");
   const gbpUrl = searchParams.get("gbp_url");
 
-  if (!url || !pageType || !gbpUrl) {
-    return NextResponse.json({ error: "url, page_type and gbp_url are required" }, { status: 400 });
+  if (!url || !pageType) {
+    return NextResponse.json({ error: "url and page_type are required" }, { status: 400 });
   }
 
   const upstreamParams = new URLSearchParams({
     url,
     page_type: pageType,
-    gbp_url: gbpUrl,
   });
+  if (gbpUrl) upstreamParams.set("gbp_url", gbpUrl);
 
   try {
     const res = await fetch(`${BACKEND_URL}/report-meta?${upstreamParams.toString()}`, {

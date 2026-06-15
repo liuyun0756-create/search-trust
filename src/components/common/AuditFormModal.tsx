@@ -34,7 +34,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
   }, [initialValues, isOpen]);
 
   const handleSubmit = () => {
-    if (!url.trim() || !gbpUrl.trim() || submitting) return;
+    if (!url.trim() || !pageType.trim() || submitting) return;
     onSubmit({ url: url.trim(), gbpUrl: gbpUrl.trim(), pageType });
   };
 
@@ -91,6 +91,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
                   <div className="relative">
                     <Globe size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
                     <input
+                      required
                       type="url"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
@@ -103,12 +104,11 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
                 {/* GBP URL */}
                 <div>
                   <label className="text-[12px] font-black uppercase tracking-widest text-gray-400 mb-2 block">
-                    GBP URL <span className="text-[#A5D020]">*</span>
+                    GBP URL
                   </label>
                   <div className="relative">
                     <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
                     <input
-                      required
                       type="url"
                       value={gbpUrl}
                       onChange={(e) => setGbpUrl(e.target.value)}
@@ -121,11 +121,12 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
                 {/* Page Type */}
                 <div>
                   <label className="text-[12px] font-black uppercase tracking-widest text-gray-400 mb-2 block">
-                    Page Type
+                    Page Type <span className="text-[#A5D020]">*</span>
                   </label>
                   <div className="relative">
                     <LayoutTemplate size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
                     <select
+                      required
                       value={pageType}
                       onChange={(e) => setPageType(e.target.value)}
                       className="w-full bg-white border border-gray-100 rounded-xl pl-11 pr-4 py-3.5 text-[14px] font-medium text-[#1A212B] focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20 transition-all appearance-none cursor-pointer"
@@ -145,7 +146,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
 
               <button
                 onClick={handleSubmit}
-                disabled={!url.trim() || !gbpUrl.trim() || submitting}
+                disabled={!url.trim() || !pageType.trim() || submitting}
                 className="w-full mt-8 flex items-center justify-center gap-2 bg-[#1D2531] text-white font-bold text-[15px] rounded-full px-6 py-4 transition-all hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed group"
               >
                 {submitting ? "Generating..." : "Run a Trust Audit"}
