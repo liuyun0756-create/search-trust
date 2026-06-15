@@ -2,15 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 
-function parseScore(raw: string): Record<string, any> | null {
+function parseScore(raw: unknown): Record<string, any> | null {
   try {
+    if (raw && typeof raw === "object") return raw as Record<string, any>;
+    if (typeof raw !== "string") return null;
+
     let cleaned = raw.trim();
     if (cleaned.startsWith("```")) {
       cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     }
     return JSON.parse(cleaned);
-  } catch {
-    console.error("Failed to parse score JSON");
+  } catch (error) {
+    console.error("Failed to parse score JSON", error);
     return null;
   }
 }

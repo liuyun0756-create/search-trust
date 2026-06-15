@@ -69,12 +69,11 @@ export default function TestReportPage() {
           setPolling(false);
           setProgress(`Done! (${attempts} polls, ~${attempts * 3}s)`);
 
-          // 解析 result.score
-          const scoreStr = taskData.result?.score || "";
-          const jsonStr = scoreStr
-            .replace(/^```json\n/, "")
-            .replace(/\n```$/, "");
-          const parsed = JSON.parse(jsonStr);
+          // 解析 result.score，兼容纯 JSON 字符串、旧 code fence 字符串、对象。
+          const score = taskData.result?.score;
+          const parsed = typeof score === "string"
+            ? JSON.parse(score.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""))
+            : score;
 
           setReportData(parsed);
           setRawJson(JSON.stringify(parsed, null, 2));

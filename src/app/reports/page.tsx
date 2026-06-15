@@ -36,8 +36,11 @@ function toReportMetaPageType(pageType: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-function parseScore(raw: string): Record<string, any> | null {
+function parseScore(raw: unknown): Record<string, any> | null {
   try {
+    if (raw && typeof raw === "object") return raw as Record<string, any>;
+    if (typeof raw !== "string") return null;
+
     let cleaned = raw.trim();
     if (cleaned.startsWith("```")) {
       cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
