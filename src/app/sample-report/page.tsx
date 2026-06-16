@@ -54,16 +54,30 @@ import {SampleReportInfo} from "@/components/sampleReport/SampleReportInfo";
 import {AuditPreview} from "@/components/sampleReport/AuditPreview";
 import {TrustLayerDetail} from "@/components/sampleReport/TrustLayerDetail";
 import {ReportDifference} from "@/components/sampleReport/ReportDifference";
+import { createPageMetadata, pageSeo } from "@/lib/seo";
 
-export const metadata = {
-  title: "Sample Report — SearchTrust",
-  description:
-    "See what a SearchTrust local trust audit looks like. Explore a sample report showing how trust breakdown is diagnosed across six structural layers.",
+export const metadata = createPageMetadata(pageSeo.sampleReport);
+
+const sampleReportJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: sampleReportFAQData.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
 };
 
 export default function SampleReportPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(sampleReportJsonLd) }}
+      />
       <SampleReportHero />
       {/* <AuditForm /> */}
       <SampleReportInfo />

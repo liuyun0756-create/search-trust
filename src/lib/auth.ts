@@ -14,7 +14,7 @@ export async function getCurrentUser() {
     .eq("clerk_user_id", clerkUserId)
     .single();
 
-  if (data) return { userId: data.id, auditCredits: data.audit_credits };
+  if (data) return { userId: data.id, clerkUserId, auditCredits: data.audit_credits };
 
   // 兜底：webhook 未触发时手动创建用户
   let email = "";
@@ -32,5 +32,5 @@ export async function getCurrentUser() {
     .select("id, audit_credits")
     .single();
 
-  return newUser ? { userId: newUser.id, auditCredits: newUser.audit_credits } : null;
+  return newUser ? { userId: newUser.id, clerkUserId, auditCredits: newUser.audit_credits } : null;
 }

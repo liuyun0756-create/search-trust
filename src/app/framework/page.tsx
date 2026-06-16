@@ -8,6 +8,7 @@ import { WhatFrameworkIsNot } from "@/components/framework/WhatFrameworkIsNot";
 import { FrameworkInProduct } from "@/components/framework/FrameworkInProduct";
 import { ExampleFailTrust } from "@/components/framework/ExampleFailTrust";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
+import { createPageMetadata, pageSeo } from "@/lib/seo";
 
 const frameworkFAQData = [
   {
@@ -40,15 +41,28 @@ const frameworkFAQData = [
   },
 ];
 
-export const metadata = {
-  title: "The L0–L5 Trust Collapse Model — SearchTrust",
-  description:
-    "A structural framework for diagnosing whether a local page qualifies as a trustworthy entry point for Google, local search, and AI-era citation systems.",
+export const metadata = createPageMetadata(pageSeo.framework);
+
+const frameworkJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: frameworkFAQData.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
 };
 
 export default function FrameworkPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(frameworkJsonLd) }}
+      />
       <FrameworkHero />
       <WhyFrameworkExists />
       <TrustCollapseMeaning />

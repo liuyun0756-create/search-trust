@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
+import { captureServerEvent } from "@/lib/analytics-server";
+import {
+  getAuditEventProperties,
+  getCreditsBucket,
+  type AnalyticsProperties,
+} from "@/lib/analytics-properties";
 
 const BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
 const DEV_MODE = process.env.DEV_BYPASS_AUTH === "true";
@@ -11,6 +17,9 @@ const PAGE_TYPE_MAP: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
+  let analyticsDistinctId = "anonymous";
+  let analyticsProperties: AnalyticsProperties = {};
+
   try {
     let user = await getCurrentUser();
 
@@ -25,31 +34,52 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (existing) {
-        user = { userId: existing.id, auditCredits: existing.audit_credits };
+        user = { userId: existing.id, clerkUserId: devId, auditCredits: existing.audit_credits };
       } else {
         const { data: newUser } = await supabase
           .from("users")
           .insert({ clerk_user_id: devId, email: "dev@test.com", name: "Dev Test", audit_credits: 99 })
           .select("id, audit_credits")
           .single();
-        if (newUser) user = { userId: newUser.id, auditCredits: newUser.audit_credits };
+        if (newUser) user = { userId: newUser.id, clerkUserId: devId, auditCredits: newUser.audit_credits };
       }
     }
 
     if (!user) {
+      await captureServerEvent({
+        distinctId: analyticsDistinctId,
+        event: "report generation failed",
+        properties: { failure_reason: "unauthorized" },
+      });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    analyticsDistinctId = user.clerkUserId;
 
     const body = await request.json();
     const { url, page_type, gbp_url } = body;
     const normalizedPageType = PAGE_TYPE_MAP[page_type] || page_type;
     const normalizedGbpUrl = typeof gbp_url === "string" ? gbp_url.trim() : "";
+    analyticsProperties = getAuditEventProperties(
+      { url, pageType: normalizedPageType, gbpUrl: normalizedGbpUrl },
+      { credits_bucket: getCreditsBucket(user.auditCredits) }
+    );
 
     if (!url) {
+      await captureServerEvent({
+        distinctId: analyticsDistinctId,
+        event: "report generation failed",
+        properties: { ...analyticsProperties, failure_reason: "missing_url" },
+      });
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
     if (user.auditCredits <= 0) {
+      await captureServerEvent({
+        distinctId: analyticsDistinctId,
+        event: "report generation failed",
+        properties: { ...analyticsProperties, failure_reason: "no_credits" },
+      });
       return NextResponse.json({ error: "No audit credits available" }, { status: 402 });
     }
 
@@ -101,6 +131,11 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error("Supabase insert error:", insertError);
+      await captureServerEvent({
+        distinctId: analyticsDistinctId,
+        event: "report generation failed",
+        properties: { ...analyticsProperties, failure_reason: "report_insert_failed" },
+      });
       return NextResponse.json(
         {
           error: "Failed to save report",
@@ -109,6 +144,12 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    await captureServerEvent({
+      distinctId: analyticsDistinctId,
+      event: "report generation started",
+      properties: { ...analyticsProperties, report_id: reportId, access_type: accessType },
+    });
 
     console.log("/analyze接口，后端Received report generation request:", { url, page_type: normalizedPageType, gbp_url: normalizedGbpUrl });
     // 1. 调后端创建任务
@@ -131,6 +172,16 @@ export async function POST(request: NextRequest) {
         .update({ status: "failed" })
         .eq("report_id", reportId)
         .eq("user_id", user.userId);
+      await captureServerEvent({
+        distinctId: analyticsDistinctId,
+        event: "report generation failed",
+        properties: {
+          ...analyticsProperties,
+          report_id: reportId,
+          failure_reason: "backend_analyze_failed",
+          backend_status: analyzeRes.status,
+        },
+      });
       return NextResponse.json({ error: `Backend analyze failed (${analyzeRes.status}): ${errText}` }, { status: 502 });
     }
 
@@ -145,6 +196,16 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Supabase task_id update error:", error);
+      await captureServerEvent({
+        distinctId: analyticsDistinctId,
+        event: "report generation failed",
+        properties: {
+          ...analyticsProperties,
+          report_id: reportId,
+          task_id,
+          failure_reason: "task_id_update_failed",
+        },
+      });
       return NextResponse.json(
         {
           error: "Failed to save report",
@@ -154,9 +215,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await captureServerEvent({
+      distinctId: analyticsDistinctId,
+      event: "report generation succeeded",
+      properties: { ...analyticsProperties, report_id: reportId, task_id },
+    });
+
     return NextResponse.json({ task_id, report_id: reportId });
   } catch (error) {
     console.error("Generate report error:", error);
+    await captureServerEvent({
+      distinctId: analyticsDistinctId,
+      event: "report generation failed",
+      properties: { ...analyticsProperties, failure_reason: "internal_error" },
+    });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -68,8 +68,8 @@ export function DeliveryRefund() {
               <p className="text-[16px] text-[#6B7280] font-medium leading-relaxed">
                 Once report processing has started or the report has been delivered, purchases are generally non-refundable.
               </p>
-              <a 
-                href="/policy" 
+              <a
+                href="/refund-policy"
                 className="inline-flex items-center gap-2 text-[14px] font-black uppercase tracking-widest text-[#A5D020] hover:text-[#7FA40F] transition-all group"
               >
                 See our Refund Policy for full details.

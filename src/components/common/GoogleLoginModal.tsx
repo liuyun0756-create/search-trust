@@ -100,9 +100,9 @@ export function GoogleLoginModal({ isOpen, onClose, onSignInStart }: GoogleLogin
               <div className="mt-12 pt-8 border-t border-gray-100">
                 <p className="text-[12px] text-gray-400 text-center leading-relaxed font-medium">
                   By joining, you agree to our{" "}
-                  <a href="/policy" className="text-[#3B82F6] hover:text-[#A5D020] transition-colors">Terms</a>
+                  <a href="/terms" className="text-[#3B82F6] hover:text-[#A5D020] transition-colors">Terms</a>
                   {" "}and{" "}
-                  <a href="/policy" className="text-[#3B82F6] hover:text-[#A5D020] transition-colors">Privacy Policy</a>.
+                  <a href="/privacy" className="text-[#3B82F6] hover:text-[#A5D020] transition-colors">Privacy Policy</a>.
                 </p>
               </div>
             </div>

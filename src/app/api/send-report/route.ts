@@ -7,10 +7,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { ReportPDFDocument } from "@/components/report/pdf/ReportPDFDocument";
 import type { Report } from "@/types/database";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function sanitizeFileName(value: string) {
   return value.replace(/[^a-zA-Z0-9-_]/g, "-").replace(/-+/g, "-");
+}
+
+function createResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new Error("RESEND_API_KEY is required.");
+  return new Resend(apiKey);
 }
 
 function parseScoreValue(raw: string | null | undefined) {
@@ -71,6 +75,7 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://trysearchtrust.com";
 
     // 发送邮件
+    const resend = createResendClient();
     const { data, error: sendError } = await resend.emails.send({
       from: process.env.REPORT_FROM_EMAIL || "SearchTrust <reports@trysearchtrust.com>",
       to: email,

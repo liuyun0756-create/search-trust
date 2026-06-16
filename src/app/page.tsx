@@ -14,6 +14,7 @@ import { FAQAccordion } from "@/components/common/FAQAccordion";
 import {AuditForm} from "@/components/common/AuditForm";
 import {WhatYouGet} from "@/components/home/WhatYouGet";
 import { ProductDefinition } from "@/components/home/ProductDefinition";
+import { createPageMetadata, pageSeo, siteUrl } from "@/lib/seo";
 
 const homeFAQData = [
   {
@@ -43,9 +44,50 @@ const homeFAQData = [
 ];
 // import { CTABanner } from "@/components/home/CTABanner";
 
+export const metadata = createPageMetadata(pageSeo.home);
+
+const homeJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "SearchTrust",
+    url: siteUrl,
+    description:
+      "SearchTrust helps diagnose why Google may not trust local pages and local business entities.",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "SearchTrust",
+    applicationCategory: "SEO Software",
+    operatingSystem: "Web",
+    offers: {
+      "@type": "Offer",
+      price: "19",
+      priceCurrency: "USD",
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: homeFAQData.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  },
+];
+
 export default function Home() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+      />
       <HeroSection />
       {/* <AuditForm /> */}
       <WhatYouGet />

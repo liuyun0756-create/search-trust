@@ -34,16 +34,30 @@ const useCasesFAQData = [
 ];
 import {WorkflowIntegrations} from "@/components/useCase/WorkflowIntegrations";
 import { RelatedResources } from "@/components/useCase/RelatedResources";
+import { createPageMetadata, pageSeo } from "@/lib/seo";
 
-export const metadata = {
-  title: "Use Cases — SearchTrust",
-  description:
-    "From pre-publish local page reviews to diagnosing ranking stagnation. See how teams use SearchTrust to diagnose trust breakdown and prioritize fixes.",
+export const metadata = createPageMetadata(pageSeo.useCases);
+
+const useCasesJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: useCasesFAQData.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
 };
 
 export default function UseCasesPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(useCasesJsonLd) }}
+      />
       <UseCasesHero />
       <WhyTeamsTurnToUs />
       <PrimaryUseCasesOverview />

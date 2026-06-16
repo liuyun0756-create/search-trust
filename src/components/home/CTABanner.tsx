@@ -77,9 +77,9 @@ export function CTABanner() {
             <div>
               {/* <h4 className="text-white font-bold mb-6">Legal</h4> */}
               <ul className="space-y-4 text-sm font-medium">
-                <li><a href="/policy" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Terms</a></li>
-                <li><a href="/policy" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Privacy</a></li>
-                <li><a href="/policy" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Refunds</a></li>
+                <li><a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Terms</a></li>
+                <li><a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Privacy</a></li>
+                <li><a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Refunds</a></li>
               </ul>
             </div>
           </div>

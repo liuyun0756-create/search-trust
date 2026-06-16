@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createServerClient } from "@/lib/supabase";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { getAuditEventProperties } from "@/lib/analytics-properties";
 
 const DODO_API_BASE = process.env.DODO_BASE_URL || "https://test.dodopayments.com";
 const DODO_API_KEY = process.env.DODO_API_KEY!;
@@ -77,6 +79,16 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json();
     const checkout_url = data.checkout_url || data.url;
+
+    await captureServerEvent({
+      distinctId: effectiveUserId,
+      event: "checkout created",
+      properties: getAuditEventProperties({
+        url: formData.url,
+        pageType: formData.pageType,
+        gbpUrl: formData.gbpUrl,
+      }),
+    });
 
     return NextResponse.json({ checkout_url });
   } catch (error) {

@@ -7,6 +7,8 @@ import { CTABanner } from "@/components/home/CTABanner";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AuditModalProvider } from "@/components/common/AuditModalProvider";
 import { FooterPreCTA } from "@/components/layout/FooterPreCTA";
+import { AnalyticsIdentify } from "@/components/common/AnalyticsIdentify";
+import { siteUrl, ogImage } from "@/lib/seo";
 
 
 const inter = Inter({
@@ -15,9 +17,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SearchTrust — Find Why Google Doesn't Trust Your Local Page",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "SearchTrust | Find Why Google Doesn't Trust Your Local Pages",
+    template: "%s",
+  },
   description:
-    "SearchTrust analyzes your local, city, service-area, or location page through a structured trust model and shows where trust breaks down, which layer matters most, and what to fix first.",
+    "SearchTrust analyzes local pages and business entities to explain why Google may not trust them, using a trust diagnosis model for local SEO and SEO agencies.",
   keywords: [
     "local SEO",
     "trust diagnosis",
@@ -29,11 +35,31 @@ export const metadata: Metadata = {
   icons: {
     icon: "/images/small-logo.png",
   },
+  alternates: {
+    canonical: siteUrl,
+  },
   openGraph: {
-    title: "SearchTrust — Local Page Trust Diagnosis",
+    title: "SearchTrust | Find Why Google Doesn't Trust Your Local Pages",
     description:
-      "Find why Google doesn't trust your local page and what to fix first.",
+      "SearchTrust analyzes local pages and business entities to explain why Google may not trust them, using a trust diagnosis model for local SEO and SEO agencies.",
+    url: siteUrl,
+    siteName: "SearchTrust",
     type: "website",
+    images: [
+      {
+        url: `${siteUrl}${ogImage}`,
+        width: 1200,
+        height: 630,
+        alt: "SearchTrust local SEO trust audit report preview",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SearchTrust | Find Why Google Doesn't Trust Your Local Pages",
+    description:
+      "SearchTrust analyzes local pages and business entities to explain why Google may not trust them, using a trust diagnosis model for local SEO and SEO agencies.",
+    images: [`${siteUrl}${ogImage}`],
   },
 };
 
@@ -46,6 +72,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
         <ClerkProvider>
+          <AnalyticsIdentify />
           <AuditModalProvider>
           <Header />
           <main>{children}</main>

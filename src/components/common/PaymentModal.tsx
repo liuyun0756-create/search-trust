@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { X, CreditCard, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { track } from "@/lib/analytics-client";
+import { getAuditEventProperties } from "@/lib/analytics-properties";
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 
@@ -19,6 +21,14 @@ export function PaymentModal({ isOpen, onClose, formData }: PaymentModalProps) {
 
   const handlePay = async () => {
     setLoading(true);
+    track(
+      "checkout clicked",
+      getAuditEventProperties({
+        url: formData?.url,
+        pageType: formData?.pageType,
+        gbpUrl: formData?.gbpUrl,
+      })
+    );
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",

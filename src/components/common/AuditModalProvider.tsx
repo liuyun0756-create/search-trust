@@ -7,6 +7,8 @@ import { GoogleLoginModal } from "@/components/common/GoogleLoginModal";
 import { AuditFormModal } from "@/components/common/AuditFormModal";
 import { PaymentModal } from "@/components/common/PaymentModal";
 import { submitAudit } from "@/lib/submit-audit";
+import { track } from "@/lib/analytics-client";
+import { getAuditEventProperties, getCreditsBucket } from "@/lib/analytics-properties";
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 const OPEN_AUDIT_AFTER_LOGIN_KEY = "searchtrust_open_audit_after_login";
@@ -103,15 +105,20 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     }
   }, [isSignedIn, refreshCredits]);
 
-  const openLogin = useCallback(() => setLoginOpen(true), []);
+  const openLogin = useCallback(() => {
+    track("login modal opened");
+    setLoginOpen(true);
+  }, []);
   const openAuditForm = useCallback(() => {
     if (isLoaded && isSignedIn) {
+      track("audit form opened", { source: "cta" });
       setAuditFormOpen(true);
       return;
     }
     if (typeof window !== "undefined") {
       sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
     }
+    track("login modal opened", { source: "audit_cta" });
     setLoginOpen(true);
   }, [isLoaded, isSignedIn]);
 
@@ -131,6 +138,13 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       console.error("Submit error:", error);
       const message = error instanceof Error ? error.message : "";
       if (message.includes("No audit credits available")) {
+        track(
+          "audit blocked no credits",
+          getAuditEventProperties(data, {
+            credits_bucket: getCreditsBucket(0),
+            source: "api_response",
+          })
+        );
         savePendingAudit(data);
         setAuditFormOpen(false);
         setPaymentOpen(true);
@@ -144,11 +158,20 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
 
   // 核心流程：填信息 → 判断登录 → 判断 credits → 跑报告/弹支付
   const handleSubmit = useCallback(async (data: AuditFormData) => {
+    track(
+      "audit submitted",
+      getAuditEventProperties(data, {
+        signed_in: Boolean(isSignedIn),
+        credits_bucket: getCreditsBucket(credits),
+      })
+    );
+
     // Step 1: 判断登录
     if (!isSignedIn) {
       if (typeof window !== "undefined") {
         sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
       }
+      track("login modal opened", { source: "audit_submit" });
       savePendingAudit(data);
       setAuditFormOpen(false);
       setLoginOpen(true);
@@ -159,6 +182,13 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     try {
       const availableCredits = creditsLoadedRef.current ? credits : await refreshCredits();
       if (availableCredits != null && availableCredits <= 0) {
+        track(
+          "audit blocked no credits",
+          getAuditEventProperties(data, {
+            credits_bucket: getCreditsBucket(availableCredits),
+            source: "client_credit_check",
+          })
+        );
         // 弹支付弹窗
         savePendingAudit(data);
         setAuditFormOpen(false);
@@ -185,10 +215,15 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     const pending = readPendingAudit();
     if (pending) {
       setPendingFormData(pending);
+      track(
+        "audit form opened",
+        getAuditEventProperties(pending, { source: "login_return" })
+      );
       setAuditFormOpen(true);
       return;
     }
 
+    track("audit form opened", { source: "login_return" });
     setAuditFormOpen(true);
   }, [handleSubmit, isLoaded, isSignedIn, readPendingAudit]);
 
@@ -198,9 +233,16 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     await refreshCredits({ force: true });
     const data = pendingFormData || readPendingAudit();
     if (data) {
+      track(
+        "audit submitted",
+        getAuditEventProperties(data, {
+          source: "payment_success_resume",
+          credits_bucket: getCreditsBucket(credits),
+        })
+      );
       await runReport(data);
     }
-  }, [pendingFormData, readPendingAudit, refreshCredits, runReport]);
+  }, [credits, pendingFormData, readPendingAudit, refreshCredits, runReport]);
 
   const handlePaymentClose = useCallback(() => {
     setPaymentOpen(false);

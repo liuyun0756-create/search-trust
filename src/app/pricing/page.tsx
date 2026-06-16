@@ -6,6 +6,7 @@ import { DeliveryRefund } from "@/components/pricing/DeliveryRefund";
 import { PricingCTA } from "@/components/pricing/PricingCTA";
 import { PricingPaymentNotice } from "@/components/pricing/PricingPaymentNotice";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
+import { createPageMetadata, pageSeo } from "@/lib/seo";
 
 const pricingFAQData = [
   {
@@ -26,15 +27,28 @@ const pricingFAQData = [
   },
 ];
 
-export const metadata = {
-  title: "Pricing — SearchTrust",
-  description:
-    "Simple one-time pricing for a SearchTrust trust audit report. No subscriptions, no hidden fees.",
+export const metadata = createPageMetadata(pageSeo.pricing);
+
+const pricingJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: pricingFAQData.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
 };
 
 export default function PricingPage() {
   return (
     <div className="bg-[#F8F9FB] min-h-screen selection:bg-[#A5D020]/30">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
+      />
       <Suspense fallback={null}>
         <PricingPaymentNotice />
       </Suspense>

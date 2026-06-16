@@ -19,7 +19,14 @@ export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  if (pathname === "/sample-case" || pathname === "/reports" || pathname === "/policy") return null;
+  if (
+    pathname === "/sample-case" ||
+    pathname === "/reports" ||
+    pathname === "/policy" ||
+    pathname === "/terms" ||
+    pathname === "/privacy" ||
+    pathname === "/refund-policy"
+  ) return null;
 
   const activeTab = navLinks.find(l => l.href === pathname)?.id ?? "home";
 
