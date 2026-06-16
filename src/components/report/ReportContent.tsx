@@ -787,15 +787,50 @@ export function ReportContent({
     setShareModalOpen(true);
   };
 
-  // 后端返回 JSON 字符串，需 parse
-  const parseScoreField = (raw: string | null | undefined) => {
+  // 后端可能返回 JSON 字符串，也可能直接返回对象。
+  const parseScoreField = (raw: unknown) => {
     if (!raw) return null;
+    if (typeof raw === 'object') return raw as { label?: string; value?: string; description?: string };
+    if (typeof raw !== 'string') return null;
     try { return JSON.parse(raw); } catch { return null; }
   };
 
   const trustStatus = parseScoreField(report.trust_status);
   const rankingPotential = parseScoreField(report.ranking_potential);
   const riskLevel = parseScoreField(report.risk_level);
+  const isGbpStatusLoading = report.status === 'pending' && typeof report.gbp_connected !== 'boolean';
+  const gbpStatus = isGbpStatusLoading
+    ? {
+        value: (
+          <span className="inline-flex items-center gap-1.5">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Checking
+          </span>
+        ),
+        tone: 'text-gray-400',
+        iconTone: 'text-gray-400',
+        iconBg: 'bg-gray-50',
+      }
+    : report.gbp_connected === true
+      ? {
+          value: 'Connected',
+          tone: 'text-emerald-500',
+          iconTone: 'text-emerald-500',
+          iconBg: 'bg-emerald-50',
+        }
+      : report.gbp_connected === false
+        ? {
+            value: 'Disconnected',
+            tone: 'text-red-500',
+            iconTone: 'text-red-500',
+            iconBg: 'bg-red-50',
+          }
+        : {
+            value: 'Not checked',
+            tone: 'text-gray-500',
+            iconTone: 'text-gray-500',
+            iconBg: 'bg-gray-50',
+          };
 
   const scoreCards = [
     {
@@ -1021,8 +1056,10 @@ export function ReportContent({
             {
               icon: Link2,
               label: 'GBP URL Status',
-              value: report.gbp_url ? 'Connected' : 'Not provided',
-              tone: report.gbp_url ? 'text-emerald-500' : 'text-gray-500',
+              value: gbpStatus.value,
+              tone: gbpStatus.tone,
+              iconTone: gbpStatus.iconTone,
+              iconBg: gbpStatus.iconBg,
             },
             {
               icon: CalendarDays,
@@ -1043,7 +1080,7 @@ export function ReportContent({
                 index > 0 ? 'border-t border-gray-200 md:border-l md:border-t-0' : ''
               }`}
             >
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 ${item.tone}`}>
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
                 <item.icon className="h-5 w-5" />
               </div>
               <div className="min-w-0">

@@ -18,6 +18,11 @@ function parseScore(raw: unknown): Record<string, any> | null {
   }
 }
 
+function normalizeScoreValue(raw: unknown): string | null {
+  if (!raw) return null;
+  return typeof raw === "string" ? raw : JSON.stringify(raw);
+}
+
 // POST — 由前端在 SSE done 后调用，保存报告结果 + 扣减 credits
 export async function POST(request: NextRequest) {
   try {
@@ -83,15 +88,16 @@ export async function POST(request: NextRequest) {
       status: reportStatus,
       completed_at: new Date().toISOString(),
       external_report_id: result.report_id || null,
-      trust_status: result.trust_status || null,
-      ranking_potential: result.ranking_potential || null,
-      risk_level: result.risk_level || null,
+      trust_status: normalizeScoreValue(result.trust_status),
+      ranking_potential: normalizeScoreValue(result.ranking_potential),
+      risk_level: normalizeScoreValue(result.risk_level),
       generated_at: result.generated_at || null,
     };
 
     if (result.page_url) updateData.page_url = result.page_url;
     if (result.page_type) updateData.page_type = result.page_type;
     if (result.gbp_url) updateData.gbp_url = result.gbp_url;
+    if (typeof result.gbp_connected === "boolean") updateData.gbp_connected = result.gbp_connected;
 
     if (parsed) {
       if (parsed.module_1_overview) updateData.module_1_overview = parsed.module_1_overview;

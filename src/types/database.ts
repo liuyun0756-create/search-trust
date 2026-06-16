@@ -16,6 +16,7 @@ export interface Report {
   page_url: string;
   page_type: string | null;
   gbp_url: string | null;
+  gbp_connected?: boolean | null;
   task_id: string | null;
   status: "pending" | "free_preview" | "paid_full" | "failed";
   access_type?: "free_trial" | "paid_credit" | "unlocked";
@@ -54,6 +55,7 @@ export type GenerateReportResponse = {
   page_url: string;
   page_type: string;
   gbp_url: string | null;
+  gbp_connected?: boolean | null;
   task_id: string;
   created_at: string;
   trust_status: string | null;

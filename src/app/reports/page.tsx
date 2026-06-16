@@ -23,6 +23,7 @@ function mergeReportMeta(report: Report, meta: Record<string, any>): Report {
     page_url: meta.page_url || meta.url || report.page_url,
     page_type: meta.page_type || report.page_type,
     gbp_url: meta.gbp_url || report.gbp_url,
+    gbp_connected: typeof meta.gbp_connected === "boolean" ? meta.gbp_connected : report.gbp_connected,
     generated_at: meta.generated_at || report.generated_at,
   };
 }
@@ -49,6 +50,11 @@ function parseScore(raw: unknown): Record<string, any> | null {
   } catch {
     return null;
   }
+}
+
+function normalizeScoreValue(raw: unknown): string | null {
+  if (!raw) return null;
+  return typeof raw === "string" ? raw : JSON.stringify(raw);
 }
 
 function EmptyState() {
@@ -259,7 +265,7 @@ function ReportsPage() {
   }, [isLoaded]);
 
   const loadReportMeta = useCallback(async (baseReport: Report) => {
-    if (!baseReport.page_url || !baseReport.page_type || !baseReport.gbp_url) return;
+    if (!baseReport.page_url || !baseReport.page_type) return;
 
     const metaPageType = toReportMetaPageType(baseReport.page_type);
     const requestKey = [
@@ -276,8 +282,8 @@ function ReportsPage() {
       const params = new URLSearchParams({
         url: baseReport.page_url,
         page_type: metaPageType,
-        gbp_url: baseReport.gbp_url,
       });
+      if (baseReport.gbp_url) params.set("gbp_url", baseReport.gbp_url);
       const res = await fetch(`/api/report-meta?${params.toString()}`);
       if (!res.ok) return;
       const meta = await res.json();
@@ -304,6 +310,7 @@ function ReportsPage() {
             page_url: meta.page_url || meta.url,
             page_type: meta.page_type,
             gbp_url: meta.gbp_url,
+            gbp_connected: meta.gbp_connected,
             generated_at: meta.generated_at,
           }),
         }).then(() => loadHistory()).catch(() => {});
@@ -381,12 +388,13 @@ function ReportsPage() {
           page_url: result.page_url || prev?.page_url || "",
           page_type: result.page_type || prev?.page_type || null,
           gbp_url: result.gbp_url || prev?.gbp_url || null,
+          gbp_connected: typeof result.gbp_connected === "boolean" ? result.gbp_connected : prev?.gbp_connected ?? null,
           task_id: taskId,
           status: reportStatus,
           access_type: prev?.access_type,
-          trust_status: result.trust_status || prev?.trust_status || null,
-          ranking_potential: result.ranking_potential || prev?.ranking_potential || null,
-          risk_level: result.risk_level || prev?.risk_level || null,
+          trust_status: normalizeScoreValue(result.trust_status) || prev?.trust_status || null,
+          ranking_potential: normalizeScoreValue(result.ranking_potential) || prev?.ranking_potential || null,
+          risk_level: normalizeScoreValue(result.risk_level) || prev?.risk_level || null,
           generated_at: result.generated_at || prev?.generated_at || null,
           module_1_overview: parsed?.module_1_overview || null,
           module_2_page_level: parsed?.module_2_page_level || null,

@@ -458,10 +458,10 @@ function getStatusColor(value?: string) {
   return STATUS_COLORS[value || ""] || "#3B82F6";
 }
 
-function parseScore(raw: string | null | undefined, fallbackLabel: string, fallbackColor: string): ScoreCard {
+function parseScore(raw: unknown, fallbackLabel: string, fallbackColor: string): ScoreCard {
   if (!raw) return { label: fallbackLabel, value: "-", color: fallbackColor };
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw as Record<string, any>;
     const value = parsed.value || "-";
     return {
       label: parsed.label || fallbackLabel,
@@ -470,7 +470,7 @@ function parseScore(raw: string | null | undefined, fallbackLabel: string, fallb
       color: getStatusColor(value) || fallbackColor,
     };
   } catch {
-    return { label: fallbackLabel, value: raw, color: fallbackColor };
+    return { label: fallbackLabel, value: text(raw), color: fallbackColor };
   }
 }
 
@@ -829,9 +829,14 @@ function ReportSections({ report }: { report: Report }) {
 export function ReportPDFDocument({ report }: { report: Report }) {
   const reportId = report.external_report_id || report.report_id;
   const generatedAt = formatGeneratedAt(report);
+  const gbpStatus = report.gbp_connected === true
+    ? { value: "Connected", color: "#22C55E" }
+    : report.gbp_connected === false
+      ? { value: "Disconnected", color: "#EF4444" }
+      : { value: "Not checked", color: "#6B7280" };
   const infoItems = [
     { label: "Page Type", value: report.page_type || "Service Page", color: "#3B82F6", icon: "pageType" as const },
-    { label: "GBP URL Status", value: report.gbp_url ? "Connected" : "Not provided", color: report.gbp_url ? "#22C55E" : "#6B7280", icon: "gbp" as const },
+    { label: "GBP URL Status", value: gbpStatus.value, color: gbpStatus.color, icon: "gbp" as const },
     { label: "Generated", value: generatedAt || "-", color: "#1A212B", icon: "generated" as const },
     { label: "Report ID", value: reportId, color: "#1A212B", icon: "reportId" as const },
   ];

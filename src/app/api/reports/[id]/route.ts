@@ -49,7 +49,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const updateData: Record<string, string> = {};
+    const updateData: Record<string, string | boolean> = {};
 
     if (typeof body.external_report_id === "string" && body.external_report_id.trim()) {
       updateData.external_report_id = body.external_report_id.trim();
@@ -62,6 +62,9 @@ export async function PATCH(
     }
     if (typeof body.gbp_url === "string" && body.gbp_url.trim()) {
       updateData.gbp_url = body.gbp_url.trim();
+    }
+    if (typeof body.gbp_connected === "boolean") {
+      updateData.gbp_connected = body.gbp_connected;
     }
     if (typeof body.generated_at === "string" && body.generated_at.trim()) {
       updateData.generated_at = body.generated_at.trim();
