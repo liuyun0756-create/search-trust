@@ -1,0 +1,10 @@
+name: 自动触发Vercel部署
+on:
+  push:
+    branches: [ main ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 调用Vercel部署钩子
+        run: curl -X POST ${{ secrets.VERCEL_HOOK_URL }}
