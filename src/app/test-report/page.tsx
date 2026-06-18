@@ -151,6 +151,7 @@ export default function TestReportPage() {
               Page Type
             </label>
             <select
+              aria-label="Page Type"
               value={pageType}
               onChange={(e) => setPageType(e.target.value)}
               className="w-full bg-white border border-gray-100 rounded-xl px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20"

@@ -42,7 +42,7 @@ export function DeliveryRefund() {
             className="flex-1 w-full"
           >
             <div className="w-[600px] h-[275px] rounded-[32px] bg-white border border-gray-100 shadow-sm overflow-hidden">
-              <img src="/images/delivery-bg.png" alt="Delivery" className="w-full h-full object-cover" />
+              <img src="/images/delivery-bg.jpg" alt="Delivery" className="w-full h-full object-cover" />
             </div>
           </motion.div>
         </div>
@@ -85,7 +85,7 @@ export function DeliveryRefund() {
             className="flex-1 w-full"
           >
             <div className="w-full max-w-[598px] h-[273px] rounded-[32px] overflow-hidden">
-              <img src="/images/refund-bg.png" alt="Refund Policy" className="w-full h-full object-cover" />
+              <img src="/images/refund-bg.jpg" alt="Refund Policy" className="w-full h-full object-cover" />
             </div>
           </motion.div>
         </div>

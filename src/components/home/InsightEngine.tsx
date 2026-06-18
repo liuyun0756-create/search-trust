@@ -48,7 +48,7 @@ export function InsightEngine() {
                  <img src={`/images/user${index + 1}.png`} alt={card.name} className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h4 className="text-[15px] font-bold text-[#1A1F2B]">{card.name}</h4>
+                  <p className="text-[15px] font-bold text-[#1A1F2B]">{card.name}</p>
                   <span className="inline-block px-2 py-0.5 mt-1 text-[11px] font-medium text-[#6B7280] border border-gray-200 rounded-md bg-white">
                     {card.role}
                   </span>

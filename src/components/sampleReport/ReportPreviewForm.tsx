@@ -45,10 +45,12 @@ export function ReportPreviewForm() {
               </div>
 
               <div>
-                <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <label htmlFor="preview-page-type" className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
                   Page Type
                 </label>
                 <select
+                  id="preview-page-type"
+                  aria-label="Page Type"
                   value={formData.pageType}
                   onChange={(e) => setFormData({ ...formData, pageType: e.target.value })}
                   className="w-full px-4 py-3 bg-[#F3F4F6] border border-gray-200 rounded-lg text-[#1A1F2B] font-medium text-[14px] focus:outline-none focus:border-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6]/20 transition-colors appearance-none"

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 
 const statusColors = {
-  'Medium-Low': '#F59E0B',
+  'Medium-Low': '#B45309',
   'Low potential': '#A5D020',
   'Medium-High risk': '#EF4444',
 };

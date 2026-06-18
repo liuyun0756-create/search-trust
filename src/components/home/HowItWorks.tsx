@@ -66,7 +66,7 @@ export function HowItWorks() {
           {/* VS 标签 — 独立层，相对于外层容器定位 */}
           <div className="absolute left-1/2 top-1/2 -translate-x-[90px] -translate-y-1/2 z-30 hidden md:flex">
             <div className="w-16 h-16 rounded-full bg-[#A5D020] flex items-center justify-center shadow-[0_0_30px_rgba(165,208,32,0.4)] border-[6px] border-white">
-              <span className="text-white font-black text-[18px] tracking-tighter italic">VS</span>
+              <span className="text-[#1A1F2B] font-black text-[18px] tracking-tighter italic">VS</span>
             </div>
           </div>
 

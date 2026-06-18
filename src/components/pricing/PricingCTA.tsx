@@ -9,7 +9,7 @@ export function PricingCTA() {
     <section className="relative overflow-hidden bg-[#F7F9F2] px-6 py-20">
       <div className="absolute inset-0 z-0 opacity-[0.08]">
         <img
-          src="/images/bottom-bg.png"
+          src="/images/bottom-bg.jpg"
           alt=""
           className="h-full w-full object-cover"
         />

@@ -8,7 +8,7 @@ export function FrameworkHero() {
       <div
         className="absolute inset-0 opacity-40 pointer-events-none"
         style={{
-          backgroundImage: "url('/images/abstract-lines.png')",
+          backgroundImage: "url('/images/abstract-lines.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

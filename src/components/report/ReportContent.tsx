@@ -35,8 +35,8 @@ const STATUS_COLORS: Record<string, string> = {
   High: '#22C55E', Strong: '#22C55E',
   Low: '#EF4444', Weak: '#EF4444',
   Medium: '#3B82F6', Moderate: '#A5D020',
-  'Medium-High': '#EF4444', 'Medium-Low': '#F59E0B',
-  'Good': '#22C55E', 'Fair': '#F59E0B', '良好': '#22C55E', '一般': '#F59E0B', '偏弱': '#EF4444',
+  'Medium-High': '#EF4444', 'Medium-Low': '#B45309',
+  'Good': '#22C55E', 'Fair': '#B45309', '良好': '#22C55E', '一般': '#F59E0B', '偏弱': '#EF4444',
 };
 
 const LoadingState = ({ text = "Under detection..." }: { text?: string }) => (

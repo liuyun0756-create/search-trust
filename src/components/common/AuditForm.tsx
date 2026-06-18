@@ -78,13 +78,15 @@ export function AuditForm({ floating = false }: AuditFormProps) {
 
         {/* Page Type Select */}
         <div className="flex flex-col gap-3">
-          <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
+          <label htmlFor="audit-page-type" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
             Page Type
             <span className="ml-1 text-[#EF4444]">*</span>
           </label>
           <div className="relative">
             <select
+              id="audit-page-type"
               required
+              aria-label="Page Type"
               value={formData.pageType}
               onChange={(e) => setFormData({...formData, pageType: e.target.value})}
               className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] appearance-none focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all cursor-pointer"

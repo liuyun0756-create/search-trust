@@ -9,7 +9,7 @@ export function AuditPreview() {
   const [activeFixTab, setActiveFixTab] = useState('blocker');
 
   const statusColors: Record<string, string> = {
-    'Medium-Low': '#F59E0B',
+    'Medium-Low': '#B45309',
     'Low potential': '#A5D020',
     'Medium-High risk': '#EF4444',
   };

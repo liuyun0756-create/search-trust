@@ -120,13 +120,15 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
 
                 {/* Page Type */}
                 <div>
-                  <label className="text-[12px] font-black uppercase tracking-widest text-gray-400 mb-2 block">
+                  <label htmlFor="modal-page-type" className="text-[12px] font-black uppercase tracking-widest text-gray-400 mb-2 block">
                     Page Type <span className="text-[#A5D020]">*</span>
                   </label>
                   <div className="relative">
                     <LayoutTemplate size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
                     <select
+                      id="modal-page-type"
                       required
+                      aria-label="Page Type"
                       value={pageType}
                       onChange={(e) => setPageType(e.target.value)}
                       className="w-full bg-white border border-gray-100 rounded-xl pl-11 pr-4 py-3.5 text-[14px] font-medium text-[#1A212B] focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20 transition-all appearance-none cursor-pointer"

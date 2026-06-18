@@ -20,7 +20,7 @@ export function TrustedByTeams() {
                 <img src={team.image} alt={team.name} className="w-full h-full object-cover" />
               </div>
               <div>
-                <h4 className="text-[15px] font-bold text-[#1A1F2B]">{team.name}</h4>
+                <p className="text-[15px] font-bold text-[#1A1F2B]">{team.name}</p>
               </div>
             </div>
           ))}

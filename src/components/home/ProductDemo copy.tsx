@@ -54,7 +54,7 @@ export function ProductDemo() {
         <div
           className="absolute inset-0 opacity-50"
           style={{
-            backgroundImage: "url('/images/l0-l5-bg.png')",
+            backgroundImage: "url('/images/l0-l5-bg.jpg')",
             backgroundSize: '100% auto',
             backgroundPosition: 'left bottom',
             backgroundRepeat: 'no-repeat',
