@@ -1,5 +1,6 @@
 "use client";
 
+// InsightEngine: 首页"为什么页面优化了却不排名"的三卡片洞察区块
 export function InsightEngine() {
   const cards = [
     {
