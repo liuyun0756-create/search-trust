@@ -13,11 +13,38 @@ function sanitizeFileName(value: string) {
   return value.replace(/[^a-zA-Z0-9-_]/g, "-").replace(/-+/g, "-");
 }
 
+function safeKeys(value: unknown): string[] {
+  if (!value) return [];
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return Object.keys(parsed).slice(0, 20);
+      }
+    } catch {
+      return [];
+    }
+
+    return [];
+  }
+
+  if (typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.keys(value as Record<string, unknown>).slice(0, 20);
+}
+
+function valueType(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "array";
+  return typeof value;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const debug = request.nextUrl.searchParams.get("debug") === "1";
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -40,6 +67,7 @@ export async function GET(
     }
 
     const report = data as Report;
+    const reportRecord = report as unknown as Record<string, unknown>;
     const exportable = isReportPdfExportable(report);
     const exportabilitySignals = getReportPdfExportabilitySignals(report);
 
@@ -54,6 +82,45 @@ export async function GET(
       hasIdentity: exportabilitySignals.hasIdentity,
       exportable,
     });
+
+    if (debug) {
+      return NextResponse.json({
+        id,
+        reportId: report.report_id ?? null,
+        status: report.status ?? null,
+        hasReportV21: Boolean(reportRecord.report_v2_1),
+        reportV21Type: valueType(reportRecord.report_v2_1),
+        reportV21Keys: safeKeys(reportRecord.report_v2_1),
+        hasScore: Boolean(reportRecord.score),
+        scoreType: valueType(reportRecord.score),
+        hasLegacyModules: Boolean(
+          reportRecord.module_1_overview ||
+          reportRecord.module_2_page_level ||
+          reportRecord.module_3_key_problems ||
+          reportRecord.module_4_eight_layers ||
+          reportRecord.module_5_optimization
+        ),
+        legacyModuleKeys: {
+          module_1_overview: safeKeys(reportRecord.module_1_overview),
+          module_2_page_level: safeKeys(reportRecord.module_2_page_level),
+          module_3_key_problems: safeKeys(reportRecord.module_3_key_problems),
+          module_4_eight_layers: safeKeys(reportRecord.module_4_eight_layers),
+          module_5_optimization: safeKeys(reportRecord.module_5_optimization),
+        },
+        hasStatusCards: Boolean(
+          reportRecord.trust_status ||
+          reportRecord.ranking_potential ||
+          reportRecord.risk_level
+        ),
+        hasIdentity: Boolean(
+          reportRecord.id ||
+          reportRecord.report_id ||
+          reportRecord.page_url ||
+          reportRecord.analyzed_url
+        ),
+        exportable,
+      });
+    }
 
     if ((report.status === "pending" || report.status === "failed") && !exportable) {
       return NextResponse.json({ error: "Report is still generating" }, { status: 409 });
