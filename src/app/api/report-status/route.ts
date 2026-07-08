@@ -128,10 +128,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { task_id, result, failed, report_id } = body;
+    const { task_id, result, failed, report_id, reportId, database_report_id } = body;
+    const requestReportId = report_id || reportId || null;
 
-    if (!task_id && !report_id) {
-      return NextResponse.json({ error: "task_id or report_id is required" }, { status: 400 });
+    if (!task_id && !requestReportId && !database_report_id) {
+      return NextResponse.json({ error: "task_id, report_id, or database_report_id is required" }, { status: 400 });
     }
 
     const persistableResult = unwrapPersistableReportResult(result);
@@ -147,7 +148,8 @@ export async function POST(request: NextRequest) {
 
     console.info("[report-status save]", {
       taskId: task_id,
-      reportId: report_id ?? null,
+      reportId: requestReportId,
+      databaseReportId: database_report_id ?? null,
       hasResult: Boolean(result),
       resultKeys: safeResultKeys(result),
       persistableResultKeys: safeResultKeys(persistableResult),
@@ -178,11 +180,41 @@ export async function POST(request: NextRequest) {
       "risk_level",
     ].join(", ");
 
-    // Find report by task_id, falling back to same-user report_id for recovery/debug posts.
-    let report: Record<string, any> | null = null;
-    let reportError: unknown = null;
+    console.info("[report-status lookup input]", {
+      taskId: task_id ?? null,
+      reportId: requestReportId,
+      databaseReportId: database_report_id ?? null,
+      hasResult: Boolean(result),
+      failed: Boolean(failed),
+    });
 
-    if (task_id) {
+    // Find report by DB id, report_id, then task_id, always scoped to current user.
+    let report: Record<string, any> | null = null;
+    let foundBy: "database_id" | "report_id" | "task_id" | "none" = "none";
+
+    if (database_report_id) {
+      const lookup = await supabase
+        .from("reports")
+        .select(reportSelect)
+        .eq("id", database_report_id)
+        .eq("user_id", user.userId)
+        .single();
+      report = lookup.data;
+      if (report) foundBy = "database_id";
+    }
+
+    if (!report && requestReportId) {
+      const lookup = await supabase
+        .from("reports")
+        .select(reportSelect)
+        .eq("report_id", requestReportId)
+        .eq("user_id", user.userId)
+        .single();
+      report = lookup.data;
+      if (report) foundBy = "report_id";
+    }
+
+    if (!report && task_id) {
       const lookup = await supabase
         .from("reports")
         .select(reportSelect)
@@ -190,25 +222,33 @@ export async function POST(request: NextRequest) {
         .eq("user_id", user.userId)
         .single();
       report = lookup.data;
-      reportError = lookup.error;
-    }
-
-    if ((!report || reportError) && report_id) {
-      const fallbackLookup = await supabase
-        .from("reports")
-        .select(reportSelect)
-        .eq("report_id", report_id)
-        .eq("user_id", user.userId)
-        .single();
-      report = fallbackLookup.data;
-      reportError = fallbackLookup.error;
+      if (report) foundBy = "task_id";
     }
 
     if (!report) {
-      return NextResponse.json({ error: "Report not found" }, { status: 404 });
+      console.info("[report-status lookup result]", {
+        foundBy,
+        found: false,
+        existingStatus: null,
+        existingHasContent: false,
+      });
+
+      return NextResponse.json({
+        ok: false,
+        reason: "report_not_found",
+        taskIdPresent: Boolean(task_id),
+        reportIdPresent: Boolean(requestReportId),
+        databaseReportIdPresent: Boolean(database_report_id),
+      }, { status: 404 });
     }
 
     const existingHasContent = hasPersistedReportContent(report);
+    console.info("[report-status lookup result]", {
+      foundBy,
+      found: true,
+      existingStatus: report.status ?? null,
+      existingHasContent,
+    });
     const saveDecision = existingHasContent
       ? "already_processed_existing_content"
       : persistableResult
@@ -219,7 +259,7 @@ export async function POST(request: NextRequest) {
 
     console.info("[report-status idempotency check]", {
       taskId: task_id ?? null,
-      reportId: report.report_id ?? report_id ?? null,
+      reportId: report.report_id ?? requestReportId,
       existingStatus: report.status ?? null,
       existingHasContent,
       incomingHasResult: Boolean(result),
@@ -229,7 +269,7 @@ export async function POST(request: NextRequest) {
 
     console.info("[report-status save decision]", {
       taskId: task_id ?? null,
-      reportId: report.report_id ?? report_id ?? null,
+      reportId: report.report_id ?? requestReportId,
       decision: saveDecision,
     });
 
@@ -332,7 +372,7 @@ export async function POST(request: NextRequest) {
 
     console.info("[report-status saved]", {
       taskId: task_id ?? null,
-      reportId: report.report_id ?? report_id ?? null,
+      reportId: report.report_id ?? requestReportId,
       updated: Boolean(completedReport),
       savedStatus: updateData.status,
       savedReportV21: Boolean(updateData.report_v2_1),

@@ -107,6 +107,10 @@ function getPersistableResult(result: unknown): Record<string, any> | null {
   return candidates.find((candidate) => candidate && hasPersistableReportContent(candidate)) ?? null;
 }
 
+function isDatabaseReportId(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-/i.test(value);
+}
+
 function EmptyState() {
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -187,6 +191,24 @@ function ReportsPage() {
   const reportCacheRef = useRef<Map<string, Report>>(new Map());
   const taskId = report?.status === "pending" ? report.task_id : null;
   const pendingReportId = report?.status === "pending" ? report.report_id : selectedReportId;
+  const buildReportStatusPayload = useCallback((payload: {
+    result: unknown;
+    failed?: boolean;
+    failure_reason?: string;
+  }) => {
+    const reportId = pendingReportId || report?.report_id || selectedReportId || undefined;
+    const databaseReportId = isDatabaseReportId(report?.id) ? report.id : undefined;
+
+    return {
+      task_id: taskId,
+      report_id: reportId,
+      reportId,
+      database_report_id: databaseReportId,
+      result: payload.result,
+      failed: payload.failed,
+      failure_reason: payload.failure_reason,
+    };
+  }, [pendingReportId, report?.id, report?.report_id, selectedReportId, taskId]);
 
   // Handle payment success redirect — auto-submit audit if form data is present
   useEffect(() => {
@@ -434,7 +456,11 @@ function ReportsPage() {
           await fetch("/api/report-status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ task_id: taskId, result: null, failed: true }),
+            body: JSON.stringify(buildReportStatusPayload({
+              result: null,
+              failed: true,
+              failure_reason: "empty_result",
+            })),
           });
         } catch {}
 
@@ -492,7 +518,7 @@ function ReportsPage() {
         const saveRes = await fetch("/api/report-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ task_id: taskId, result: persistableResult }),
+          body: JSON.stringify(buildReportStatusPayload({ result: persistableResult })),
         });
         const saveData = await saveRes.json().catch(() => null);
         console.debug("[report persistence] report-status response", {
@@ -548,7 +574,11 @@ function ReportsPage() {
             await fetch("/api/report-status", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ task_id: taskId, result: null, failed: true }),
+              body: JSON.stringify(buildReportStatusPayload({
+                result: null,
+                failed: true,
+                failure_reason: "backend_failed",
+              })),
             });
           } catch {}
 
@@ -585,7 +615,7 @@ function ReportsPage() {
             await fetch("/api/report-status", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ task_id: taskId, result: persistableResult }),
+              body: JSON.stringify(buildReportStatusPayload({ result: persistableResult })),
             });
             resultSaved = true;
           }
@@ -598,7 +628,11 @@ function ReportsPage() {
           await fetch("/api/report-status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ task_id: taskId, result: null, failed: true }),
+            body: JSON.stringify(buildReportStatusPayload({
+              result: null,
+              failed: true,
+              failure_reason: "fallback_no_result",
+            })),
           });
         } catch {}
         setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
@@ -611,7 +645,7 @@ function ReportsPage() {
     return () => {
       eventSource.close();
     };
-  }, [taskId, pendingReportId, loadHistory, refreshCredits]);
+  }, [taskId, pendingReportId, loadHistory, refreshCredits, buildReportStatusPayload]);
 
   // First load: open the selected report, otherwise default to the latest history item.
   useEffect(() => {

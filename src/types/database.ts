@@ -53,6 +53,7 @@ export type GenerateReportRequest = {
 
 export type GenerateReportResponse = {
   report_id: string;
+  database_report_id?: string | null;
   page_url: string;
   page_type: string;
   gbp_url: string | null;
