@@ -57,6 +57,56 @@ function normalizeScoreValue(raw: unknown): string | null {
   return typeof raw === "string" ? raw : JSON.stringify(raw);
 }
 
+function asRecord(value: unknown): Record<string, any> | null {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, any>
+    : null;
+}
+
+function safeResultKeys(value: unknown): string[] {
+  const record = asRecord(value);
+  return record ? Object.keys(record).slice(0, 30) : [];
+}
+
+function hasLegacyModuleFields(value: Record<string, any>): boolean {
+  return Boolean(
+    value.module_1_overview ||
+    value.module_2_page_level ||
+    value.module_3_key_problems ||
+    value.module_4_eight_layers ||
+    value.module_5_optimization
+  );
+}
+
+function hasStatusCards(value: Record<string, any>): boolean {
+  return Boolean(value.trust_status || value.ranking_potential || value.risk_level);
+}
+
+function hasPersistableReportContent(value: unknown): value is Record<string, any> {
+  const record = asRecord(value);
+  if (!record) return false;
+
+  return Boolean(
+    record.report_v2_1 ||
+    record.score ||
+    hasLegacyModuleFields(record) ||
+    hasStatusCards(record)
+  );
+}
+
+function getPersistableResult(result: unknown): Record<string, any> | null {
+  const record = asRecord(result);
+  if (!record) return null;
+
+  const candidates = [
+    record,
+    asRecord(record.final_report),
+    asRecord(record.data),
+  ];
+
+  return candidates.find((candidate) => candidate && hasPersistableReportContent(candidate)) ?? null;
+}
+
 function EmptyState() {
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -354,9 +404,28 @@ function ReportsPage() {
     setSseProgress(null);
 
     const handleDone = async (result: any) => {
+      const persistableResult = getPersistableResult(result);
+      console.debug("[report persistence] SSE done", {
+        taskId,
+        hasResult: Boolean(result),
+        resultKeys: safeResultKeys(result),
+        hasPersistableResult: Boolean(persistableResult),
+        persistableResultKeys: safeResultKeys(persistableResult),
+        hasReportV21: Boolean(persistableResult?.report_v2_1),
+        hasScore: Boolean(persistableResult?.score),
+        hasFinalReport: Boolean(asRecord(result)?.final_report),
+        hasData: Boolean(asRecord(result)?.data),
+      });
+
       // Handle empty result from backend (task done but no report data)
-      if (!result || (!result.score && !result.report_v2_1)) {
-        console.error("[SSE] Task done but result is empty:", result);
+      if (!persistableResult) {
+        console.error("[SSE] Task done but result is empty", {
+          taskId,
+          hasResult: Boolean(result),
+          resultKeys: safeResultKeys(result),
+          hasFinalReport: Boolean(asRecord(result)?.final_report),
+          hasData: Boolean(asRecord(result)?.data),
+        });
         setSseActive(false);
         setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
 
@@ -374,7 +443,7 @@ function ReportsPage() {
       }
 
       // Parse score JSON from SSE result
-      const parsed = result?.score ? parseScore(result.score) : null;
+      const parsed = persistableResult.score ? parseScore(persistableResult.score) : null;
 
       // Construct Report object directly for instant rendering
       // Render immediately
@@ -385,23 +454,23 @@ function ReportsPage() {
           report_id: prev?.report_id || pendingReportId || "",
           external_report_id: prev?.external_report_id || null,
           user_id: prev?.user_id || "",
-          page_url: result.page_url || prev?.page_url || "",
-          page_type: result.page_type || prev?.page_type || null,
-          gbp_url: result.gbp_url || prev?.gbp_url || null,
-          gbp_connected: typeof result.gbp_connected === "boolean" ? result.gbp_connected : prev?.gbp_connected ?? null,
+          page_url: persistableResult.page_url || persistableResult.report_v2_1?.analyzed_url || prev?.page_url || "",
+          page_type: persistableResult.page_type || persistableResult.report_v2_1?.page_type || prev?.page_type || null,
+          gbp_url: persistableResult.gbp_url || persistableResult.report_v2_1?.gbp_status?.gbp_url || prev?.gbp_url || null,
+          gbp_connected: typeof persistableResult.gbp_connected === "boolean" ? persistableResult.gbp_connected : prev?.gbp_connected ?? null,
           task_id: taskId,
           status: reportStatus,
           access_type: prev?.access_type,
-          trust_status: normalizeScoreValue(result.trust_status) || prev?.trust_status || null,
-          ranking_potential: normalizeScoreValue(result.ranking_potential) || prev?.ranking_potential || null,
-          risk_level: normalizeScoreValue(result.risk_level) || prev?.risk_level || null,
-          generated_at: result.generated_at || prev?.generated_at || null,
-          module_1_overview: parsed?.module_1_overview || null,
-          module_2_page_level: parsed?.module_2_page_level || null,
-          module_3_key_problems: parsed?.module_3_key_problems || null,
-          module_4_eight_layers: parsed?.module_4_eight_layers || null,
-          module_5_optimization: parsed?.module_5_optimization || null,
-          report_v2_1: result.report_v2_1 || prev?.report_v2_1 || null,
+          trust_status: normalizeScoreValue(persistableResult.trust_status) || prev?.trust_status || null,
+          ranking_potential: normalizeScoreValue(persistableResult.ranking_potential) || prev?.ranking_potential || null,
+          risk_level: normalizeScoreValue(persistableResult.risk_level) || prev?.risk_level || null,
+          generated_at: persistableResult.generated_at || persistableResult.report_v2_1?.generated_at || prev?.generated_at || null,
+          module_1_overview: parsed?.module_1_overview || persistableResult.module_1_overview || null,
+          module_2_page_level: parsed?.module_2_page_level || persistableResult.module_2_page_level || null,
+          module_3_key_problems: parsed?.module_3_key_problems || persistableResult.module_3_key_problems || null,
+          module_4_eight_layers: parsed?.module_4_eight_layers || persistableResult.module_4_eight_layers || null,
+          module_5_optimization: parsed?.module_5_optimization || persistableResult.module_5_optimization || null,
+          report_v2_1: persistableResult.report_v2_1 || prev?.report_v2_1 || null,
           created_at: prev?.created_at || new Date().toISOString(),
         };
         reportCacheRef.current.set(completedReport.id, completedReport);
@@ -412,15 +481,41 @@ function ReportsPage() {
       if (pendingReportId) setActiveReportId(pendingReportId);
 
       // Async: save to DB + refresh credits + update history
-      fetch("/api/report-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task_id: taskId, result }),
-      }).then(() => {
-        refreshCredits({ force: true });
-      }).catch((err) => {
-        console.error("Failed to save report result:", err);
+      console.debug("[report persistence] posting report-status", {
+        taskId,
+        hasReportV21: Boolean(persistableResult.report_v2_1),
+        hasScore: Boolean(persistableResult.score),
+        resultKeys: safeResultKeys(persistableResult),
       });
+
+      try {
+        const saveRes = await fetch("/api/report-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task_id: taskId, result: persistableResult }),
+        });
+        const saveData = await saveRes.json().catch(() => null);
+        console.debug("[report persistence] report-status response", {
+          taskId,
+          ok: saveRes.ok,
+          status: saveData?.status,
+          reportId: saveData?.reportId,
+          hasReport: Boolean(saveData?.report),
+          hasReportV21: Boolean(saveData?.report?.report_v2_1),
+          hasScore: Boolean(saveData?.report?.score),
+        });
+
+        if (saveRes.ok && saveData?.report) {
+          const savedReport = saveData.report as Report;
+          setReport(savedReport);
+          reportCacheRef.current.set(savedReport.id, savedReport);
+          reportCacheRef.current.set(savedReport.report_id, savedReport);
+          setActiveReportId(savedReport.id);
+        }
+        refreshCredits({ force: true });
+      } catch (err) {
+        console.error("Failed to save report result:", err);
+      }
 
       await loadHistory();
     };
@@ -439,7 +534,7 @@ function ReportsPage() {
         if (data.status === "done") {
           eventSource.close();
           taskDone = true;
-          handleDone(data.result);
+          await handleDone(data.result);
           return;
         }
 
@@ -479,11 +574,18 @@ function ReportsPage() {
         const res = await fetch(`${BACKEND_URL}/task/${taskId}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.status === "done" && data.result) {
+          const persistableResult = getPersistableResult(data.result);
+          if (data.status === "done" && persistableResult) {
+            console.debug("[report persistence] fallback posting report-status", {
+              taskId,
+              hasReportV21: Boolean(persistableResult.report_v2_1),
+              hasScore: Boolean(persistableResult.score),
+              resultKeys: safeResultKeys(persistableResult),
+            });
             await fetch("/api/report-status", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ task_id: taskId, result: data.result }),
+              body: JSON.stringify({ task_id: taskId, result: persistableResult }),
             });
             resultSaved = true;
           }
