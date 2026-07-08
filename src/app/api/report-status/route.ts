@@ -139,6 +139,16 @@ function getRecoveryReportFields(
   };
 }
 
+function isMissingColumnError(error: unknown, columnName: string) {
+  const record = asRecord(error);
+  const message = [
+    record?.message,
+    record?.details,
+    record?.hint,
+  ].filter(Boolean).join(" ");
+  return typeof message === "string" && message.includes(columnName);
+}
+
 // POST — 由前端在 SSE done 后调用，保存报告结果 + 扣减 credits
 export async function POST(request: NextRequest) {
   try {
@@ -183,19 +193,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient();
 
-    const reportSelect = [
+    const lookupSelect = [
       "id",
       "report_id",
       "user_id",
       "task_id",
       "status",
       "access_type",
-      "report_v2_1",
-      "module_1_overview",
-      "module_2_page_level",
-      "module_3_key_problems",
-      "module_4_eight_layers",
-      "module_5_optimization",
       "trust_status",
       "ranking_potential",
       "risk_level",
@@ -217,7 +221,7 @@ export async function POST(request: NextRequest) {
     if (database_report_id) {
       const lookup = await supabase
         .from("reports")
-        .select(reportSelect)
+        .select(lookupSelect)
         .eq("id", database_report_id)
         .eq("user_id", user.userId)
         .single();
@@ -228,7 +232,7 @@ export async function POST(request: NextRequest) {
     if (!report && requestReportId) {
       const lookup = await supabase
         .from("reports")
-        .select(reportSelect)
+        .select(lookupSelect)
         .eq("report_id", requestReportId)
         .eq("user_id", user.userId)
         .single();
@@ -239,7 +243,7 @@ export async function POST(request: NextRequest) {
     if (!report && task_id) {
       const lookup = await supabase
         .from("reports")
-        .select(reportSelect)
+        .select(lookupSelect)
         .eq("task_id", task_id)
         .eq("user_id", user.userId)
         .single();
@@ -269,7 +273,7 @@ export async function POST(request: NextRequest) {
           if (globalLookup.data.user_id === user.userId) {
             const scopedRetry = await supabase
               .from("reports")
-              .select(reportSelect)
+              .select(lookupSelect)
               .eq("id", globalLookup.data.id)
               .eq("user_id", user.userId)
               .single();
@@ -306,7 +310,7 @@ export async function POST(request: NextRequest) {
                 status: "pending",
                 access_type: recoveryAccessType,
               })
-              .select(reportSelect)
+              .select(lookupSelect)
               .single();
 
             if (recoveryError || !recoveredReport) {
@@ -369,6 +373,8 @@ export async function POST(request: NextRequest) {
     }
 
     const existingHasContent = hasPersistedReportContent(report);
+    const existingStatus = typeof report.status === "string" ? report.status : null;
+    const shouldDeductCredit = existingStatus === "pending" || existingStatus === "failed";
     console.info("[report-status lookup result]", {
       foundBy,
       found: true,
@@ -477,12 +483,35 @@ export async function POST(request: NextRequest) {
     if (persistableResult.module_4_eight_layers) updateData.module_4_eight_layers = persistableResult.module_4_eight_layers;
     if (persistableResult.module_5_optimization) updateData.module_5_optimization = persistableResult.module_5_optimization;
 
-    const { data: completedReport, error: updateError } = await supabase
+    let { data: completedReport, error: updateError } = await supabase
       .from("reports")
       .update(updateData)
       .eq("id", report.id)
       .select("*")
       .single();
+
+    if (updateError && updateData.report_v2_1 && isMissingColumnError(updateError, "report_v2_1")) {
+      const fallbackUpdateData = { ...updateData };
+      delete fallbackUpdateData.report_v2_1;
+
+      console.error("[report-status saved fallback] report_v2_1 column unavailable; retrying legacy-compatible save", {
+        reportId: report.report_id ?? requestReportId,
+        taskIdSuffix: safeIdSuffix(task_id),
+      });
+
+      const fallbackUpdate = await supabase
+        .from("reports")
+        .update(fallbackUpdateData)
+        .eq("id", report.id)
+        .select("*")
+        .single();
+
+      completedReport = fallbackUpdate.data;
+      updateError = fallbackUpdate.error;
+      if (!updateError && completedReport) {
+        delete updateData.report_v2_1;
+      }
+    }
 
     if (updateError || !completedReport) {
       console.error("Supabase update error:", updateError);
@@ -490,7 +519,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Deduct credit after successful save (don't go below 0)
-    if (userData && userData.audit_credits > 0) {
+    if (shouldDeductCredit && userData && userData.audit_credits > 0) {
       await supabase
         .from("users")
         .update({ audit_credits: userData.audit_credits - 1, updated_at: new Date().toISOString() })
