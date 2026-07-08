@@ -9,7 +9,7 @@ import {
   Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
   ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon
 } from 'lucide-react';
-import { normalizeReportToV21 } from '@/lib/report-v21';
+import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
 import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v21/ReportV21Content';
@@ -720,6 +720,7 @@ export function ReportContent({
   const showFailed = isFailed && !isLoading;
   const normalized = normalizeReportToV21(report);
   const reportV21 = normalized.reportV21;
+  const canExportPdf = isReportPdfExportable(report);
   const overallStatus = reportV21.overall_status ?? {
     label: 'Unknown',
     level: 'medium',
@@ -895,12 +896,19 @@ export function ReportContent({
 
   const handleDownloadPDF = async () => {
     if (pdfStatus === 'downloading') return;
+    if (!canExportPdf) {
+      alert('Report is still generating');
+      return;
+    }
     setPdfStatus('downloading');
     try {
       const res = await fetch(`/api/reports/${report.id}/pdf`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'PDF export failed');
+        const message = err?.error === 'Report is still generating'
+          ? 'Report is still generating'
+          : 'PDF export failed. Please try again after the report finishes saving.';
+        throw new Error(message);
       }
 
       const blob = await res.blob();
@@ -1008,7 +1016,7 @@ export function ReportContent({
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
                 onClick={handleDownloadPDF}
-                disabled={pdfStatus === 'downloading' || report.status === 'pending'}
+                disabled={pdfStatus === 'downloading' || !canExportPdf}
                 className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#171B22] px-6 py-3 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_14px_28px_rgba(15,23,42,0.16)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {pdfStatus === 'downloading' ? (
