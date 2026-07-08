@@ -384,6 +384,14 @@ function truncateText(value: unknown, maxLength = 280): string {
   return `${rendered.slice(0, maxLength - 3).trim()}...`;
 }
 
+function compactTextMiddle(value: unknown, maxLength = 28): string {
+  const rendered = safeText(value);
+  if (rendered.length <= maxLength) return rendered;
+  const keepStart = Math.max(8, Math.floor((maxLength - 3) * 0.58));
+  const keepEnd = Math.max(6, maxLength - 3 - keepStart);
+  return `${rendered.slice(0, keepStart)}...${rendered.slice(-keepEnd)}`;
+}
+
 function safeList<T>(value: T[] | undefined | null): T[] {
   return Array.isArray(value) ? value : [];
 }
@@ -569,7 +577,7 @@ function ReportHeader({
     { label: "Page Type", value: reportV21.page_type || report.page_type || "Service Page" },
     { label: "GBP Status", value: labelize(reportV21.gbp_status.status) },
     { label: "Generated", value: formatDate(reportV21.generated_at) },
-    { label: "Report ID", value: reportV21.report_id || report.external_report_id || report.report_id },
+    { label: "Report ID", value: compactTextMiddle(reportV21.report_id || report.external_report_id || report.report_id, 30) },
   ];
 
   return (
