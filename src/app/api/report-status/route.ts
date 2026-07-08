@@ -59,7 +59,12 @@ function hasLegacyModuleFields(value: Record<string, any>): boolean {
 }
 
 function hasStatusCards(value: Record<string, any>): boolean {
-  return Boolean(value.trust_status || value.ranking_potential || value.risk_level);
+  return Boolean(
+    value.trust_status ||
+    value.ranking_potential ||
+    value.risk_level ||
+    value.overall_status
+  );
 }
 
 function getReportV21(value: unknown): Record<string, any> | null {
@@ -82,14 +87,33 @@ function hasPersistableReportContent(value: unknown): value is Record<string, an
   );
 }
 
-function getPersistableResult(result: unknown): Record<string, any> | null {
-  const record = asRecord(result);
+function hasPersistedReportContent(report: unknown): boolean {
+  const record = asRecord(report);
+  if (!record) return false;
+
+  return Boolean(
+    getReportV21(record.report_v2_1) ||
+    record.score ||
+    hasLegacyModuleFields(record) ||
+    record.trust_status ||
+    record.ranking_potential ||
+    record.risk_level
+  );
+}
+
+function unwrapPersistableReportResult(raw: unknown): Record<string, any> | null {
+  const record = asRecord(raw);
   if (!record) return null;
 
+  const nestedResult = asRecord(record.result);
   const candidates = [
     record,
+    nestedResult,
     asRecord(record.final_report),
     asRecord(record.data),
+    asRecord(record.payload),
+    asRecord(nestedResult?.final_report),
+    asRecord(nestedResult?.data),
   ];
 
   return candidates.find((candidate) => candidate && hasPersistableReportContent(candidate)) ?? null;
@@ -104,13 +128,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { task_id, result, failed } = body;
+    const { task_id, result, failed, report_id } = body;
 
-    if (!task_id) {
-      return NextResponse.json({ error: "task_id is required" }, { status: 400 });
+    if (!task_id && !report_id) {
+      return NextResponse.json({ error: "task_id or report_id is required" }, { status: 400 });
     }
 
-    const persistableResult = getPersistableResult(result);
+    const persistableResult = unwrapPersistableReportResult(result);
     const hasLegacyScore = Boolean(persistableResult?.score);
     const reportV21 = getReportV21(persistableResult?.report_v2_1);
     const hasReportV21 = Boolean(reportV21);
@@ -123,6 +147,7 @@ export async function POST(request: NextRequest) {
 
     console.info("[report-status save]", {
       taskId: task_id,
+      reportId: report_id ?? null,
       hasResult: Boolean(result),
       resultKeys: safeResultKeys(result),
       persistableResultKeys: safeResultKeys(persistableResult),
@@ -136,35 +161,103 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient();
 
-    // Find report by task_id
-    const { data: report, error: reportError } = await supabase
-      .from("reports")
-      .select("id, task_id, status, access_type")
-      .eq("task_id", task_id)
-      .eq("user_id", user.userId)
-      .single();
+    const reportSelect = [
+      "id",
+      "report_id",
+      "task_id",
+      "status",
+      "access_type",
+      "report_v2_1",
+      "module_1_overview",
+      "module_2_page_level",
+      "module_3_key_problems",
+      "module_4_eight_layers",
+      "module_5_optimization",
+      "trust_status",
+      "ranking_potential",
+      "risk_level",
+    ].join(", ");
 
-    if (reportError || !report) {
+    // Find report by task_id, falling back to same-user report_id for recovery/debug posts.
+    let report: Record<string, any> | null = null;
+    let reportError: unknown = null;
+
+    if (task_id) {
+      const lookup = await supabase
+        .from("reports")
+        .select(reportSelect)
+        .eq("task_id", task_id)
+        .eq("user_id", user.userId)
+        .single();
+      report = lookup.data;
+      reportError = lookup.error;
+    }
+
+    if ((!report || reportError) && report_id) {
+      const fallbackLookup = await supabase
+        .from("reports")
+        .select(reportSelect)
+        .eq("report_id", report_id)
+        .eq("user_id", user.userId)
+        .single();
+      report = fallbackLookup.data;
+      reportError = fallbackLookup.error;
+    }
+
+    if (!report) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
-    const canRecoverFailedReport = report.status === "failed" && hasPersistableContent;
+    const existingHasContent = hasPersistedReportContent(report);
+    const saveDecision = existingHasContent
+      ? "already_processed_existing_content"
+      : persistableResult
+        ? "save_incoming_result"
+        : failed
+          ? "mark_failed_empty_result"
+          : "no_persistable_result";
 
-    // Idempotency: a completed report should not be saved or charged again.
-    if (report.status !== "pending" && !canRecoverFailedReport) {
-      return NextResponse.json({ status: report.status, reportId: report.id, idempotent: true });
+    console.info("[report-status idempotency check]", {
+      taskId: task_id ?? null,
+      reportId: report.report_id ?? report_id ?? null,
+      existingStatus: report.status ?? null,
+      existingHasContent,
+      incomingHasResult: Boolean(result),
+      incomingHasPersistableResult: Boolean(persistableResult),
+      incomingKeys: safeResultKeys(persistableResult),
+    });
+
+    console.info("[report-status save decision]", {
+      taskId: task_id ?? null,
+      reportId: report.report_id ?? report_id ?? null,
+      decision: saveDecision,
+    });
+
+    if (existingHasContent) {
+      return NextResponse.json({
+        ok: true,
+        saved: false,
+        status: "already_processed",
+        reportId: report.id,
+        idempotent: true,
+        existingHasContent: true,
+      });
     }
 
     // Failed: mark the report failed, don't deduct credits
-    if (failed) {
+    if (failed && !persistableResult) {
       await supabase.from("reports").update({ status: "failed" }).eq("id", report.id);
-      return NextResponse.json({ status: "failed", reportId: report.id });
+      return NextResponse.json({ ok: true, saved: false, status: "failed", reportId: report.id });
     }
 
     if (!hasPersistableContent || !persistableResult) {
-      // Empty result — treat as failed
-      await supabase.from("reports").update({ status: "failed" }).eq("id", report.id);
-      return NextResponse.json({ status: "failed", reason: "empty_result" });
+      return NextResponse.json({
+        ok: false,
+        saved: false,
+        status: "no_persistable_result",
+        reason: "no_persistable_result",
+        reportId: report.id,
+      });
     }
 
     // Parse result
@@ -221,13 +314,12 @@ export async function POST(request: NextRequest) {
       .from("reports")
       .update(updateData)
       .eq("id", report.id)
-      .in("status", canRecoverFailedReport ? ["pending", "failed"] : ["pending"])
       .select("*")
       .single();
 
     if (updateError || !completedReport) {
       console.error("Supabase update error:", updateError);
-      return NextResponse.json({ status: "already_processed", reportId: report.id, idempotent: true });
+      return NextResponse.json({ error: "Failed to save report result" }, { status: 500 });
     }
 
     // Deduct credit after successful save (don't go below 0)
@@ -239,14 +331,29 @@ export async function POST(request: NextRequest) {
     }
 
     console.info("[report-status saved]", {
-      taskId: task_id,
+      taskId: task_id ?? null,
+      reportId: report.report_id ?? report_id ?? null,
       updated: Boolean(completedReport),
       savedStatus: updateData.status,
       savedReportV21: Boolean(updateData.report_v2_1),
-      savedScore: Boolean(updateData.score),
+      savedScore: hasLegacyScore,
+      savedStatusCards: Boolean(
+        updateData.trust_status ||
+        updateData.ranking_potential ||
+        updateData.risk_level
+      ),
     });
 
-    return NextResponse.json({ status: "done", reportId: report.id, report: completedReport });
+    return NextResponse.json({
+      ok: true,
+      saved: true,
+      status: "completed",
+      reportId: report.id,
+      hasReportV21,
+      hasScore: hasLegacyScore,
+      hasStatusCards: hasCards,
+      report: completedReport,
+    });
   } catch (error) {
     console.error("Report status error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
