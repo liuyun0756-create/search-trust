@@ -30,6 +30,7 @@ export interface Report {
   module_3_key_problems: Record<string, any> | null;
   module_4_eight_layers: Record<string, any> | null;
   module_5_optimization: Record<string, any> | null;
+  report_v2_1?: unknown | null;
   created_at: string;
 }
 
@@ -66,4 +67,5 @@ export type GenerateReportResponse = {
   module_3_key_problems: Record<string, any>;
   module_4_eight_layers: Record<string, any>;
   module_5_optimization: Record<string, any>;
+  report_v2_1?: unknown | null;
 };

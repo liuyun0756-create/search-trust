@@ -9,20 +9,16 @@ import {
   Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
   ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon
 } from 'lucide-react';
+import { normalizeReportToV21 } from '@/lib/report-v21';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
+import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v21/ReportV21Content';
 
-type TabId = 'Executive Summary' | 'Page Level' | 'Key Issues' | 'Six-Layer Model' | 'Optimization Path';
+type TabId = V21TabId;
 
-const TABS: TabId[] = ['Executive Summary', 'Page Level', 'Key Issues', 'Six-Layer Model', 'Optimization Path'];
+const TABS: TabId[] = V21_TABS;
 
-const SECTION_IDS: Record<TabId, string> = {
-  'Executive Summary': 'section-executive-summary',
-  'Page Level': 'section-page-level',
-  'Key Issues': 'section-key-issues',
-  'Six-Layer Model': 'section-six-layer-model',
-  'Optimization Path': 'section-optimization-path',
-};
+const SECTION_IDS: Record<TabId, string> = V21_SECTION_IDS;
 
 interface ReportContentProps {
   report: Report;
@@ -37,6 +33,14 @@ const STATUS_COLORS: Record<string, string> = {
   Medium: '#3B82F6', Moderate: '#A5D020',
   'Medium-High': '#EF4444', 'Medium-Low': '#B45309',
   'Good': '#22C55E', 'Fair': '#B45309', '良好': '#22C55E', '一般': '#F59E0B', '偏弱': '#EF4444',
+};
+
+const statusColorFor = (level: string, lowIsPositive = false) => {
+  if (level === 'low') return lowIsPositive ? '#22C55E' : '#EF4444';
+  if (level === 'high' || level === 'strong') return '#22C55E';
+  if (level === 'weak' || level === 'medium_high') return '#EF4444';
+  if (level === 'improvable' || level === 'competitive') return '#615FFF';
+  return '#3B82F6';
 };
 
 const LoadingState = ({ text = "Under detection..." }: { text?: string }) => (
@@ -637,11 +641,12 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
 // ============================================================
 function renderModule(tab: TabId, data: Record<string, any>) {
   switch (tab) {
-    case 'Executive Summary': return <Module1Overview data={data} />;
+    case 'Overall Conclusion': return <Module1Overview data={data} />;
     case 'Page Level': return <Module2PageLevel data={data} />;
     case 'Key Issues': return <Module3KeyProblems data={data} />;
-    case 'Six-Layer Model': return <Module4EightLayers data={data} />;
+    case 'Trust Layer Breakdown': return <Module4EightLayers data={data} />;
     case 'Optimization Path': return <Module5Optimization data={data} />;
+    case 'Data Coverage': return <SectionSkeleton />;
   }
 }
 
@@ -704,7 +709,7 @@ export function ReportContent({
   isLoading = false,
   isHeaderLoading = false,
 }: ReportContentProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('Executive Summary');
+  const [activeTab, setActiveTab] = useState<TabId>('Overall Conclusion');
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'downloading'>('idle');
@@ -713,6 +718,23 @@ export function ReportContent({
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
   const showFailed = isFailed && !isLoading;
+  const normalized = normalizeReportToV21(report);
+  const reportV21 = normalized.reportV21;
+  const overallStatus = reportV21.overall_status ?? {
+    label: 'Unknown',
+    level: 'medium',
+    explanation: 'No structured trust status was available.',
+  };
+  const rankingPotential = reportV21.ranking_potential ?? {
+    label: 'Unknown',
+    level: 'competitive',
+    explanation: 'No structured ranking potential was available.',
+  };
+  const riskLevel = reportV21.risk_level ?? {
+    label: 'Unknown',
+    level: 'medium',
+    explanation: 'No structured risk level was available.',
+  };
 
   // 滚动时自动高亮对应的 tab
   useEffect(() => {
@@ -736,12 +758,6 @@ export function ReportContent({
 
     return () => observers.forEach((o) => o.disconnect());
   }, []);
-
-  const isLocked = (tab: TabId) => {
-    return false
-    // if (isPaid) return false;
-    // return tab !== 'Executive Summary' && tab !== 'Page Level';
-  };
 
   const scrollToSection = (tab: TabId) => {
     setActiveTab(tab);
@@ -787,18 +803,8 @@ export function ReportContent({
     setShareModalOpen(true);
   };
 
-  // 后端可能返回 JSON 字符串，也可能直接返回对象。
-  const parseScoreField = (raw: unknown) => {
-    if (!raw) return null;
-    if (typeof raw === 'object') return raw as { label?: string; value?: string; description?: string };
-    if (typeof raw !== 'string') return null;
-    try { return JSON.parse(raw); } catch { return null; }
-  };
-
-  const trustStatus = parseScoreField(report.trust_status);
-  const rankingPotential = parseScoreField(report.ranking_potential);
-  const riskLevel = parseScoreField(report.risk_level);
   const isGbpStatusLoading = report.status === 'pending' && typeof report.gbp_connected !== 'boolean';
+  const normalizedGbpStatus = reportV21.gbp_status?.status || 'not_checked';
   const gbpStatus = isGbpStatusLoading
     ? {
         value: (
@@ -811,20 +817,27 @@ export function ReportContent({
         iconTone: 'text-gray-400',
         iconBg: 'bg-gray-50',
       }
-    : report.gbp_connected === true
+    : normalizedGbpStatus === 'checked'
       ? {
           value: 'Connected',
           tone: 'text-emerald-500',
           iconTone: 'text-emerald-500',
           iconBg: 'bg-emerald-50',
         }
-      : report.gbp_connected === false
+      : normalizedGbpStatus === 'not_found'
         ? {
-            value: 'Disconnected',
+            value: 'Not found',
             tone: 'text-red-500',
             iconTone: 'text-red-500',
             iconBg: 'bg-red-50',
           }
+        : normalizedGbpStatus === 'error'
+          ? {
+              value: 'Error',
+              tone: 'text-red-500',
+              iconTone: 'text-red-500',
+              iconBg: 'bg-red-50',
+            }
         : {
             value: 'Not checked',
             tone: 'text-gray-500',
@@ -834,41 +847,33 @@ export function ReportContent({
 
   const scoreCards = [
     {
-      label: trustStatus?.label || 'Trust Status',
-      val: trustStatus?.value || '—',
-      desc: trustStatus?.description || '',
-      color: STATUS_COLORS[trustStatus?.value || ''] || '#3B82F6',
+      label: 'Trust Status',
+      val: overallStatus.label || '—',
+      desc: overallStatus.explanation || '',
+      color: statusColorFor(overallStatus.level),
       icon: ShieldCheck,
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-500',
     },
     {
-      label: rankingPotential?.label || 'Ranking Potential',
-      val: rankingPotential?.value || '—',
-      desc: rankingPotential?.description || '',
-      color: STATUS_COLORS[rankingPotential?.value || ''] || '#A5D020',
+      label: 'Ranking Potential',
+      val: rankingPotential.label || '—',
+      desc: rankingPotential.explanation || '',
+      color: statusColorFor(rankingPotential.level),
       icon: BarChart3,
       iconBg: 'bg-indigo-50',
       iconColor: 'text-indigo-500',
     },
     {
-      label: riskLevel?.label || 'Risk Level',
-      val: riskLevel?.value || '—',
-      desc: riskLevel?.description || '',
-      color: STATUS_COLORS[riskLevel?.value || ''] || '#EF4444',
+      label: 'Risk Level',
+      val: riskLevel.label || '—',
+      desc: riskLevel.explanation || '',
+      color: statusColorFor(riskLevel.level, true),
       icon: TriangleAlert,
       iconBg: 'bg-red-50',
       iconColor: 'text-red-500',
     },
   ];
-
-  const moduleMap: Record<TabId, Record<string, any> | null> = {
-    'Executive Summary': report.module_1_overview,
-    'Page Level': report.module_2_page_level,
-    'Key Issues': report.module_3_key_problems,
-    'Six-Layer Model': report.module_4_eight_layers,
-    'Optimization Path': report.module_5_optimization,
-  };
 
   const handleSendEmail = async () => {
     if (!email || emailStatus === 'sending') return;
@@ -1132,12 +1137,12 @@ export function ReportContent({
 
       {/* Sticky Tab Bar */}
       {!showFailed && <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
-        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
           {TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => scrollToSection(tab)}
-              className={`relative rounded-xl px-4 py-3.5 text-[14px] font-bold whitespace-nowrap transition-all ${
+              className={`relative rounded-xl px-3 py-3.5 text-[13px] font-bold leading-tight transition-all ${
                 activeTab === tab
                   ? 'bg-[#1A1F2B] text-white shadow-sm'
                   : 'bg-white text-gray-400 hover:bg-white hover:text-[#1A1F2B]'
@@ -1150,17 +1155,13 @@ export function ReportContent({
       </div>}
 
       {/* All Sections */}
-      {!showFailed && <div className="space-y-8">
-        {TABS.map((tab) => (
-          <ModuleSection
-            key={tab}
-            tab={tab}
-            data={moduleMap[tab]}
-            isLocked={isLocked(tab)}
-            isLoading={isLoading}
-          />
-        ))}
-      </div>}
+      {!showFailed && (
+        <ReportV21Content
+          normalized={normalized}
+          rawReport={report}
+          isLoading={isLoading}
+        />
+      )}
     </main>
   );
 }

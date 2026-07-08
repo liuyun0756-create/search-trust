@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
-    const canRecoverFailedReport = report.status === "failed" && result?.score;
+    const hasLegacyScore = Boolean(result?.score);
+    const hasReportV21 = Boolean(result?.report_v2_1 && typeof result.report_v2_1 === "object");
+    const canRecoverFailedReport = report.status === "failed" && (hasLegacyScore || hasReportV21);
 
     // Idempotency: a completed report should not be saved or charged again.
     if (report.status !== "pending" && !canRecoverFailedReport) {
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "failed", reportId: report.id });
     }
 
-    if (!result || !result.score) {
+    if (!result || (!hasLegacyScore && !hasReportV21)) {
       // Empty result — treat as failed
       await supabase.from("reports").update({ status: "failed" }).eq("id", report.id);
       return NextResponse.json({ status: "failed", reason: "empty_result" });
@@ -98,6 +100,7 @@ export async function POST(request: NextRequest) {
     if (result.page_type) updateData.page_type = result.page_type;
     if (result.gbp_url) updateData.gbp_url = result.gbp_url;
     if (typeof result.gbp_connected === "boolean") updateData.gbp_connected = result.gbp_connected;
+    if (hasReportV21) updateData.report_v2_1 = result.report_v2_1;
 
     if (parsed) {
       if (parsed.module_1_overview) updateData.module_1_overview = parsed.module_1_overview;

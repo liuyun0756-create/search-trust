@@ -355,7 +355,7 @@ function ReportsPage() {
 
     const handleDone = async (result: any) => {
       // Handle empty result from backend (task done but no report data)
-      if (!result || !result.score) {
+      if (!result || (!result.score && !result.report_v2_1)) {
         console.error("[SSE] Task done but result is empty:", result);
         setSseActive(false);
         setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
@@ -401,6 +401,7 @@ function ReportsPage() {
           module_3_key_problems: parsed?.module_3_key_problems || null,
           module_4_eight_layers: parsed?.module_4_eight_layers || null,
           module_5_optimization: parsed?.module_5_optimization || null,
+          report_v2_1: result.report_v2_1 || prev?.report_v2_1 || null,
           created_at: prev?.created_at || new Date().toISOString(),
         };
         reportCacheRef.current.set(completedReport.id, completedReport);
@@ -473,9 +474,9 @@ function ReportsPage() {
 
       let resultSaved = false;
 
-      // Try to save result from backend REST API first
+      // SSE fallback save path: poll the backend task endpoint and persist if already complete.
       try {
-        const res = await fetch(`${BACKEND_URL}/task/${taskId}/result`);
+        const res = await fetch(`${BACKEND_URL}/task/${taskId}`);
         if (res.ok) {
           const data = await res.json();
           if (data.status === "done" && data.result) {
