@@ -4,7 +4,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { ReportPDFDocument } from "@/components/report/pdf/ReportPDFDocument";
-import { isReportPdfExportable } from "@/lib/report-v21";
+import { getReportPdfExportabilitySignals, isReportPdfExportable } from "@/lib/report-v21";
 import type { Report } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -40,7 +40,22 @@ export async function GET(
     }
 
     const report = data as Report;
-    if (report.status === "pending" && !isReportPdfExportable(report)) {
+    const exportable = isReportPdfExportable(report);
+    const exportabilitySignals = getReportPdfExportabilitySignals(report);
+
+    console.info("[PDF route exportability]", {
+      id,
+      reportId: report.report_id,
+      status: report.status,
+      hasReportV21: exportabilitySignals.hasReportV21,
+      hasScore: exportabilitySignals.hasScore,
+      hasLegacyModules: exportabilitySignals.hasLegacyModules,
+      hasStatusCards: exportabilitySignals.hasStatusCards,
+      hasIdentity: exportabilitySignals.hasIdentity,
+      exportable,
+    });
+
+    if ((report.status === "pending" || report.status === "failed") && !exportable) {
       return NextResponse.json({ error: "Report is still generating" }, { status: 409 });
     }
 

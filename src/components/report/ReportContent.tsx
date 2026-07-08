@@ -720,7 +720,8 @@ export function ReportContent({
   const showFailed = isFailed && !isLoading;
   const normalized = normalizeReportToV21(report);
   const reportV21 = normalized.reportV21;
-  const canExportPdf = isReportPdfExportable(report);
+  const normalizedIsRenderable = reportV21?.schema_version === "2.1" && normalized.source !== "fallback";
+  const canExportPdf = normalizedIsRenderable || isReportPdfExportable(report);
   const overallStatus = reportV21.overall_status ?? {
     label: 'Unknown',
     level: 'medium',
