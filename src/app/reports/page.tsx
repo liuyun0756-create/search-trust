@@ -111,6 +111,17 @@ function isDatabaseReportId(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-/i.test(value);
 }
 
+function buildReportRoute(params: {
+  report_id: string;
+  task_id?: string | null;
+  database_report_id?: string | null;
+}) {
+  const search = new URLSearchParams({ report_id: params.report_id });
+  if (params.task_id) search.set("task_id", params.task_id);
+  if (params.database_report_id) search.set("database_report_id", params.database_report_id);
+  return `/reports?${search.toString()}`;
+}
+
 function EmptyState() {
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -159,6 +170,8 @@ function ReportsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedReportId = searchParams.get("report_id");
+  const selectedTaskId = searchParams.get("task_id");
+  const selectedDatabaseReportId = searchParams.get("database_report_id");
   const paymentReturnParam = searchParams.get("payment");
   const isPaymentReturn = paymentReturnParam === "success" || paymentReturnParam === "return";
   const { isSignedIn, isLoaded } = useUser();
@@ -173,6 +186,7 @@ function ReportsPage() {
       audit_page_type: searchParams.get("audit_page_type"),
       task_id: searchParams.get("task_id"),
       report_id: searchParams.get("report_id"),
+      database_report_id: searchParams.get("database_report_id"),
     });
   }, [searchParams]);
 
@@ -189,7 +203,15 @@ function ReportsPage() {
   const processedPaymentRef = useRef<string | null>(null);
   const requestedMetaRef = useRef<Set<string>>(new Set());
   const reportCacheRef = useRef<Map<string, Report>>(new Map());
-  const taskId = report?.status === "pending" ? report.task_id : null;
+  const completedTaskIdsRef = useRef<Set<string>>(new Set());
+  const reportTaskId = report?.task_id || null;
+  const sseTaskIdCandidate = report?.status === "pending"
+    ? reportTaskId
+    : (!report ? selectedTaskId : null);
+  const taskId = sseTaskIdCandidate && !completedTaskIdsRef.current.has(sseTaskIdCandidate)
+    ? sseTaskIdCandidate
+    : null;
+  const payloadTaskId = reportTaskId || selectedTaskId || taskId;
   const pendingReportId = report?.status === "pending" ? report.report_id : selectedReportId;
   const buildReportStatusPayload = useCallback((payload: {
     result: unknown;
@@ -197,10 +219,12 @@ function ReportsPage() {
     failure_reason?: string;
   }) => {
     const reportId = pendingReportId || report?.report_id || selectedReportId || undefined;
-    const databaseReportId = isDatabaseReportId(report?.id) ? report.id : undefined;
+    const databaseReportId = isDatabaseReportId(report?.id)
+      ? report.id
+      : (isDatabaseReportId(selectedDatabaseReportId) ? selectedDatabaseReportId : undefined);
 
     return {
-      task_id: taskId,
+      task_id: payloadTaskId,
       report_id: reportId,
       reportId,
       database_report_id: databaseReportId,
@@ -208,7 +232,14 @@ function ReportsPage() {
       failed: payload.failed,
       failure_reason: payload.failure_reason,
     };
-  }, [pendingReportId, report?.id, report?.report_id, selectedReportId, taskId]);
+  }, [
+    payloadTaskId,
+    pendingReportId,
+    report?.id,
+    report?.report_id,
+    selectedDatabaseReportId,
+    selectedReportId,
+  ]);
 
   // Handle payment success redirect — auto-submit audit if form data is present
   useEffect(() => {
@@ -267,7 +298,7 @@ function ReportsPage() {
             gbpUrl: auditGbpUrl,
           });
           console.log("[PaymentReturn] submitAudit result:", result);
-          router.replace(`/reports?report_id=${result.report_id}`);
+          router.replace(buildReportRoute(result));
         } catch (err) {
           console.error("Auto-submit after payment failed:", err);
           const msg = err instanceof Error ? err.message : "Unknown error";
@@ -469,6 +500,7 @@ function ReportsPage() {
       }
 
       // Parse score JSON from SSE result
+      if (taskId) completedTaskIdsRef.current.add(taskId);
       const parsed = persistableResult.score ? parseScore(persistableResult.score) : null;
 
       // Construct Report object directly for instant rendering
@@ -537,6 +569,7 @@ function ReportsPage() {
           reportCacheRef.current.set(savedReport.id, savedReport);
           reportCacheRef.current.set(savedReport.report_id, savedReport);
           setActiveReportId(savedReport.id);
+          router.replace(`/reports?report_id=${savedReport.report_id}`, { scroll: false });
         }
         refreshCredits({ force: true });
       } catch (err) {
@@ -568,6 +601,7 @@ function ReportsPage() {
           eventSource.close();
           setSseActive(false);
           taskDone = true;
+          if (taskId) completedTaskIdsRef.current.add(taskId);
           setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
 
           try {
@@ -606,6 +640,7 @@ function ReportsPage() {
           const data = await res.json();
           const persistableResult = getPersistableResult(data.result);
           if (data.status === "done" && persistableResult) {
+            if (taskId) completedTaskIdsRef.current.add(taskId);
             console.debug("[report persistence] fallback posting report-status", {
               taskId,
               hasReportV21: Boolean(persistableResult.report_v2_1),
@@ -645,7 +680,7 @@ function ReportsPage() {
     return () => {
       eventSource.close();
     };
-  }, [taskId, pendingReportId, loadHistory, refreshCredits, buildReportStatusPayload]);
+  }, [taskId, pendingReportId, loadHistory, refreshCredits, buildReportStatusPayload, router]);
 
   // First load: open the selected report, otherwise default to the latest history item.
   useEffect(() => {

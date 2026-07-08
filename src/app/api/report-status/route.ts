@@ -34,6 +34,10 @@ function safeResultKeys(value: unknown): string[] {
   return record ? Object.keys(record).slice(0, 30) : [];
 }
 
+function safeIdSuffix(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value.slice(-8) : null;
+}
+
 function parseJsonObject(raw: unknown): Record<string, any> | null {
   if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw as Record<string, any>;
   if (typeof raw !== "string") return null;
@@ -119,6 +123,22 @@ function unwrapPersistableReportResult(raw: unknown): Record<string, any> | null
   return candidates.find((candidate) => candidate && hasPersistableReportContent(candidate)) ?? null;
 }
 
+function readString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function getRecoveryReportFields(
+  persistableResult: Record<string, any> | null,
+  reportV21: Record<string, any> | null
+) {
+  const gbpStatus = asRecord(reportV21?.gbp_status);
+  return {
+    pageUrl: readString(persistableResult?.page_url) || readString(reportV21?.analyzed_url),
+    pageType: readString(persistableResult?.page_type) || readString(reportV21?.page_type) || "Unknown",
+    gbpUrl: readString(persistableResult?.gbp_url) || readString(gbpStatus?.gbp_url) || "",
+  };
+}
+
 // POST — 由前端在 SSE done 后调用，保存报告结果 + 扣减 credits
 export async function POST(request: NextRequest) {
   try {
@@ -166,6 +186,7 @@ export async function POST(request: NextRequest) {
     const reportSelect = [
       "id",
       "report_id",
+      "user_id",
       "task_id",
       "status",
       "access_type",
@@ -190,7 +211,8 @@ export async function POST(request: NextRequest) {
 
     // Find report by DB id, report_id, then task_id, always scoped to current user.
     let report: Record<string, any> | null = null;
-    let foundBy: "database_id" | "report_id" | "task_id" | "none" = "none";
+    let foundBy: "database_id" | "report_id" | "task_id" | "recovery_created" | "none" = "none";
+    let recoveryReason: string | null = null;
 
     if (database_report_id) {
       const lookup = await supabase
@@ -226,11 +248,110 @@ export async function POST(request: NextRequest) {
     }
 
     if (!report) {
+      if (requestReportId && hasPersistableContent && persistableResult) {
+        const globalLookup = await supabase
+          .from("reports")
+          .select("id, user_id, status")
+          .eq("report_id", requestReportId)
+          .maybeSingle();
+
+        if (globalLookup.error) {
+          recoveryReason = "global_report_lookup_failed";
+          console.error("[report-status recovery] global lookup failed", {
+            reportId: requestReportId,
+            errorCode: globalLookup.error.code,
+          });
+        } else if (globalLookup.data) {
+          recoveryReason = globalLookup.data.user_id === user.userId
+            ? "same_user_report_found_after_scoped_lookup_failed"
+            : "report_id_conflict_for_different_user";
+
+          if (globalLookup.data.user_id === user.userId) {
+            const scopedRetry = await supabase
+              .from("reports")
+              .select(reportSelect)
+              .eq("id", globalLookup.data.id)
+              .eq("user_id", user.userId)
+              .single();
+            report = scopedRetry.data;
+            if (report) foundBy = "report_id";
+          }
+        } else {
+          const recoveryFields = getRecoveryReportFields(persistableResult, reportV21);
+
+          if (!recoveryFields.pageUrl) {
+            recoveryReason = "missing_recovery_page_url";
+          } else {
+            const { data: previousCompleted } = await supabase
+              .from("reports")
+              .select("id")
+              .eq("user_id", user.userId)
+              .in("status", ["free_preview", "paid_full"])
+              .limit(1);
+
+            const recoveryAccessType =
+              user.auditCredits > 1 || (previousCompleted?.length ?? 0) > 0
+                ? "paid_credit"
+                : "free_trial";
+
+            const { data: recoveredReport, error: recoveryError } = await supabase
+              .from("reports")
+              .insert({
+                report_id: requestReportId,
+                user_id: user.userId,
+                page_url: recoveryFields.pageUrl,
+                page_type: recoveryFields.pageType,
+                gbp_url: recoveryFields.gbpUrl,
+                task_id: task_id || null,
+                status: "pending",
+                access_type: recoveryAccessType,
+              })
+              .select(reportSelect)
+              .single();
+
+            if (recoveryError || !recoveredReport) {
+              recoveryReason = "recovery_insert_failed";
+              console.error("[report-status recovery] insert failed", {
+                reportId: requestReportId,
+                taskIdSuffix: safeIdSuffix(task_id),
+                errorCode: recoveryError?.code,
+              });
+            } else {
+              const recoveredRecord = recoveredReport as Record<string, any>;
+              report = recoveredRecord;
+              foundBy = "recovery_created";
+              recoveryReason = "recovery_created";
+              console.info("[report-status recovery] created missing report row", {
+                reportId: requestReportId,
+                databaseReportIdSuffix: safeIdSuffix(recoveredRecord.id),
+                taskIdSuffix: safeIdSuffix(task_id),
+                accessType: recoveryAccessType,
+                hasReportV21,
+                hasScore: hasLegacyScore,
+                hasStatusCards: hasCards,
+              });
+            }
+          }
+        }
+      } else {
+        recoveryReason = !requestReportId
+          ? "missing_report_id"
+          : !hasPersistableContent
+            ? "no_persistable_content"
+            : "missing_persistable_result";
+      }
+    }
+
+    if (!report) {
       console.info("[report-status lookup result]", {
         foundBy,
         found: false,
         existingStatus: null,
         existingHasContent: false,
+        recoveryReason,
+        hasPersistableContent,
+        taskIdSuffix: safeIdSuffix(task_id),
+        databaseReportIdSuffix: safeIdSuffix(database_report_id),
       });
 
       return NextResponse.json({
@@ -239,6 +360,11 @@ export async function POST(request: NextRequest) {
         taskIdPresent: Boolean(task_id),
         reportIdPresent: Boolean(requestReportId),
         databaseReportIdPresent: Boolean(database_report_id),
+        hasPersistableContent,
+        recovery: {
+          attempted: Boolean(requestReportId && hasPersistableContent && persistableResult),
+          reason: recoveryReason,
+        },
       }, { status: 404 });
     }
 
@@ -248,6 +374,7 @@ export async function POST(request: NextRequest) {
       found: true,
       existingStatus: report.status ?? null,
       existingHasContent,
+      recoveryReason,
     });
     const saveDecision = existingHasContent
       ? "already_processed_existing_content"
