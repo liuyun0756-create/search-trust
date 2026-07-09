@@ -2,15 +2,17 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Target, MapPin, UserCheck, FileText, Clock } from 'lucide-react';
+import { Shield, Target, MapPin, UserCheck, FileText, Clock, Fingerprint, Link2 } from 'lucide-react';
 
 const collapseSteps = [
-  { level: "L0", title: "Qualification", desc: "If a page fails qualification, deeper trust signals barely matter.", icon: Shield },
-  { level: "L1", title: "Specificity", desc: "If it passes qualification but lacks specificity, it begins to look templated.", icon: Target },
-  { level: "L2", title: "Real-World Anchors", desc: "Without real-world anchors, local claims become weak.", icon: MapPin },
-  { level: "L3", title: "Responsibility", desc: "Without responsibility, business legitimacy is unclear.", icon: UserCheck },
-  { level: "L4", title: "Standalone Value", desc: "Without standalone value, the page feels unnecessary.", icon: FileText },
-  { level: "L5", title: "Era Fit", desc: "Without era fit, it may be visible but not competitive.", icon: Clock },
+  { level: "L0", title: "Foundation", desc: "If the page lacks a clear service, topic, and local intent foundation, deeper evidence has less impact.", icon: Shield },
+  { level: "L0-A", title: "Entity Presence", desc: "Without visible entity presence, the page struggles to show who is responsible for the service.", icon: Fingerprint },
+  { level: "L0-B", title: "Entity Consistency", desc: "If identity signals conflict, trust evidence is harder to consolidate around one business.", icon: Link2 },
+  { level: "L1", title: "Specificity", desc: "If the page lacks specificity, it begins to feel templated or reusable.", icon: Target },
+  { level: "L2", title: "Real-World Connection", desc: "Without real-world connection, local claims become weak.", icon: MapPin },
+  { level: "L3", title: "Accountability", desc: "Without accountability, service responsibility remains unclear.", icon: UserCheck },
+  { level: "L4", title: "Page Unique Value", desc: "Without page unique value, the page feels unnecessary.", icon: FileText },
+  { level: "L5", title: "Algorithm Fit", desc: "Without algorithm fit, it may be visible but not structurally competitive.", icon: Clock },
 ];
 
 export function TrustCollapseFlow() {

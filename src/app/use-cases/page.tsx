@@ -25,7 +25,7 @@ const useCasesFAQData = [
   },
   {
     question: 'Is this only for local SEO?',
-    answer: 'The MVP is primarily built for local pages and local trust diagnosis. The L0–L5 framework is designed specifically for pages that need to establish entity authority in local search contexts.',
+    answer: 'The MVP is primarily built for local pages and local trust diagnosis. The v2.1 8-layer framework is designed for pages that need to establish entity authority, evidence, and accountability in local search contexts.',
   },
   {
     question: 'Can multi-location brands use it?',

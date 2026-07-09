@@ -31,7 +31,7 @@ export function ExampleFailTrust() {
           <div className="bg-[#F8F9FA] rounded-[24px] overflow-hidden border border-gray-100">
             <img
               src="/images/six-layer-trust-model.png"
-              alt="Example: how a local page fails trust"
+              alt="Example: how SearchTrust maps a local page across the 8-layer trust model"
               className="w-full h-auto"
             />
           </div>

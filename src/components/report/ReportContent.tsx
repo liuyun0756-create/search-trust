@@ -318,15 +318,16 @@ function Module3KeyProblems({ data }: { data: Record<string, any> }) {
 function Module4EightLayers({ data }: { data: Record<string, any> }) {
   const layers: any[] = data.layers || [];
   const visibleLayers = layers
-    .map((layer, index) => ({ ...layer, originalIndex: index }))
-    .filter((layer) => layer.originalIndex !== 1 && layer.originalIndex !== 2);
+    .map((layer, index) => ({ ...layer, originalIndex: index }));
   const layerTitles: Record<number, string> = {
-    0: 'L0-Relevance',
-    3: 'L1-Entity Clarity',
-    4: 'L2-Proof Signals',
-    5: 'L3-Local Fit',
-    6: 'L4-Strutural Trust',
-    7: 'L5-Standalone Value',
+    0: 'L0 Foundation',
+    1: 'L0-A Entity Presence',
+    2: 'L0-B Entity Consistency',
+    3: 'L1 Specificity',
+    4: 'L2 Real-World Connection',
+    5: 'L3 Accountability',
+    6: 'L4 Page Unique Value',
+    7: 'L5 Algorithm Fit',
   };
 
   const statusTagClass: Record<string, string> = {
@@ -340,7 +341,7 @@ function Module4EightLayers({ data }: { data: Record<string, any> }) {
   return (
     <section>
       <section className="text-[16px]  text-[#1A212B] mb-2 pb-2">
-        <span className="text-[16px] ">Below is the full six-layer trust diagnosis used to interpret the current strength of the page.</span>
+        <span className="text-[16px] ">Below is the full 8-layer trust diagnosis used to interpret the current strength of the page.</span>
       </section>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {visibleLayers.map((layer: any) => (

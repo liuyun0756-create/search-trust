@@ -17,23 +17,23 @@ const sections = [
   },
   {
     icon: Target,
-    title: 'Dominant failure layer',
-    desc: 'The layer where trust breakdown matters most.',
+    title: 'Primary blocking layer',
+    desc: 'The trust layer where the current weakness matters most.',
   },
   {
     icon: Layers,
-    title: 'Key issues by layer',
-    desc: 'Weaknesses organized through the six-layer model.',
+    title: '8-layer trust breakdown',
+    desc: 'Weaknesses organized across foundation, entity, specificity, accountability, value, and algorithm-fit layers.',
   },
   {
     icon: Zap,
-    title: 'Prioritized improvement path',
-    desc: 'What to fix first, next, and later.',
+    title: 'Data coverage and safe GBP alignment',
+    desc: 'What was checked, what was unavailable, and whether structured GBP alignment can be shown safely.',
   },
   {
     icon: FileText,
-    title: 'Strategic recommendations',
-    desc: 'Guidance focused on trust impact, not just issue listing.',
+    title: 'PDF export and client-ready views',
+    desc: 'Client View, Analyst View, and PDF output for agency reporting workflows.',
   },
 ];
 

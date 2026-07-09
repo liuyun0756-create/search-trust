@@ -161,6 +161,14 @@ export interface ClientSummary {
   expected_change: string;
 }
 
+export interface AgencyBranding {
+  enabled?: boolean;
+  agency_name?: string;
+  agency_logo_url?: string;
+  client_name?: string;
+  footer_note?: string;
+}
+
 export interface ReportV21 {
   schema_version: "2.1";
   report_id: string;
@@ -178,6 +186,7 @@ export interface ReportV21 {
   key_issues: KeyIssue[];
   optimization_path: OptimizationPath;
   client_summary: ClientSummary;
+  agency_branding?: AgencyBranding;
 }
 
 export type NormalizedReportSource = "native" | "legacy_adapted" | "fallback";

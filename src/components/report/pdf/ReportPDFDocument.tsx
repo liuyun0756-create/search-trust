@@ -2,7 +2,9 @@ import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
   extractGBPAlignmentRows,
+  getEffectiveBranding,
   getLayerDisplayConfig,
+  hasWhiteLabelBranding,
   normalizeReportToV21,
   REQUIRED_LAYER_KEYS,
 } from "@/lib/report-v21";
@@ -119,6 +121,41 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     marginBottom: 10,
+  },
+  agencyPanel: {
+    borderWidth: 1,
+    borderColor: "#E4EDD2",
+    borderRadius: 10,
+    backgroundColor: "#FBFDF5",
+    padding: 10,
+    marginBottom: 12,
+  },
+  agencyBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D6E8A8",
+    borderRadius: 8,
+    color: "#7A8A15",
+    fontSize: 7,
+    fontWeight: 700,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  agencyTitle: {
+    color: "#111827",
+    fontSize: 11,
+    fontWeight: 700,
+    marginBottom: 3,
+    lineHeight: 1.25,
+  },
+  agencyText: {
+    color: "#4B5563",
+    fontSize: 8,
+    lineHeight: 1.35,
+    marginBottom: 2,
   },
   scoreRow: {
     flexDirection: "row",
@@ -573,6 +610,8 @@ function ReportHeader({
   reportV21: ReportV21;
   normalized: NormalizedReportV21Result;
 }) {
+  const branding = getEffectiveBranding(reportV21);
+  const showBranding = hasWhiteLabelBranding(reportV21);
   const infoItems = [
     { label: "Page Type", value: reportV21.page_type || report.page_type || "Service Page" },
     { label: "GBP Status", value: labelize(reportV21.gbp_status.status) },
@@ -585,6 +624,15 @@ function ReportHeader({
       <Text style={styles.eyebrow}>SearchTrust Trust Audit Report</Text>
       <Text style={styles.title}>Trust Audit Report</Text>
       <Text style={styles.sourceBadge}>{sourceLabel(normalized.source)}</Text>
+      {showBranding && (
+        <View style={styles.agencyPanel}>
+          <Text style={styles.agencyBadge}>Agency report</Text>
+          {branding.clientName && <Text style={styles.agencyTitle}>Prepared for {truncateText(branding.clientName, 90)}</Text>}
+          {branding.agencyName && <Text style={styles.agencyText}>Prepared by {truncateText(branding.agencyName, 90)}</Text>}
+          <Text style={styles.agencyText}>Trust framework by SearchTrust</Text>
+          {branding.footerNote && <Text style={styles.agencyText}>{truncateText(branding.footerNote, 160)}</Text>}
+        </View>
+      )}
       <View style={styles.urlBox}>
         <Text style={styles.pageUrl}>{safeText(reportV21.analyzed_url || report.page_url)}</Text>
       </View>

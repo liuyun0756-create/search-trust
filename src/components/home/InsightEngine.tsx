@@ -12,8 +12,8 @@ export function InsightEngine() {
     {
       name: "Sophia Martinez",
       role: "Digital Marketing Expert",
-      title: "Google lacks trust, not information",
-      desc: "Google's local ranking algorithm weighs trust signals: entity consistency, citation authority, co-occurrence patterns. Most tools ignore all of these.",
+      title: "The gap is trust, not information",
+      desc: "Local competition depends on trust signals such as entity consistency, evidence, citations, and real-world context. Most tools ignore the structure behind those signals.",
     },
     {
       name: "Emma Wilson",

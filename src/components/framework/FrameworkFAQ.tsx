@@ -5,9 +5,9 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const faqData = [
   {
-    question: "Why six layers?",
+    question: "Why eight layers?",
     answer:
-      "Because trust is not built by random signals. It forms through a structured sequence, and six layers describe that structure more clearly than scattered factors.",
+      "Because local page trust is not built by one signal. The v2.1 framework separates foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit so the report can show where trust actually breaks.",
   },
   {
     question: "Are all layers equally important?",
@@ -22,7 +22,7 @@ const faqData = [
   {
     question: "How is this different from E-E-A-T?",
     answer:
-      "E-E-A-T is a broad quality lens. L0–L5 is a page-structure diagnosis model.",
+      "E-E-A-T is a broad quality lens. SearchTrust is a page and entity trust diagnosis model built for local pages and agency reporting.",
   },
   {
     question: "Is this only for Google?",

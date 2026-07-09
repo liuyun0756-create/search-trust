@@ -5,3 +5,4 @@ export * from "./legacyReportToV21";
 export * from "./normalizeReportToV21";
 export * from "./gbpAlignment";
 export * from "./pdfExportability";
+export * from "./branding";

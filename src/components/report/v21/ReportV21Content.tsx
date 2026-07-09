@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import type { Report } from "@/types/database";
 import { V21DataCoverage } from "./V21DataCoverage";
+import { V21BrandingHeader } from "./V21BrandingHeader";
 import { V21GBPAlignment } from "./V21GBPAlignment";
 import { V21KeyIssues } from "./V21KeyIssues";
 import { V21OptimizationPath } from "./V21OptimizationPath";
@@ -81,6 +82,7 @@ export function ReportV21Content({
   return (
     <div className="space-y-8">
       <V21ViewModeToggle mode={viewMode} onChange={setViewMode} />
+      <V21BrandingHeader reportV21={report} viewMode={viewMode} />
 
       <Section id={V21_SECTION_IDS["Overall Conclusion"]} title="Overall Conclusion">
         <V21OverallConclusion normalized={normalized} viewMode={viewMode} />

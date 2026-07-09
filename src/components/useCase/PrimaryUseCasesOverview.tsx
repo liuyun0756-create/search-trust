@@ -37,12 +37,12 @@ const tabs = [
       'Whether it deserves to exist independently',
     ],
     howHelps: [
-      'Analyze the page\'s dominant failure layer',
+      'Analyze the page\'s primary blocking trust layer',
       'Determine whether the page is only location-labeled',
       'Find gaps in specificity, real-world anchors, and standalone value',
       'Give low-cost fix recommendations before launch',
     ],
-    outputs: ['Trust status', 'Dominant layer', 'Risk list', 'Fix priorities'],
+    outputs: ['Trust status', 'Primary blocking layer', 'Risk list', 'Fix priorities'],
     benefits: [
       'Reduce low-trust pages before launch',
       'Lower late-stage rework',
@@ -66,13 +66,13 @@ const tabs = [
     whyNotEnoughIntro:
       'These actions do not answer:',
     whyNotEnough: [
-      'Does Google see this page as a real local entry point?',
+      'Does the page show enough evidence to act as a real local entry point?',
       'Where has the page lost trust?',
       'Is the page structurally unstable?',
     ],
     howHelps: [
       'Detect the trust fracture layer',
-      'Explain how Google may interpret the page',
+      'Explain how search systems may interpret the page structure',
       'Distinguish "not enough content" from "the structure is not trusted"',
       'Give the repair action that should happen first',
     ],
@@ -86,10 +86,10 @@ const tabs = [
   {
     id: 'ai-review',
     icon: Bot,
-    label: 'Review AI-generated city pages at scale',
-    shortLabel: 'Review AI-generated\ncity pages at scale',
+    label: 'Review priority AI-generated city pages',
+    shortLabel: 'Review priority\nAI city pages',
     description:
-      'You can now generate dozens or hundreds of city pages quickly — but speed does not tell you which pages look believable and which look like doorway-style expansion.',
+      'AI can generate many city pages quickly, but speed does not tell you which priority pages look believable and which look like doorway-style expansion.',
     currentPractice: [
       'Only check grammar and duplication',
       'Manually sample-review pages',
@@ -108,11 +108,11 @@ const tabs = [
       'Find programmatic risk signals',
       'Identify generic local page patterns',
       'Locate the most common trust gaps',
-      'Build a basic trust QA layer for scaled content',
+      'Build a basic trust QA layer for sampled or priority content reviews',
     ],
     outputs: [],
     benefits: [
-      'Reduce batch page risk',
+      'Reduce risk before broader rollout',
       'Raise the floor for template production',
       'Create a trust-review standard for content factories',
     ],
@@ -179,7 +179,7 @@ const tabs = [
     outputs: [],
     benefits: [
       'Improve location page consistency',
-      'Reduce batch location page risk',
+      'Reduce priority location page risk',
       'Help brands unify local page standards',
     ],
   },
