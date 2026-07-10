@@ -39,7 +39,7 @@ export function SampleReportHero() {
 
             <div className="mt-8 space-y-4 w-full">
               <p className="text-[#657083] text-[16px] leading-relaxed">
-                Explore a sample local page trust audit and see how SearchTrust v2.1 diagnoses trust breakdown across 8 evidence-backed layers.
+                Explore a sample local page trust audit and see how SearchTrust diagnoses trust breakdown across six structural layers.
               </p>
               <div className="flex max-w-full items-start gap-3 rounded-2xl border border-[#A5D020]/20 bg-[#F4F7E9] px-4 py-3">
                 <div className="mt-1 flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#A5D020]" />

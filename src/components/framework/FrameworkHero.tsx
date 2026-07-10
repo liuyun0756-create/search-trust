@@ -23,25 +23,25 @@ export function FrameworkHero() {
           <div className="flex-1 max-w-2xl">
             <div className="mb-6 pt-3">
               <span className="inline-block px-3 py-1 text-[10px] tracking-[0.2em] font-bold text-[#666] border border-gray-200 rounded bg-white/50 backdrop-blur-sm uppercase">
-                SearchTrust v2.1 Framework
+                The L0–L5 Trust Collapse Model
               </span>
             </div>
 
             <h1 className="text-[44px] md:text-[52px] font-[800] leading-[72px] text-[#1D2531] tracking-tight">
-              The 8-Layer Local <br />
-              Trust <span className="text-bar-highlight text-[#1D2531]">Model</span>
+              The L0–L5 Trust <br />
+              Collapse <span className="text-bar-highlight text-[#1D2531]">Model</span>
             </h1>
 
             <div className="mt-8 space-y-4 w-full">
               <p className="text-[#657083] text-[15px] leading-relaxed">
-                A structural framework for diagnosing whether a local page has the
-                entity, evidence, accountability, and page-level signals needed to
-                compete as a trustworthy local entry point.
+                A structural framework for diagnosing whether a local page qualifies
+                as a trustworthy entry point for Google, local search, and AI–era
+                citation systems.
               </p>
               <div className="flex max-w-full items-start gap-3 rounded-2xl border border-[#A5D020]/20 bg-[#F4F7E9] px-4 py-3">
                 <div className="mt-1 flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#A5D020]" />
                 <p className="text-[11px] md:text-[12px] text-[#4B5563] font-bold leading-snug uppercase tracking-[0.08em]">
-                  The current product uses an 8-layer evidence-backed diagnosis, evolved from the earlier SearchTrust trust-collapse framework.
+                  This framework is designed to explain why a page may fail trust before it fails visibility.
                 </p>
               </div>
             </div>
@@ -59,7 +59,7 @@ export function FrameworkHero() {
             <div className="w-[600px] h-[612px] rounded-2xl border border-white/60 bg-white/30 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative overflow-hidden">
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#A5D020]/10 blur-[80px] rounded-full" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <img src="/images/six-layer-trust-model.png" alt="SearchTrust 8-layer local trust model" />
+                <img src="/images/six-layer-trust-model.png" alt="Six-Layer Trust Model" />
               </div>
             </div>
           </div>

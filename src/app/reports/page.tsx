@@ -13,7 +13,7 @@ import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { submitAudit } from "@/lib/submit-audit";
 import type { Report } from "@/types/database";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_REPORT_API_BASE_URL || "http://localhost:8000/api/v1";
+const BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 
 function mergeReportMeta(report: Report, meta: Record<string, any>): Report {
@@ -55,90 +55,6 @@ function parseScore(raw: unknown): Record<string, any> | null {
 function normalizeScoreValue(raw: unknown): string | null {
   if (!raw) return null;
   return typeof raw === "string" ? raw : JSON.stringify(raw);
-}
-
-function asRecord(value: unknown): Record<string, any> | null {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, any>
-    : null;
-}
-
-function safeResultKeys(value: unknown): string[] {
-  const record = asRecord(value);
-  return record ? Object.keys(record).slice(0, 30) : [];
-}
-
-function hasLegacyModuleFields(value: Record<string, any>): boolean {
-  return Boolean(
-    value.module_1_overview ||
-    value.module_2_page_level ||
-    value.module_3_key_problems ||
-    value.module_4_eight_layers ||
-    value.module_5_optimization
-  );
-}
-
-function hasStatusCards(value: Record<string, any>): boolean {
-  return Boolean(value.trust_status || value.ranking_potential || value.risk_level);
-}
-
-function hasPersistableReportContent(value: unknown): value is Record<string, any> {
-  const record = asRecord(value);
-  if (!record) return false;
-
-  return Boolean(
-    record.report_v2_1 ||
-    record.score ||
-    hasLegacyModuleFields(record) ||
-    hasStatusCards(record)
-  );
-}
-
-function getPersistableResult(result: unknown): Record<string, any> | null {
-  const record = asRecord(result);
-  if (!record) return null;
-
-  const candidates = [
-    record,
-    asRecord(record.final_report),
-    asRecord(record.data),
-  ];
-
-  return candidates.find((candidate) => candidate && hasPersistableReportContent(candidate)) ?? null;
-}
-
-function isDatabaseReportId(value: unknown): value is string {
-  return typeof value === "string" && /^[0-9a-f]{8}-/i.test(value);
-}
-
-function failedReportPatch(taskId: string | null, payload: unknown, fallbackReason: string): Partial<Report> {
-  const record = asRecord(payload);
-  return {
-    status: "failed",
-    task_id: taskId,
-    error_code: typeof record?.error_code === "string" ? record.error_code : null,
-    error_message: typeof record?.error === "string" ? record.error : null,
-    user_message: typeof record?.user_message === "string" ? record.user_message : null,
-    retryable: typeof record?.retryable === "boolean" ? record.retryable : true,
-    validation_errors: Array.isArray(record?.validation_errors)
-      ? record.validation_errors.map(String)
-      : null,
-    warnings: Array.isArray(record?.warnings)
-      ? record.warnings.map(String)
-      : null,
-    failure_reason: typeof record?.error_code === "string" ? record.error_code : fallbackReason,
-  };
-}
-
-function buildReportRoute(params: {
-  report_id: string;
-  task_id?: string | null;
-  database_report_id?: string | null;
-}) {
-  const search = new URLSearchParams({ report_id: params.report_id });
-  if (params.task_id) search.set("task_id", params.task_id);
-  if (params.database_report_id) search.set("database_report_id", params.database_report_id);
-  return `/reports?${search.toString()}`;
 }
 
 function EmptyState() {
@@ -189,8 +105,6 @@ function ReportsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedReportId = searchParams.get("report_id");
-  const selectedTaskId = searchParams.get("task_id");
-  const selectedDatabaseReportId = searchParams.get("database_report_id");
   const paymentReturnParam = searchParams.get("payment");
   const isPaymentReturn = paymentReturnParam === "success" || paymentReturnParam === "return";
   const { isSignedIn, isLoaded } = useUser();
@@ -205,7 +119,6 @@ function ReportsPage() {
       audit_page_type: searchParams.get("audit_page_type"),
       task_id: searchParams.get("task_id"),
       report_id: searchParams.get("report_id"),
-      database_report_id: searchParams.get("database_report_id"),
     });
   }, [searchParams]);
 
@@ -222,43 +135,8 @@ function ReportsPage() {
   const processedPaymentRef = useRef<string | null>(null);
   const requestedMetaRef = useRef<Set<string>>(new Set());
   const reportCacheRef = useRef<Map<string, Report>>(new Map());
-  const completedTaskIdsRef = useRef<Set<string>>(new Set());
-  const reportTaskId = report?.task_id || null;
-  const sseTaskIdCandidate = report?.status === "pending"
-    ? reportTaskId
-    : (!report ? selectedTaskId : null);
-  const taskId = sseTaskIdCandidate && !completedTaskIdsRef.current.has(sseTaskIdCandidate)
-    ? sseTaskIdCandidate
-    : null;
-  const payloadTaskId = reportTaskId || selectedTaskId || taskId;
+  const taskId = report?.status === "pending" ? report.task_id : null;
   const pendingReportId = report?.status === "pending" ? report.report_id : selectedReportId;
-  const buildReportStatusPayload = useCallback((payload: {
-    result: unknown;
-    failed?: boolean;
-    failure_reason?: string;
-  }) => {
-    const reportId = pendingReportId || report?.report_id || selectedReportId || undefined;
-    const databaseReportId = isDatabaseReportId(report?.id)
-      ? report.id
-      : (isDatabaseReportId(selectedDatabaseReportId) ? selectedDatabaseReportId : undefined);
-
-    return {
-      task_id: payloadTaskId,
-      report_id: reportId,
-      reportId,
-      database_report_id: databaseReportId,
-      result: payload.result,
-      failed: payload.failed,
-      failure_reason: payload.failure_reason,
-    };
-  }, [
-    payloadTaskId,
-    pendingReportId,
-    report?.id,
-    report?.report_id,
-    selectedDatabaseReportId,
-    selectedReportId,
-  ]);
 
   // Handle payment success redirect — auto-submit audit if form data is present
   useEffect(() => {
@@ -317,7 +195,7 @@ function ReportsPage() {
             gbpUrl: auditGbpUrl,
           });
           console.log("[PaymentReturn] submitAudit result:", result);
-          router.replace(buildReportRoute(result));
+          router.replace(`/reports?report_id=${result.report_id}`);
         } catch (err) {
           console.error("Auto-submit after payment failed:", err);
           const msg = err instanceof Error ? err.message : "Unknown error";
@@ -476,44 +354,18 @@ function ReportsPage() {
     setSseProgress(null);
 
     const handleDone = async (result: any) => {
-      const persistableResult = getPersistableResult(result);
-      console.debug("[report persistence] SSE done", {
-        taskId,
-        hasResult: Boolean(result),
-        resultKeys: safeResultKeys(result),
-        hasPersistableResult: Boolean(persistableResult),
-        persistableResultKeys: safeResultKeys(persistableResult),
-        hasReportV21: Boolean(persistableResult?.report_v2_1),
-        hasScore: Boolean(persistableResult?.score),
-        hasFinalReport: Boolean(asRecord(result)?.final_report),
-        hasData: Boolean(asRecord(result)?.data),
-      });
-
       // Handle empty result from backend (task done but no report data)
-      if (!persistableResult) {
-        console.error("[SSE] Task done but result is empty", {
-          taskId,
-          hasResult: Boolean(result),
-          resultKeys: safeResultKeys(result),
-          hasFinalReport: Boolean(asRecord(result)?.final_report),
-          hasData: Boolean(asRecord(result)?.data),
-        });
+      if (!result || !result.score) {
+        console.error("[SSE] Task done but result is empty:", result);
         setSseActive(false);
-        setReport((prev) => prev?.task_id === taskId ? {
-          ...prev,
-          ...failedReportPatch(taskId, result, "empty_result"),
-        } : prev);
+        setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
 
         // Mark as failed — delete the empty report record
         try {
           await fetch("/api/report-status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(buildReportStatusPayload({
-              result: null,
-              failed: true,
-              failure_reason: "empty_result",
-            })),
+            body: JSON.stringify({ task_id: taskId, result: null, failed: true }),
           });
         } catch {}
 
@@ -522,8 +374,7 @@ function ReportsPage() {
       }
 
       // Parse score JSON from SSE result
-      if (taskId) completedTaskIdsRef.current.add(taskId);
-      const parsed = persistableResult.score ? parseScore(persistableResult.score) : null;
+      const parsed = result?.score ? parseScore(result.score) : null;
 
       // Construct Report object directly for instant rendering
       // Render immediately
@@ -534,23 +385,22 @@ function ReportsPage() {
           report_id: prev?.report_id || pendingReportId || "",
           external_report_id: prev?.external_report_id || null,
           user_id: prev?.user_id || "",
-          page_url: persistableResult.page_url || persistableResult.report_v2_1?.analyzed_url || prev?.page_url || "",
-          page_type: persistableResult.page_type || persistableResult.report_v2_1?.page_type || prev?.page_type || null,
-          gbp_url: persistableResult.gbp_url || persistableResult.report_v2_1?.gbp_status?.gbp_url || prev?.gbp_url || null,
-          gbp_connected: typeof persistableResult.gbp_connected === "boolean" ? persistableResult.gbp_connected : prev?.gbp_connected ?? null,
+          page_url: result.page_url || prev?.page_url || "",
+          page_type: result.page_type || prev?.page_type || null,
+          gbp_url: result.gbp_url || prev?.gbp_url || null,
+          gbp_connected: typeof result.gbp_connected === "boolean" ? result.gbp_connected : prev?.gbp_connected ?? null,
           task_id: taskId,
           status: reportStatus,
           access_type: prev?.access_type,
-          trust_status: normalizeScoreValue(persistableResult.trust_status) || prev?.trust_status || null,
-          ranking_potential: normalizeScoreValue(persistableResult.ranking_potential) || prev?.ranking_potential || null,
-          risk_level: normalizeScoreValue(persistableResult.risk_level) || prev?.risk_level || null,
-          generated_at: persistableResult.generated_at || persistableResult.report_v2_1?.generated_at || prev?.generated_at || null,
-          module_1_overview: parsed?.module_1_overview || persistableResult.module_1_overview || null,
-          module_2_page_level: parsed?.module_2_page_level || persistableResult.module_2_page_level || null,
-          module_3_key_problems: parsed?.module_3_key_problems || persistableResult.module_3_key_problems || null,
-          module_4_eight_layers: parsed?.module_4_eight_layers || persistableResult.module_4_eight_layers || null,
-          module_5_optimization: parsed?.module_5_optimization || persistableResult.module_5_optimization || null,
-          report_v2_1: persistableResult.report_v2_1 || prev?.report_v2_1 || null,
+          trust_status: normalizeScoreValue(result.trust_status) || prev?.trust_status || null,
+          ranking_potential: normalizeScoreValue(result.ranking_potential) || prev?.ranking_potential || null,
+          risk_level: normalizeScoreValue(result.risk_level) || prev?.risk_level || null,
+          generated_at: result.generated_at || prev?.generated_at || null,
+          module_1_overview: parsed?.module_1_overview || null,
+          module_2_page_level: parsed?.module_2_page_level || null,
+          module_3_key_problems: parsed?.module_3_key_problems || null,
+          module_4_eight_layers: parsed?.module_4_eight_layers || null,
+          module_5_optimization: parsed?.module_5_optimization || null,
           created_at: prev?.created_at || new Date().toISOString(),
         };
         reportCacheRef.current.set(completedReport.id, completedReport);
@@ -561,42 +411,15 @@ function ReportsPage() {
       if (pendingReportId) setActiveReportId(pendingReportId);
 
       // Async: save to DB + refresh credits + update history
-      console.debug("[report persistence] posting report-status", {
-        taskId,
-        hasReportV21: Boolean(persistableResult.report_v2_1),
-        hasScore: Boolean(persistableResult.score),
-        resultKeys: safeResultKeys(persistableResult),
-      });
-
-      try {
-        const saveRes = await fetch("/api/report-status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildReportStatusPayload({ result: persistableResult })),
-        });
-        const saveData = await saveRes.json().catch(() => null);
-        console.debug("[report persistence] report-status response", {
-          taskId,
-          ok: saveRes.ok,
-          status: saveData?.status,
-          reportId: saveData?.reportId,
-          hasReport: Boolean(saveData?.report),
-          hasReportV21: Boolean(saveData?.report?.report_v2_1),
-          hasScore: Boolean(saveData?.report?.score),
-        });
-
-        if (saveRes.ok && saveData?.report) {
-          const savedReport = saveData.report as Report;
-          setReport(savedReport);
-          reportCacheRef.current.set(savedReport.id, savedReport);
-          reportCacheRef.current.set(savedReport.report_id, savedReport);
-          setActiveReportId(savedReport.id);
-          router.replace(`/reports?report_id=${savedReport.report_id}`, { scroll: false });
-        }
+      fetch("/api/report-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task_id: taskId, result }),
+      }).then(() => {
         refreshCredits({ force: true });
-      } catch (err) {
+      }).catch((err) => {
         console.error("Failed to save report result:", err);
-      }
+      });
 
       await loadHistory();
     };
@@ -615,7 +438,7 @@ function ReportsPage() {
         if (data.status === "done") {
           eventSource.close();
           taskDone = true;
-          await handleDone(data.result);
+          handleDone(data.result);
           return;
         }
 
@@ -623,23 +446,13 @@ function ReportsPage() {
           eventSource.close();
           setSseActive(false);
           taskDone = true;
-          if (taskId) completedTaskIdsRef.current.add(taskId);
-          setReport((prev) => prev?.task_id === taskId ? {
-            ...prev,
-            ...failedReportPatch(taskId, data.result || data, "backend_failed"),
-          } : prev);
+          setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
 
           try {
             await fetch("/api/report-status", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(buildReportStatusPayload({
-                result: data.result || null,
-                failed: true,
-                failure_reason: typeof data.result?.error_code === "string"
-                  ? data.result.error_code
-                  : "backend_failed",
-              })),
+              body: JSON.stringify({ task_id: taskId, result: null, failed: true }),
             });
           } catch {}
 
@@ -652,46 +465,29 @@ function ReportsPage() {
     };
 
     eventSource.onerror = async () => {
+      eventSource.close();
       if (taskDone) return;
+
+      console.log("SSE error, falling back to load report from DB");
+      setSseActive(false);
 
       let resultSaved = false;
 
-      // A long-running Dify report can close one SSE connection before the task
-      // completes. Keep EventSource open so the browser reconnects while the
-      // backend still reports an active task.
+      // Try to save result from backend REST API first
       try {
-        const res = await fetch(`${BACKEND_URL}/task/${taskId}`);
+        const res = await fetch(`${BACKEND_URL}/task/${taskId}/result`);
         if (res.ok) {
           const data = await res.json();
-          if (["queued", "scraping", "analyzing", "reporting"].includes(data.status)) {
-            if (data.progress) setSseProgress(data.progress);
-            console.log("SSE reconnecting while report generation continues", { taskId, status: data.status });
-            return;
-          }
-
-          const persistableResult = getPersistableResult(data.result);
-          if (data.status === "done" && persistableResult) {
-            eventSource.close();
-            taskDone = true;
-            if (taskId) completedTaskIdsRef.current.add(taskId);
-            console.debug("[report persistence] fallback posting report-status", {
-              taskId,
-              hasReportV21: Boolean(persistableResult.report_v2_1),
-              hasScore: Boolean(persistableResult.score),
-              resultKeys: safeResultKeys(persistableResult),
-            });
+          if (data.status === "done" && data.result) {
             await fetch("/api/report-status", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(buildReportStatusPayload({ result: persistableResult })),
+              body: JSON.stringify({ task_id: taskId, result: data.result }),
             });
             resultSaved = true;
           }
         }
       } catch {}
-
-      eventSource.close();
-      setSseActive(false);
 
       if (!resultSaved) {
         // Task not found or no result — clean up the empty report
@@ -699,17 +495,10 @@ function ReportsPage() {
           await fetch("/api/report-status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(buildReportStatusPayload({
-              result: null,
-              failed: true,
-              failure_reason: "fallback_no_result",
-            })),
+            body: JSON.stringify({ task_id: taskId, result: null, failed: true }),
           });
         } catch {}
-        setReport((prev) => prev?.task_id === taskId ? {
-          ...prev,
-          ...failedReportPatch(taskId, null, "fallback_no_result"),
-        } : prev);
+        setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
       }
 
       // Reload history but keep the current report surface visible.
@@ -719,7 +508,7 @@ function ReportsPage() {
     return () => {
       eventSource.close();
     };
-  }, [taskId, pendingReportId, loadHistory, refreshCredits, buildReportStatusPayload, router]);
+  }, [taskId, pendingReportId, loadHistory, refreshCredits]);
 
   // First load: open the selected report, otherwise default to the latest history item.
   useEffect(() => {

@@ -18,19 +18,19 @@ interface WhatYouGetProps {
 const defaultBenefits = [
   {
     icon: Shield,
-    title: "An evidence-backed 8-layer trust diagnosis for one submitted page",
+    title: "A six-layer trust diagnosis for one submitted page",
   },
   {
     icon: AlertTriangle,
-    title: "The primary blocking trust layer holding the page back",
+    title: "The dominant failure point holding the page back",
   },
   {
     icon: Star,
-    title: "Data coverage, evidence, and prioritized recommendations",
+    title: "Prioritized recommendations based on trust impact",
   },
   {
     icon: Send,
-    title: "Web report and PDF export for client-ready sharing",
+    title: "Delivery by email within two hours of submission",
   }
 ];
 

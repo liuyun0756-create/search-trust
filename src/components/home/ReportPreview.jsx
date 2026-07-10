@@ -21,7 +21,7 @@ const reportTabs = [
       main_conclusion:
         'Your page qualifies for local search competition, but is not yet a high-trust local business page.',
       explanation:
-        'The page has foundational capabilities, such as a clear topic and service direction, but shows visible gaps in entity presence and specificity. These gaps limit the evidence available to support stable local trust.',
+        'The page has foundational capabilities, such as a clear topic and service direction, but shows visible gaps in entity presence and specificity. These gaps cause the page to be interpreted as lacking real-world identity traces, limiting trust accumulation and ranking stability in local search.',
     },
   },
   {
@@ -51,7 +51,7 @@ const reportTabs = [
       primary_trust_failure: {
         blocking_layer: 'Entity Consistency Layer (L0-B)',
         summary:
-          'The page explains what you offer, but checked identity signals are not yet consistent enough to support strong entity trust.',
+          'Google can understand what you offer, but cannot consistently confirm who you are. As a result, trust signals cannot accumulate properly.',
       },
       concrete_issues: [
         {
@@ -118,50 +118,40 @@ const reportTabs = [
     },
   },
   {
-    label: '8-Layer Trust Model',
-    title: '8-Layer Trust Model',
-    type: 'trustLayerModel',
-    trustLayerModel: {
+    label: 'Six-Layer Model',
+    title: 'Six-Layer Model',
+    type: 'sixLayerModel',
+    sixLayerModel: {
       intro:
-        'Below is the 8-layer trust diagnosis used to interpret the current strength of the page.',
+        'Below is the full six-layer trust diagnosis used to interpret the current strength of the page.',
       layers: [
         {
-          title: 'L0 Foundation',
+          title: 'L0-Relevance',
           status: 'Good',
           description: 'The page has clear topic direction and service positioning.',
         },
         {
-          title: 'L0-A Entity Presence',
-          status: 'Fair',
-          description: 'The page still needs stronger business identity signals.',
-        },
-        {
-          title: 'L0-B Entity Consistency',
-          status: 'Fair',
-          description: 'Checked identity signals should be aligned across the page and related surfaces.',
-        },
-        {
-          title: 'L1 Specificity',
+          title: 'L1-Entity Clarity',
           status: 'Fair',
           description: 'Page content is too generic, lacking local context language.',
         },
         {
-          title: 'L2 Real-World Connection',
+          title: 'L2-Proof Signals',
           status: 'Fair',
           description: 'The page has weak connection to geographic space.',
         },
         {
-          title: 'L3 Accountability',
+          title: 'L3-Local Fit',
           status: 'Weak',
           description: 'The page focuses more on meeting search demand than taking real-world responsibility.',
         },
         {
-          title: 'L4 Page Unique Value',
+          title: 'L4-Strutural Trust',
           status: 'Good',
           description: 'The page has some independent value.',
         },
         {
-          title: 'L5 Algorithm Fit',
+          title: 'L5-Standalone Value',
           status: 'Good',
           description: 'The page performs well under current search algorithms.',
         },
@@ -192,11 +182,11 @@ const reportTabs = [
             execution_focus: [
               'Add complete street address with LocalBusiness schema.',
               'Present consistent NAP information in footer.',
-              'Add business hours and service scope where they can be supported by checked business signals.',
+              'Add business hours module consistent with Google Business Profile.',
             ],
             completion_signals: [
               'Page contains complete address and business hours.',
-              'Structured data and visible page content expose consistent entity information.',
+              'Google can identify entity information through structured data.',
             ],
             expected_impact: [
               'Improved entity recognition.',
@@ -209,11 +199,11 @@ const reportTabs = [
             execution_focus: [
               'Add complete street address with LocalBusiness schema.',
               'Present consistent NAP information in footer.',
-              'Add business hours and service scope where they can be supported by checked business signals.',
+              'Add business hours module consistent with Google Business Profile.',
             ],
             completion_signals: [
               'Page contains complete address and business hours.',
-              'Structured data and visible page content expose consistent entity information.',
+              'Google can identify entity information through structured data.',
             ],
             expected_impact: [
               'Improved entity recognition.',
@@ -226,11 +216,11 @@ const reportTabs = [
             execution_focus: [
               'Add complete street address with LocalBusiness schema.',
               'Present consistent NAP information in footer.',
-              'Add business hours and service scope where they can be supported by checked business signals.',
+              'Add business hours module consistent with Google Business Profile.',
             ],
             completion_signals: [
               'Page contains complete address and business hours.',
-              'Structured data and visible page content expose consistent entity information.',
+              'Google can identify entity information through structured data.',
             ],
             expected_impact: [
               'Improved entity recognition.',
@@ -603,7 +593,7 @@ export function ReportPreview() {
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A1F2B]">
-            See what a v2.1 Trust Audit Report looks like
+            See what a Trust Collapse Report looks like
           </h2>
           <div className="section-title-bar" />
         </div>
@@ -645,8 +635,8 @@ export function ReportPreview() {
                 <PageLevelPreview data={activeTab.pageLevel} />
               ) : activeTab.type === 'keyIssues' ? (
                 <KeyIssuesPreview data={activeTab.keyIssues} />
-              ) : activeTab.type === 'trustLayerModel' ? (
-                <SixLayerModelPreview data={activeTab.trustLayerModel} />
+              ) : activeTab.type === 'sixLayerModel' ? (
+                <SixLayerModelPreview data={activeTab.sixLayerModel} />
               ) : activeTab.type === 'optimizationPath' ? (
                 <OptimizationPathPreview data={activeTab.optimization} />
               ) : (

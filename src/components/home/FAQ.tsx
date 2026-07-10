@@ -6,11 +6,11 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 const faqData = [
   {
     question: "How is SearchTrust different from a standard SEO audit tool?",
-    answer: "Standard SEO tools measure performance signals: backlinks, traffic, content length, and technical errors. SearchTrust diagnoses page and entity trust structure: what evidence is present, which trust layer is weak, and what to fix first."
+    answer: "Standard SEO tools measure performance signals: backlinks, traffic, content length, technical errors. SearchTrust diagnoses trust signals — specifically why Google might withhold trust from a page even when standard signals look correct. It's a different instrument for a different question."
   },
   {
-    question: "What is the SearchTrust 8-layer trust model?",
-    answer: "It is a structured local trust diagnosis model covering foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit."
+    question: "What is the L0–L5 Trust Collapse Model?",
+    answer: "The L0-L5 model is a structural framework designed to diagnose whether a page qualifies as a real local entity entry point, covering layers from basic qualification to modern era-fit."
   },
   {
     question: "Does SearchTrust work for any type of local page?",
@@ -22,11 +22,11 @@ const faqData = [
   },
   {
     question: "How long does a trust audit take?",
-    answer: "A single-page audit usually generates a web report shortly after processing. Delivery timing may vary by page availability, data coverage, and workflow load."
+    answer: "A single-page audit is processed in real-time, typically providing a full Trust Collapse Report in under 60 seconds."
   },
   {
     question: "Can I run trust audits in bulk?",
-    answer: "The current checkout analyzes one URL at a time. Agencies and multi-location teams can start with priority pages first; broader batch workflows are not part of the current $19 one-time report."
+    answer: "Bulk auditing is available for enterprise teams managing hundreds or thousands of location pages simultaneously."
   }
 ];
 

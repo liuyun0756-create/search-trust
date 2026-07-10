@@ -9,7 +9,7 @@ const faqData = [
   },
   {
     q: 'Is payment handled securely?',
-    a: 'Yes. All payments are processed securely via Dodo Payments.',
+    a: 'Yes. All payments are processed securely via Paddle.',
   },
 ];
 

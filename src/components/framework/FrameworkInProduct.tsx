@@ -7,23 +7,23 @@ import { AlertTriangle, Lightbulb, Eye, Route } from 'lucide-react';
 const features = [
   {
     icon: AlertTriangle,
-    title: "Primary Blocking Layer",
-    desc: "Identifies which v2.1 trust layer is limiting the page most.",
+    title: "Dominant Failure Layer",
+    desc: "Identifies which trust layer is causing the most damage to your page's credibility.",
   },
   {
     icon: Lightbulb,
     title: "Why This Layer Matters",
-    desc: "Explains how the weakness affects page and entity trust structure.",
+    desc: "Explains the specific impact this failure has on Google's evaluation of your page.",
   },
   {
     icon: Eye,
-    title: "Evidence and Coverage",
-    desc: "Shows available evidence, checked data sources, and important limitations.",
+    title: "Google's Interpretation",
+    desc: "Shows exactly how Google interprets the missing or weak signals on your page.",
   },
   {
     icon: Route,
     title: "Lowest Cost Recovery Path",
-    desc: "Provides a prioritized fix strategy tied to the affected trust layer.",
+    desc: "Provides the most efficient fix strategy to restore trust at the failing layer.",
   },
 ];
 

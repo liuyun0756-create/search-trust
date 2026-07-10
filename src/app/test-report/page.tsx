@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { BackHeader } from "@/components/common/BackHeader";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_REPORT_API_BASE_URL || "http://localhost:8000/api/v1";
+const BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
 
 export default function TestReportPage() {
   const [url, setUrl] = useState("");

@@ -4,14 +4,12 @@ import React from 'react';
 import { Sparkles } from 'lucide-react';
 
 const levels = [
-  { id: "L0", title: "Foundation", desc: "Does the page have a clear service, topic, and local intent foundation?" },
-  { id: "L0-A", title: "Entity Presence", desc: "Can a real business entity be identified from checked signals?" },
-  { id: "L0-B", title: "Entity Consistency", desc: "Do identity signals stay consistent across checked surfaces?" },
+  { id: "L0", title: "Qualification", desc: "Does the page even qualify to compete?" },
   { id: "L1", title: "Specificity", desc: "Is it concrete enough to feel real, or generic enough to be reused anywhere?" },
-  { id: "L2", title: "Real-World Connection", desc: "Does it connect to places, service context, time, and reality?" },
-  { id: "L3", title: "Accountability", desc: "Does the page reflect real business accountability, not just claims?" },
-  { id: "L4", title: "Page Unique Value", desc: "Does this deserve to exist on its own?" },
-  { id: "L5", title: "Algorithm Fit", desc: "Is the page structure adapted to today's search and AI citation environment?" }
+  { id: "L2", title: "Real-World Anchors", desc: "Does it connect to places, service context, time, and reality?" },
+  { id: "L3", title: "Responsibility", desc: "Does the page reflect real business accountability, not just claims?" },
+  { id: "L4", title: "Standalone Value", desc: "Does this deserve to exist on its own?" },
+  { id: "L5", title: "Era Fit", desc: "Is the page structure adapted to today's Google and AI search environment?" }
 ];
 
 const CurvedConnectors = () => {
@@ -74,15 +72,15 @@ export function ProductDemo() {
           {/* 左侧：标题与文案 */}
           <div className="lg:sticky lg:top-24">
             <h2 className="text-[40px] md:text-[52px] font-extrabold text-white leading-[1.1] mb-8 tracking-tighter">
-              The SearchTrust 8-Layer <br /> Trust Model
+              The L0—L5 Trust <br /> Collapse Model
             </h2>
             <p className="text-gray-400 text-[17px] leading-relaxed max-w-md mb-24 font-medium">
-              A structural framework for diagnosing whether a page has the evidence, entity signals, and accountability needed to compete as a local entry point.
+              A structural framework for diagnosing whether a page qualifies as a real local entity entry point.
             </p>
             
             <div className="max-w-xs">
                <p className="text-gray-500 text-[14px] font-medium italic border-l-2 border-gray-800 pl-4 leading-relaxed">
-                SearchTrust doesn't just flag issues. It maps them to trust layers, evidence, coverage, and a prioritized fix path.
+                Search Trust doesn't just flag issues. It shows where trust collapses in the page's structure.
               </p>
             </div>
           </div>

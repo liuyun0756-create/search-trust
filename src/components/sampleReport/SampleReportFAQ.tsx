@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 const faqData = [
   {
     question: "What does SearchTrust analyze?",
-    answer: "SearchTrust analyzes one submitted local page URL through an evidence-backed 8-layer trust model to identify where structural trust breaks down and what to fix first.",
+    answer: "SearchTrust analyzes one submitted local page URL and evaluates it through a six-layer trust model to identify where structural trust breaks down and what to fix first.",
   },
   {
     question: "What kinds of pages is it best for?",
@@ -18,7 +18,7 @@ const faqData = [
   },
   {
     question: "What do I receive after purchase?",
-    answer: "You receive one structured report for one submitted URL. The report includes status cards, page level, key issues, an 8-layer trust breakdown, data coverage, safe GBP alignment status, prioritized recommendations, and PDF export.",
+    answer: "You receive one structured report for one submitted URL. The report includes current trust status, dominant failure layer, findings across the six-layer model, and prioritized recommendations.",
   },
   {
     question: "How is the report delivered?",
@@ -33,8 +33,8 @@ const faqData = [
     answer: "Yes. Pre-publish review is one of the clearest use cases for SearchTrust. It can help identify weak local grounding, template risk, and trust gaps before rollout.",
   },
   {
-    question: "Does this promise higher placement?",
-    answer: "No. SearchTrust does not promise rankings, traffic, or business outcomes. It helps diagnose structural trust weaknesses that may affect a page's ability to compete in local search.",
+    question: "Does this guarantee better rankings?",
+    answer: "No. SearchTrust does not guarantee rankings, traffic, or business outcomes. It helps diagnose structural trust weaknesses that may affect a page's ability to compete in local search.",
   },
   {
     question: "Is this suitable for agencies?",

@@ -8,7 +8,7 @@ import {
   type AnalyticsProperties,
 } from "@/lib/analytics-properties";
 
-const BACKEND_URL = process.env.REPORT_API_BASE_URL || "http://localhost:8000/api/v1";
+const BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
 const DEV_MODE = process.env.DEV_BYPASS_AUTH === "true";
 
 // TODO: 后端统一成英文后删除此映射
@@ -119,19 +119,15 @@ export async function POST(request: NextRequest) {
         : "free_trial";
 
     const reportId = `RPT-${Date.now().toString(36).toUpperCase()}`;
-    const { data: insertedReport, error: insertError } = await supabase
-      .from("reports")
-      .insert({
-        report_id: reportId,
-        user_id: user.userId,
-        page_url: url,
-        page_type: normalizedPageType,
-        gbp_url: normalizedGbpUrl,
-        status: "pending",
-        access_type: accessType,
-      })
-      .select("id, report_id")
-      .single();
+    const { error: insertError } = await supabase.from("reports").insert({
+      report_id: reportId,
+      user_id: user.userId,
+      page_url: url,
+      page_type: normalizedPageType,
+      gbp_url: normalizedGbpUrl,
+      status: "pending",
+      access_type: accessType,
+    });
 
     if (insertError) {
       console.error("Supabase insert error:", insertError);
@@ -153,14 +149,6 @@ export async function POST(request: NextRequest) {
       distinctId: analyticsDistinctId,
       event: "report generation started",
       properties: { ...analyticsProperties, report_id: reportId, access_type: accessType },
-    });
-
-    console.info("[report creation identity]", {
-      reportId,
-      databaseReportId: insertedReport?.id ?? null,
-      taskId: null,
-      inserted: Boolean(insertedReport),
-      taskIdPersisted: false,
     });
 
     console.log("/analyze接口，后端Received report generation request:", { url, page_type: normalizedPageType, gbp_url: normalizedGbpUrl });
@@ -200,13 +188,11 @@ export async function POST(request: NextRequest) {
     const { task_id } = await analyzeRes.json();
 
     // 2. 更新 task_id，等待 SSE 完成后填充模块
-    const { data: taskIdUpdate, error } = await supabase
+    const { error } = await supabase
       .from("reports")
       .update({ task_id })
       .eq("report_id", reportId)
-      .eq("user_id", user.userId)
-      .select("id, report_id, task_id")
-      .single();
+      .eq("user_id", user.userId);
 
     if (error) {
       console.error("Supabase task_id update error:", error);
@@ -235,19 +221,7 @@ export async function POST(request: NextRequest) {
       properties: { ...analyticsProperties, report_id: reportId, task_id },
     });
 
-    console.info("[report creation identity]", {
-      reportId,
-      databaseReportId: taskIdUpdate?.id ?? insertedReport?.id ?? null,
-      taskId: task_id,
-      inserted: Boolean(insertedReport),
-      taskIdPersisted: Boolean(taskIdUpdate?.task_id),
-    });
-
-    return NextResponse.json({
-      task_id,
-      report_id: reportId,
-      database_report_id: taskIdUpdate?.id ?? insertedReport?.id ?? null,
-    });
+    return NextResponse.json({ task_id, report_id: reportId });
   } catch (error) {
     console.error("Generate report error:", error);
     await captureServerEvent({

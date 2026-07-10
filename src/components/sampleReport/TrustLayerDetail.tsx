@@ -9,23 +9,21 @@ export function TrustLayerDetail() {
   const layers = [
     {
       id: 'L0',
-      name: 'Foundation',
+      name: 'Qualification',
       question: 'What It Answers',
       questionDesc: 'Does this page qualify to enter the evaluation process, or is it fundamentally not competitive?',
       contentTitle: 'What Can Be Written',
       contents: ['Does the page clearly focus on a real search intent', 'Is it a meaningful local page, not an invalid expansion', 'Is there a clear service/location/entity relationship'],
       failureTitle: 'Page Failure Signs',
       failures: ['Page intent is vague', 'Service-city relationship is unclear', 'Looks more like a bulk placeholder than a real entry page'],
-      googleLabel: "Search Interpretation",
-      googleDesc: 'This page may not yet show a stable local trust foundation.'
+      googleLabel: "Google's Likely Interpretation",
+      googleDesc: 'This page may not represent a distinct local destination worth surfacing'
     },
     { id: 'L1', name: 'Specificity' },
-    { id: 'L0-A', name: 'Entity Presence' },
-    { id: 'L0-B', name: 'Entity Consistency' },
-    { id: 'L2', name: 'Real-World Connection' },
-    { id: 'L3', name: 'Accountability' },
-    { id: 'L4', name: 'Page Unique Value' },
-    { id: 'L5', name: 'Algorithm Fit' }
+    { id: 'L2', name: 'Real-World Anchors' },
+    { id: 'L3', name: 'Responsibility' },
+    { id: 'L4', name: 'Standalone Value' },
+    { id: 'L5', name: 'Era Fit' }
   ];
 
   return (

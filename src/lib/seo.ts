@@ -60,15 +60,15 @@ export function createPageMetadata({
 
 export const pageSeo = {
   home: {
-    title: "SearchTrust | Evidence-Backed Local Page Trust Reports",
+    title: "SearchTrust | Find Why Google Doesn't Trust Your Local Pages",
     description:
-      "SearchTrust analyzes local pages and business entities with an evidence-backed 8-layer trust diagnosis for local SEO teams and agencies.",
+      "SearchTrust analyzes local pages and business entities to explain why Google may not trust them, using a trust diagnosis model for local SEO and SEO agencies.",
     path: "/",
   },
   framework: {
-    title: "8-Layer Local Trust Framework | SearchTrust",
+    title: "Google Trust Collapse Framework for Local SEO | SearchTrust",
     description:
-      "Learn the SearchTrust framework for diagnosing local page trust across foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit.",
+      "Learn the SearchTrust framework for diagnosing why local pages fail trust across eligibility, entity presence, consistency, specificity, real-world signals, accountability, and algorithm fit.",
     path: "/framework",
   },
   sampleReport: {

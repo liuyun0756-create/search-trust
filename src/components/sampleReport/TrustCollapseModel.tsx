@@ -7,14 +7,12 @@ import { ArrowRight, ShieldAlert } from 'lucide-react';
 
 export function TrustCollapseModel() {
   const layers = [
-    { id: 'L0', name: 'Foundation', desc: 'Does this page have a clear service, topic, and local intent foundation?' },
-    { id: 'L0-A', name: 'Entity Presence', desc: 'Can a real business entity be identified from checked signals?' },
-    { id: 'L0-B', name: 'Entity Consistency', desc: 'Do identity signals stay consistent across checked surfaces?' },
+    { id: 'L0', name: 'Qualification', desc: 'Can this page even qualify as a real competitor?' },
     { id: 'L1', name: 'Specificity', desc: 'Does it feel real and grounded, or generic and reusable?' },
-    { id: 'L2', name: 'Real-World Connection', desc: 'Does it connect to actual places, service reality, and local context?' },
-    { id: 'L3', name: 'Accountability', desc: 'Does it show process, responsibility, and next-step clarity?' },
-    { id: 'L4', name: 'Page Unique Value', desc: 'Does the page deserve to exist on its own?' },
-    { id: 'L5', name: 'Algorithm Fit', desc: 'Is the page adapted to modern search and AI citation expectations?' }
+    { id: 'L2', name: 'Real-World Anchors', desc: 'Does it connect to actual places, service reality, and local context?' },
+    { id: 'L3', name: 'Responsibility', desc: 'Does it show signs of accountable business presence?' },
+    { id: 'L4', name: 'Standalone Value', desc: 'Does the page deserve to exist on its own?' },
+    { id: 'L5', name: 'Era Fit', desc: 'Is the page adapted to modern search and AI citation expectations?' }
   ];
 
   return (
@@ -25,8 +23,8 @@ export function TrustCollapseModel() {
           {/* 左侧：文字介绍区域 */}
           <div className="lg:col-span-6">
             <h2 className="text-[40px] md:text-[48px] font-bold text-[#1A1F2B] leading-[1.1] mb-8">
-              The 8-Layer <br/>
-              <span className="text-[#A5D020]">Local Trust Model</span>
+              The L0—L5 <br/>
+              <span className="text-[#A5D020]">Trust Collapse Model</span>
             </h2>
             
             <p className="text-[18px] text-gray-500 leading-relaxed mb-8 font-medium">
