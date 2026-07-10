@@ -198,7 +198,7 @@ function legacyAction(
     related_rule_ids: [],
     where_to_add: ["Relevant page sections identified during implementation."],
     what_to_add: whatToAdd.length ? whatToAdd : ["Review the legacy recommendation and add missing trust-supporting details."],
-    example_copy: "",
+    example_copy: [],
     implementation_notes: ["Adapted from legacy report output; structured v2.1 implementation detail was not available."],
     completion_signals: stringList(completionSignals).map(cleanText),
     expected_effect: cleanText(expectedEffect) || "Improves the affected trust layer when implemented with page-specific evidence.",

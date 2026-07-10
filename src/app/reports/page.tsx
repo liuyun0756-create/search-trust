@@ -13,7 +13,7 @@ import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { submitAudit } from "@/lib/submit-audit";
 import type { Report } from "@/types/database";
 
-const BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
+const BACKEND_URL = process.env.NEXT_PUBLIC_REPORT_API_BASE_URL || "http://localhost:8000/api/v1";
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 
 function mergeReportMeta(report: Report, meta: Record<string, any>): Report {
@@ -109,6 +109,25 @@ function getPersistableResult(result: unknown): Record<string, any> | null {
 
 function isDatabaseReportId(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-/i.test(value);
+}
+
+function failedReportPatch(taskId: string | null, payload: unknown, fallbackReason: string): Partial<Report> {
+  const record = asRecord(payload);
+  return {
+    status: "failed",
+    task_id: taskId,
+    error_code: typeof record?.error_code === "string" ? record.error_code : null,
+    error_message: typeof record?.error === "string" ? record.error : null,
+    user_message: typeof record?.user_message === "string" ? record.user_message : null,
+    retryable: typeof record?.retryable === "boolean" ? record.retryable : true,
+    validation_errors: Array.isArray(record?.validation_errors)
+      ? record.validation_errors.map(String)
+      : null,
+    warnings: Array.isArray(record?.warnings)
+      ? record.warnings.map(String)
+      : null,
+    failure_reason: typeof record?.error_code === "string" ? record.error_code : fallbackReason,
+  };
 }
 
 function buildReportRoute(params: {
@@ -480,7 +499,10 @@ function ReportsPage() {
           hasData: Boolean(asRecord(result)?.data),
         });
         setSseActive(false);
-        setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
+        setReport((prev) => prev?.task_id === taskId ? {
+          ...prev,
+          ...failedReportPatch(taskId, result, "empty_result"),
+        } : prev);
 
         // Mark as failed — delete the empty report record
         try {
@@ -602,16 +624,21 @@ function ReportsPage() {
           setSseActive(false);
           taskDone = true;
           if (taskId) completedTaskIdsRef.current.add(taskId);
-          setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
+          setReport((prev) => prev?.task_id === taskId ? {
+            ...prev,
+            ...failedReportPatch(taskId, data.result || data, "backend_failed"),
+          } : prev);
 
           try {
             await fetch("/api/report-status", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(buildReportStatusPayload({
-                result: null,
+                result: data.result || null,
                 failed: true,
-                failure_reason: "backend_failed",
+                failure_reason: typeof data.result?.error_code === "string"
+                  ? data.result.error_code
+                  : "backend_failed",
               })),
             });
           } catch {}
@@ -625,21 +652,27 @@ function ReportsPage() {
     };
 
     eventSource.onerror = async () => {
-      eventSource.close();
       if (taskDone) return;
-
-      console.log("SSE error, falling back to load report from DB");
-      setSseActive(false);
 
       let resultSaved = false;
 
-      // SSE fallback save path: poll the backend task endpoint and persist if already complete.
+      // A long-running Dify report can close one SSE connection before the task
+      // completes. Keep EventSource open so the browser reconnects while the
+      // backend still reports an active task.
       try {
         const res = await fetch(`${BACKEND_URL}/task/${taskId}`);
         if (res.ok) {
           const data = await res.json();
+          if (["queued", "scraping", "analyzing", "reporting"].includes(data.status)) {
+            if (data.progress) setSseProgress(data.progress);
+            console.log("SSE reconnecting while report generation continues", { taskId, status: data.status });
+            return;
+          }
+
           const persistableResult = getPersistableResult(data.result);
           if (data.status === "done" && persistableResult) {
+            eventSource.close();
+            taskDone = true;
             if (taskId) completedTaskIdsRef.current.add(taskId);
             console.debug("[report persistence] fallback posting report-status", {
               taskId,
@@ -657,6 +690,9 @@ function ReportsPage() {
         }
       } catch {}
 
+      eventSource.close();
+      setSseActive(false);
+
       if (!resultSaved) {
         // Task not found or no result — clean up the empty report
         try {
@@ -670,7 +706,10 @@ function ReportsPage() {
             })),
           });
         } catch {}
-        setReport((prev) => prev?.task_id === taskId ? { ...prev, status: "failed" } : prev);
+        setReport((prev) => prev?.task_id === taskId ? {
+          ...prev,
+          ...failedReportPatch(taskId, null, "fallback_no_result"),
+        } : prev);
       }
 
       // Reload history but keep the current report surface visible.

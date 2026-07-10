@@ -7,7 +7,8 @@ import {
   Lock, Download,
   Loader2, AlertTriangle,
   Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
-  ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon
+  ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon,
+  RotateCcw, ArrowLeft
 } from 'lucide-react';
 import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
 import type { Report } from '@/types/database';
@@ -71,28 +72,111 @@ const HeaderSkeleton = () => (
   </section>
 );
 
-const FailedState = ({ onRetry }: { onRetry: () => void }) => (
+function safeStringList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
+    : [];
+}
+
+const FailedState = ({
+  report,
+  onRetry,
+  onBack,
+}: {
+  report: Report;
+  onRetry: () => void;
+  onBack: () => void;
+}) => {
+  const errorCode = report.error_code || report.failure_reason || 'REPORT_GENERATION_FAILED';
+  const userMessage = report.user_message || report.error_message || (
+    errorCode === 'V21_OUTPUT_INVALID'
+      ? 'The analysis finished, but the structured v2.1 report output was incomplete. No report has been generated from unsupported data.'
+      : 'The backend stream closed before returning usable report data. No report has been generated from unsupported data.'
+  );
+  const validationErrors = safeStringList(report.validation_errors);
+  const warnings = safeStringList(report.warnings);
+
+  return (
   <div className="bg-white rounded-[24px] border border-red-100 shadow-sm p-10 md:p-12 mb-8">
-    <div className="max-w-2xl">
-      <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-5">
-        <AlertTriangle className="w-6 h-6" />
+    <div className="max-w-3xl">
+      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-red-50 text-red-500 ring-8 ring-red-50/40">
+        <AlertTriangle className="h-8 w-8" />
       </div>
-      <h2 className="text-[24px] font-bold tracking-tighter text-[#1A212B] mb-3">
-        Report generation stopped
-      </h2>
-      <p className="text-[14px] text-[#6B7280] font-medium leading-relaxed mb-6">
-        The backend stream closed before returning report data, so this report could not be completed. Your audit credit has not been deducted.
+      <p className="mb-3 text-[12px] font-black uppercase tracking-[0.16em] text-red-500">
+        Structured output incomplete
       </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="bg-[#1D2531] text-white px-6 py-3 rounded-xl font-bold text-[14px] hover:bg-black transition-all"
-      >
-        Run a New Audit
-      </button>
+      <h2 className="mb-3 text-[28px] font-black tracking-tighter text-[#1A212B]">
+        Report generation needs another try
+      </h2>
+      <p className="mb-7 max-w-2xl text-[15px] font-medium leading-7 text-[#5C6675]">
+        {userMessage}
+      </p>
+
+      <div className="mb-7 rounded-2xl border border-[#E8EEF5] bg-[#F8FAFC] p-5">
+        <p className="text-[14px] font-bold text-[#1A212B]">What happened?</p>
+        <p className="mt-2 text-[13px] font-medium leading-6 text-[#657083]">
+          SearchTrust v2.1 now requires a native structured report from the analysis workflow before showing an evidence-backed report. This prevents the UI from filling missing diagnostic fields with unsupported fallback content.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1D2531] px-6 py-3 text-[14px] font-bold text-white transition-all hover:bg-black"
+        >
+          <RotateCcw className="h-4 w-4" />
+          Retry analysis
+        </button>
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-[14px] font-bold text-[#1A212B] transition-all hover:bg-gray-50"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to dashboard
+        </button>
+      </div>
+
+      <details className="mt-8 rounded-2xl border border-gray-100 bg-white p-5">
+        <summary className="cursor-pointer text-[13px] font-black uppercase tracking-[0.12em] text-gray-400">
+          Analyst / debug details
+        </summary>
+        <div className="mt-4 space-y-4 text-[13px] font-medium leading-6 text-[#657083]">
+          <div>
+            <span className="font-black text-[#1A212B]">error_code:</span> {errorCode}
+          </div>
+          {report.task_id && (
+            <div>
+              <span className="font-black text-[#1A212B]">task_id:</span> {report.task_id}
+            </div>
+          )}
+          {validationErrors.length > 0 && (
+            <div>
+              <p className="mb-2 font-black text-[#1A212B]">validation summary</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {validationErrors.slice(0, 6).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {warnings.length > 0 && (
+            <div>
+              <p className="mb-2 font-black text-[#1A212B]">warnings</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {warnings.slice(0, 6).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </details>
     </div>
   </div>
-);
+  );
+};
 
 const UnlockOverlay = ({ title, description }: { title: string; description: string }) => {
   const router = useRouter();
@@ -710,6 +794,7 @@ export function ReportContent({
   isLoading = false,
   isHeaderLoading = false,
 }: ReportContentProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>('Overall Conclusion');
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
@@ -804,6 +889,18 @@ export function ReportContent({
 
   const handleShareReport = () => {
     setShareModalOpen(true);
+  };
+
+  const handleRetryAnalysis = () => {
+    openAuditForm({
+      url: report.page_url,
+      pageType: report.page_type || 'Service Page',
+      gbpUrl: report.gbp_url || '',
+    });
+  };
+
+  const handleBackToDashboard = () => {
+    router.push('/reports');
   };
 
   const isGbpStatusLoading = report.status === 'pending' && typeof report.gbp_connected !== 'boolean';
@@ -1108,7 +1205,13 @@ export function ReportContent({
       </section>
       )}
 
-      {showFailed && <FailedState onRetry={openAuditForm} />}
+      {showFailed && (
+        <FailedState
+          report={report}
+          onRetry={handleRetryAnalysis}
+          onBack={handleBackToDashboard}
+        />
+      )}
 
       {/* Score Cards */}
       {!showFailed && <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

@@ -8,7 +8,7 @@ import {
   type AnalyticsProperties,
 } from "@/lib/analytics-properties";
 
-const BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
+const BACKEND_URL = process.env.REPORT_API_BASE_URL || "http://localhost:8000/api/v1";
 const DEV_MODE = process.env.DEV_BYPASS_AUTH === "true";
 
 // TODO: 后端统一成英文后删除此映射

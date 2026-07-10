@@ -49,10 +49,17 @@ export function V21ActionItems({
           <h4 className="text-[15px] font-black text-[#1A212B]">{item.task_title}</h4>
           <FieldList label="Where to add" values={item.where_to_add} />
           <FieldList label="What to add" values={item.what_to_add} />
-          {item.example_copy && (
+          {safeList(item.example_copy).filter(Boolean).length > 0 && (
             <div className="mt-3 rounded-xl border border-[#E4EDD2] bg-[#FBFDF5] p-3">
               <p className="mb-1 text-[12px] font-black uppercase tracking-[0.12em] text-[#8BAA2B]">Example copy</p>
-              <p className="text-[13px] font-medium leading-relaxed text-gray-700">{item.example_copy}</p>
+              <ul className="space-y-1.5">
+                {safeList(item.example_copy).filter(Boolean).map((copy, copyIndex) => (
+                  <li key={`${copy}-${copyIndex}`} className="flex gap-2 text-[13px] font-medium leading-relaxed text-gray-700">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#A5D020]" />
+                    <span>{copy}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           {showTechnical && <FieldList label="Implementation notes" values={item.implementation_notes} />}

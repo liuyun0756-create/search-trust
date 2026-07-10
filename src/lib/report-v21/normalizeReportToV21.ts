@@ -10,6 +10,7 @@ export function normalizeReportToV21(report: any): NormalizedReportV21Result {
     const nativeCandidate = clone(report?.report_v2_1);
     if (nativeCandidate) {
       applyTopLevelBranding(nativeCandidate, report);
+      normalizeActionExampleCopies(nativeCandidate);
       const nativeValidation = validateReportV21Client(nativeCandidate);
       if (nativeValidation.valid) {
         return {
@@ -91,6 +92,19 @@ function applyTopLevelBranding(candidate: unknown, report: any) {
   const branding = report?.agency_branding;
   if (!isRecord(branding) || branding.enabled !== true) return;
   candidate.agency_branding = clone(branding);
+}
+
+function normalizeActionExampleCopies(value: unknown): void {
+  if (Array.isArray(value)) {
+    value.forEach(normalizeActionExampleCopies);
+    return;
+  }
+  if (!isRecord(value)) return;
+
+  if ("task_title" in value && "affected_layer" in value && typeof value.example_copy === "string") {
+    value.example_copy = [value.example_copy];
+  }
+  Object.values(value).forEach(normalizeActionExampleCopies);
 }
 
 function fallbackReportV21(report: any): ReportV21 {

@@ -4,6 +4,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { ReportPDFDocument } from "@/components/report/pdf/ReportPDFDocument";
+import { SAMPLE_REPORT_V21 } from "@/components/report/sampleReportV21";
 import { getReportPdfExportabilitySignals, isReportPdfExportable } from "@/lib/report-v21";
 import type { Report } from "@/types/database";
 
@@ -39,18 +40,50 @@ function valueType(value: unknown): string {
   return typeof value;
 }
 
+async function renderReportPdf(report: Report) {
+  const document = React.createElement(ReportPDFDocument, { report }) as React.ReactElement<any>;
+  const buffer = await renderToBuffer(document);
+  const reportId = report.external_report_id || report.report_id;
+  const fileName = `SearchTrust-${sanitizeFileName(reportId)}.pdf`;
+
+  return new NextResponse(new Uint8Array(buffer), {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${fileName}"`,
+      "Cache-Control": "private, no-store",
+    },
+  });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const debug = request.nextUrl.searchParams.get("debug") === "1";
+    const { id } = await params;
+
+    if (id === SAMPLE_REPORT_V21.id || id === SAMPLE_REPORT_V21.report_id) {
+      if (debug) {
+        return NextResponse.json({
+          id,
+          reportId: SAMPLE_REPORT_V21.report_id,
+          status: SAMPLE_REPORT_V21.status,
+          sample: true,
+          hasReportV21: Boolean(SAMPLE_REPORT_V21.report_v2_1),
+          reportV21Type: valueType(SAMPLE_REPORT_V21.report_v2_1),
+          reportV21Keys: safeKeys(SAMPLE_REPORT_V21.report_v2_1),
+          exportable: true,
+        });
+      }
+      return renderReportPdf(SAMPLE_REPORT_V21);
+    }
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
     const supabase = createServerClient();
     const query = supabase
       .from("reports")
@@ -126,18 +159,7 @@ export async function GET(
       return NextResponse.json({ error: "Report is still generating" }, { status: 409 });
     }
 
-    const document = React.createElement(ReportPDFDocument, { report }) as React.ReactElement<any>;
-    const buffer = await renderToBuffer(document);
-    const reportId = report.external_report_id || report.report_id;
-    const fileName = `SearchTrust-${sanitizeFileName(reportId)}.pdf`;
-
-    return new NextResponse(new Uint8Array(buffer), {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
-        "Cache-Control": "private, no-store",
-      },
-    });
+    return renderReportPdf(report);
   } catch (error) {
     console.error("Generate report PDF error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -17,7 +17,7 @@ type AuditFormData = { url: string; gbpUrl: string; pageType: string };
 
 interface AuditModalContextType {
   openLogin: () => void;
-  openAuditForm: () => void;
+  openAuditForm: (initialValues?: Partial<AuditFormData>) => void;
   submitAuditForm: (data: AuditFormData) => Promise<void>;
   credits: number | null;
   refreshCredits: (options?: { force?: boolean }) => Promise<number | null>;
@@ -109,18 +109,28 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     track("login modal opened");
     setLoginOpen(true);
   }, []);
-  const openAuditForm = useCallback(() => {
+  const openAuditForm = useCallback((initialValues?: Partial<AuditFormData>) => {
+    const defaults = initialValues?.url
+      ? {
+          url: initialValues.url,
+          gbpUrl: initialValues.gbpUrl || "",
+          pageType: initialValues.pageType || "Service Page",
+        }
+      : null;
+
     if (isLoaded && isSignedIn) {
+      if (defaults) setPendingFormData(defaults);
       track("audit form opened", { source: "cta" });
       setAuditFormOpen(true);
       return;
     }
+    if (defaults) savePendingAudit(defaults);
     if (typeof window !== "undefined") {
       sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
     }
     track("login modal opened", { source: "audit_cta" });
     setLoginOpen(true);
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, savePendingAudit]);
 
   const buildReportRoute = useCallback((params: {
     report_id: string;

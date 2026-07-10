@@ -80,7 +80,12 @@
       "layer_name": "Eligibility",
       "layer_label": "L0 Foundation",
       "status": "good",
-      "checked_rule_ids": [17, 18, 19, 20],
+      "checked_rule_ids": [
+        17,
+        18,
+        19,
+        20
+      ],
       "triggered_rule_ids": [],
       "summary": "The page has a clear service-page foundation.",
       "explanation": "The page topic is commercially specific and recognizable as emergency plumbing and drain service. It does not need a new positioning angle before trust work begins.",
@@ -110,8 +115,19 @@
       "layer_name": "Entity Presence",
       "layer_label": "L0-A Entity Presence",
       "status": "weak",
-      "checked_rule_ids": [21, 22, 23, 24, 25],
-      "triggered_rule_ids": [21, 22, 24, 25],
+      "checked_rule_ids": [
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "triggered_rule_ids": [
+        21,
+        22,
+        24,
+        25
+      ],
       "summary": "The page needs a stronger visible business identity.",
       "explanation": "Visitors should not have to infer who operates the service, where the company works, or how emergency dispatch is handled. A local service page should show this identity before asking for the call.",
       "evidence_items": [
@@ -139,7 +155,12 @@
           "priority": "high",
           "task_title": "Add a visible emergency-service identity block",
           "affected_layer": "entity_presence",
-          "related_rule_ids": [21, 22, 24, 25],
+          "related_rule_ids": [
+            21,
+            22,
+            24,
+            25
+          ],
           "where_to_add": [
             "Hero area beside or directly below the primary call button",
             "Footer contact area",
@@ -152,7 +173,9 @@
             "Service area summary",
             "Short dispatch expectation"
           ],
-          "example_copy": "Express 24 Hr Plumbing & Drain provides emergency plumbing and drain service for local homes and businesses. Call for 24-hour dispatch and a clear next step before work begins.",
+          "example_copy": [
+            "Express 24 Hr Plumbing & Drain provides emergency plumbing and drain service for local homes and businesses. Call for 24-hour dispatch and a clear next step before work begins."
+          ],
           "implementation_notes": [
             "Use the same business name and phone format everywhere on the page.",
             "Place this before long service descriptions so the visitor sees identity before detail."
@@ -212,7 +235,9 @@
             "Canonical service-area sentence",
             "Approved emergency availability wording"
           ],
-          "example_copy": "Use this identity format across owned pages: Express 24 Hr Plumbing & Drain, 24-hour emergency plumbing and drain service, [primary phone], serving [local service area].",
+          "example_copy": [
+            "Use this identity format across owned pages: Express 24 Hr Plumbing & Drain, 24-hour emergency plumbing and drain service, [primary phone], serving [local service area]."
+          ],
           "implementation_notes": [
             "This action prepares the site for consistency checks without making any external-profile claim.",
             "Keep the wording short enough to reuse in headers, footers, and service sections."
@@ -232,8 +257,24 @@
       "layer_name": "Specificity",
       "layer_label": "L1 Specificity",
       "status": "medium",
-      "checked_rule_ids": [1, 2, 4, 6, 7, 8, 32, 34, 35, 36],
-      "triggered_rule_ids": [2, 4, 32, 34],
+      "checked_rule_ids": [
+        1,
+        2,
+        4,
+        6,
+        7,
+        8,
+        32,
+        34,
+        35,
+        36
+      ],
+      "triggered_rule_ids": [
+        2,
+        4,
+        32,
+        34
+      ],
       "summary": "The page topic is specific, but service details need more concrete emergency context.",
       "explanation": "Emergency plumbing language is useful, but the page should explain the actual situations, symptoms, and service paths that local customers recognize.",
       "evidence_items": [
@@ -260,7 +301,12 @@
           "priority": "high",
           "task_title": "Add emergency plumbing scenario blocks",
           "affected_layer": "specificity",
-          "related_rule_ids": [2, 4, 32, 34],
+          "related_rule_ids": [
+            2,
+            4,
+            32,
+            34
+          ],
           "where_to_add": [
             "Below the hero identity block",
             "Before testimonials or general service lists"
@@ -272,7 +318,9 @@
             "Water heater leak response",
             "After-hours shutoff guidance"
           ],
-          "example_copy": "If a main drain backs up after hours, our first step is to help you stop active water damage, confirm the affected fixtures, and dispatch the right drain equipment for the visit.",
+          "example_copy": [
+            "If a main drain backs up after hours, our first step is to help you stop active water damage, confirm the affected fixtures, and dispatch the right drain equipment for the visit."
+          ],
           "implementation_notes": [
             "Write each scenario in plain customer language.",
             "Avoid long keyword lists; explain what happens next."
@@ -292,8 +340,19 @@
       "layer_name": "Real-World Connection",
       "layer_label": "L2 Real-World Connection",
       "status": "weak",
-      "checked_rule_ids": [3, 11, 30, 31, 33],
-      "triggered_rule_ids": [3, 11, 30, 31],
+      "checked_rule_ids": [
+        3,
+        11,
+        30,
+        31,
+        33
+      ],
+      "triggered_rule_ids": [
+        3,
+        11,
+        30,
+        31
+      ],
       "summary": "The page needs stronger local and operational proof.",
       "explanation": "A service page should connect the claim to visible local operations: service area, dispatch flow, common property conditions, and proof that the company handles real calls.",
       "evidence_items": [
@@ -321,7 +380,12 @@
           "priority": "high",
           "task_title": "Add local operating proof for emergency calls",
           "affected_layer": "real_world_connection",
-          "related_rule_ids": [3, 11, 30, 31],
+          "related_rule_ids": [
+            3,
+            11,
+            30,
+            31
+          ],
           "where_to_add": [
             "Mid-page trust section",
             "Near the service-area section",
@@ -333,7 +397,9 @@
             "Common local plumbing situations",
             "Recent-job style examples when available"
           ],
-          "example_copy": "For urgent drain backups, we confirm the affected fixtures, ask whether water is actively rising, and prepare the visit around the most likely line or fixture issue before dispatch.",
+          "example_copy": [
+            "For urgent drain backups, we confirm the affected fixtures, ask whether water is actively rising, and prepare the visit around the most likely line or fixture issue before dispatch."
+          ],
           "implementation_notes": [
             "Use real operating steps the business can stand behind.",
             "Keep examples anonymized and avoid customer-identifying details."
@@ -353,8 +419,15 @@
       "layer_name": "Accountability",
       "layer_label": "L3 Accountability",
       "status": "medium",
-      "checked_rule_ids": [9, 10, 12],
-      "triggered_rule_ids": [9, 10],
+      "checked_rule_ids": [
+        9,
+        10,
+        12
+      ],
+      "triggered_rule_ids": [
+        9,
+        10
+      ],
       "summary": "The page should make service responsibility clearer.",
       "explanation": "Emergency customers need to know what happens after they call, how pricing or inspection is handled, and what the business will or will not promise before work begins.",
       "evidence_items": [
@@ -381,7 +454,10 @@
           "priority": "medium",
           "task_title": "Add a clear emergency service process",
           "affected_layer": "accountability",
-          "related_rule_ids": [9, 10],
+          "related_rule_ids": [
+            9,
+            10
+          ],
           "where_to_add": [
             "Below emergency scenario blocks",
             "FAQ section",
@@ -394,7 +470,9 @@
             "Approval before repair step",
             "Cleanup or follow-up expectation"
           ],
-          "example_copy": "After you call, we confirm the urgent issue, explain the next available dispatch step, inspect the problem on site, and review the repair path before work begins.",
+          "example_copy": [
+            "After you call, we confirm the urgent issue, explain the next available dispatch step, inspect the problem on site, and review the repair path before work begins."
+          ],
           "implementation_notes": [
             "Use service promises the business can consistently deliver.",
             "Avoid absolute claims that depend on conditions outside the page."
@@ -414,8 +492,15 @@
       "layer_name": "Page Unique Value",
       "layer_label": "L4 Page Unique Value",
       "status": "medium",
-      "checked_rule_ids": [13, 14, 16],
-      "triggered_rule_ids": [13, 14],
+      "checked_rule_ids": [
+        13,
+        14,
+        16
+      ],
+      "triggered_rule_ids": [
+        13,
+        14
+      ],
       "summary": "The page has a usable topic but needs more unique local service value.",
       "explanation": "A stronger page should contain details only this business can credibly say: process, coverage, technician approach, emergency triage, and service examples.",
       "evidence_items": [
@@ -442,7 +527,10 @@
           "priority": "medium",
           "task_title": "Add business-specific proof instead of broad copy expansion",
           "affected_layer": "page_unique_value",
-          "related_rule_ids": [13, 14],
+          "related_rule_ids": [
+            13,
+            14
+          ],
           "where_to_add": [
             "Service body",
             "Trust proof section",
@@ -454,7 +542,9 @@
             "Emergency triage details",
             "Anonymized service examples"
           ],
-          "example_copy": "Our emergency calls start with a quick triage: active water, affected fixtures, access points, and whether the problem appears fixture-specific or line-related.",
+          "example_copy": [
+            "Our emergency calls start with a quick triage: active water, affected fixtures, access points, and whether the problem appears fixture-specific or line-related."
+          ],
           "implementation_notes": [
             "Choose details that are true for the business and useful to customers.",
             "Do this before adding large generic service paragraphs."
@@ -474,7 +564,12 @@
       "layer_name": "Algorithm Fit",
       "layer_label": "L5 Algorithm Fit",
       "status": "good",
-      "checked_rule_ids": [15, 37, 38, 39],
+      "checked_rule_ids": [
+        15,
+        37,
+        38,
+        39
+      ],
       "triggered_rule_ids": [],
       "summary": "The page can support search interpretation once trust gaps are repaired.",
       "explanation": "The topic, commercial intent, and service-page structure are clear enough. The priority is not a technical rewrite; it is adding the evidence and structure that make the page more trustworthy.",
@@ -504,7 +599,12 @@
       "id": "issue-identity-presence",
       "issue_title": "Business identity is not prominent enough on the service page",
       "affected_layer": "entity_presence",
-      "related_rule_ids": [21, 22, 24, 25],
+      "related_rule_ids": [
+        21,
+        22,
+        24,
+        25
+      ],
       "severity": "high",
       "evidence_items": [
         {
@@ -529,7 +629,12 @@
           "priority": "high",
           "task_title": "Add a visible emergency-service identity block",
           "affected_layer": "entity_presence",
-          "related_rule_ids": [21, 22, 24, 25],
+          "related_rule_ids": [
+            21,
+            22,
+            24,
+            25
+          ],
           "where_to_add": [
             "Hero area beside or directly below the primary call button",
             "Footer contact area",
@@ -542,7 +647,9 @@
             "Service area summary",
             "Short dispatch expectation"
           ],
-          "example_copy": "Express 24 Hr Plumbing & Drain provides emergency plumbing and drain service for local homes and businesses. Call for 24-hour dispatch and a clear next step before work begins.",
+          "example_copy": [
+            "Express 24 Hr Plumbing & Drain provides emergency plumbing and drain service for local homes and businesses. Call for 24-hour dispatch and a clear next step before work begins."
+          ],
           "implementation_notes": [
             "Use the same business name and phone format everywhere on the page.",
             "Place this before long service descriptions so the visitor sees identity before detail."
@@ -560,7 +667,12 @@
       "id": "issue-real-world-proof",
       "issue_title": "Emergency plumbing proof is too generic",
       "affected_layer": "real_world_connection",
-      "related_rule_ids": [3, 11, 30, 31],
+      "related_rule_ids": [
+        3,
+        11,
+        30,
+        31
+      ],
       "severity": "high",
       "evidence_items": [
         {
@@ -585,7 +697,12 @@
           "priority": "high",
           "task_title": "Add local operating proof for emergency calls",
           "affected_layer": "real_world_connection",
-          "related_rule_ids": [3, 11, 30, 31],
+          "related_rule_ids": [
+            3,
+            11,
+            30,
+            31
+          ],
           "where_to_add": [
             "Mid-page trust section",
             "Near the service-area section",
@@ -597,7 +714,9 @@
             "Common local plumbing situations",
             "Recent-job style examples when available"
           ],
-          "example_copy": "For urgent drain backups, we confirm the affected fixtures, ask whether water is actively rising, and prepare the visit around the most likely line or fixture issue before dispatch.",
+          "example_copy": [
+            "For urgent drain backups, we confirm the affected fixtures, ask whether water is actively rising, and prepare the visit around the most likely line or fixture issue before dispatch."
+          ],
           "implementation_notes": [
             "Use real operating steps the business can stand behind.",
             "Keep examples anonymized and avoid customer-identifying details."
@@ -615,7 +734,10 @@
       "id": "issue-fix-order",
       "issue_title": "Optimization should start with trust evidence before broad content expansion",
       "affected_layer": "page_unique_value",
-      "related_rule_ids": [13, 14],
+      "related_rule_ids": [
+        13,
+        14
+      ],
       "severity": "medium",
       "evidence_items": [
         {
@@ -640,7 +762,10 @@
           "priority": "medium",
           "task_title": "Add business-specific proof instead of broad copy expansion",
           "affected_layer": "page_unique_value",
-          "related_rule_ids": [13, 14],
+          "related_rule_ids": [
+            13,
+            14
+          ],
           "where_to_add": [
             "Service body",
             "Trust proof section",
@@ -652,7 +777,9 @@
             "Emergency triage details",
             "Anonymized service examples"
           ],
-          "example_copy": "Our emergency calls start with a quick triage: active water, affected fixtures, access points, and whether the problem appears fixture-specific or line-related.",
+          "example_copy": [
+            "Our emergency calls start with a quick triage: active water, affected fixtures, access points, and whether the problem appears fixture-specific or line-related."
+          ],
           "implementation_notes": [
             "Choose details that are true for the business and useful to customers.",
             "Do this before adding large generic service paragraphs."
@@ -674,7 +801,12 @@
         "priority": "high",
         "task_title": "Add a visible emergency-service identity block",
         "affected_layer": "entity_presence",
-        "related_rule_ids": [21, 22, 24, 25],
+        "related_rule_ids": [
+          21,
+          22,
+          24,
+          25
+        ],
         "where_to_add": [
           "Hero area beside or directly below the primary call button",
           "Footer contact area",
@@ -687,7 +819,9 @@
           "Service area summary",
           "Short dispatch expectation"
         ],
-        "example_copy": "Express 24 Hr Plumbing & Drain provides emergency plumbing and drain service for local homes and businesses. Call for 24-hour dispatch and a clear next step before work begins.",
+        "example_copy": [
+          "Express 24 Hr Plumbing & Drain provides emergency plumbing and drain service for local homes and businesses. Call for 24-hour dispatch and a clear next step before work begins."
+        ],
         "implementation_notes": [
           "Use the same business name and phone format everywhere on the page.",
           "Place this before long service descriptions so the visitor sees identity before detail."
@@ -704,7 +838,12 @@
         "priority": "high",
         "task_title": "Add local operating proof for emergency calls",
         "affected_layer": "real_world_connection",
-        "related_rule_ids": [3, 11, 30, 31],
+        "related_rule_ids": [
+          3,
+          11,
+          30,
+          31
+        ],
         "where_to_add": [
           "Mid-page trust section",
           "Near the service-area section",
@@ -716,7 +855,9 @@
           "Common local plumbing situations",
           "Recent-job style examples when available"
         ],
-        "example_copy": "For urgent drain backups, we confirm the affected fixtures, ask whether water is actively rising, and prepare the visit around the most likely line or fixture issue before dispatch.",
+        "example_copy": [
+          "For urgent drain backups, we confirm the affected fixtures, ask whether water is actively rising, and prepare the visit around the most likely line or fixture issue before dispatch."
+        ],
         "implementation_notes": [
           "Use real operating steps the business can stand behind.",
           "Keep examples anonymized and avoid customer-identifying details."
@@ -733,7 +874,12 @@
         "priority": "high",
         "task_title": "Add emergency plumbing scenario blocks",
         "affected_layer": "specificity",
-        "related_rule_ids": [2, 4, 32, 34],
+        "related_rule_ids": [
+          2,
+          4,
+          32,
+          34
+        ],
         "where_to_add": [
           "Below the hero identity block",
           "Before testimonials or general service lists"
@@ -745,7 +891,9 @@
           "Water heater leak response",
           "After-hours shutoff guidance"
         ],
-        "example_copy": "If a main drain backs up after hours, our first step is to help you stop active water damage, confirm the affected fixtures, and dispatch the right drain equipment for the visit.",
+        "example_copy": [
+          "If a main drain backs up after hours, our first step is to help you stop active water damage, confirm the affected fixtures, and dispatch the right drain equipment for the visit."
+        ],
         "implementation_notes": [
           "Write each scenario in plain customer language.",
           "Avoid long keyword lists; explain what happens next."
@@ -775,7 +923,9 @@
           "Service area text that matches visible copy",
           "Phone and operating-hours fields if supported by the business"
         ],
-        "example_copy": "After visible identity copy is approved, mirror the same business name, phone, and service-area language in owned-page structured fields.",
+        "example_copy": [
+          "After visible identity copy is approved, mirror the same business name, phone, and service-area language in owned-page structured fields."
+        ],
         "implementation_notes": [
           "Do not add structured fields that are not visible or supported on the page.",
           "Start after the visible copy has been approved."
@@ -802,7 +952,9 @@
           "General plumbing tips",
           "Long-form non-urgent educational content"
         ],
-        "example_copy": "Save broad educational articles for a later phase after the service page has stronger identity, proof, and emergency process content.",
+        "example_copy": [
+          "Save broad educational articles for a later phase after the service page has stronger identity, proof, and emergency process content."
+        ],
         "implementation_notes": [
           "This is not the first priority because the current trust gap is evidence, not topic coverage.",
           "Use later editorial work to support the repaired service page."
@@ -827,7 +979,12 @@
             "priority": "high",
             "task_title": "Add a visible emergency-service identity block",
             "affected_layer": "entity_presence",
-            "related_rule_ids": [21, 22, 24, 25],
+            "related_rule_ids": [
+              21,
+              22,
+              24,
+              25
+            ],
             "where_to_add": [
               "Hero area beside or directly below the primary call button",
               "Footer contact area",
@@ -840,7 +997,9 @@
               "Service area summary",
               "Short dispatch expectation"
             ],
-            "example_copy": "Express 24 Hr Plumbing & Drain provides emergency plumbing and drain service for local homes and businesses. Call for 24-hour dispatch and a clear next step before work begins.",
+            "example_copy": [
+              "Express 24 Hr Plumbing & Drain provides emergency plumbing and drain service for local homes and businesses. Call for 24-hour dispatch and a clear next step before work begins."
+            ],
             "implementation_notes": [
               "Use the same business name and phone format everywhere on the page.",
               "Place this before long service descriptions so the visitor sees identity before detail."
@@ -870,7 +1029,12 @@
             "priority": "high",
             "task_title": "Add emergency plumbing scenario blocks",
             "affected_layer": "specificity",
-            "related_rule_ids": [2, 4, 32, 34],
+            "related_rule_ids": [
+              2,
+              4,
+              32,
+              34
+            ],
             "where_to_add": [
               "Below the hero identity block",
               "Before testimonials or general service lists"
@@ -882,7 +1046,9 @@
               "Water heater leak response",
               "After-hours shutoff guidance"
             ],
-            "example_copy": "If a main drain backs up after hours, our first step is to help you stop active water damage, confirm the affected fixtures, and dispatch the right drain equipment for the visit.",
+            "example_copy": [
+              "If a main drain backs up after hours, our first step is to help you stop active water damage, confirm the affected fixtures, and dispatch the right drain equipment for the visit."
+            ],
             "implementation_notes": [
               "Write each scenario in plain customer language.",
               "Avoid long keyword lists; explain what happens next."
@@ -899,7 +1065,12 @@
             "priority": "high",
             "task_title": "Add local operating proof for emergency calls",
             "affected_layer": "real_world_connection",
-            "related_rule_ids": [3, 11, 30, 31],
+            "related_rule_ids": [
+              3,
+              11,
+              30,
+              31
+            ],
             "where_to_add": [
               "Mid-page trust section",
               "Near the service-area section",
@@ -911,7 +1082,9 @@
               "Common local plumbing situations",
               "Recent-job style examples when available"
             ],
-            "example_copy": "For urgent drain backups, we confirm the affected fixtures, ask whether water is actively rising, and prepare the visit around the most likely line or fixture issue before dispatch.",
+            "example_copy": [
+              "For urgent drain backups, we confirm the affected fixtures, ask whether water is actively rising, and prepare the visit around the most likely line or fixture issue before dispatch."
+            ],
             "implementation_notes": [
               "Use real operating steps the business can stand behind.",
               "Keep examples anonymized and avoid customer-identifying details."
@@ -952,7 +1125,9 @@
               "Service area text that matches visible copy",
               "Phone and operating-hours fields if supported by the business"
             ],
-            "example_copy": "After visible identity copy is approved, mirror the same business name, phone, and service-area language in owned-page structured fields.",
+            "example_copy": [
+              "After visible identity copy is approved, mirror the same business name, phone, and service-area language in owned-page structured fields."
+            ],
             "implementation_notes": [
               "Do not add structured fields that are not visible or supported on the page.",
               "Start after the visible copy has been approved."

@@ -31,6 +31,13 @@ export interface Report {
   module_4_eight_layers: Record<string, any> | null;
   module_5_optimization: Record<string, any> | null;
   report_v2_1?: unknown | null;
+  error_code?: string | null;
+  error_message?: string | null;
+  user_message?: string | null;
+  retryable?: boolean | null;
+  validation_errors?: string[] | null;
+  warnings?: string[] | null;
+  failure_reason?: string | null;
   created_at: string;
 }
 

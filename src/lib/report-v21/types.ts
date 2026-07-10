@@ -85,7 +85,7 @@ export interface ActionItem {
   related_rule_ids: number[];
   where_to_add: string[];
   what_to_add: string[];
-  example_copy: string;
+  example_copy: string[];
   implementation_notes: string[];
   completion_signals: string[];
   expected_effect: string;

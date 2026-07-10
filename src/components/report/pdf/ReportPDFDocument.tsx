@@ -593,6 +593,12 @@ function ActionCard({ action, compact = false }: { action: ActionItem; compact?:
       <Field label="Affected Layer" value={displayLayer(action.affected_layer)} maxLength={120} />
       <Field label="Where To Add" value={safeList(action.where_to_add).join("; ")} maxLength={compact ? 160 : 260} />
       <Field label="What To Add" value={safeList(action.what_to_add).join("; ")} maxLength={compact ? 180 : 280} />
+      {safeList(action.example_copy).length > 0 && (
+        <View style={{ marginBottom: 7 }}>
+          <Text style={styles.label}>Example Copy</Text>
+          <BulletList items={action.example_copy} limit={compact ? 1 : 3} maxLength={compact ? 180 : 280} />
+        </View>
+      )}
       {!compact && <Field label="Expected Effect" value={action.expected_effect} maxLength={240} />}
       <View style={styles.row}>
         <Text style={styles.mutedText}>Effort: {labelize(safeText(action.effort_level, "medium"))}</Text>
