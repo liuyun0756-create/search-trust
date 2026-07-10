@@ -100,9 +100,9 @@ export function ReportPreviewForm() {
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-[3px] h-4 bg-[#3B82F6]" />
-                <h4 className="text-[14px] font-bold text-[#1A1F2B]">Dominant failure layer</h4>
+                <h4 className="text-[14px] font-bold text-[#1A1F2B]">Primary blocking layer</h4>
               </div>
-              <p className="text-[14px] font-bold text-[#6B7280] mb-2">L2 — Weak real-world anchors</p>
+              <p className="text-[14px] font-bold text-[#6B7280] mb-2">L2 — Weak real-world connection</p>
               <div className="bg-[#F9FAFB] p-4 rounded-lg border border-gray-100">
                 <p className="text-[13px] leading-relaxed text-gray-500">
                   这页已经具备基本的服务相关性和本地指向性，但在实体信任、现实连接和页面独立价值上仍有明显短板。

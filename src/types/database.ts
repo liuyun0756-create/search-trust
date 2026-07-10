@@ -30,6 +30,14 @@ export interface Report {
   module_3_key_problems: Record<string, any> | null;
   module_4_eight_layers: Record<string, any> | null;
   module_5_optimization: Record<string, any> | null;
+  report_v2_1?: unknown | null;
+  error_code?: string | null;
+  error_message?: string | null;
+  user_message?: string | null;
+  retryable?: boolean | null;
+  validation_errors?: string[] | null;
+  warnings?: string[] | null;
+  failure_reason?: string | null;
   created_at: string;
 }
 
@@ -52,6 +60,7 @@ export type GenerateReportRequest = {
 
 export type GenerateReportResponse = {
   report_id: string;
+  database_report_id?: string | null;
   page_url: string;
   page_type: string;
   gbp_url: string | null;
@@ -66,4 +75,5 @@ export type GenerateReportResponse = {
   module_3_key_problems: Record<string, any>;
   module_4_eight_layers: Record<string, any>;
   module_5_optimization: Record<string, any>;
+  report_v2_1?: unknown | null;
 };

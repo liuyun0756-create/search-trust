@@ -39,7 +39,7 @@ If you are using the service on behalf of a company, agency, or other organizati
         heading: '3. Purchases and payment',
         body: `Prices are listed on our website or checkout pages. By placing an order, you agree to pay the listed price, together with any applicable taxes, fees, or charges disclosed at checkout.
 
-Payments on this website are processed by Paddle. Paddle may act as merchant of record for transactions, and your payment may be subject to Paddle's terms, policies, and checkout processes.
+Payments on this website are processed by Dodo Payments. Your payment may be subject to Dodo Payments' terms, policies, and checkout processes.
 
 Unless expressly stated otherwise: purchases are one-time payments, each purchase applies to the specific report or service selected, there is no recurring subscription or automatic renewal.
 
@@ -165,7 +165,7 @@ a. Information you provide directly
 When you use our website or purchase our services, you may provide information such as: your name, email address, billing address, company or organization name, submitted URLs or page information, messages you send to us, support requests, and any other information you choose to provide.
 
 b. Payment information
-Payments are processed by Paddle. We do not typically store your full payment card details. When you make a purchase, payment-related information may be collected and processed by Paddle in accordance with Paddle's own privacy practices and terms.
+Payments are processed by Dodo Payments. We do not typically store your full payment card details. When you make a purchase, payment-related information may be collected and processed by Dodo Payments in accordance with its own privacy practices and terms.
 
 c. Automatically collected information
 When you visit our website, we may automatically collect certain technical and usage information, such as: IP address, browser type, device type, operating system, referring pages, pages visited, dates and times of access, usage events, approximate location based on IP, and cookie or analytics identifiers.
@@ -197,15 +197,15 @@ If we send marketing emails, we will do so in accordance with applicable law, an
         heading: '4. How we share information',
         body: `We do not sell your personal information in the ordinary sense of selling customer lists for money.
 
-We may share information with trusted third parties only as needed to operate the service, including: payment processors such as Paddle, hosting and infrastructure providers, analytics providers, customer support or communication tools, contractors or service providers assisting with operations, and legal or regulatory authorities when required by law.
+We may share information with trusted third parties only as needed to operate the service, including: payment processors such as Dodo Payments, hosting and infrastructure providers, analytics providers, customer support or communication tools, contractors or service providers assisting with operations, and legal or regulatory authorities when required by law.
 
 We may also disclose information: to enforce our rights, to detect or prevent fraud, abuse, or security issues, in connection with a merger, acquisition, sale of assets, or business transfer.`,
       },
       {
-        heading: '5. Payment processing by Paddle',
-        body: `Payments on our website are processed by Paddle. When you complete a transaction, certain personal and transaction-related information may be collected and processed by Paddle as part of the checkout and payment process.
+        heading: '5. Payment processing by Dodo Payments',
+        body: `Payments on our website are processed by Dodo Payments. When you complete a transaction, certain personal and transaction-related information may be collected and processed by Dodo Payments as part of the checkout and payment process.
 
-Please review Paddle's own privacy policy for more information about how Paddle handles payment and billing data.`,
+Please review Dodo Payments' own privacy policy for more information about how it handles payment and billing data.`,
       },
       {
         heading: '6. Data retention',
@@ -340,7 +340,7 @@ If you submitted the wrong URL, contact us as soon as possible at liu6685756@gma
         heading: '8. Review process',
         body: `We review refund requests case by case and aim to respond within 3 business days.
 
-If a refund is approved, it will generally be returned to the original payment method used for the purchase. Processing times for completed refunds may depend on Paddle, your payment provider, and your financial institution.`,
+If a refund is approved, it will generally be returned to the original payment method used for the purchase. Processing times for completed refunds may depend on Dodo Payments, your payment provider, and your financial institution.`,
       },
       {
         heading: '9. Chargebacks and payment disputes',

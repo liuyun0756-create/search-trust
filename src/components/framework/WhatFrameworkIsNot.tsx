@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 const notItems = [
-  "It is not a ranking guarantee system.",
+  "It is not a ranking promise system.",
   "It is not a content generator.",
   "It is not a technical SEO crawler.",
   "It is not a substitute for overall SEO strategy.",

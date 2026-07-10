@@ -30,7 +30,7 @@ const benefits = [
   {
     icon: ClipboardCheck,
     title: 'Better quality control for scaled local SEO',
-    description: 'Ensure every page in a multi-location rollout meets trust standards, not just surface-level ones.',
+    description: 'Review priority pages in a multi-location rollout against trust standards, not just surface-level checks.',
   },
   {
     icon: ListOrdered,

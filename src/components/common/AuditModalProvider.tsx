@@ -17,7 +17,7 @@ type AuditFormData = { url: string; gbpUrl: string; pageType: string };
 
 interface AuditModalContextType {
   openLogin: () => void;
-  openAuditForm: () => void;
+  openAuditForm: (initialValues?: Partial<AuditFormData>) => void;
   submitAuditForm: (data: AuditFormData) => Promise<void>;
   credits: number | null;
   refreshCredits: (options?: { force?: boolean }) => Promise<number | null>;
@@ -109,31 +109,52 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     track("login modal opened");
     setLoginOpen(true);
   }, []);
-  const openAuditForm = useCallback(() => {
+  const openAuditForm = useCallback((initialValues?: Partial<AuditFormData>) => {
+    const defaults = initialValues?.url
+      ? {
+          url: initialValues.url,
+          gbpUrl: initialValues.gbpUrl || "",
+          pageType: initialValues.pageType || "Service Page",
+        }
+      : null;
+
     if (isLoaded && isSignedIn) {
+      if (defaults) setPendingFormData(defaults);
       track("audit form opened", { source: "cta" });
       setAuditFormOpen(true);
       return;
     }
+    if (defaults) savePendingAudit(defaults);
     if (typeof window !== "undefined") {
       sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
     }
     track("login modal opened", { source: "audit_cta" });
     setLoginOpen(true);
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, savePendingAudit]);
+
+  const buildReportRoute = useCallback((params: {
+    report_id: string;
+    task_id?: string | null;
+    database_report_id?: string | null;
+  }) => {
+    const search = new URLSearchParams({ report_id: params.report_id });
+    if (params.task_id) search.set("task_id", params.task_id);
+    if (params.database_report_id) search.set("database_report_id", params.database_report_id);
+    return `/reports?${search.toString()}`;
+  }, []);
 
   // 调后端跑报告
   const runReport = useCallback(async (data: AuditFormData) => {
     setSubmitting(true);
     try {
-      const { report_id } = await submitAudit({
+      const result = await submitAudit({
         url: data.url,
         pageType: data.pageType,
         gbpUrl: data.gbpUrl,
       });
       clearPendingAudit();
       setAuditFormOpen(false);
-      router.push(`/reports?report_id=${report_id}`);
+      router.push(buildReportRoute(result));
     } catch (error) {
       console.error("Submit error:", error);
       const message = error instanceof Error ? error.message : "";
@@ -154,7 +175,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     } finally {
       setSubmitting(false);
     }
-  }, [clearPendingAudit, router, savePendingAudit]);
+  }, [buildReportRoute, clearPendingAudit, router, savePendingAudit]);
 
   // 核心流程：填信息 → 判断登录 → 判断 credits → 跑报告/弹支付
   const handleSubmit = useCallback(async (data: AuditFormData) => {

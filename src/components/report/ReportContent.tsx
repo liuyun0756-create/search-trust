@@ -7,22 +7,19 @@ import {
   Lock, Download,
   Loader2, AlertTriangle,
   Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
-  ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon
+  ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon,
+  RotateCcw, ArrowLeft
 } from 'lucide-react';
+import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
+import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v21/ReportV21Content';
 
-type TabId = 'Executive Summary' | 'Page Level' | 'Key Issues' | 'Six-Layer Model' | 'Optimization Path';
+type TabId = V21TabId;
 
-const TABS: TabId[] = ['Executive Summary', 'Page Level', 'Key Issues', 'Six-Layer Model', 'Optimization Path'];
+const TABS: TabId[] = V21_TABS;
 
-const SECTION_IDS: Record<TabId, string> = {
-  'Executive Summary': 'section-executive-summary',
-  'Page Level': 'section-page-level',
-  'Key Issues': 'section-key-issues',
-  'Six-Layer Model': 'section-six-layer-model',
-  'Optimization Path': 'section-optimization-path',
-};
+const SECTION_IDS: Record<TabId, string> = V21_SECTION_IDS;
 
 interface ReportContentProps {
   report: Report;
@@ -37,6 +34,14 @@ const STATUS_COLORS: Record<string, string> = {
   Medium: '#3B82F6', Moderate: '#A5D020',
   'Medium-High': '#EF4444', 'Medium-Low': '#B45309',
   'Good': '#22C55E', 'Fair': '#B45309', '良好': '#22C55E', '一般': '#F59E0B', '偏弱': '#EF4444',
+};
+
+const statusColorFor = (level: string, lowIsPositive = false) => {
+  if (level === 'low') return lowIsPositive ? '#22C55E' : '#EF4444';
+  if (level === 'high' || level === 'strong') return '#22C55E';
+  if (level === 'weak' || level === 'medium_high') return '#EF4444';
+  if (level === 'improvable' || level === 'competitive') return '#615FFF';
+  return '#3B82F6';
 };
 
 const LoadingState = ({ text = "Under detection..." }: { text?: string }) => (
@@ -67,28 +72,111 @@ const HeaderSkeleton = () => (
   </section>
 );
 
-const FailedState = ({ onRetry }: { onRetry: () => void }) => (
+function safeStringList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
+    : [];
+}
+
+const FailedState = ({
+  report,
+  onRetry,
+  onBack,
+}: {
+  report: Report;
+  onRetry: () => void;
+  onBack: () => void;
+}) => {
+  const errorCode = report.error_code || report.failure_reason || 'REPORT_GENERATION_FAILED';
+  const userMessage = report.user_message || report.error_message || (
+    errorCode === 'V21_OUTPUT_INVALID'
+      ? 'The analysis finished, but the structured v2.1 report output was incomplete. No report has been generated from unsupported data.'
+      : 'The backend stream closed before returning usable report data. No report has been generated from unsupported data.'
+  );
+  const validationErrors = safeStringList(report.validation_errors);
+  const warnings = safeStringList(report.warnings);
+
+  return (
   <div className="bg-white rounded-[24px] border border-red-100 shadow-sm p-10 md:p-12 mb-8">
-    <div className="max-w-2xl">
-      <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-5">
-        <AlertTriangle className="w-6 h-6" />
+    <div className="max-w-3xl">
+      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-red-50 text-red-500 ring-8 ring-red-50/40">
+        <AlertTriangle className="h-8 w-8" />
       </div>
-      <h2 className="text-[24px] font-bold tracking-tighter text-[#1A212B] mb-3">
-        Report generation stopped
-      </h2>
-      <p className="text-[14px] text-[#6B7280] font-medium leading-relaxed mb-6">
-        The backend stream closed before returning report data, so this report could not be completed. Your audit credit has not been deducted.
+      <p className="mb-3 text-[12px] font-black uppercase tracking-[0.16em] text-red-500">
+        Structured output incomplete
       </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="bg-[#1D2531] text-white px-6 py-3 rounded-xl font-bold text-[14px] hover:bg-black transition-all"
-      >
-        Run a New Audit
-      </button>
+      <h2 className="mb-3 text-[28px] font-black tracking-tighter text-[#1A212B]">
+        Report generation needs another try
+      </h2>
+      <p className="mb-7 max-w-2xl text-[15px] font-medium leading-7 text-[#5C6675]">
+        {userMessage}
+      </p>
+
+      <div className="mb-7 rounded-2xl border border-[#E8EEF5] bg-[#F8FAFC] p-5">
+        <p className="text-[14px] font-bold text-[#1A212B]">What happened?</p>
+        <p className="mt-2 text-[13px] font-medium leading-6 text-[#657083]">
+          SearchTrust v2.1 now requires a native structured report from the analysis workflow before showing an evidence-backed report. This prevents the UI from filling missing diagnostic fields with unsupported fallback content.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1D2531] px-6 py-3 text-[14px] font-bold text-white transition-all hover:bg-black"
+        >
+          <RotateCcw className="h-4 w-4" />
+          Retry analysis
+        </button>
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-[14px] font-bold text-[#1A212B] transition-all hover:bg-gray-50"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to dashboard
+        </button>
+      </div>
+
+      <details className="mt-8 rounded-2xl border border-gray-100 bg-white p-5">
+        <summary className="cursor-pointer text-[13px] font-black uppercase tracking-[0.12em] text-gray-400">
+          Analyst / debug details
+        </summary>
+        <div className="mt-4 space-y-4 text-[13px] font-medium leading-6 text-[#657083]">
+          <div>
+            <span className="font-black text-[#1A212B]">error_code:</span> {errorCode}
+          </div>
+          {report.task_id && (
+            <div>
+              <span className="font-black text-[#1A212B]">task_id:</span> {report.task_id}
+            </div>
+          )}
+          {validationErrors.length > 0 && (
+            <div>
+              <p className="mb-2 font-black text-[#1A212B]">validation summary</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {validationErrors.slice(0, 6).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {warnings.length > 0 && (
+            <div>
+              <p className="mb-2 font-black text-[#1A212B]">warnings</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {warnings.slice(0, 6).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </details>
     </div>
   </div>
-);
+  );
+};
 
 const UnlockOverlay = ({ title, description }: { title: string; description: string }) => {
   const router = useRouter();
@@ -314,15 +402,16 @@ function Module3KeyProblems({ data }: { data: Record<string, any> }) {
 function Module4EightLayers({ data }: { data: Record<string, any> }) {
   const layers: any[] = data.layers || [];
   const visibleLayers = layers
-    .map((layer, index) => ({ ...layer, originalIndex: index }))
-    .filter((layer) => layer.originalIndex !== 1 && layer.originalIndex !== 2);
+    .map((layer, index) => ({ ...layer, originalIndex: index }));
   const layerTitles: Record<number, string> = {
-    0: 'L0-Relevance',
-    3: 'L1-Entity Clarity',
-    4: 'L2-Proof Signals',
-    5: 'L3-Local Fit',
-    6: 'L4-Strutural Trust',
-    7: 'L5-Standalone Value',
+    0: 'L0 Foundation',
+    1: 'L0-A Entity Presence',
+    2: 'L0-B Entity Consistency',
+    3: 'L1 Specificity',
+    4: 'L2 Real-World Connection',
+    5: 'L3 Accountability',
+    6: 'L4 Page Unique Value',
+    7: 'L5 Algorithm Fit',
   };
 
   const statusTagClass: Record<string, string> = {
@@ -336,7 +425,7 @@ function Module4EightLayers({ data }: { data: Record<string, any> }) {
   return (
     <section>
       <section className="text-[16px]  text-[#1A212B] mb-2 pb-2">
-        <span className="text-[16px] ">Below is the full six-layer trust diagnosis used to interpret the current strength of the page.</span>
+        <span className="text-[16px] ">Below is the full 8-layer trust diagnosis used to interpret the current strength of the page.</span>
       </section>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {visibleLayers.map((layer: any) => (
@@ -637,11 +726,12 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
 // ============================================================
 function renderModule(tab: TabId, data: Record<string, any>) {
   switch (tab) {
-    case 'Executive Summary': return <Module1Overview data={data} />;
+    case 'Overall Conclusion': return <Module1Overview data={data} />;
     case 'Page Level': return <Module2PageLevel data={data} />;
     case 'Key Issues': return <Module3KeyProblems data={data} />;
-    case 'Six-Layer Model': return <Module4EightLayers data={data} />;
+    case 'Trust Layer Breakdown': return <Module4EightLayers data={data} />;
     case 'Optimization Path': return <Module5Optimization data={data} />;
+    case 'Data Coverage': return <SectionSkeleton />;
   }
 }
 
@@ -704,7 +794,8 @@ export function ReportContent({
   isLoading = false,
   isHeaderLoading = false,
 }: ReportContentProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('Executive Summary');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<TabId>('Overall Conclusion');
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'downloading'>('idle');
@@ -713,6 +804,25 @@ export function ReportContent({
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
   const showFailed = isFailed && !isLoading;
+  const normalized = normalizeReportToV21(report);
+  const reportV21 = normalized.reportV21;
+  const normalizedIsRenderable = reportV21?.schema_version === "2.1" && normalized.source !== "fallback";
+  const canExportPdf = normalizedIsRenderable || isReportPdfExportable(report);
+  const overallStatus = reportV21.overall_status ?? {
+    label: 'Unknown',
+    level: 'medium',
+    explanation: 'No structured trust status was available.',
+  };
+  const rankingPotential = reportV21.ranking_potential ?? {
+    label: 'Unknown',
+    level: 'competitive',
+    explanation: 'No structured ranking potential was available.',
+  };
+  const riskLevel = reportV21.risk_level ?? {
+    label: 'Unknown',
+    level: 'medium',
+    explanation: 'No structured risk level was available.',
+  };
 
   // 滚动时自动高亮对应的 tab
   useEffect(() => {
@@ -736,12 +846,6 @@ export function ReportContent({
 
     return () => observers.forEach((o) => o.disconnect());
   }, []);
-
-  const isLocked = (tab: TabId) => {
-    return false
-    // if (isPaid) return false;
-    // return tab !== 'Executive Summary' && tab !== 'Page Level';
-  };
 
   const scrollToSection = (tab: TabId) => {
     setActiveTab(tab);
@@ -787,18 +891,20 @@ export function ReportContent({
     setShareModalOpen(true);
   };
 
-  // 后端可能返回 JSON 字符串，也可能直接返回对象。
-  const parseScoreField = (raw: unknown) => {
-    if (!raw) return null;
-    if (typeof raw === 'object') return raw as { label?: string; value?: string; description?: string };
-    if (typeof raw !== 'string') return null;
-    try { return JSON.parse(raw); } catch { return null; }
+  const handleRetryAnalysis = () => {
+    openAuditForm({
+      url: report.page_url,
+      pageType: report.page_type || 'Service Page',
+      gbpUrl: report.gbp_url || '',
+    });
   };
 
-  const trustStatus = parseScoreField(report.trust_status);
-  const rankingPotential = parseScoreField(report.ranking_potential);
-  const riskLevel = parseScoreField(report.risk_level);
+  const handleBackToDashboard = () => {
+    router.push('/reports');
+  };
+
   const isGbpStatusLoading = report.status === 'pending' && typeof report.gbp_connected !== 'boolean';
+  const normalizedGbpStatus = reportV21.gbp_status?.status || 'not_checked';
   const gbpStatus = isGbpStatusLoading
     ? {
         value: (
@@ -811,20 +917,27 @@ export function ReportContent({
         iconTone: 'text-gray-400',
         iconBg: 'bg-gray-50',
       }
-    : report.gbp_connected === true
+    : normalizedGbpStatus === 'checked'
       ? {
           value: 'Connected',
           tone: 'text-emerald-500',
           iconTone: 'text-emerald-500',
           iconBg: 'bg-emerald-50',
         }
-      : report.gbp_connected === false
+      : normalizedGbpStatus === 'not_found'
         ? {
-            value: 'Disconnected',
+            value: 'Not found',
             tone: 'text-red-500',
             iconTone: 'text-red-500',
             iconBg: 'bg-red-50',
           }
+        : normalizedGbpStatus === 'error'
+          ? {
+              value: 'Error',
+              tone: 'text-red-500',
+              iconTone: 'text-red-500',
+              iconBg: 'bg-red-50',
+            }
         : {
             value: 'Not checked',
             tone: 'text-gray-500',
@@ -834,41 +947,33 @@ export function ReportContent({
 
   const scoreCards = [
     {
-      label: trustStatus?.label || 'Trust Status',
-      val: trustStatus?.value || '—',
-      desc: trustStatus?.description || '',
-      color: STATUS_COLORS[trustStatus?.value || ''] || '#3B82F6',
+      label: 'Trust Status',
+      val: overallStatus.label || '—',
+      desc: overallStatus.explanation || '',
+      color: statusColorFor(overallStatus.level),
       icon: ShieldCheck,
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-500',
     },
     {
-      label: rankingPotential?.label || 'Ranking Potential',
-      val: rankingPotential?.value || '—',
-      desc: rankingPotential?.description || '',
-      color: STATUS_COLORS[rankingPotential?.value || ''] || '#A5D020',
+      label: 'Ranking Potential',
+      val: rankingPotential.label || '—',
+      desc: rankingPotential.explanation || '',
+      color: statusColorFor(rankingPotential.level),
       icon: BarChart3,
       iconBg: 'bg-indigo-50',
       iconColor: 'text-indigo-500',
     },
     {
-      label: riskLevel?.label || 'Risk Level',
-      val: riskLevel?.value || '—',
-      desc: riskLevel?.description || '',
-      color: STATUS_COLORS[riskLevel?.value || ''] || '#EF4444',
+      label: 'Risk Level',
+      val: riskLevel.label || '—',
+      desc: riskLevel.explanation || '',
+      color: statusColorFor(riskLevel.level, true),
       icon: TriangleAlert,
       iconBg: 'bg-red-50',
       iconColor: 'text-red-500',
     },
   ];
-
-  const moduleMap: Record<TabId, Record<string, any> | null> = {
-    'Executive Summary': report.module_1_overview,
-    'Page Level': report.module_2_page_level,
-    'Key Issues': report.module_3_key_problems,
-    'Six-Layer Model': report.module_4_eight_layers,
-    'Optimization Path': report.module_5_optimization,
-  };
 
   const handleSendEmail = async () => {
     if (!email || emailStatus === 'sending') return;
@@ -890,12 +995,19 @@ export function ReportContent({
 
   const handleDownloadPDF = async () => {
     if (pdfStatus === 'downloading') return;
+    if (!canExportPdf) {
+      alert('Report is still generating');
+      return;
+    }
     setPdfStatus('downloading');
     try {
       const res = await fetch(`/api/reports/${report.id}/pdf`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'PDF export failed');
+        const message = err?.error === 'Report is still generating'
+          ? 'Report is still generating'
+          : 'PDF export failed. Please try again after the report finishes saving.';
+        throw new Error(message);
       }
 
       const blob = await res.blob();
@@ -1003,7 +1115,7 @@ export function ReportContent({
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
                 onClick={handleDownloadPDF}
-                disabled={pdfStatus === 'downloading' || report.status === 'pending'}
+                disabled={pdfStatus === 'downloading' || !canExportPdf}
                 className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#171B22] px-6 py-3 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_14px_28px_rgba(15,23,42,0.16)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {pdfStatus === 'downloading' ? (
@@ -1093,7 +1205,13 @@ export function ReportContent({
       </section>
       )}
 
-      {showFailed && <FailedState onRetry={openAuditForm} />}
+      {showFailed && (
+        <FailedState
+          report={report}
+          onRetry={handleRetryAnalysis}
+          onBack={handleBackToDashboard}
+        />
+      )}
 
       {/* Score Cards */}
       {!showFailed && <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -1132,12 +1250,12 @@ export function ReportContent({
 
       {/* Sticky Tab Bar */}
       {!showFailed && <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
-        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
           {TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => scrollToSection(tab)}
-              className={`relative rounded-xl px-4 py-3.5 text-[14px] font-bold whitespace-nowrap transition-all ${
+              className={`relative rounded-xl px-3 py-3.5 text-[13px] font-bold leading-tight transition-all ${
                 activeTab === tab
                   ? 'bg-[#1A1F2B] text-white shadow-sm'
                   : 'bg-white text-gray-400 hover:bg-white hover:text-[#1A1F2B]'
@@ -1150,17 +1268,13 @@ export function ReportContent({
       </div>}
 
       {/* All Sections */}
-      {!showFailed && <div className="space-y-8">
-        {TABS.map((tab) => (
-          <ModuleSection
-            key={tab}
-            tab={tab}
-            data={moduleMap[tab]}
-            isLocked={isLocked(tab)}
-            isLoading={isLoading}
-          />
-        ))}
-      </div>}
+      {!showFailed && (
+        <ReportV21Content
+          normalized={normalized}
+          rawReport={report}
+          isLoading={isLoading}
+        />
+      )}
     </main>
   );
 }

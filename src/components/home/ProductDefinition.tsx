@@ -14,7 +14,7 @@ const isNotItems = [
   "Not a GBP management tool",
   "Not a full technical SEO crawler",
   "Not a generic content score",
-  "Not a ranking guarantee",
+  "Not a ranking promise",
 ];
 
 export function ProductDefinition() {

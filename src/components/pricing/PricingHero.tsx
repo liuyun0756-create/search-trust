@@ -75,7 +75,7 @@ export function PricingHero() {
                 <span className="pb-2 text-[16px] font-bold text-[#6B7280]">/ submitted URL</span>
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-[#55616F]">
-                A structured trust diagnosis for one submitted page, delivered as a clear report with the first fix to prioritize.
+                A v2.1 trust diagnosis for one submitted page, delivered as a web report with PDF export and a clear fix path.
               </p>
             </div>
 
@@ -90,11 +90,12 @@ export function PricingHero() {
               <ul className="space-y-3 text-[14px] font-medium text-[#3E4651]">
               {[
                 '1 page / 1 submitted URL',
-                'L0–L5 trust framework evaluation',
-                'Current trust status',
-                'Dominant failure layer',
-                'Key findings by layer',
-                'Prioritized improvement path',
+                '8-layer trust model evaluation',
+                'Trust status, ranking potential, and risk level',
+                'Evidence-backed key issues',
+                'Data coverage and safe GBP alignment status',
+                'Client / Analyst report views and PDF export',
+                'Light agency-ready branding placeholders',
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-[#86B800]" />
