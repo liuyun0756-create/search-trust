@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const recentCutoff = new Date(Date.now() - 60_000).toISOString();
     const { data: recentPending } = await supabase
       .from("reports")
-      .select("report_id, task_id")
+      .select("id, report_id, task_id")
       .eq("user_id", user.userId)
       .eq("page_url", url)
       .eq("status", "pending")
@@ -95,15 +95,13 @@ export async function POST(request: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(1);
 
-    if (recentPending?.[0]?.task_id) {
+    if (recentPending?.[0]) {
       return NextResponse.json({
         task_id: recentPending[0].task_id,
         report_id: recentPending[0].report_id,
+        database_report_id: recentPending[0].id,
+        pending_initialization: !recentPending[0].task_id,
       });
-    }
-
-    if (recentPending?.length) {
-      return NextResponse.json({ error: "A report for this URL is already being created" }, { status: 409 });
     }
 
     const { data: previousCompleted } = await supabase
@@ -210,6 +208,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Supabase task_id update error:", error);
+      await supabase
+        .from("reports")
+        .update({ status: "failed" })
+        .eq("report_id", reportId)
+        .eq("user_id", user.userId);
       await captureServerEvent({
         distinctId: analyticsDistinctId,
         event: "report generation failed",

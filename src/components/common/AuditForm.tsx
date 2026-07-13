@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
 import { PAGE_TYPES } from '@/lib/constants';
@@ -11,6 +11,7 @@ interface AuditFormProps {
 
 export function AuditForm({ floating = false }: AuditFormProps) {
   const [loading, setLoading] = useState(false);
+  const submissionRef = useRef(false);
   const [formData, setFormData] = useState({
     url: '',
     gbpUrl: '',
@@ -21,8 +22,9 @@ export function AuditForm({ floating = false }: AuditFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.url.trim() || !formData.pageType.trim()) return;
+    if (!formData.url.trim() || !formData.pageType.trim() || submissionRef.current) return;
 
+    submissionRef.current = true;
     setLoading(true);
 
     try {
@@ -35,6 +37,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
       console.error("Submit error:", err);
       alert("Something went wrong. Please try again.");
     } finally {
+      submissionRef.current = false;
       setLoading(false);
     }
   };

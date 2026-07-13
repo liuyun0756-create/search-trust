@@ -386,6 +386,43 @@ function ReportsPage() {
     }
   }, [isLoaded]);
 
+  // A duplicate browser submit can find the report row before its task_id is
+  // persisted. Refresh that pending row until it is ready for the SSE stream.
+  useEffect(() => {
+    const pendingId = report?.id || report?.report_id;
+    if (!pendingId || report?.status !== "pending" || report?.task_id) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const refreshPendingReport = async () => {
+      try {
+        const res = await fetch(`/api/reports/${pendingId}`, { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const nextReport = await res.json() as Report;
+        if (cancelled) return;
+        reportCacheRef.current.set(nextReport.id, nextReport);
+        reportCacheRef.current.set(nextReport.report_id, nextReport);
+        setReport((current) => (
+          current?.id === nextReport.id || current?.report_id === nextReport.report_id
+            ? nextReport
+            : current
+        ));
+        if (nextReport.status === "pending" && !nextReport.task_id) {
+          timer = setTimeout(refreshPendingReport, 1000);
+        }
+      } catch {
+        if (!cancelled) timer = setTimeout(refreshPendingReport, 1000);
+      }
+    };
+
+    refreshPendingReport();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [report?.id, report?.report_id, report?.status, report?.task_id]);
+
   const loadReportMeta = useCallback(async (baseReport: Report) => {
     if (!baseReport.page_url || !baseReport.page_type) return;
 

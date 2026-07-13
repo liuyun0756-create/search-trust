@@ -38,6 +38,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
   const [auditFormOpen, setAuditFormOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submissionRef = useRef(false);
   const [credits, setCredits] = useState<number | null>(null);
   const creditsLoadedRef = useRef(false);
   const creditsRequestRef = useRef<Promise<number | null> | null>(null);
@@ -145,6 +146,8 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
 
   // 调后端跑报告
   const runReport = useCallback(async (data: AuditFormData) => {
+    if (submissionRef.current) return;
+    submissionRef.current = true;
     setSubmitting(true);
     try {
       const result = await submitAudit({
@@ -173,6 +176,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       }
       alert(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
+      submissionRef.current = false;
       setSubmitting(false);
     }
   }, [buildReportRoute, clearPendingAudit, router, savePendingAudit]);
