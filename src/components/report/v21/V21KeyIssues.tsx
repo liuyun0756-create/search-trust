@@ -33,11 +33,6 @@ export function V21KeyIssues({
             <span className="rounded-full border border-gray-100 bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-500">
               {formatLayerKey(issue.affected_layer)}
             </span>
-            {showTechnical && issue.related_rule_ids?.length > 0 && (
-              <span className="rounded-full border border-gray-100 bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-500">
-                Rules: {issue.related_rule_ids.join(", ")}
-              </span>
-            )}
           </div>
           <h3 className="mb-3 text-[20px] font-black tracking-tight text-[#1A212B]">{issue.issue_title}</h3>
           <p className="mb-4 text-[14px] font-medium leading-relaxed text-gray-600">{issue.explanation}</p>
@@ -48,7 +43,7 @@ export function V21KeyIssues({
             </div>
           )}
           <div className="space-y-3">
-            <V21EvidenceList evidenceItems={issue.evidence_items} viewMode={viewMode} />
+            <V21EvidenceList evidenceItems={issue.evidence_items} viewMode={viewMode} density="compact" />
             <V21ActionItems
               actions={issue.recommended_actions}
               viewMode={viewMode}

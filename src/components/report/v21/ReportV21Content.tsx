@@ -1,6 +1,6 @@
 "use client";
 
-import type { NormalizedReportV21Result } from "@/lib/report-v21";
+import type { EvidenceItem, KeyIssue, LayerFinding, NormalizedReportV21Result } from "@/lib/report-v21";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import type { Report } from "@/types/database";
@@ -69,6 +69,7 @@ export function ReportV21Content({
     competitor_pages_checked: false,
     limitations: ["Data coverage was not available in the report payload."],
   };
+  const keyIssues = enrichKeyIssues(report.key_issues, report.layers);
 
   if (isLoading) {
     return (
@@ -93,7 +94,7 @@ export function ReportV21Content({
       </Section>
 
       <Section id={V21_SECTION_IDS["Key Issues"]} title="Key Issues">
-        <V21KeyIssues keyIssues={report.key_issues} viewMode={viewMode} />
+        <V21KeyIssues keyIssues={keyIssues} viewMode={viewMode} />
       </Section>
 
       <Section id={V21_SECTION_IDS["Trust Layer Breakdown"]} title="Trust Layer Breakdown">
@@ -113,6 +114,37 @@ export function ReportV21Content({
       </Section>
     </div>
   );
+}
+
+function enrichKeyIssues(
+  keyIssues: KeyIssue[] | null | undefined,
+  layers: LayerFinding[] | null | undefined,
+): KeyIssue[] {
+  const layerEvidence = new Map(
+    (Array.isArray(layers) ? layers : []).map((layer) => [layer.layer_key, layer.evidence_items]),
+  );
+
+  return (Array.isArray(keyIssues) ? keyIssues : []).map((issue) => ({
+    ...issue,
+    evidence_items: mergeEvidence(issue.evidence_items, layerEvidence.get(issue.affected_layer)),
+  }));
+}
+
+function mergeEvidence(
+  issueEvidence: EvidenceItem[] | null | undefined,
+  layerEvidence: EvidenceItem[] | null | undefined,
+): EvidenceItem[] {
+  const seen = new Set<string>();
+  const merged: EvidenceItem[] = [];
+
+  for (const item of [...(issueEvidence || []), ...(layerEvidence || [])]) {
+    const key = item.id || [item.source_label, item.page_section, item.extracted_text, item.explanation].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+  }
+
+  return merged;
 }
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {

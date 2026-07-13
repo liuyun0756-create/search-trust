@@ -7,7 +7,7 @@ import {
   Lock, Download,
   Loader2, AlertTriangle,
   Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
-  ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon,
+  ChevronDown, X as XIcon,
   RotateCcw, ArrowLeft
 } from 'lucide-react';
 import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
@@ -34,14 +34,6 @@ const STATUS_COLORS: Record<string, string> = {
   Medium: '#3B82F6', Moderate: '#A5D020',
   'Medium-High': '#EF4444', 'Medium-Low': '#B45309',
   'Good': '#22C55E', 'Fair': '#B45309', '良好': '#22C55E', '一般': '#F59E0B', '偏弱': '#EF4444',
-};
-
-const statusColorFor = (level: string, lowIsPositive = false) => {
-  if (level === 'low') return lowIsPositive ? '#22C55E' : '#EF4444';
-  if (level === 'high' || level === 'strong') return '#22C55E';
-  if (level === 'weak' || level === 'medium_high') return '#EF4444';
-  if (level === 'improvable' || level === 'competitive') return '#615FFF';
-  return '#3B82F6';
 };
 
 const LoadingState = ({ text = "Under detection..." }: { text?: string }) => (
@@ -808,22 +800,6 @@ export function ReportContent({
   const reportV21 = normalized.reportV21;
   const normalizedIsRenderable = reportV21?.schema_version === "2.1" && normalized.source !== "fallback";
   const canExportPdf = normalizedIsRenderable || isReportPdfExportable(report);
-  const overallStatus = reportV21.overall_status ?? {
-    label: 'Unknown',
-    level: 'medium',
-    explanation: 'No structured trust status was available.',
-  };
-  const rankingPotential = reportV21.ranking_potential ?? {
-    label: 'Unknown',
-    level: 'competitive',
-    explanation: 'No structured ranking potential was available.',
-  };
-  const riskLevel = reportV21.risk_level ?? {
-    label: 'Unknown',
-    level: 'medium',
-    explanation: 'No structured risk level was available.',
-  };
-
   // 滚动时自动高亮对应的 tab
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
@@ -951,36 +927,6 @@ export function ReportContent({
             iconTone: 'text-gray-500',
             iconBg: 'bg-gray-50',
           };
-
-  const scoreCards = [
-    {
-      label: 'Trust Status',
-      val: overallStatus.label || '—',
-      desc: overallStatus.explanation || '',
-      color: statusColorFor(overallStatus.level),
-      icon: ShieldCheck,
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-500',
-    },
-    {
-      label: 'Ranking Potential',
-      val: rankingPotential.label || '—',
-      desc: rankingPotential.explanation || '',
-      color: statusColorFor(rankingPotential.level),
-      icon: BarChart3,
-      iconBg: 'bg-indigo-50',
-      iconColor: 'text-indigo-500',
-    },
-    {
-      label: 'Risk Level',
-      val: riskLevel.label || '—',
-      desc: riskLevel.explanation || '',
-      color: statusColorFor(riskLevel.level, true),
-      icon: TriangleAlert,
-      iconBg: 'bg-red-50',
-      iconColor: 'text-red-500',
-    },
-  ];
 
   const handleSendEmail = async () => {
     if (!email || emailStatus === 'sending') return;
@@ -1223,41 +1169,6 @@ export function ReportContent({
           onBack={handleBackToDashboard}
         />
       )}
-
-      {/* Score Cards */}
-      {!showFailed && <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {scoreCards.map((card, i) => {
-          const Icon = card.icon;
-
-          return (
-            <div key={i} className="relative min-h-[235px] rounded-[22px] border border-gray-200 bg-white p-6 shadow-sm">
-              {isLoading ? <LoadingState /> : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex h-full flex-col">
-                  <div className="mb-5 flex items-center gap-3">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${card.iconBg} ${card.iconColor}`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <p className="text-[17px] font-bold leading-tight tracking-tight text-[#1A1F2B]">{card.label}</p>
-                      <BadgeInfo className="h-4 w-4 shrink-0 text-[#9AA6B8]" />
-                    </div>
-                  </div>
-
-                  <h4 className="mb-5 text-[32px] font-black leading-none tracking-tight" style={{ color: card.color }}>
-                    {card.val}
-                  </h4>
-
-                  {card.desc && (
-                    <p className="text-[15px] font-medium leading-7 text-[#465264]">
-                      {card.desc}
-                    </p>
-                  )}
-                </motion.div>
-              )}
-            </div>
-          );
-        })}
-      </div>}
 
       {/* Sticky Tab Bar */}
       {!showFailed && <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
