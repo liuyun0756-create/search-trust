@@ -905,6 +905,13 @@ export function ReportContent({
 
   const isGbpStatusLoading = report.status === 'pending' && typeof report.gbp_connected !== 'boolean';
   const normalizedGbpStatus = reportV21.gbp_status?.status || 'not_checked';
+  const gbpSourceLabel = reportV21.gbp_status?.source === 'user_provided'
+    ? 'Provided by user'
+    : reportV21.gbp_status?.source === 'system_discovered'
+      ? 'System discovered'
+      : reportV21.gbp_status?.source === 'not_available'
+        ? 'No source available'
+        : 'Source not recorded';
   const gbpStatus = isGbpStatusLoading
     ? {
         value: (
@@ -1169,6 +1176,7 @@ export function ReportContent({
               icon: Link2,
               label: 'GBP URL Status',
               value: gbpStatus.value,
+              detail: gbpSourceLabel,
               tone: gbpStatus.tone,
               iconTone: gbpStatus.iconTone,
               iconBg: gbpStatus.iconBg,
@@ -1198,6 +1206,9 @@ export function ReportContent({
               <div className="min-w-0">
                 <p className="mb-1.5 text-[12px] font-bold text-[#8A96A8]">{item.label}</p>
                 <p className={`truncate text-[12px] font-bold ${item.tone}`}>{item.value}</p>
+                {'detail' in item && item.detail && (
+                  <p className="mt-1 truncate text-[11px] font-medium text-[#8A96A8]">{item.detail}</p>
+                )}
               </div>
             </div>
           ))}

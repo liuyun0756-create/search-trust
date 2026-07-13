@@ -4,6 +4,12 @@ import { filterClientLimitations, isAnalystView, type V21ViewMode } from "./view
 
 const GBP_NOT_VERIFIED_MESSAGE = "GBP was not checked in this report, so GBP alignment could not be verified.";
 
+const GBP_SOURCE_LABELS = {
+  user_provided: "Provided by the user",
+  system_discovered: "Found automatically from page or business information",
+  not_available: "No GBP source was available",
+} as const;
+
 export function V21DataCoverage({
   gbpStatus,
   dataCoverage,
@@ -37,6 +43,10 @@ export function V21DataCoverage({
         <h3 className="mb-2 text-[22px] font-black capitalize tracking-tight text-[#1A212B]">
           {gbpStatus.status.replace(/_/g, " ")}
         </h3>
+        <p className="text-[13px] font-medium text-gray-600">
+          <span className="font-bold text-[#1A212B]">Source: </span>
+          {gbpStatus.source ? GBP_SOURCE_LABELS[gbpStatus.source] : "Not recorded for this existing report"}
+        </p>
         {gbpStatus.gbp_url && (
           <a href={gbpStatus.gbp_url} target="_blank" rel="noopener noreferrer" className="text-[13px] font-bold text-blue-600 hover:text-blue-800">
             {gbpStatus.gbp_url}
