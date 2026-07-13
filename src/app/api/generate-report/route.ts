@@ -8,7 +8,8 @@ import {
   type AnalyticsProperties,
 } from "@/lib/analytics-properties";
 
-const BACKEND_URL = process.env.REPORT_API_BASE_URL || "http://localhost:8000/api/v1";
+const DEFAULT_BACKEND_URL = "https://searchtrust-rd-production.up.railway.app/api/v1";
+const BACKEND_URL = process.env.REPORT_API_BASE_URL || DEFAULT_BACKEND_URL;
 const DEV_MODE = process.env.DEV_BYPASS_AUTH === "true";
 
 // TODO: 后端统一成英文后删除此映射
@@ -163,16 +164,39 @@ export async function POST(request: NextRequest) {
 
     console.log("/analyze接口，后端Received report generation request:", { url, page_type: normalizedPageType, gbp_url: normalizedGbpUrl });
     // 1. 调后端创建任务
-    const analyzeRes = await fetch(`${BACKEND_URL}/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url,
-        page_type: normalizedPageType,
-        language: "English",
-        gbp_url: normalizedGbpUrl,
-      }),
-    });
+    let analyzeRes: Response;
+    try {
+      analyzeRes = await fetch(`${BACKEND_URL}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url,
+          page_type: normalizedPageType,
+          language: "English",
+          gbp_url: normalizedGbpUrl,
+        }),
+      });
+    } catch (error) {
+      console.error("Backend analyze request failed:", error);
+      await supabase
+        .from("reports")
+        .update({ status: "failed" })
+        .eq("report_id", reportId)
+        .eq("user_id", user.userId);
+      await captureServerEvent({
+        distinctId: analyticsDistinctId,
+        event: "report generation failed",
+        properties: {
+          ...analyticsProperties,
+          report_id: reportId,
+          failure_reason: "backend_analyze_unreachable",
+        },
+      });
+      return NextResponse.json(
+        { error: "The report service is temporarily unavailable. Please try again." },
+        { status: 502 }
+      );
+    }
 
     if (!analyzeRes.ok) {
       const errText = await analyzeRes.text();
