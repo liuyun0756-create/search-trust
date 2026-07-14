@@ -6,7 +6,6 @@ import { useState } from "react";
 import type { Report } from "@/types/database";
 import { V21DataCoverage } from "./V21DataCoverage";
 import { V21BrandingHeader } from "./V21BrandingHeader";
-import { V21GBPAlignment } from "./V21GBPAlignment";
 import { V21KeyIssues } from "./V21KeyIssues";
 import { V21OptimizationPath } from "./V21OptimizationPath";
 import { V21OverallConclusion } from "./V21OverallConclusion";
@@ -21,8 +20,7 @@ export const V21_SECTION_IDS = {
   "Key Issues": "section-key-issues",
   "Trust Layer Breakdown": "section-trust-layer-breakdown",
   "Optimization Path": "section-optimization-path",
-  "Data Coverage": "section-data-coverage",
-  "GBP × Page Alignment": "section-gbp-page-alignment",
+  "Evidence Coverage": "section-evidence-coverage",
 } as const;
 
 export type V21TabId = keyof typeof V21_SECTION_IDS;
@@ -53,21 +51,6 @@ export function ReportV21Content({
     roadmap: [],
     fix_order_warning: "",
     completion_signals: [],
-  };
-  const gbpStatus = report.gbp_status ?? {
-    status: "not_checked" as const,
-    reason: "GBP status was not available in the report payload.",
-  };
-  const dataCoverage = report.data_coverage ?? {
-    page_content_checked: false,
-    gbp_checked: false,
-    schema_checked: false,
-    contact_page_checked: false,
-    about_page_checked: false,
-    reviews_checked: false,
-    internal_pages_checked: false,
-    competitor_pages_checked: false,
-    limitations: ["Data coverage was not available in the report payload."],
   };
   const keyIssues = enrichKeyIssues(report.key_issues, report.layers);
 
@@ -105,12 +88,8 @@ export function ReportV21Content({
         <V21OptimizationPath optimizationPath={optimizationPath} viewMode={viewMode} />
       </Section>
 
-      <Section id={V21_SECTION_IDS["Data Coverage"]} title="Data Coverage">
-        <V21DataCoverage gbpStatus={gbpStatus} dataCoverage={dataCoverage} source={normalized.source} viewMode={viewMode} />
-      </Section>
-
-      <Section id={V21_SECTION_IDS["GBP × Page Alignment"]} title="GBP × Page Alignment">
-        <V21GBPAlignment reportV21={report} viewMode={viewMode} />
+      <Section id={V21_SECTION_IDS["Evidence Coverage"]} title="Evidence Coverage & GBP Check">
+        <V21DataCoverage reportV21={report} source={normalized.source} />
       </Section>
     </div>
   );

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import {
   Lock, Download,
   Loader2, AlertTriangle,
-  Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
+  Copy, FileText, Link2, CalendarDays, BadgeInfo,
   ChevronDown, X as XIcon,
   RotateCcw, ArrowLeft
 } from 'lucide-react';
@@ -14,6 +14,7 @@ import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
 import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v21/ReportV21Content';
+import { PdfInput } from './PdfInput';
 
 type TabId = V21TabId;
 
@@ -68,6 +69,21 @@ function safeStringList(value: unknown): string[] {
   return Array.isArray(value)
     ? value.map((item) => String(item).trim()).filter(Boolean)
     : [];
+}
+
+function formatGeneratedAt(value: string | null | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en-US', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    hour12: false, timeZone: 'UTC', timeZoneName: 'short',
+  }).format(date);
+}
+
+function compactReportId(value: string | null | undefined): string {
+  if (!value || value.length <= 24) return value || '—';
+  return `${value.slice(0, 12)}…${value.slice(-8)}`;
 }
 
 const FailedState = ({
@@ -396,14 +412,14 @@ function Module4EightLayers({ data }: { data: Record<string, any> }) {
   const visibleLayers = layers
     .map((layer, index) => ({ ...layer, originalIndex: index }));
   const layerTitles: Record<number, string> = {
-    0: 'L0 Foundation',
-    1: 'L0-A Entity Presence',
-    2: 'L0-B Entity Consistency',
-    3: 'L1 Specificity',
-    4: 'L2 Real-World Connection',
-    5: 'L3 Accountability',
-    6: 'L4 Page Unique Value',
-    7: 'L5 Algorithm Fit',
+    0: 'L1 Foundation',
+    1: 'L2 Entity Presence',
+    2: 'L3 Entity Consistency',
+    3: 'L4 Specificity',
+    4: 'L5 Real-World Connection',
+    5: 'L6 Accountability',
+    6: 'L7 Page Unique Value',
+    7: 'L8 Algorithm Fit',
   };
 
   const statusTagClass: Record<string, string> = {
@@ -723,7 +739,7 @@ function renderModule(tab: TabId, data: Record<string, any>) {
     case 'Key Issues': return <Module3KeyProblems data={data} />;
     case 'Trust Layer Breakdown': return <Module4EightLayers data={data} />;
     case 'Optimization Path': return <Module5Optimization data={data} />;
-    case 'Data Coverage': return <SectionSkeleton />;
+    case 'Evidence Coverage': return <SectionSkeleton />;
   }
 }
 
@@ -791,7 +807,15 @@ export function ReportContent({
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'downloading'>('idle');
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [agencyName, setAgencyName] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [footerNote, setFooterNote] = useState('');
+  const [agencyLogoData, setAgencyLogoData] = useState('');
+  const [agencyLogoName, setAgencyLogoName] = useState('');
+  const [pdfBrandingError, setPdfBrandingError] = useState('');
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [copiedField, setCopiedField] = useState('');
   const isClickScrolling = useRef(false);
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
@@ -835,14 +859,7 @@ export function ReportContent({
     }, 800);
   };
 
-  const generatedAt = report.generated_at
-    || (report.created_at
-      ? new Date(report.created_at).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })
-      : '');
+  const generatedAt = formatGeneratedAt(report.generated_at || report.created_at);
   const displayReportId = report.external_report_id || report.report_id;
   const isSampleReport = displayReportId?.toLowerCase().includes('sample');
 
@@ -865,6 +882,13 @@ export function ReportContent({
 
   const handleShareReport = () => {
     setShareModalOpen(true);
+  };
+
+  const copyText = async (value: string, field: string) => {
+    if (!value) return;
+    await navigator.clipboard?.writeText(value);
+    setCopiedField(field);
+    window.setTimeout(() => setCopiedField(''), 1800);
   };
 
   const handleRetryAnalysis = () => {
@@ -954,7 +978,18 @@ export function ReportContent({
     }
     setPdfStatus('downloading');
     try {
-      const res = await fetch(`/api/reports/${report.id}/pdf`);
+      const res = await fetch(`/api/reports/${report.id}/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branding: {
+            agency_name: agencyName,
+            client_name: clientName,
+            agency_logo_data: agencyLogoData,
+            footer_note: footerNote,
+          },
+        }),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         const message = err?.error === 'Report is still generating'
@@ -973,6 +1008,7 @@ export function ReportContent({
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      setPdfModalOpen(false);
     } catch (error) {
       console.error('PDF export error:', error);
       alert(error instanceof Error ? error.message : 'PDF export failed');
@@ -981,8 +1017,46 @@ export function ReportContent({
     }
   };
 
+  const handleLogoUpload = (file: File | undefined) => {
+    setPdfBrandingError('');
+    if (!file) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      setPdfBrandingError('Use a PNG or JPEG logo.');
+      return;
+    }
+    if (file.size > 1_000_000) {
+      setPdfBrandingError('Use a logo smaller than 1 MB for this PDF export.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAgencyLogoData(typeof reader.result === 'string' ? reader.result : '');
+      setAgencyLogoName(file.name);
+    };
+    reader.onerror = () => setPdfBrandingError('The logo could not be read. Please choose another file.');
+    reader.readAsDataURL(file);
+  };
+
   return (
     <main className="flex-1 min-w-0">
+      {pdfModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/45 px-4 backdrop-blur-sm">
+          <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-[24px] border border-gray-100 bg-white p-6 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div><h2 className="text-[22px] font-black text-[#1A212B]">Agency PDF</h2><p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-500">These details are used only for this download. They are not saved to the report or database.</p></div>
+              <button type="button" onClick={() => setPdfModalOpen(false)} className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#1A212B]" aria-label="Close PDF export"><XIcon className="h-5 w-5" /></button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <PdfInput label="Agency or consultant name" value={agencyName} onChange={setAgencyName} />
+              <PdfInput label="Client name" value={clientName} onChange={setClientName} />
+            </div>
+            <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase tracking-[0.12em] text-gray-500">Agency logo</span><input type="file" accept="image/png,image/jpeg" onChange={(event) => handleLogoUpload(event.target.files?.[0])} className="block w-full text-[13px] font-medium text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#F3F8E8] file:px-3 file:py-2 file:text-[12px] file:font-bold file:text-[#506314]" />{agencyLogoName && <p className="mt-2 text-[12px] font-medium text-gray-500">Selected: {agencyLogoName}</p>}</label>
+            <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase tracking-[0.12em] text-gray-500">Footer note</span><textarea value={footerNote} onChange={(event) => setFooterNote(event.target.value)} maxLength={240} rows={3} placeholder="Optional note for this client delivery" className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[14px] font-medium text-[#1A212B] outline-none focus:border-[#A5D020] focus:ring-4 focus:ring-[#A5D020]/10" /></label>
+            {pdfBrandingError && <p className="mt-3 text-[13px] font-bold text-red-500">{pdfBrandingError}</p>}
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => setPdfModalOpen(false)} className="rounded-xl border border-gray-200 px-5 py-3 text-[14px] font-bold text-[#1A212B] hover:bg-gray-50">Cancel</button><button type="button" onClick={handleDownloadPDF} disabled={pdfStatus === 'downloading'} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#171B22] px-5 py-3 text-[14px] font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">{pdfStatus === 'downloading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{pdfStatus === 'downloading' ? 'Preparing...' : 'Download PDF'}</button></div>
+          </div>
+        </div>
+      )}
       {shareModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/45 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[24px] border border-gray-100 bg-white p-6 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
@@ -1067,7 +1141,7 @@ export function ReportContent({
           {isPaid && (
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
-                onClick={handleDownloadPDF}
+                onClick={() => setPdfModalOpen(true)}
                 disabled={pdfStatus === 'downloading' || !canExportPdf}
                 className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#171B22] px-6 py-3 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_14px_28px_rgba(15,23,42,0.16)] disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -1077,14 +1151,6 @@ export function ReportContent({
                   <Download className="h-4 w-4" />
                 )}
                 {pdfStatus === 'downloading' ? 'Preparing...' : 'Export PDF'}
-              </button>
-              <button
-                type="button"
-                onClick={handleShareReport}
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl border border-[#1A1F2B]/60 bg-white px-6 py-3 text-[14px] font-bold text-[#1A1F2B] transition-all hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-[#F7F9F2]"
-              >
-                <Share2 className="h-4 w-4" />
-                Share
               </button>
             </div>
           )}
@@ -1136,7 +1202,8 @@ export function ReportContent({
             {
               icon: BadgeInfo,
               label: 'Report ID',
-              value: displayReportId,
+              value: compactReportId(displayReportId),
+              copyValue: displayReportId,
               tone: 'text-[#1A1F2B]',
             },
           ].map((item, index) => (
@@ -1151,7 +1218,14 @@ export function ReportContent({
               </div>
               <div className="min-w-0">
                 <p className="mb-1.5 text-[12px] font-bold text-[#8A96A8]">{item.label}</p>
-                <p className={`truncate text-[12px] font-bold ${item.tone}`}>{item.value}</p>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <p className={`min-w-0 truncate text-[12px] font-bold ${item.tone}`}>{item.value}</p>
+                  {'copyValue' in item && item.copyValue && (
+                    <button type="button" onClick={() => copyText(item.copyValue, 'report-id')} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-[#1A1F2B]" aria-label="Copy report ID" title="Copy full report ID">
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
                 {'detail' in item && item.detail && (
                   <p className="mt-1 truncate text-[11px] font-medium text-[#8A96A8]">{item.detail}</p>
                 )}
@@ -1159,6 +1233,7 @@ export function ReportContent({
             </div>
           ))}
         </div>
+        {copiedField === 'report-id' && <p className="mt-3 text-right text-[12px] font-bold text-emerald-600">Report ID copied.</p>}
       </section>
       )}
 

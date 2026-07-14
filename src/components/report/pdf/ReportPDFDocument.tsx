@@ -1,10 +1,9 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Image, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
   extractGBPAlignmentRows,
   getEffectiveBranding,
   getLayerDisplayConfig,
-  hasWhiteLabelBranding,
   normalizeReportToV21,
   REQUIRED_LAYER_KEYS,
 } from "@/lib/report-v21";
@@ -16,8 +15,8 @@ import type {
   LayerKey,
   NormalizedReportV21Result,
   ReportV21,
-  RoadmapPhase,
 } from "@/lib/report-v21";
+import type { EffectiveBranding } from "@/lib/report-v21";
 import { filterClientLimitations } from "@/components/report/v21/viewMode";
 import type { Report } from "@/types/database";
 
@@ -156,6 +155,17 @@ const styles = StyleSheet.create({
     fontSize: 8,
     lineHeight: 1.35,
     marginBottom: 2,
+  },
+  agencyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  agencyLogo: {
+    width: 34,
+    height: 34,
+    objectFit: "contain",
+    marginRight: 8,
   },
   scoreRow: {
     flexDirection: "row",
@@ -468,11 +478,10 @@ function formatDate(value: string): string {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
+    hour12: false, timeZone: "UTC", timeZoneName: "short",
+  }).format(date);
 }
 
 function displayLayer(layerKey: LayerKey | string): string {
@@ -611,13 +620,15 @@ function ReportHeader({
   report,
   reportV21,
   normalized,
+  brandingOverride,
 }: {
   report: Report;
   reportV21: ReportV21;
   normalized: NormalizedReportV21Result;
+  brandingOverride?: EffectiveBranding;
 }) {
-  const branding = getEffectiveBranding(reportV21);
-  const showBranding = hasWhiteLabelBranding(reportV21);
+  const branding = brandingOverride ?? getEffectiveBranding(reportV21);
+  const showBranding = branding.enabled && Boolean(branding.agencyName || branding.clientName || branding.agencyLogoData);
   const infoItems = [
     { label: "Page Type", value: reportV21.page_type || report.page_type || "Service Page" },
     { label: "GBP Status", value: labelize(reportV21.gbp_status.status) },
@@ -632,7 +643,10 @@ function ReportHeader({
       <Text style={styles.sourceBadge}>{sourceLabel(normalized.source)}</Text>
       {showBranding && (
         <View style={styles.agencyPanel}>
-          <Text style={styles.agencyBadge}>Agency report</Text>
+          <View style={styles.agencyHeader}>
+            {branding.agencyLogoData && <Image src={branding.agencyLogoData} style={styles.agencyLogo} />}
+            <View><Text style={styles.agencyBadge}>Agency report</Text></View>
+          </View>
           {branding.clientName && <Text style={styles.agencyTitle}>Prepared for {truncateText(branding.clientName, 90)}</Text>}
           {branding.agencyName && <Text style={styles.agencyText}>Prepared by {truncateText(branding.agencyName, 90)}</Text>}
           <Text style={styles.agencyText}>Trust framework by SearchTrust</Text>
@@ -779,16 +793,14 @@ function TrustLayersSection({ reportV21 }: { reportV21: ReportV21 }) {
                 <StatusBadge value={layer.status} />
               </View>
               <Text style={styles.mutedText}>{config.name}</Text>
-              <Field label="Summary" value={layer.summary || layer.explanation} maxLength={230} />
-              <Field label="Explanation" value={layer.explanation} maxLength={230} />
+              <Field label="Assessment" value={layer.summary || layer.explanation} maxLength={230} />
               <Text style={styles.mutedText}>
-                Triggered rules: {safeList(layer.triggered_rule_ids).length} / Checked rules: {safeList(layer.checked_rule_ids).length}
+                Signals assessed: {config.signalsAssessed} / Findings requiring attention: {safeList(layer.triggered_rule_ids).length}
               </Text>
               <View style={{ marginTop: 6 }}>
                 <Text style={styles.label}>Top Suggested Fixes</Text>
-                <BulletList items={layer.suggested_fixes} limit={2} maxLength={150} />
+                <BulletList items={layer.suggested_fixes} limit={1} maxLength={150} />
               </View>
-              <EvidenceSummary evidence={layer.evidence_items} limit={1} />
             </View>
           );
         })}
@@ -808,33 +820,16 @@ function ActionSection({ title, actions, limit }: { title: string; actions?: Act
   );
 }
 
-function RoadmapPhaseCard({ phase }: { phase: RoadmapPhase }) {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>Phase {phase.sequence}: {truncateText(phase.phase_title, 110)}</Text>
-      <Field label="Goal" value={phase.goal} maxLength={220} />
-      <Field label="Entry Condition" value={phase.entry_condition} maxLength={180} />
-      <Text style={styles.label}>Action Items</Text>
-      <BulletList items={safeList(phase.action_items).map((action) => action.task_title)} limit={3} maxLength={150} />
-      <Text style={styles.label}>Expected Outcomes</Text>
-      <BulletList items={phase.expected_outcomes} limit={3} maxLength={150} />
-    </View>
-  );
-}
-
 function OptimizationPathSection({ reportV21 }: { reportV21: ReportV21 }) {
   const path = reportV21.optimization_path;
   return (
     <Section title="Optimization Path">
       <ActionSection title="Must Execute Now" actions={path.must_execute_now} limit={4} />
-      <ActionSection title="Defer Until Later" actions={path.defer_until_later} limit={3} />
-      <ActionSection title="Do Not Prioritize Yet" actions={path.do_not_prioritize_yet} limit={2} />
-      {safeList(path.roadmap).length > 0 && (
-        <View style={{ marginBottom: 8 }}>
-          <Text style={styles.cardTitle}>Roadmap</Text>
-          {safeList(path.roadmap).slice(0, 4).map((phase) => <RoadmapPhaseCard key={phase.id || phase.phase_title} phase={phase} />)}
-        </View>
-      )}
+      <ActionSection title="Address After the Foundation" actions={path.defer_until_later} limit={3} />
+      <View style={styles.statement}>
+        <Text style={styles.cardTitle}>Improvement Sequence</Text>
+        <Text style={styles.bodyText}>L1-L3 establish a stable business entity. L4-L5 add local, real-world detail. L6-L7 add accountable, unique proof. L8 Algorithm Fit is reassessed after those earlier signals improve.</Text>
+      </View>
       <Field label="Fix Order Warning" value={path.fix_order_warning} maxLength={360} />
       <Text style={styles.label}>Completion Signals</Text>
       <BulletList items={path.completion_signals} limit={5} />
@@ -930,7 +925,7 @@ function GBPAlignmentSection({ reportV21 }: { reportV21: ReportV21 }) {
           </Text>
         </View>
         <Text style={styles.mutedText}>
-          Review L0-A Entity Presence and L0-B Entity Consistency for available evidence.
+          Review L2 Entity Presence and L3 Entity Consistency for available evidence.
         </Text>
       </Section>
     );
@@ -956,7 +951,7 @@ function MethodFooter() {
   );
 }
 
-export function ReportPDFDocument({ report }: { report: Report }) {
+export function ReportPDFDocument({ report, branding }: { report: Report; branding?: EffectiveBranding }) {
   const normalized = normalizeReportToV21(report);
   const reportV21 = normalized.reportV21;
   const reportId = reportV21.report_id || report.external_report_id || report.report_id;
@@ -964,7 +959,7 @@ export function ReportPDFDocument({ report }: { report: Report }) {
   return (
     <Document title={`SearchTrust Report ${reportId}`} author="SearchTrust" subject="Trust Audit Report" creator="SearchTrust">
       <Page size="A4" style={styles.page} wrap>
-        <ReportHeader report={report} reportV21={reportV21} normalized={normalized} />
+        <ReportHeader report={report} reportV21={reportV21} normalized={normalized} brandingOverride={branding} />
         <ExecutiveSummary reportV21={reportV21} />
         <PageLevelSection reportV21={reportV21} />
         <KeyIssuesSection reportV21={reportV21} />

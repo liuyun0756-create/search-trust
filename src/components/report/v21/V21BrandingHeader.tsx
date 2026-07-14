@@ -17,10 +17,10 @@ export function V21BrandingHeader({
     <div className={`rounded-[24px] border border-[#E4EDD2] bg-[#FBFDF5] ${isClient ? "p-6" : "p-5"}`}>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          {branding.agencyLogoUrl && (
+          {branding.agencyLogoData && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={branding.agencyLogoUrl}
+              src={branding.agencyLogoData}
               alt={branding.agencyName ? `${branding.agencyName} logo` : "Agency logo"}
               className="h-12 w-12 rounded-xl border border-white bg-white object-contain p-1 shadow-sm"
             />

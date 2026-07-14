@@ -12,7 +12,7 @@ export const OLD_SIX_LAYER_LABELS = [
 
 const OLD_SIX_LAYER_REPLACEMENTS: Array<[RegExp, string]> = [
   [/Six-Layer Model/gi, "Eight-Layer Model"],
-  [/L0-RELEVANCE/gi, "L0 Foundation"],
+  [/L0-RELEVANCE/gi, "L1 Foundation"],
   [/L1-ENTITY CLARITY/gi, "Entity Presence"],
   [/L2-PROOF SIGNALS/gi, "Entity Consistency"],
   [/L3-LOCAL FIT/gi, "Real-World Connection"],

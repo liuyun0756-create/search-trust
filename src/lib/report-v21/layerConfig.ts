@@ -15,48 +15,57 @@ export interface LayerDisplayConfig {
   label: string;
   name: string;
   shortName: string;
+  signalsAssessed: number;
 }
 
 export const LAYER_DISPLAY_CONFIG: Record<LayerKey, LayerDisplayConfig> = {
   foundation: {
-    label: "L0 Foundation",
-    name: "Eligibility",
+    label: "L1 Foundation",
+    name: "Foundation",
     shortName: "Foundation",
+    signalsAssessed: 4,
   },
   entity_presence: {
-    label: "L0-A Entity Presence",
+    label: "L2 Entity Presence",
     name: "Entity Presence",
     shortName: "Presence",
+    signalsAssessed: 5,
   },
   entity_consistency: {
-    label: "L0-B Entity Consistency",
+    label: "L3 Entity Consistency",
     name: "Entity Consistency",
     shortName: "Consistency",
+    signalsAssessed: 4,
   },
   specificity: {
-    label: "L1 Specificity",
+    label: "L4 Specificity",
     name: "Specificity",
     shortName: "Specificity",
+    signalsAssessed: 10,
   },
   real_world_connection: {
-    label: "L2 Real-World Connection",
+    label: "L5 Real-World Connection",
     name: "Real-World Connection",
     shortName: "Real World",
+    signalsAssessed: 5,
   },
   accountability: {
-    label: "L3 Accountability",
+    label: "L6 Accountability",
     name: "Accountability",
     shortName: "Accountability",
+    signalsAssessed: 3,
   },
   page_unique_value: {
-    label: "L4 Page Unique Value",
+    label: "L7 Page Unique Value",
     name: "Page Unique Value",
     shortName: "Unique Value",
+    signalsAssessed: 3,
   },
   algorithm_fit: {
-    label: "L5 Algorithm Fit",
+    label: "L8 Algorithm Fit",
     name: "Algorithm Fit",
     shortName: "Algorithm Fit",
+    signalsAssessed: 4,
   },
 };
 
@@ -71,5 +80,6 @@ export function getLayerDisplayConfig(layerKey: unknown): LayerDisplayConfig {
     label: fallback,
     name: fallback,
     shortName: fallback,
+    signalsAssessed: 0,
   };
 }

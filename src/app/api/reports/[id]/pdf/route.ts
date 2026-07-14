@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ReportPDFDocument } from "@/components/report/pdf/ReportPDFDocument";
 import { SAMPLE_REPORT_V21 } from "@/components/report/sampleReportV21";
 import { getReportPdfExportabilitySignals, isReportPdfExportable } from "@/lib/report-v21";
+import type { EffectiveBranding } from "@/lib/report-v21";
 import type { Report } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -40,8 +41,8 @@ function valueType(value: unknown): string {
   return typeof value;
 }
 
-async function renderReportPdf(report: Report) {
-  const document = React.createElement(ReportPDFDocument, { report }) as React.ReactElement<any>;
+async function renderReportPdf(report: Report, branding?: EffectiveBranding) {
+  const document = React.createElement(ReportPDFDocument, { report, branding }) as React.ReactElement<any>;
   const buffer = await renderToBuffer(document);
   const reportId = report.external_report_id || report.report_id;
   const fileName = `SearchTrust-${sanitizeFileName(reportId)}.pdf`;
@@ -53,6 +54,27 @@ async function renderReportPdf(report: Report) {
       "Cache-Control": "private, no-store",
     },
   });
+}
+
+function parseBranding(value: unknown): EffectiveBranding | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const raw = value as Record<string, unknown>;
+  const text = (key: string, maxLength: number) => {
+    const value = raw[key];
+    return typeof value === "string" && value.trim() ? value.trim().slice(0, maxLength) : null;
+  };
+  const logoData = text("agency_logo_data", 1_500_000);
+  if (logoData && !/^data:image\/(png|jpeg);base64,/i.test(logoData)) {
+    throw new Error("Logo must be a PNG or JPEG image upload.");
+  }
+  const branding: EffectiveBranding = {
+    enabled: true,
+    agencyName: text("agency_name", 120),
+    agencyLogoData: logoData,
+    clientName: text("client_name", 120),
+    footerNote: text("footer_note", 240),
+  };
+  return branding.agencyName || branding.agencyLogoData || branding.clientName || branding.footerNote ? branding : undefined;
 }
 
 export async function GET(
@@ -163,5 +185,35 @@ export async function GET(
   } catch (error) {
     console.error("Generate report PDF error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const branding = parseBranding(body?.branding);
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const supabase = createServerClient();
+    const query = supabase.from("reports").select("*").eq("user_id", user.userId);
+    const isUUID = /^[0-9a-f]{8}-/.test(id);
+    const { data, error } = await (isUUID ? query.eq("id", id).single() : query.eq("report_id", id).single());
+    if (error || !data) return NextResponse.json({ error: "Report not found" }, { status: 404 });
+
+    const report = data as Report;
+    if ((report.status === "pending" || report.status === "failed") && !isReportPdfExportable(report)) {
+      return NextResponse.json({ error: "Report is still generating" }, { status: 409 });
+    }
+    return renderReportPdf(report, branding);
+  } catch (error) {
+    const message = error instanceof Error && error.message.startsWith("Logo must") ? error.message : "Internal server error";
+    if (message !== "Internal server error") return NextResponse.json({ error: message }, { status: 400 });
+    console.error("Generate branded report PDF error:", error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

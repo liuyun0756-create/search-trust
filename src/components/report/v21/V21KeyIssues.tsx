@@ -43,7 +43,7 @@ export function V21KeyIssues({
             </div>
           )}
           <div className="space-y-3">
-            <V21EvidenceList evidenceItems={issue.evidence_items} viewMode={viewMode} density="compact" />
+            <V21EvidenceList evidenceItems={issue.evidence_items} viewMode={viewMode} density="compact" showEmpty={issue.severity === "high" || issue.severity === "medium"} />
             <V21ActionItems
               actions={issue.recommended_actions}
               viewMode={viewMode}

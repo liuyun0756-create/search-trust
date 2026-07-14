@@ -44,7 +44,38 @@ export interface DataCoverage {
   reviews_checked: boolean;
   internal_pages_checked: boolean;
   competitor_pages_checked: boolean;
+  citations_checked?: boolean;
+  geo_grid_checked?: boolean;
   limitations: string[];
+}
+
+export interface GBPProfileSnapshot {
+  name?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  categories?: string[];
+  hours?: string | null;
+  rating?: string | null;
+  review_count?: string | null;
+  service_areas?: string[];
+}
+
+export interface GBPAlignmentContractRow {
+  field_key: string;
+  field_label: string;
+  page_value?: string | null;
+  gbp_value?: string | null;
+  status: ComparisonResult;
+  impact: string;
+  suggested_fix: string;
+  related_layer_keys: LayerKey[];
+}
+
+export interface SchemaSummary {
+  checked: boolean;
+  source_url?: string | null;
+  types: string[];
 }
 
 export interface OverallStatus {
@@ -166,7 +197,7 @@ export interface ClientSummary {
 export interface AgencyBranding {
   enabled?: boolean;
   agency_name?: string;
-  agency_logo_url?: string;
+  agency_logo_data?: string;
   client_name?: string;
   footer_note?: string;
 }
@@ -178,6 +209,9 @@ export interface ReportV21 {
   page_type: string;
   generated_at: string;
   gbp_status: GBPStatus;
+  gbp_profile?: GBPProfileSnapshot | null;
+  gbp_alignment?: GBPAlignmentContractRow[];
+  schema_summary?: SchemaSummary | null;
   data_coverage: DataCoverage;
   overall_status: OverallStatus;
   ranking_potential: RankingPotential;

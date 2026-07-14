@@ -25,7 +25,7 @@ export function V21ViewModeToggle({
         <ModeButton
           active={mode === "analyst"}
           title="Analyst View"
-          description="Evidence, rules, coverage, and implementation detail."
+          description="Evidence, coverage, and implementation detail."
           onClick={() => onChange("analyst")}
         />
       </div>

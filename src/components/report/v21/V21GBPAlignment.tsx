@@ -39,7 +39,7 @@ export function V21GBPAlignment({
         <LimitedState
           title="No structured alignment table"
           message="GBP was checked, but this report does not include a structured side-by-side GBP × Page alignment table."
-          detail="Review entity consistency through L0-A Entity Presence, L0-B Entity Consistency, and available evidence in the trust layer breakdown."
+          detail="Review L2 Entity Presence, L3 Entity Consistency, and the available evidence in the trust layer breakdown."
         />
         {showTechnical && extraction.warnings.length > 0 && <Warnings warnings={extraction.warnings} />}
       </div>
@@ -111,7 +111,7 @@ function AlignmentRow({ row }: { row: GBPAlignmentRow }) {
   );
 }
 
-function TextCell({ value }: { value: string }) {
+function TextCell({ value }: { value: unknown }) {
   return (
     <td className="border-b border-gray-100 px-4 py-4">
       <p className="max-w-[230px] overflow-hidden text-ellipsis text-[13px] font-medium leading-relaxed text-gray-600">

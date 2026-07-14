@@ -31,6 +31,33 @@ export function V21TrustLayers({
     };
   });
 
+  if (!showTechnical) {
+    return (
+      <div className="space-y-5">
+        <div className="rounded-[20px] border border-[#E4EDD2] bg-[#FBFDF5] p-5">
+          <h3 className="text-[20px] font-black tracking-tight text-[#1A212B]">Eight trust layers</h3>
+          <p className="mt-2 text-[14px] font-medium leading-relaxed text-gray-600">
+            These eight signals show where the page is ready to compete and where trust needs to be strengthened first.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {orderedLayers.map((layer) => {
+            const config = getLayerDisplayConfig(layer.layer_key);
+            return (
+              <article key={layer.layer_key} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-gray-400">{config.label}</p>
+                <p className="mt-2 text-[14px] font-black text-[#1A212B]">{config.name}</p>
+                <span className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black uppercase ${getLayerStatusTone(layer.status)}`}>
+                  {getLayerStatusLabel(layer.status)}
+                </span>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="rounded-[20px] border border-[#E4EDD2] bg-[#FBFDF5] p-5">
@@ -44,8 +71,8 @@ export function V21TrustLayers({
         <article key={layer.layer_key} className="rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="mb-1 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">{layer.layer_label}</p>
-              <h4 className="text-[20px] font-black tracking-tight text-[#1A212B]">{layer.layer_name}</h4>
+              <p className="mb-1 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">{getLayerDisplayConfig(layer.layer_key).label}</p>
+              <h4 className="text-[20px] font-black tracking-tight text-[#1A212B]">{getLayerDisplayConfig(layer.layer_key).name}</h4>
             </div>
             <span className={`rounded-full border px-3 py-1.5 text-[12px] font-black uppercase ${getLayerStatusTone(layer.status)}`}>
               {getLayerStatusLabel(layer.status)}
@@ -57,8 +84,8 @@ export function V21TrustLayers({
 
           {showTechnical && (
             <div className="mb-4 flex flex-wrap gap-2">
-              <Metric label="Checked rules" value={safeList(layer.checked_rule_ids).length} />
-              <Metric label="Triggered rules" value={safeList(layer.triggered_rule_ids).length} />
+              <Metric label="Signals assessed" value={getLayerDisplayConfig(layer.layer_key).signalsAssessed} />
+              <Metric label="Findings requiring attention" value={safeList(layer.triggered_rule_ids).length} />
             </div>
           )}
 
@@ -78,16 +105,10 @@ export function V21TrustLayers({
 
           {showTechnical ? (
             <div className="space-y-3">
-              <V21EvidenceList evidenceItems={layer.evidence_items} viewMode={viewMode} />
+              <V21EvidenceList evidenceItems={layer.evidence_items} viewMode={viewMode} showEmpty={layer.status === "weak" || layer.status === "medium"} />
               <V21ActionItems actions={layer.action_items} title="Layer actions" viewMode={viewMode} />
             </div>
-          ) : (
-            <div className="rounded-2xl border border-gray-100 bg-gray-50/60 px-4 py-3">
-              <p className="text-[13px] font-medium text-gray-600">
-                {safeList(layer.evidence_items).length} evidence item(s) and {safeList(layer.action_items).length} action item(s) available in Analyst View.
-              </p>
-            </div>
-          )}
+          ) : null}
         </article>
       ))}
     </div>
