@@ -151,6 +151,8 @@ function getAlignmentStatusLabel(status: GBPAlignmentStatus): string {
     partial: "Partial",
     missing: "Missing",
     not_checked: "Not checked",
+    not_applicable: "Not applicable",
+    error: "Unavailable",
   };
   return labels[status] || "Not checked";
 }
@@ -162,6 +164,8 @@ function getAlignmentStatusTone(status: GBPAlignmentStatus): string {
     partial: "border-amber-100 bg-amber-50 text-amber-700",
     missing: "border-orange-100 bg-orange-50 text-orange-700",
     not_checked: "border-gray-100 bg-gray-50 text-gray-500",
+    not_applicable: "border-gray-100 bg-gray-50 text-gray-500",
+    error: "border-red-100 bg-red-50 text-red-700",
   };
   return tones[status] || tones.not_checked;
 }

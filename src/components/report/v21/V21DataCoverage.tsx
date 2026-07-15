@@ -94,8 +94,8 @@ function ProfileField({ label, value }: { label: string; value?: string | null }
   return <div className="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3"><p className="text-[11px] font-black uppercase tracking-[0.12em] text-gray-400">{label}</p><p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-700">{value || "Not recorded"}</p></div>;
 }
 
-function ResultStatus({ value }: { value: GBPAlignmentContractRow["status"] }) {
-  const labels: Record<GBPAlignmentContractRow["status"], string> = { match: "Aligned", mismatch: "Does not align", partial: "Partial", missing: "Missing", not_checked: "Not assessed" };
-  const classes: Record<GBPAlignmentContractRow["status"], string> = { match: "border-emerald-100 bg-emerald-50 text-emerald-700", mismatch: "border-red-100 bg-red-50 text-red-700", partial: "border-amber-100 bg-amber-50 text-amber-700", missing: "border-orange-100 bg-orange-50 text-orange-700", not_checked: "border-gray-100 bg-gray-50 text-gray-500" };
+function ResultStatus({ value }: { value: GBPAlignmentContractRow["status"] | GBPAlignmentRow["status"] }) {
+  const labels: Record<typeof value, string> = { match: "Aligned", mismatch: "Does not align", partial: "Partial", missing: "Missing", not_checked: "Not assessed", not_applicable: "Not applicable", error: "Unavailable" };
+  const classes: Record<typeof value, string> = { match: "border-emerald-100 bg-emerald-50 text-emerald-700", mismatch: "border-red-100 bg-red-50 text-red-700", partial: "border-amber-100 bg-amber-50 text-amber-700", missing: "border-orange-100 bg-orange-50 text-orange-700", not_checked: "border-gray-100 bg-gray-50 text-gray-500", not_applicable: "border-gray-100 bg-gray-50 text-gray-500", error: "border-red-100 bg-red-50 text-red-700" };
   return <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black uppercase ${classes[value]}`}>{labels[value]}</span>;
 }

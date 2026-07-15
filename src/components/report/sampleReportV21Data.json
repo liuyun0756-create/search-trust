@@ -24,6 +24,177 @@
       "Schema markup, contact page, about page, reviews, internal pages, and competitor pages were not checked for this representative fixture."
     ]
   },
+  "business_presence_audit": {
+    "audit_scope": [
+      {
+        "key": "page_content",
+        "label": "Page content",
+        "status": "checked",
+        "detail": "Representative visible page signals are included in this sample."
+      },
+      {
+        "key": "gbp_profile",
+        "label": "GBP profile",
+        "status": "not_checked",
+        "detail": "No live GBP lookup was performed for this representative sample."
+      },
+      {
+        "key": "gbp_page_alignment",
+        "label": "GBP x Page alignment",
+        "status": "not_checked",
+        "detail": "GBP alignment requires a live public GBP result."
+      },
+      {
+        "key": "profile_activity",
+        "label": "GBP categories and activity",
+        "status": "not_checked",
+        "detail": "Categories, photos and posts were not requested for this sample."
+      },
+      {
+        "key": "recent_reviews",
+        "label": "Recent review sample",
+        "status": "not_checked",
+        "detail": "No recent review records were requested for this sample."
+      },
+      {
+        "key": "citations",
+        "label": "External citations / NAP network",
+        "status": "not_checked",
+        "detail": "Citation provider integration is deferred for this release."
+      }
+    ],
+    "summary": {
+      "assessed_items": 0,
+      "matched_items": 0,
+      "issue_items": 0,
+      "not_checked_items": 7
+    },
+    "gbp_page_alignment": [
+      {
+        "key": "business_name",
+        "evidence_id": "bp-business_name",
+        "label": "Business name",
+        "status": "not_checked",
+        "page_value": "Express 24HR Plumbing and Drain",
+        "gbp_value": null,
+        "page_source": "Representative sample page",
+        "gbp_source": null,
+        "explanation": "GBP data was not available, so no comparison was made.",
+        "related_layer": "entity_consistency",
+        "included_in_score": false
+      },
+      {
+        "key": "phone",
+        "evidence_id": "bp-phone",
+        "label": "Phone",
+        "status": "not_checked",
+        "page_value": null,
+        "gbp_value": null,
+        "page_source": null,
+        "gbp_source": null,
+        "explanation": "GBP data was not available, so no comparison was made.",
+        "related_layer": "entity_consistency",
+        "included_in_score": false
+      },
+      {
+        "key": "address",
+        "evidence_id": "bp-address",
+        "label": "Address",
+        "status": "not_checked",
+        "page_value": null,
+        "gbp_value": null,
+        "page_source": null,
+        "gbp_source": null,
+        "explanation": "GBP data was not available, so no comparison was made.",
+        "related_layer": "entity_consistency",
+        "included_in_score": false
+      },
+      {
+        "key": "website",
+        "evidence_id": "bp-website",
+        "label": "Website",
+        "status": "not_checked",
+        "page_value": "https://express24hrplumbinganddrain.com/",
+        "gbp_value": null,
+        "page_source": "Representative sample URL",
+        "gbp_source": null,
+        "explanation": "GBP data was not available, so no comparison was made.",
+        "related_layer": "entity_consistency",
+        "included_in_score": false
+      },
+      {
+        "key": "opening_hours",
+        "evidence_id": "bp-opening_hours",
+        "label": "Opening hours",
+        "status": "not_checked",
+        "page_value": "24-hour emergency service messaging",
+        "gbp_value": null,
+        "page_source": "Representative sample page",
+        "gbp_source": null,
+        "explanation": "GBP data was not available, so no comparison was made.",
+        "related_layer": "entity_consistency",
+        "included_in_score": false
+      },
+      {
+        "key": "service_area",
+        "evidence_id": "bp-service_area",
+        "label": "Service area",
+        "status": "not_checked",
+        "page_value": null,
+        "gbp_value": null,
+        "page_source": null,
+        "gbp_source": null,
+        "explanation": "The public GBP source was not checked for service-area data.",
+        "related_layer": "entity_consistency",
+        "included_in_score": false
+      },
+      {
+        "key": "categories",
+        "evidence_id": "bp-categories",
+        "label": "Categories / service intent",
+        "status": "not_checked",
+        "page_value": "Emergency plumbing and drain service",
+        "gbp_value": null,
+        "page_source": "Representative sample page topic",
+        "gbp_source": null,
+        "explanation": "GBP categories were not available, so no comparison was made.",
+        "related_layer": "entity_consistency",
+        "included_in_score": false
+      }
+    ],
+    "profile_activity": {
+      "status": "not_checked",
+      "categories": [],
+      "category_source": "not_available",
+      "photo_count": null,
+      "latest_photo_date": null,
+      "photo_status": "not_checked",
+      "post_count": null,
+      "latest_post_date": null,
+      "post_status": "not_checked",
+      "limitations": [
+        "GBP profile data was unavailable for this representative sample."
+      ]
+    },
+    "review_audit": {
+      "status": "not_checked",
+      "total_reviews": null,
+      "sample_size": 0,
+      "sample_limit": 30,
+      "latest_review_date": null,
+      "rating_distribution": {},
+      "owner_reply_count": 0,
+      "owner_reply_rate": null,
+      "reviews": [],
+      "limitations": [
+        "No recent public review records were requested for this representative sample."
+      ]
+    },
+    "citations": {
+      "status": "not_checked",
+      "reason": "Citation provider integration is deferred for this release."
+    }
+  },
   "overall_status": {
     "label": "Medium Weak",
     "level": "medium_weak",

@@ -1,7 +1,7 @@
 import { getLayerDisplayConfig, isLayerKey } from "./layerConfig";
 import type { EvidenceItem, LayerKey, ReportV21 } from "./types";
 
-export type GBPAlignmentStatus = "match" | "mismatch" | "partial" | "missing" | "not_checked";
+export type GBPAlignmentStatus = "match" | "mismatch" | "partial" | "missing" | "not_checked" | "not_applicable" | "error";
 
 export type GBPAlignmentFieldKey =
   | "business_name"
@@ -10,6 +10,7 @@ export type GBPAlignmentFieldKey =
   | "service_area"
   | "opening_hours"
   | "primary_category"
+  | "categories"
   | "website"
   | "reviews"
   | "other";
@@ -39,17 +40,21 @@ const FIELD_LABELS: Record<GBPAlignmentFieldKey, string> = {
   service_area: "Service area",
   opening_hours: "Opening hours",
   primary_category: "Primary category",
+  categories: "Categories / service intent",
   website: "Website",
   reviews: "Reviews",
   other: "Other",
 };
 
-const VALID_STATUSES: GBPAlignmentStatus[] = ["match", "mismatch", "partial", "missing", "not_checked"];
+const VALID_STATUSES: GBPAlignmentStatus[] = ["match", "mismatch", "partial", "missing", "not_checked", "not_applicable", "error"];
 const DEFAULT_RELATED_LAYERS: LayerKey[] = ["entity_presence", "entity_consistency"];
 
 export function extractGBPAlignmentRows(reportV21: ReportV21): GBPAlignmentExtractionResult {
   const warnings: string[] = [];
-  const alignment = (reportV21 as unknown as { gbp_alignment?: unknown })?.gbp_alignment;
+  const auditRows = reportV21.business_presence_audit?.gbp_page_alignment;
+  const alignment = Array.isArray(auditRows)
+    ? { rows: auditRows }
+    : (reportV21 as unknown as { gbp_alignment?: unknown })?.gbp_alignment;
   const sourceRows = rowsFromAlignment(alignment);
 
   if (!sourceRows.length) {
@@ -98,7 +103,7 @@ function normalizeRow(value: unknown): GBPAlignmentRow | null {
     page_value: safeText(row.page_value ?? row.page_signal ?? row.pageSignal ?? row.page),
     gbp_value: safeText(row.gbp_value ?? row.gbp_signal ?? row.gbpSignal ?? row.gbp),
     status,
-    impact: safeText(row.impact),
+    impact: safeText(row.impact ?? row.explanation),
     suggested_fix: safeText(row.suggested_fix ?? row.suggestedFix ?? row.fix),
     related_layer_keys: normalizeLayerKeys(row.related_layer_keys ?? row.relatedLayers),
     evidence_items: normalizeEvidence(row.evidence_items ?? row.evidenceItems),

@@ -739,7 +739,7 @@ function renderModule(tab: TabId, data: Record<string, any>) {
     case 'Key Issues': return <Module3KeyProblems data={data} />;
     case 'Trust Layer Breakdown': return <Module4EightLayers data={data} />;
     case 'Optimization Path': return <Module5Optimization data={data} />;
-    case 'Evidence Coverage': return <SectionSkeleton />;
+    case 'Business Presence Audit': return <SectionSkeleton />;
   }
 }
 

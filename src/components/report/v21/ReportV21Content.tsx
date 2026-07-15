@@ -4,8 +4,8 @@ import type { EvidenceItem, KeyIssue, LayerFinding, NormalizedReportV21Result } 
 import type { ReactNode } from "react";
 import { useState } from "react";
 import type { Report } from "@/types/database";
-import { V21DataCoverage } from "./V21DataCoverage";
 import { V21BrandingHeader } from "./V21BrandingHeader";
+import { V21BusinessPresenceAudit } from "./V21BusinessPresenceAudit";
 import { V21KeyIssues } from "./V21KeyIssues";
 import { V21OptimizationPath } from "./V21OptimizationPath";
 import { V21OverallConclusion } from "./V21OverallConclusion";
@@ -20,7 +20,7 @@ export const V21_SECTION_IDS = {
   "Key Issues": "section-key-issues",
   "Trust Layer Breakdown": "section-trust-layer-breakdown",
   "Optimization Path": "section-optimization-path",
-  "Evidence Coverage": "section-evidence-coverage",
+  "Business Presence Audit": "section-business-presence-audit",
 } as const;
 
 export type V21TabId = keyof typeof V21_SECTION_IDS;
@@ -88,8 +88,8 @@ export function ReportV21Content({
         <V21OptimizationPath optimizationPath={optimizationPath} viewMode={viewMode} />
       </Section>
 
-      <Section id={V21_SECTION_IDS["Evidence Coverage"]} title="Evidence Coverage & GBP Check">
-        <V21DataCoverage reportV21={report} source={normalized.source} />
+      <Section id={V21_SECTION_IDS["Business Presence Audit"]} title="Business Presence Audit">
+        <V21BusinessPresenceAudit reportV21={report} source={normalized.source} viewMode={viewMode} />
       </Section>
     </div>
   );

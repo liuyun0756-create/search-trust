@@ -938,6 +938,91 @@ function GBPAlignmentSection({ reportV21 }: { reportV21: ReportV21 }) {
   );
 }
 
+function BusinessPresenceAuditSection({ reportV21 }: { reportV21: ReportV21 }) {
+  const audit = reportV21.business_presence_audit;
+  if (!audit) {
+    return (
+      <>
+        <DataCoverageSection reportV21={reportV21} />
+        <GBPAlignmentSection reportV21={reportV21} />
+      </>
+    );
+  }
+
+  const alignment = extractGBPAlignmentRows(reportV21);
+  const profile = audit.profile_activity;
+  const reviews = audit.review_audit;
+  const distribution = Object.entries(reviews.rating_distribution)
+    .sort(([left], [right]) => Number(right) - Number(left))
+    .map(([rating, count]) => `${rating}-star: ${count}`)
+    .join(" / ");
+
+  return (
+    <Section title="Business Presence Audit">
+      <Text style={styles.cardTitle}>Audit Scope</Text>
+      <View style={styles.layerGrid}>
+        {audit.audit_scope.map((item, index) => (
+          <View key={item.key} style={[styles.layerCard, index % 2 === 1 ? styles.layerCardEven : {}]}>
+            <Text style={styles.label}>{item.label}</Text>
+            <StatusBadge value={item.status} />
+            <Text style={styles.mutedText}>{truncateText(item.detail, 125)}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.statement}>
+        <Text style={styles.bodyText}>
+          {audit.summary.assessed_items} signals assessed / {audit.summary.matched_items} aligned / {audit.summary.issue_items} need attention / {audit.summary.not_checked_items} not assessed
+        </Text>
+        <Text style={styles.mutedText}>These objective checks do not change the eight-layer score.</Text>
+      </View>
+
+      {alignment.rows.length > 0 && (
+        <View style={{ marginTop: 8 }}>
+          <Text style={styles.cardTitle}>GBP x Page Alignment</Text>
+          <AlignmentTable rows={alignment.rows} />
+        </View>
+      )}
+
+      <View style={styles.layerGrid}>
+        <View style={styles.layerCard}>
+          <Text style={styles.cardTitle}>GBP Categories and Activity</Text>
+          <Field label="Observed Categories" value={profile.categories.join(", ") || "Not returned"} maxLength={180} />
+          <Field label="Photos Returned" value={profile.photo_count == null ? "Not returned" : String(profile.photo_count)} />
+          <Field label="Latest Photo Date" value={profile.latest_photo_date || "Not exposed"} />
+          <Field label="Posts Returned" value={profile.post_count == null ? "Not returned" : String(profile.post_count)} />
+          <Field label="Latest Post Date" value={profile.latest_post_date || "Not exposed"} />
+          <BulletList items={profile.limitations} limit={3} maxLength={130} />
+        </View>
+        <View style={[styles.layerCard, styles.layerCardEven]}>
+          <Text style={styles.cardTitle}>Recent Review Audit</Text>
+          <Field label="GBP Review Total" value={reviews.total_reviews == null ? "Not returned" : String(reviews.total_reviews)} />
+          <Field label="Recent Sample" value={`${reviews.sample_size} / ${reviews.sample_limit}`} />
+          <Field label="Latest Review" value={reviews.latest_review_date || "Not returned"} />
+          <Field label="Owner Reply Rate" value={reviews.owner_reply_rate == null ? "Not available" : `${Math.round(reviews.owner_reply_rate * 100)}%`} />
+          <Field label="Rating Distribution" value={distribution || "Not available"} maxLength={160} />
+          <BulletList items={reviews.limitations} limit={3} maxLength={130} />
+        </View>
+      </View>
+
+      {reviews.reviews.length > 0 && (
+        <View style={{ marginTop: 8 }}>
+          <Text style={styles.cardTitle}>Recent Review Evidence</Text>
+          {reviews.reviews.slice(0, 3).map((review, index) => (
+            <View key={`${review.author || "review"}-${index}`} style={styles.card}>
+              <Text style={styles.label}>
+                {review.author || "Anonymous"} / {review.rating == null ? "No rating" : `${review.rating}/5`} / {review.date || "Date not returned"}
+              </Text>
+              <Text style={styles.bodyText}>{truncateText(review.text || "No review text returned", 230)}</Text>
+              {review.owner_reply && <Text style={styles.mutedText}>Owner reply: {truncateText(review.owner_reply, 160)}</Text>}
+            </View>
+          ))}
+        </View>
+      )}
+    </Section>
+  );
+}
+
 function MethodFooter() {
   return (
     <View style={styles.methodFooter}>
@@ -965,8 +1050,7 @@ export function ReportPDFDocument({ report, branding }: { report: Report; brandi
         <KeyIssuesSection reportV21={reportV21} />
         <TrustLayersSection reportV21={reportV21} />
         <OptimizationPathSection reportV21={reportV21} />
-        <DataCoverageSection reportV21={reportV21} />
-        <GBPAlignmentSection reportV21={reportV21} />
+        <BusinessPresenceAuditSection reportV21={reportV21} />
         <MethodFooter />
 
         <View style={styles.fixedFooter} fixed>

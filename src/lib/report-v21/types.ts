@@ -27,6 +27,15 @@ export type ComparisonResult = "match" | "missing" | "mismatch" | "partial" | "n
 export type Confidence = "high" | "medium" | "low";
 export type ActionPriority = "high" | "medium" | "low";
 export type EffortLevel = "small" | "medium" | "large";
+export type AuditStatus = "checked" | "partial" | "not_checked" | "error" | "not_applicable";
+export type AuditComparisonStatus =
+  | "match"
+  | "missing"
+  | "mismatch"
+  | "partial"
+  | "not_checked"
+  | "not_applicable"
+  | "error";
 
 export interface GBPStatus {
   status: GBPStatusValue;
@@ -47,6 +56,80 @@ export interface DataCoverage {
   citations_checked?: boolean;
   geo_grid_checked?: boolean;
   limitations: string[];
+}
+
+export interface AuditScopeItem {
+  key: string;
+  label: string;
+  status: AuditStatus;
+  detail: string;
+}
+
+export interface BusinessPresenceSummary {
+  assessed_items: number;
+  matched_items: number;
+  issue_items: number;
+  not_checked_items: number;
+}
+
+export interface PresenceComparisonItem {
+  key: string;
+  evidence_id: string;
+  label: string;
+  status: AuditComparisonStatus;
+  page_value?: string | null;
+  gbp_value?: string | null;
+  page_source?: string | null;
+  gbp_source?: string | null;
+  explanation: string;
+  related_layer?: LayerKey | null;
+  included_in_score: boolean;
+}
+
+export interface ProfileActivity {
+  status: AuditStatus;
+  categories: string[];
+  category_source: "observed" | "authoritative" | "not_available";
+  photo_count?: number | null;
+  latest_photo_date?: string | null;
+  photo_status: AuditStatus;
+  post_count?: number | null;
+  latest_post_date?: string | null;
+  post_status: AuditStatus;
+  limitations: string[];
+}
+
+export interface ReviewSampleItem {
+  author?: string | null;
+  rating?: number | null;
+  date?: string | null;
+  text?: string | null;
+  owner_reply?: string | null;
+}
+
+export interface ReviewAudit {
+  status: AuditStatus;
+  total_reviews?: number | null;
+  sample_size: number;
+  sample_limit: number;
+  latest_review_date?: string | null;
+  rating_distribution: Record<string, number>;
+  owner_reply_count: number;
+  owner_reply_rate?: number | null;
+  reviews: ReviewSampleItem[];
+  limitations: string[];
+}
+
+export interface BusinessPresenceAudit {
+  audit_scope: AuditScopeItem[];
+  summary: BusinessPresenceSummary;
+  gbp_page_alignment: PresenceComparisonItem[];
+  profile_activity: ProfileActivity;
+  review_audit: ReviewAudit;
+  citations: {
+    status: "not_checked";
+    reason: string;
+  };
 }
 
 export interface GBPProfileSnapshot {
@@ -213,6 +296,7 @@ export interface ReportV21 {
   gbp_alignment?: GBPAlignmentContractRow[];
   schema_summary?: SchemaSummary | null;
   data_coverage: DataCoverage;
+  business_presence_audit?: BusinessPresenceAudit | null;
   overall_status: OverallStatus;
   ranking_potential: RankingPotential;
   risk_level: RiskLevel;
