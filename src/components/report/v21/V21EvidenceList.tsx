@@ -58,6 +58,7 @@ export function V21EvidenceList({
 function EvidenceCard({ item }: { item: EvidenceItem }) {
   const source = sourceLabel(item.source_type);
   const finding = findingLabel(item.comparison_result);
+  const hasRecordedValue = Boolean(item.extracted_text || item.normalized_value);
   return (
     <article className="min-w-0 rounded-xl border border-gray-100 bg-white p-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-gray-500">
@@ -69,6 +70,17 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
       {item.page_section && <p className="mt-1 text-[12px] font-medium text-gray-500">Location: {item.page_section}</p>}
       {item.extracted_text && <blockquote className="mt-3 rounded-lg border-l-2 border-[#A5D020] bg-[#F8FAF5] px-3 py-2 text-[13px] font-medium leading-relaxed text-gray-700">{item.extracted_text}</blockquote>}
       {!item.extracted_text && item.normalized_value && <p className="mt-3 rounded-lg bg-[#F8FAF5] px-3 py-2 text-[13px] font-medium leading-relaxed text-gray-700"><span className="font-bold text-[#1A212B]">Recorded value: </span>{item.normalized_value}</p>}
+      {!hasRecordedValue && item.comparison_result === "missing" && (
+        <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50/70 px-3 py-2 text-[13px] font-medium leading-relaxed text-amber-900">
+          <p><span className="font-bold">Checked scope: </span>{item.page_section || source}</p>
+          <p className="mt-1"><span className="font-bold">Not found: </span>{item.source_label}</p>
+        </div>
+      )}
+      {!hasRecordedValue && item.comparison_result === "not_checked" && (
+        <p className="mt-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-[13px] font-medium leading-relaxed text-gray-600">
+          This source was not available for verification in the current audit.
+        </p>
+      )}
       <p className="mt-3 text-[13px] font-medium leading-relaxed text-gray-600"><span className="font-bold text-[#1A212B]">Why it matters: </span>{item.explanation}</p>
     </article>
   );

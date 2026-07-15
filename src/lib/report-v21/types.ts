@@ -116,8 +116,33 @@ export interface ReviewAudit {
   rating_distribution: Record<string, number>;
   owner_reply_count: number;
   owner_reply_rate?: number | null;
+  unanswered_count?: number;
+  low_rating_count?: number;
+  low_rating_unanswered_count?: number;
+  detailed_positive_count?: number;
   reviews: ReviewSampleItem[];
   limitations: string[];
+}
+
+export type BusinessPresenceProposalStatus = "clear" | "needs_attention" | "limited";
+export type BusinessPresenceArea = "identity_alignment" | "profile_activity" | "review_operations";
+
+export interface BusinessPresenceProposalSummary {
+  headline: string;
+  summary: string;
+  identity_issue_count: number;
+  profile_opportunity_count: number;
+  review_action_count: number;
+}
+
+export interface BusinessPresenceProposalAction {
+  id: string;
+  priority: ActionPriority;
+  business_area: BusinessPresenceArea;
+  title: string;
+  rationale: string;
+  recommended_scope: string[];
+  evidence_keys: string[];
 }
 
 export interface BusinessPresenceAudit {
@@ -130,7 +155,12 @@ export interface BusinessPresenceAudit {
     status: "not_checked";
     reason: string;
   };
+  proposal_status?: BusinessPresenceProposalStatus;
+  proposal_summary?: BusinessPresenceProposalSummary;
+  proposal_actions?: BusinessPresenceProposalAction[];
 }
+
+export type PdfVariant = "client" | "full";
 
 export interface GBPProfileSnapshot {
   name?: string | null;
@@ -220,6 +250,11 @@ export interface PageLevel {
   what_it_looks_like: string;
   strengths: string[];
   missing_elements: string[];
+  current_assessment?: string;
+  existing_foundation?: string;
+  main_limitation?: string;
+  likely_search_outcome?: string;
+  competitive_interpretation?: string;
 }
 
 export interface LayerFinding {
@@ -230,6 +265,7 @@ export interface LayerFinding {
   status: LayerStatus;
   checked_rule_ids: number[];
   triggered_rule_ids: number[];
+  triggered_findings?: string[];
   summary: string;
   explanation: string;
   evidence_items: EvidenceItem[];
@@ -244,8 +280,11 @@ export interface KeyIssue {
   related_rule_ids: number[];
   severity: ActionPriority;
   evidence_items: EvidenceItem[];
+  judgement?: string;
   explanation: string;
   why_it_matters: string;
+  impacts?: string[];
+  suggestions?: string[];
   recommended_actions: ActionItem[];
 }
 

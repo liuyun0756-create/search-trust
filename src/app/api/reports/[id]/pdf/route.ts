@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ReportPDFDocument } from "@/components/report/pdf/ReportPDFDocument";
 import { SAMPLE_REPORT_V21 } from "@/components/report/sampleReportV21";
 import { getReportPdfExportabilitySignals, isReportPdfExportable } from "@/lib/report-v21";
-import type { EffectiveBranding } from "@/lib/report-v21";
+import type { EffectiveBranding, PdfVariant } from "@/lib/report-v21";
 import type { Report } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -41,11 +41,12 @@ function valueType(value: unknown): string {
   return typeof value;
 }
 
-async function renderReportPdf(report: Report, branding?: EffectiveBranding) {
-  const document = React.createElement(ReportPDFDocument, { report, branding }) as React.ReactElement<any>;
+async function renderReportPdf(report: Report, branding: EffectiveBranding | undefined, variant: PdfVariant) {
+  const document = React.createElement(ReportPDFDocument, { report, branding, variant }) as React.ReactElement<any>;
   const buffer = await renderToBuffer(document);
   const reportId = report.external_report_id || report.report_id;
-  const fileName = `SearchTrust-${sanitizeFileName(reportId)}.pdf`;
+  const suffix = variant === "client" ? "Client" : "Full-Audit";
+  const fileName = `SearchTrust-${sanitizeFileName(reportId)}-${suffix}.pdf`;
 
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
@@ -54,6 +55,12 @@ async function renderReportPdf(report: Report, branding?: EffectiveBranding) {
       "Cache-Control": "private, no-store",
     },
   });
+}
+
+function parseVariant(value: unknown, defaultValue: PdfVariant = "full"): PdfVariant {
+  if (value == null || value === "") return defaultValue;
+  if (value === "client" || value === "full") return value;
+  throw new Error('pdf_variant must be "client" or "full".');
 }
 
 function parseBranding(value: unknown): EffectiveBranding | undefined {
@@ -83,6 +90,7 @@ export async function GET(
 ) {
   try {
     const debug = request.nextUrl.searchParams.get("debug") === "1";
+    const variant = parseVariant(request.nextUrl.searchParams.get("variant"));
     const { id } = await params;
 
     if (id === SAMPLE_REPORT_V21.id || id === SAMPLE_REPORT_V21.report_id) {
@@ -98,7 +106,7 @@ export async function GET(
           exportable: true,
         });
       }
-      return renderReportPdf(SAMPLE_REPORT_V21);
+      return renderReportPdf(SAMPLE_REPORT_V21, undefined, variant);
     }
 
     const user = await getCurrentUser();
@@ -181,8 +189,11 @@ export async function GET(
       return NextResponse.json({ error: "Report is still generating" }, { status: 409 });
     }
 
-    return renderReportPdf(report);
+    return renderReportPdf(report, undefined, variant);
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith("pdf_variant")) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error("Generate report PDF error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -196,6 +207,7 @@ export async function POST(
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const branding = parseBranding(body?.branding);
+    const variant = parseVariant(body?.pdf_variant);
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -209,9 +221,9 @@ export async function POST(
     if ((report.status === "pending" || report.status === "failed") && !isReportPdfExportable(report)) {
       return NextResponse.json({ error: "Report is still generating" }, { status: 409 });
     }
-    return renderReportPdf(report, branding);
+    return renderReportPdf(report, branding, variant);
   } catch (error) {
-    const message = error instanceof Error && error.message.startsWith("Logo must") ? error.message : "Internal server error";
+    const message = error instanceof Error && (error.message.startsWith("Logo must") || error.message.startsWith("pdf_variant")) ? error.message : "Internal server error";
     if (message !== "Internal server error") return NextResponse.json({ error: message }, { status: 400 });
     console.error("Generate branded report PDF error:", error);
     return NextResponse.json({ error: message }, { status: 500 });

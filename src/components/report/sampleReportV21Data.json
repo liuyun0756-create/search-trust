@@ -185,6 +185,10 @@
       "rating_distribution": {},
       "owner_reply_count": 0,
       "owner_reply_rate": null,
+      "unanswered_count": 0,
+      "low_rating_count": 0,
+      "low_rating_unanswered_count": 0,
+      "detailed_positive_count": 0,
       "reviews": [],
       "limitations": [
         "No recent public review records were requested for this representative sample."
@@ -193,7 +197,16 @@
     "citations": {
       "status": "not_checked",
       "reason": "Citation provider integration is deferred for this release."
-    }
+    },
+    "proposal_status": "limited",
+    "proposal_summary": {
+      "headline": "No confirmed work item from the available data",
+      "summary": "GBP and recent-review data were not requested for this representative sample, so the audit avoids definite conclusions for those areas.",
+      "identity_issue_count": 0,
+      "profile_opportunity_count": 0,
+      "review_action_count": 0
+    },
+    "proposal_actions": []
   },
   "overall_status": {
     "label": "Medium Weak",
@@ -232,6 +245,11 @@
   },
   "page_level": {
     "label": "Medium Weak",
+    "current_assessment": "The page has a clear emergency-service purpose and a usable commercial foundation, but its visible business identity and real-world proof are not yet strong enough to support stable local trust.",
+    "existing_foundation": "Visitors can quickly understand the emergency plumbing offer, the service intent is commercially clear, and the existing structure can be improved without changing the core offer.",
+    "main_limitation": "The page does not yet connect its emergency-service claims to enough visible business identity, local operating context, and verifiable service proof.",
+    "likely_search_outcome": "The page may appear for relevant service searches, but performance is likely to remain less stable where competitors show clearer local identity and stronger real-world evidence.",
+    "competitive_interpretation": "The offer is understandable, but stronger local competitors are easier to verify and therefore more defensible as trusted local service results.",
     "what_it_looks_like": "A usable service page with clear emergency plumbing intent, but with thin business identity and limited real-world proof. It can convert some visitors, yet it does not fully explain why this company is the specific local provider to trust.",
     "strengths": [
       "The service intent is clear enough for a visitor to understand the page topic quickly.",

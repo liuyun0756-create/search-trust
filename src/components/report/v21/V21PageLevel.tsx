@@ -3,41 +3,44 @@ import { safeList } from "./statusHelpers";
 import type { V21ViewMode } from "./viewMode";
 
 export function V21PageLevel({ pageLevel, viewMode: _viewMode = "analyst" }: { pageLevel: PageLevel; viewMode?: V21ViewMode }) {
+  const currentAssessment = pageLevel.current_assessment || pageLevel.what_it_looks_like;
+  const existingFoundation = pageLevel.existing_foundation || listSummary(pageLevel.strengths, "No strong foundation was identified.");
+  const mainLimitation = pageLevel.main_limitation || listSummary(pageLevel.missing_elements, "No material limitation was identified.");
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="rounded-[22px] border border-gray-100 bg-gray-50/60 p-6">
-        <p className="mb-2 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">Page level</p>
-        <h3 className="mb-3 text-[24px] font-black tracking-tight text-[#1A212B]">{pageLevel.label}</h3>
-        <p className="text-[15px] font-medium leading-relaxed text-gray-700">{pageLevel.what_it_looks_like}</p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">Current Assessment</p>
+          <span className="rounded-full border border-[#E4EDD2] bg-[#FBFDF5] px-3 py-1.5 text-[12px] font-black text-[#7E9F20]">
+            {pageLevel.label}
+          </span>
+        </div>
+        <p className="text-[15px] font-medium leading-relaxed text-gray-700">{currentAssessment}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <ListCard title="Strengths" values={pageLevel.strengths} tone="good" />
-        <ListCard title="Missing / Weak Elements" values={pageLevel.missing_elements} tone="weak" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <DetailCard title="Existing Foundation" value={existingFoundation} />
+        <DetailCard title="Main Limitation" value={mainLimitation} />
+        <DetailCard title="Likely Search Outcome" value={pageLevel.likely_search_outcome} />
+        <DetailCard title="Competitive Interpretation" value={pageLevel.competitive_interpretation} />
       </div>
     </div>
   );
 }
 
-function ListCard({ title, values, tone }: { title: string; values?: string[] | null; tone: "good" | "weak" }) {
-  const items = safeList(values).filter(Boolean);
-  const dot = tone === "good" ? "bg-emerald-500" : "bg-amber-500";
-
+function DetailCard({ title, value }: { title: string; value?: string | null }) {
   return (
     <article className="rounded-[20px] border border-gray-100 bg-white p-5 shadow-sm">
-      <h4 className="mb-4 text-[15px] font-black text-[#1A212B]">{title}</h4>
-      {items.length ? (
-        <ul className="space-y-2.5">
-          {items.map((item, index) => (
-            <li key={`${item}-${index}`} className="flex gap-3 text-[14px] font-medium leading-relaxed text-gray-600">
-              <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-[13px] font-medium text-gray-400">No structured items available.</p>
-      )}
+      <h4 className="mb-3 text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">{title}</h4>
+      <p className="text-[14px] font-medium leading-relaxed text-gray-700">
+        {value || "This interpretation was not available in the current report."}
+      </p>
     </article>
   );
+}
+
+function listSummary(values: string[] | null | undefined, empty: string): string {
+  const items = safeList(values).filter(Boolean);
+  return items.length ? items.join(" ") : empty;
 }

@@ -14,6 +14,7 @@ import type {
   LayerFinding,
   LayerKey,
   NormalizedReportV21Result,
+  PdfVariant,
   ReportV21,
 } from "@/lib/report-v21";
 import type { EffectiveBranding } from "@/lib/report-v21";
@@ -609,6 +610,12 @@ function ActionCard({ action, compact = false }: { action: ActionItem; compact?:
         </View>
       )}
       {!compact && <Field label="Expected Effect" value={action.expected_effect} maxLength={240} />}
+      {!compact && safeList(action.implementation_notes).length > 0 && (
+        <View style={{ marginBottom: 7 }}><Text style={styles.label}>Implementation Notes</Text><BulletList items={action.implementation_notes} maxLength={260} /></View>
+      )}
+      {!compact && safeList(action.completion_signals).length > 0 && (
+        <View style={{ marginBottom: 7 }}><Text style={styles.label}>Completion Signals</Text><BulletList items={action.completion_signals} maxLength={260} /></View>
+      )}
       <View style={styles.row}>
         <Text style={styles.mutedText}>Effort: {labelize(safeText(action.effort_level, "medium"))}</Text>
       </View>
@@ -668,7 +675,7 @@ function ReportHeader({
   );
 }
 
-function ExecutiveSummary({ reportV21 }: { reportV21: ReportV21 }) {
+function ExecutiveSummary({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
   return (
     <>
       <View style={styles.scoreRow}>
@@ -708,35 +715,43 @@ function ExecutiveSummary({ reportV21 }: { reportV21: ReportV21 }) {
             <Field label="Expected Change" value={reportV21.client_summary.expected_change} />
           </View>
         </View>
-        <EvidenceSummary evidence={reportV21.primary_blocking_layer.evidence_items} limit={1} />
+        {variant === "full" && <EvidenceSummary evidence={reportV21.primary_blocking_layer.evidence_items} limit={3} />}
       </Section>
     </>
   );
 }
 
 function PageLevelSection({ reportV21 }: { reportV21: ReportV21 }) {
+  const pageLevel = reportV21.page_level;
   return (
     <Section title="Page Level Assessment">
       <View style={styles.row}>
-        <Text style={[styles.cardTitle, { marginBottom: 0, flex: 1 }]}>{safeText(reportV21.page_level.label)}</Text>
+        <Text style={[styles.cardTitle, { marginBottom: 0, flex: 1 }]}>{safeText(pageLevel.label)}</Text>
       </View>
-      <Field label="What It Looks Like" value={reportV21.page_level.what_it_looks_like} maxLength={520} />
+      <Field label="Current Assessment" value={pageLevel.current_assessment || pageLevel.what_it_looks_like} maxLength={520} />
       <View style={styles.twoColumn}>
         <View style={styles.column}>
-          <Text style={styles.label}>Strengths</Text>
-          <BulletList items={reportV21.page_level.strengths} limit={5} />
+          <Field label="Existing Foundation" value={pageLevel.existing_foundation || safeList(pageLevel.strengths).join(" ")} maxLength={320} />
         </View>
         <View style={[styles.column, styles.columnLast]}>
-          <Text style={styles.label}>Missing Elements</Text>
-          <BulletList items={reportV21.page_level.missing_elements} limit={5} />
+          <Field label="Main Limitation" value={pageLevel.main_limitation || safeList(pageLevel.missing_elements).join(" ")} maxLength={320} />
+        </View>
+      </View>
+      <View style={styles.twoColumn}>
+        <View style={styles.column}>
+          <Field label="Likely Search Outcome" value={pageLevel.likely_search_outcome} maxLength={320} />
+        </View>
+        <View style={[styles.column, styles.columnLast]}>
+          <Field label="Competitive Interpretation" value={pageLevel.competitive_interpretation} maxLength={320} />
         </View>
       </View>
     </Section>
   );
 }
 
-function KeyIssuesSection({ reportV21 }: { reportV21: ReportV21 }) {
-  const issues = safeList(reportV21.key_issues).slice(0, 4);
+function KeyIssuesSection({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
+  const allIssues = safeList(reportV21.key_issues);
+  const issues = variant === "client" ? allIssues.slice(0, 2) : allIssues;
   return (
     <Section title="Key Issues">
       {issues.length === 0 && <Text style={styles.bodyText}>No structured key issues were available for this report.</Text>}
@@ -747,11 +762,24 @@ function KeyIssuesSection({ reportV21 }: { reportV21: ReportV21 }) {
             <StatusBadge value={issue.severity} />
           </View>
           <Field label="Affected Layer" value={displayLayer(issue.affected_layer)} maxLength={120} />
+          <Field label="Judgement" value={issue.judgement || issue.explanation} maxLength={320} />
           <Field label="Explanation" value={issue.explanation} maxLength={360} />
           <Field label="Why It Matters" value={issue.why_it_matters} maxLength={280} />
-          <EvidenceSummary evidence={issue.evidence_items} limit={1} />
-          {safeList(issue.recommended_actions).slice(0, 2).map((action) => (
-            <ActionCard key={action.id || action.task_title} action={action} compact />
+          {safeList(issue.impacts).length > 0 && (
+            <View style={{ marginBottom: 6 }}>
+              <Text style={styles.label}>Impacts</Text>
+              <BulletList items={issue.impacts} limit={3} maxLength={180} />
+            </View>
+          )}
+          {safeList(issue.suggestions).length > 0 && (
+            <View style={{ marginBottom: 6 }}>
+              <Text style={styles.label}>Suggestions</Text>
+              <BulletList items={issue.suggestions} limit={3} maxLength={180} />
+            </View>
+          )}
+          {variant === "full" && <EvidenceSummary evidence={issue.evidence_items} limit={issue.evidence_items.length} />}
+          {variant === "full" && safeList(issue.recommended_actions).map((action) => (
+            <ActionCard key={action.id || action.task_title} action={action} />
           ))}
         </View>
       ))}
@@ -779,7 +807,7 @@ function layerByKey(reportV21: ReportV21, layerKey: LayerKey): LayerFinding {
   };
 }
 
-function TrustLayersSection({ reportV21 }: { reportV21: ReportV21 }) {
+function TrustLayersSection({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
   return (
     <Section title="8-Layer Trust Model">
       <View style={styles.layerGrid}>
@@ -794,13 +822,20 @@ function TrustLayersSection({ reportV21 }: { reportV21: ReportV21 }) {
               </View>
               <Text style={styles.mutedText}>{config.name}</Text>
               <Field label="Assessment" value={layer.summary || layer.explanation} maxLength={230} />
-              <Text style={styles.mutedText}>
+              {variant === "full" && <Text style={styles.mutedText}>
                 Signals assessed: {config.signalsAssessed} / Findings requiring attention: {safeList(layer.triggered_rule_ids).length}
-              </Text>
-              <View style={{ marginTop: 6 }}>
+              </Text>}
+              {variant === "full" && safeList(layer.triggered_findings).length > 0 && (
+                <View style={{ marginTop: 6 }}>
+                  <Text style={styles.label}>What Needs Attention</Text>
+                  <BulletList items={layer.triggered_findings} limit={2} maxLength={120} />
+                </View>
+              )}
+              {variant === "full" && <View style={{ marginTop: 6 }}>
                 <Text style={styles.label}>Top Suggested Fixes</Text>
-                <BulletList items={layer.suggested_fixes} limit={1} maxLength={150} />
-              </View>
+                <BulletList items={layer.suggested_fixes} limit={3} maxLength={150} />
+              </View>}
+              {variant === "full" && <EvidenceSummary evidence={layer.evidence_items} limit={layer.evidence_items.length} />}
             </View>
           );
         })}
@@ -809,30 +844,30 @@ function TrustLayersSection({ reportV21 }: { reportV21: ReportV21 }) {
   );
 }
 
-function ActionSection({ title, actions, limit }: { title: string; actions?: ActionItem[]; limit?: number }) {
-  const items = safeList(actions).slice(0, limit);
+function ActionSection({ title, actions, limit, compact = false }: { title: string; actions?: ActionItem[]; limit?: number; compact?: boolean }) {
+  const allItems = safeList(actions);
+  const items = limit == null ? allItems : allItems.slice(0, limit);
   if (!items.length) return null;
   return (
     <View style={{ marginBottom: 8 }}>
       <Text style={styles.cardTitle}>{title}</Text>
-      {items.map((action) => <ActionCard key={action.id || action.task_title} action={action} compact />)}
+      {items.map((action) => <ActionCard key={action.id || action.task_title} action={action} compact={compact} />)}
     </View>
   );
 }
 
-function OptimizationPathSection({ reportV21 }: { reportV21: ReportV21 }) {
+function OptimizationPathSection({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
   const path = reportV21.optimization_path;
   return (
     <Section title="Optimization Path">
-      <ActionSection title="Must Execute Now" actions={path.must_execute_now} limit={4} />
-      <ActionSection title="Address After the Foundation" actions={path.defer_until_later} limit={3} />
+      <ActionSection title="Must Execute Now" actions={path.must_execute_now} limit={variant === "client" ? 3 : undefined} compact={variant === "client"} />
+      {variant === "full" && <ActionSection title="Address After the Foundation" actions={path.defer_until_later} />}
       <View style={styles.statement}>
         <Text style={styles.cardTitle}>Improvement Sequence</Text>
         <Text style={styles.bodyText}>L1-L3 establish a stable business entity. L4-L5 add local, real-world detail. L6-L7 add accountable, unique proof. L8 Algorithm Fit is reassessed after those earlier signals improve.</Text>
       </View>
-      <Field label="Fix Order Warning" value={path.fix_order_warning} maxLength={360} />
-      <Text style={styles.label}>Completion Signals</Text>
-      <BulletList items={path.completion_signals} limit={5} />
+      {variant === "full" && <Field label="Fix Order Warning" value={path.fix_order_warning} maxLength={360} />}
+      {variant === "full" && <><Text style={styles.label}>Completion Signals</Text><BulletList items={path.completion_signals} /></>}
     </Section>
   );
 }
@@ -938,7 +973,7 @@ function GBPAlignmentSection({ reportV21 }: { reportV21: ReportV21 }) {
   );
 }
 
-function BusinessPresenceAuditSection({ reportV21 }: { reportV21: ReportV21 }) {
+function BusinessPresenceAuditSection({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
   const audit = reportV21.business_presence_audit;
   if (!audit) {
     return (
@@ -950,8 +985,21 @@ function BusinessPresenceAuditSection({ reportV21 }: { reportV21: ReportV21 }) {
   }
 
   const alignment = extractGBPAlignmentRows(reportV21);
+  const visibleAlignment = variant === "client"
+    ? alignment.rows.filter((row) => ["mismatch", "missing", "partial"].includes(row.status))
+    : alignment.rows;
   const profile = audit.profile_activity;
   const reviews = audit.review_audit;
+  const proposalActions = audit.proposal_actions || [];
+  const proposalSummary = audit.proposal_summary || {
+    headline: proposalActions.length
+      ? `${proposalActions.length} proposal-ready work item(s) identified`
+      : "No confirmed work item from the available data",
+    summary: "This saved report predates the proposal summary contract. Available objective checks are shown below.",
+    identity_issue_count: audit.summary.issue_items,
+    profile_opportunity_count: 0,
+    review_action_count: 0,
+  };
   const distribution = Object.entries(reviews.rating_distribution)
     .sort(([left], [right]) => Number(right) - Number(left))
     .map(([rating, count]) => `${rating}-star: ${count}`)
@@ -959,62 +1007,91 @@ function BusinessPresenceAuditSection({ reportV21 }: { reportV21: ReportV21 }) {
 
   return (
     <Section title="Business Presence Audit">
-      <Text style={styles.cardTitle}>Audit Scope</Text>
-      <View style={styles.layerGrid}>
-        {audit.audit_scope.map((item, index) => (
-          <View key={item.key} style={[styles.layerCard, index % 2 === 1 ? styles.layerCardEven : {}]}>
-            <Text style={styles.label}>{item.label}</Text>
-            <StatusBadge value={item.status} />
-            <Text style={styles.mutedText}>{truncateText(item.detail, 125)}</Text>
-          </View>
-        ))}
-      </View>
-
       <View style={styles.statement}>
+        <Text style={styles.label}>Executive Snapshot</Text>
+        <Text style={styles.cardTitle}>{truncateText(proposalSummary.headline, 160)}</Text>
+        <Text style={styles.bodyText}>{truncateText(proposalSummary.summary, 420)}</Text>
         <Text style={styles.bodyText}>
           {audit.summary.assessed_items} signals assessed / {audit.summary.matched_items} aligned / {audit.summary.issue_items} need attention / {audit.summary.not_checked_items} not assessed
         </Text>
         <Text style={styles.mutedText}>These objective checks do not change the eight-layer score.</Text>
       </View>
 
-      {alignment.rows.length > 0 && (
+      <Text style={styles.cardTitle}>Recommended Scope of Work</Text>
+      {proposalActions.length ? proposalActions.map((action) => (
+        <View key={action.id} style={styles.softCard}>
+          <View style={styles.row}>
+            <Text style={[styles.cardTitle, { flex: 1, marginBottom: 0 }]}>{truncateText(action.title, 140)}</Text>
+            <StatusBadge value={action.priority} />
+          </View>
+          <Field label="Business Area" value={labelize(action.business_area)} />
+          <Field label="Why This Work" value={action.rationale} maxLength={360} />
+          <Text style={styles.label}>Suggested Work Scope</Text>
+          <BulletList items={action.recommended_scope} maxLength={260} />
+          {variant === "full" && <Field label="Evidence References" value={action.evidence_keys.join(", ")} maxLength={220} />}
+        </View>
+      )) : <Text style={styles.mutedText}>No confirmed Business Presence work item was created from the available data.</Text>}
+
+      {visibleAlignment.length > 0 && (
         <View style={{ marginTop: 8 }}>
           <Text style={styles.cardTitle}>GBP x Page Alignment</Text>
-          <AlignmentTable rows={alignment.rows} />
+          <AlignmentTable rows={visibleAlignment} />
         </View>
+      )}
+      {variant === "client" && visibleAlignment.length === 0 && (
+        <View style={styles.statement}><Text style={styles.bodyText}>No confirmed page-to-GBP alignment issue was found in the assessed signals.</Text></View>
       )}
 
       <View style={styles.layerGrid}>
         <View style={styles.layerCard}>
-          <Text style={styles.cardTitle}>GBP Categories and Activity</Text>
+          <Text style={styles.cardTitle}>Profile Activity</Text>
           <Field label="Observed Categories" value={profile.categories.join(", ") || "Not returned"} maxLength={180} />
           <Field label="Photos Returned" value={profile.photo_count == null ? "Not returned" : String(profile.photo_count)} />
           <Field label="Latest Photo Date" value={profile.latest_photo_date || "Not exposed"} />
           <Field label="Posts Returned" value={profile.post_count == null ? "Not returned" : String(profile.post_count)} />
           <Field label="Latest Post Date" value={profile.latest_post_date || "Not exposed"} />
-          <BulletList items={profile.limitations} limit={3} maxLength={130} />
+          {variant === "full" && <BulletList items={profile.limitations} maxLength={180} />}
         </View>
         <View style={[styles.layerCard, styles.layerCardEven]}>
-          <Text style={styles.cardTitle}>Recent Review Audit</Text>
+          <Text style={styles.cardTitle}>Review Operations</Text>
           <Field label="GBP Review Total" value={reviews.total_reviews == null ? "Not returned" : String(reviews.total_reviews)} />
           <Field label="Recent Sample" value={`${reviews.sample_size} / ${reviews.sample_limit}`} />
           <Field label="Latest Review" value={reviews.latest_review_date || "Not returned"} />
           <Field label="Owner Reply Rate" value={reviews.owner_reply_rate == null ? "Not available" : `${Math.round(reviews.owner_reply_rate * 100)}%`} />
+          <Field label="Unanswered Reviews" value={reviews.unanswered_count == null ? "Not available" : String(reviews.unanswered_count)} />
+          <Field label="1-3 Star Reviews" value={reviews.low_rating_count == null ? "Not available" : String(reviews.low_rating_count)} />
+          <Field label="1-3 Star Unanswered" value={reviews.low_rating_unanswered_count == null ? "Not available" : String(reviews.low_rating_unanswered_count)} />
+          <Field label="Detailed Positive Reviews" value={reviews.detailed_positive_count == null ? "Not available" : String(reviews.detailed_positive_count)} />
           <Field label="Rating Distribution" value={distribution || "Not available"} maxLength={160} />
-          <BulletList items={reviews.limitations} limit={3} maxLength={130} />
+          {variant === "full" && <BulletList items={reviews.limitations} maxLength={180} />}
         </View>
       </View>
 
-      {reviews.reviews.length > 0 && (
+      {variant === "full" && (
         <View style={{ marginTop: 8 }}>
-          <Text style={styles.cardTitle}>Recent Review Evidence</Text>
-          {reviews.reviews.slice(0, 3).map((review, index) => (
+          <Text style={styles.cardTitle}>Audit Coverage</Text>
+          <View style={styles.layerGrid}>
+            {audit.audit_scope.map((item, index) => (
+              <View key={item.key} style={[styles.layerCard, index % 2 === 1 ? styles.layerCardEven : {}]}>
+                <Text style={styles.label}>{item.label}</Text>
+                <StatusBadge value={item.status} />
+                <Text style={styles.mutedText}>{truncateText(item.detail, 180)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {variant === "full" && reviews.reviews.length > 0 && (
+        <View style={{ marginTop: 8 }}>
+          <Text style={styles.cardTitle}>Recent Review Evidence ({reviews.reviews.length})</Text>
+          {reviews.reviews.map((review, index) => (
             <View key={`${review.author || "review"}-${index}`} style={styles.card}>
               <Text style={styles.label}>
                 {review.author || "Anonymous"} / {review.rating == null ? "No rating" : `${review.rating}/5`} / {review.date || "Date not returned"}
               </Text>
-              <Text style={styles.bodyText}>{truncateText(review.text || "No review text returned", 230)}</Text>
-              {review.owner_reply && <Text style={styles.mutedText}>Owner reply: {truncateText(review.owner_reply, 160)}</Text>}
+              <Text style={styles.bodyText}>{truncateText(review.text || "No review text returned", 600)}</Text>
+              {review.owner_reply && <Text style={styles.mutedText}>Owner reply: {truncateText(review.owner_reply, 400)}</Text>}
             </View>
           ))}
         </View>
@@ -1036,7 +1113,15 @@ function MethodFooter() {
   );
 }
 
-export function ReportPDFDocument({ report, branding }: { report: Report; branding?: EffectiveBranding }) {
+export function ReportPDFDocument({
+  report,
+  branding,
+  variant = "full",
+}: {
+  report: Report;
+  branding?: EffectiveBranding;
+  variant?: PdfVariant;
+}) {
   const normalized = normalizeReportToV21(report);
   const reportV21 = normalized.reportV21;
   const reportId = reportV21.report_id || report.external_report_id || report.report_id;
@@ -1045,12 +1130,12 @@ export function ReportPDFDocument({ report, branding }: { report: Report; brandi
     <Document title={`SearchTrust Report ${reportId}`} author="SearchTrust" subject="Trust Audit Report" creator="SearchTrust">
       <Page size="A4" style={styles.page} wrap>
         <ReportHeader report={report} reportV21={reportV21} normalized={normalized} brandingOverride={branding} />
-        <ExecutiveSummary reportV21={reportV21} />
+        <ExecutiveSummary reportV21={reportV21} variant={variant} />
         <PageLevelSection reportV21={reportV21} />
-        <KeyIssuesSection reportV21={reportV21} />
-        <TrustLayersSection reportV21={reportV21} />
-        <OptimizationPathSection reportV21={reportV21} />
-        <BusinessPresenceAuditSection reportV21={reportV21} />
+        <KeyIssuesSection reportV21={reportV21} variant={variant} />
+        <TrustLayersSection reportV21={reportV21} variant={variant} />
+        <OptimizationPathSection reportV21={reportV21} variant={variant} />
+        <BusinessPresenceAuditSection reportV21={reportV21} variant={variant} />
         <MethodFooter />
 
         <View style={styles.fixedFooter} fixed>

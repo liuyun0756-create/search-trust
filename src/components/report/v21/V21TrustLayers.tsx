@@ -89,6 +89,22 @@ export function V21TrustLayers({
             </div>
           )}
 
+          {showTechnical && safeList(layer.triggered_findings).length > 0 && (
+            <div className="mb-4 rounded-2xl border border-amber-100 bg-amber-50/40 p-4">
+              <p className="mb-3 text-[12px] font-black uppercase tracking-[0.12em] text-amber-700">
+                What needs attention ({safeList(layer.triggered_findings).length})
+              </p>
+              <ul className="grid grid-cols-1 gap-x-6 gap-y-2 lg:grid-cols-2">
+                {safeList(layer.triggered_findings).map((finding, index) => (
+                  <li key={`${finding}-${index}`} className="flex gap-2 text-[13px] font-medium leading-relaxed text-gray-700">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                    <span>{finding}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {safeList(layer.suggested_fixes).length > 0 && (
             <div className="mb-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
               <p className="mb-2 text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">Suggested fixes</p>

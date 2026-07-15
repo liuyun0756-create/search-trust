@@ -79,6 +79,11 @@ export function V21OverallConclusion({
         </div>
       )}
 
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <SummaryCard title="Primary Blocking Layer" value={formatLayerKey(primaryBlockingLayer.layer_key)} detail={primaryBlockingLayer.reason} />
+        <SummaryCard title="Why It Matters" value={clientSummary.why_it_matters} detail={`First priority: ${clientSummary.first_priority}`} />
+      </div>
+
       <div className="rounded-[22px] border border-blue-100 bg-blue-50/50 p-6">
         <h3 className="mb-2 text-[20px] font-black tracking-tight text-[#1A212B]">{clientSummary.title}</h3>
         <p className="text-[15px] font-medium leading-relaxed text-gray-700">{clientSummary.plain_language_summary}</p>
@@ -89,15 +94,9 @@ export function V21OverallConclusion({
           <article key={card.label} className="rounded-[20px] border border-gray-100 bg-white p-5 shadow-sm">
             <p className="mb-2 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">{card.label}</p>
             <h4 className={`mb-2 text-[24px] font-black tracking-tight ${card.tone}`}>{card.value}</h4>
-            <p className="mb-3 text-[12px] font-bold uppercase text-gray-400">{String(card.level || "unknown").replace(/_/g, " ")}</p>
             <p className="text-[13px] font-medium leading-relaxed text-gray-600">{card.explanation}</p>
           </article>
         ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <SummaryCard title="Primary Blocking Layer" value={formatLayerKey(primaryBlockingLayer.layer_key)} detail={primaryBlockingLayer.reason} />
-        <SummaryCard title="Why It Matters" value={clientSummary.why_it_matters} detail={`First priority: ${clientSummary.first_priority}`} />
       </div>
 
       {clientSummary.expected_change && (

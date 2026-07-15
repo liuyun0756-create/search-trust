@@ -6,11 +6,12 @@ import { motion } from 'framer-motion';
 import {
   Lock, Download,
   Loader2, AlertTriangle,
-  Copy, FileText, Link2, CalendarDays, BadgeInfo,
+  Copy, FileText, Link2, CalendarDays, BadgeInfo, CheckCircle2,
   ChevronDown, X as XIcon,
   RotateCcw, ArrowLeft
 } from 'lucide-react';
 import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
+import type { PdfVariant } from '@/lib/report-v21';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
 import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v21/ReportV21Content';
@@ -227,6 +228,36 @@ function SectionSkeleton() {
         </div>
       ))}
     </div>
+  );
+}
+
+function PdfVariantOption({
+  selected,
+  title,
+  badge,
+  description,
+  onClick,
+}: {
+  selected: boolean;
+  title: string;
+  badge?: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onClick}
+      className={`w-full rounded-lg border px-4 py-4 text-left transition-colors ${selected ? 'border-[#93B917] bg-white shadow-sm' : 'border-gray-200 bg-white/70 hover:border-gray-300'}`}
+    >
+      <span className="flex items-center justify-between gap-3">
+        <span className="text-[15px] font-black text-[#1A212B]">{title}</span>
+        {badge && <span className="rounded-full bg-[#EAF5C9] px-2.5 py-1 text-[9px] font-black uppercase text-[#5D7217]">{badge}</span>}
+      </span>
+      <span className="mt-2 block text-[12px] font-medium leading-relaxed text-gray-500">{description}</span>
+    </button>
   );
 }
 
@@ -808,6 +839,7 @@ export function ReportContent({
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'downloading'>('idle');
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfVariant, setPdfVariant] = useState<PdfVariant>('client');
   const [agencyName, setAgencyName] = useState('');
   const [clientName, setClientName] = useState('');
   const [footerNote, setFooterNote] = useState('');
@@ -815,7 +847,8 @@ export function ReportContent({
   const [agencyLogoName, setAgencyLogoName] = useState('');
   const [pdfBrandingError, setPdfBrandingError] = useState('');
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [copiedField, setCopiedField] = useState('');
+  const [copyToast, setCopyToast] = useState<{ message: string; success: boolean } | null>(null);
+  const copyToastTimer = useRef<number | null>(null);
   const isClickScrolling = useRef(false);
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
@@ -824,6 +857,9 @@ export function ReportContent({
   const reportV21 = normalized.reportV21;
   const normalizedIsRenderable = reportV21?.schema_version === "2.1" && normalized.source !== "fallback";
   const canExportPdf = normalizedIsRenderable || isReportPdfExportable(report);
+  useEffect(() => () => {
+    if (copyToastTimer.current) window.clearTimeout(copyToastTimer.current);
+  }, []);
   // 滚动时自动高亮对应的 tab
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
@@ -884,11 +920,17 @@ export function ReportContent({
     setShareModalOpen(true);
   };
 
-  const copyText = async (value: string, field: string) => {
+  const copyText = async (value: string, successMessage: string) => {
     if (!value) return;
-    await navigator.clipboard?.writeText(value);
-    setCopiedField(field);
-    window.setTimeout(() => setCopiedField(''), 1800);
+    if (copyToastTimer.current) window.clearTimeout(copyToastTimer.current);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(value);
+      setCopyToast({ message: successMessage, success: true });
+    } catch {
+      setCopyToast({ message: 'Copy failed. Please try again.', success: false });
+    }
+    copyToastTimer.current = window.setTimeout(() => setCopyToast(null), 2000);
   };
 
   const handleRetryAnalysis = () => {
@@ -976,12 +1018,14 @@ export function ReportContent({
       alert('Report is still generating');
       return;
     }
+    setPdfBrandingError('');
     setPdfStatus('downloading');
     try {
       const res = await fetch(`/api/reports/${report.id}/pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          pdf_variant: pdfVariant,
           branding: {
             agency_name: agencyName,
             client_name: clientName,
@@ -1003,7 +1047,7 @@ export function ReportContent({
       const reportId = report.external_report_id || report.report_id;
       const a = document.createElement('a');
       a.href = url;
-      a.download = `SearchTrust-${reportId}.pdf`;
+      a.download = `SearchTrust-${reportId}-${pdfVariant === 'client' ? 'Client' : 'Full-Audit'}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1011,10 +1055,16 @@ export function ReportContent({
       setPdfModalOpen(false);
     } catch (error) {
       console.error('PDF export error:', error);
-      alert(error instanceof Error ? error.message : 'PDF export failed');
+      setPdfBrandingError(error instanceof Error ? error.message : 'PDF export failed');
     } finally {
       setPdfStatus('idle');
     }
+  };
+
+  const openPdfExport = () => {
+    setPdfVariant('client');
+    setPdfBrandingError('');
+    setPdfModalOpen(true);
   };
 
   const handleLogoUpload = (file: File | undefined) => {
@@ -1039,21 +1089,71 @@ export function ReportContent({
 
   return (
     <main className="flex-1 min-w-0">
+      {copyToast && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-6 right-6 z-[70] flex max-w-[min(360px,calc(100vw-3rem))] items-center gap-2.5 rounded-xl border bg-white px-4 py-3 text-[13px] font-bold shadow-[0_18px_50px_rgba(15,23,42,0.18)] ${copyToast.success ? 'border-emerald-100 text-emerald-700' : 'border-red-100 text-red-600'}`}
+        >
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>{copyToast.message}</span>
+        </motion.div>
+      )}
       {pdfModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/45 px-4 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-[24px] border border-gray-100 bg-white p-6 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div><h2 className="text-[22px] font-black text-[#1A212B]">Agency PDF</h2><p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-500">These details are used only for this download. They are not saved to the report or database.</p></div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#111827]/45 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+          <div className="flex max-h-[96vh] w-full max-w-4xl flex-col overflow-hidden rounded-t-[20px] border border-gray-100 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] sm:max-h-[90vh] sm:rounded-[20px]">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-5 sm:px-7">
+              <div>
+                <h2 className="text-[22px] font-black text-[#1A212B]">Export PDF</h2>
+                <p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-500">Choose the audience, then add optional agency branding for this download.</p>
+              </div>
               <button type="button" onClick={() => setPdfModalOpen(false)} className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#1A212B]" aria-label="Close PDF export"><XIcon className="h-5 w-5" /></button>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <PdfInput label="Agency or consultant name" value={agencyName} onChange={setAgencyName} />
-              <PdfInput label="Client name" value={clientName} onChange={setClientName} />
+            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="border-b border-gray-100 bg-[#F8FAF5] px-5 py-6 lg:border-b-0 lg:border-r lg:px-7">
+                <p className="text-[11px] font-black uppercase text-gray-400">Report version</p>
+                <div className="mt-3 space-y-3" role="radiogroup" aria-label="PDF version">
+                  <PdfVariantOption
+                    selected={pdfVariant === 'client'}
+                    title="Client PDF"
+                    badge="Recommended"
+                    description="Client-ready conclusions, priorities and Business Presence work scope without raw evidence or internal detail."
+                    onClick={() => setPdfVariant('client')}
+                  />
+                  <PdfVariantOption
+                    selected={pdfVariant === 'full'}
+                    title="Full Audit PDF"
+                    description="Complete analyst report with evidence, implementation detail, source coverage and recent-review records."
+                    onClick={() => setPdfVariant('full')}
+                  />
+                </div>
+                <div className="mt-5 rounded-lg border border-[#DCE9BE] bg-white px-4 py-3 text-[12px] font-semibold leading-relaxed text-[#526315]">
+                  {pdfVariant === 'client'
+                    ? 'Best for sending with a proposal or presenting findings to a client.'
+                    : 'Best for internal delivery, QA and implementation planning.'}
+                </div>
+              </div>
+              <div className="px-5 py-6 sm:px-7">
+                <p className="text-[11px] font-black uppercase text-gray-400">Optional branding</p>
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                  <PdfInput label="Agency or consultant name" value={agencyName} onChange={setAgencyName} />
+                  <PdfInput label="Client name" value={clientName} onChange={setClientName} />
+                </div>
+                <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase text-gray-500">Agency logo</span><input type="file" accept="image/png,image/jpeg" onChange={(event) => handleLogoUpload(event.target.files?.[0])} className="block w-full text-[13px] font-medium text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#F3F8E8] file:px-3 file:py-2 file:text-[12px] file:font-bold file:text-[#506314]" />{agencyLogoName && <p className="mt-2 text-[12px] font-medium text-gray-500">Selected: {agencyLogoName}</p>}</label>
+                <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase text-gray-500">Footer note</span><textarea value={footerNote} onChange={(event) => setFooterNote(event.target.value)} maxLength={240} rows={3} placeholder="Optional note for this client delivery" className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[14px] font-medium text-[#1A212B] outline-none focus:border-[#A5D020] focus:ring-4 focus:ring-[#A5D020]/10" /></label>
+                <p className="mt-3 text-[11px] font-medium leading-relaxed text-gray-400">Branding is used only for this download and is not saved to the report or database.</p>
+                {pdfBrandingError && <p className="mt-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[13px] font-bold text-red-600">{pdfBrandingError}</p>}
+              </div>
             </div>
-            <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase tracking-[0.12em] text-gray-500">Agency logo</span><input type="file" accept="image/png,image/jpeg" onChange={(event) => handleLogoUpload(event.target.files?.[0])} className="block w-full text-[13px] font-medium text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#F3F8E8] file:px-3 file:py-2 file:text-[12px] file:font-bold file:text-[#506314]" />{agencyLogoName && <p className="mt-2 text-[12px] font-medium text-gray-500">Selected: {agencyLogoName}</p>}</label>
-            <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase tracking-[0.12em] text-gray-500">Footer note</span><textarea value={footerNote} onChange={(event) => setFooterNote(event.target.value)} maxLength={240} rows={3} placeholder="Optional note for this client delivery" className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[14px] font-medium text-[#1A212B] outline-none focus:border-[#A5D020] focus:ring-4 focus:ring-[#A5D020]/10" /></label>
-            {pdfBrandingError && <p className="mt-3 text-[13px] font-bold text-red-500">{pdfBrandingError}</p>}
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => setPdfModalOpen(false)} className="rounded-xl border border-gray-200 px-5 py-3 text-[14px] font-bold text-[#1A212B] hover:bg-gray-50">Cancel</button><button type="button" onClick={handleDownloadPDF} disabled={pdfStatus === 'downloading'} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#171B22] px-5 py-3 text-[14px] font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">{pdfStatus === 'downloading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{pdfStatus === 'downloading' ? 'Preparing...' : 'Download PDF'}</button></div>
+            <div className="flex flex-col gap-3 border-t border-gray-100 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+              <p className="text-[12px] font-semibold text-gray-500">{pdfVariant === 'client' ? 'Client-ready PDF' : 'Complete analyst PDF'}</p>
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                <button type="button" onClick={() => setPdfModalOpen(false)} className="rounded-xl border border-gray-200 px-5 py-3 text-[14px] font-bold text-[#1A212B] hover:bg-gray-50">Cancel</button>
+                <button type="button" onClick={handleDownloadPDF} disabled={pdfStatus === 'downloading'} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#171B22] px-5 py-3 text-[14px] font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">{pdfStatus === 'downloading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{pdfStatus === 'downloading' ? 'Preparing...' : `Download ${pdfVariant === 'client' ? 'Client PDF' : 'Full Audit'}`}</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1141,7 +1241,7 @@ export function ReportContent({
           {isPaid && (
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
-                onClick={() => setPdfModalOpen(true)}
+                onClick={openPdfExport}
                 disabled={pdfStatus === 'downloading' || !canExportPdf}
                 className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#171B22] px-6 py-3 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_14px_28px_rgba(15,23,42,0.16)] disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -1168,7 +1268,7 @@ export function ReportContent({
           </a>
           <button
             type="button"
-            onClick={() => navigator.clipboard?.writeText(report.page_url)}
+            onClick={() => copyText(report.page_url, 'Report URL copied.')}
             className="shrink-0 rounded-lg p-1.5 text-[#657083] transition-colors hover:bg-white hover:text-[#1A1F2B]"
             aria-label="Copy report URL"
           >
@@ -1221,7 +1321,7 @@ export function ReportContent({
                 <div className="flex min-w-0 items-center gap-1.5">
                   <p className={`min-w-0 truncate text-[12px] font-bold ${item.tone}`}>{item.value}</p>
                   {'copyValue' in item && item.copyValue && (
-                    <button type="button" onClick={() => copyText(item.copyValue, 'report-id')} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-[#1A1F2B]" aria-label="Copy report ID" title="Copy full report ID">
+                    <button type="button" onClick={() => copyText(item.copyValue, 'Report ID copied.')} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-[#1A1F2B]" aria-label="Copy report ID" title="Copy full report ID">
                       <Copy className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -1233,7 +1333,6 @@ export function ReportContent({
             </div>
           ))}
         </div>
-        {copiedField === 'report-id' && <p className="mt-3 text-right text-[12px] font-bold text-emerald-600">Report ID copied.</p>}
       </section>
       )}
 
