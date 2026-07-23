@@ -2,6 +2,7 @@ import React from "react";
 import { Document, Image, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
   extractGBPAlignmentRows,
+  getClientDecisionContext,
   getEffectiveBranding,
   getLayerDisplayConfig,
   normalizeReportToV21,
@@ -258,6 +259,102 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 11,
     marginBottom: 10,
+  },
+  decisionBanner: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+  },
+  priorityBadge: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    marginBottom: 7,
+    fontSize: 7,
+    fontWeight: 700,
+    textTransform: "uppercase",
+  },
+  decisionDivider: {
+    borderTopWidth: 1,
+    marginTop: 8,
+    paddingTop: 8,
+  },
+  metricRow: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  metricItem: {
+    width: "33.333%",
+    padding: 9,
+    borderRightWidth: 1,
+    borderRightColor: "#E5E7EB",
+  },
+  metricItemLast: {
+    borderRightWidth: 0,
+  },
+  metricValue: {
+    color: "#111827",
+    fontSize: 16,
+    fontWeight: 700,
+    marginBottom: 3,
+  },
+  approvalCard: {
+    borderWidth: 1,
+    borderColor: "#DCE8C3",
+    backgroundColor: "#FBFDF6",
+    borderRadius: 10,
+    padding: 11,
+    marginBottom: 10,
+  },
+  scoreInterpretation: {
+    borderWidth: 1,
+    borderColor: "#E0E7FF",
+    backgroundColor: "#F5F7FF",
+    borderRadius: 9,
+    padding: 9,
+    marginBottom: 10,
+  },
+  phaseList: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  phaseRow: {
+    flexDirection: "row",
+    padding: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEF0F3",
+  },
+  phaseRowLast: {
+    borderBottomWidth: 0,
+  },
+  phaseNumber: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#A5D020",
+    color: "#1A212B",
+    fontSize: 8,
+    fontWeight: 700,
+    textAlign: "center",
+    paddingTop: 4,
+    marginRight: 8,
+  },
+  phaseLabel: {
+    width: 105,
+    marginRight: 8,
+  },
+  sourceLine: {
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    paddingTop: 8,
   },
   twoColumn: {
     flexDirection: "row",
@@ -676,6 +773,10 @@ function ReportHeader({
 }
 
 function ExecutiveSummary({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
+  if (variant === "client") {
+    return <ClientExecutiveSummary reportV21={reportV21} />;
+  }
+
   return (
     <>
       <View style={styles.scoreRow}>
@@ -719,6 +820,145 @@ function ExecutiveSummary({ reportV21, variant }: { reportV21: ReportV21; varian
       </Section>
     </>
   );
+}
+
+function ClientExecutiveSummary({ reportV21 }: { reportV21: ReportV21 }) {
+  const summary = reportV21.client_summary;
+  const decision = getClientDecisionContext(reportV21);
+  const palette = decisionPalette(decision.priority_level);
+  const sources = checkedDataSources(reportV21);
+
+  return (
+    <>
+      <Section title="Client Decision Summary">
+        <View style={[styles.decisionBanner, { borderColor: palette.border, backgroundColor: palette.background }]}>
+          <Text style={[styles.priorityBadge, { borderColor: palette.border, color: palette.text, backgroundColor: "#FFFFFF" }]}>
+            {decision.priority_label}
+          </Text>
+          <Text style={styles.cardTitle}>{safeText(summary.title, "Client Summary")}</Text>
+          <Text style={styles.bodyText}>{truncateText(summary.plain_language_summary, 520)}</Text>
+          <View style={[styles.decisionDivider, { borderTopColor: palette.border }]}>
+            <Text style={[styles.label, { color: palette.text }]}>Why action is needed now</Text>
+            <Text style={styles.bodyText}>{truncateText(decision.why_act_now, 460)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.metricRow}>
+          <DecisionMetric label="Confirmed issues" value={decision.issue_count} />
+          <DecisionMetric label="Affected trust layers" value={decision.affected_layer_count} />
+          <DecisionMetric label="Recommended work phases" value={decision.work_phase_count} isLast />
+        </View>
+
+        <View style={styles.approvalCard}>
+          <Text style={[styles.label, { color: "#7A991C" }]}>Recommended approval</Text>
+          <View style={styles.twoColumn}>
+            <View style={styles.column}>
+              <Field
+                label="Primary Blocking Layer"
+                value={`${displayLayer(reportV21.primary_blocking_layer.layer_key)} - ${safeText(reportV21.primary_blocking_layer.reason)}`}
+                maxLength={360}
+              />
+            </View>
+            <View style={[styles.column, styles.columnLast]}>
+              <Field label="First Priority" value={summary.first_priority} maxLength={300} />
+              <Field label="Expected Change" value={summary.expected_change} maxLength={300} />
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.label}>How to read the three scores</Text>
+        <View style={styles.scoreRow}>
+          <ScoreCard
+            label="Trust Status"
+            value={safeText(reportV21.overall_status.label)}
+            level={reportV21.overall_status.level}
+            description={reportV21.overall_status.explanation}
+          />
+          <ScoreCard
+            label="Ranking Potential"
+            value={safeText(reportV21.ranking_potential.label)}
+            level={reportV21.ranking_potential.level}
+            description={reportV21.ranking_potential.explanation}
+          />
+          <ScoreCard
+            label="Risk Level"
+            value={safeText(reportV21.risk_level.label)}
+            level={reportV21.risk_level.level}
+            description={reportV21.risk_level.explanation}
+            isLast
+          />
+        </View>
+        <View style={styles.scoreInterpretation}>
+          <Text style={styles.bodyText}>{truncateText(decision.score_interpretation, 560)}</Text>
+        </View>
+
+        <Text style={styles.label}>Recommended work sequence</Text>
+        {decision.work_sequence.length ? (
+          <View style={styles.phaseList}>
+            {decision.work_sequence.map((phase, index) => (
+              <View
+                key={phase.stage}
+                style={[styles.phaseRow, index === decision.work_sequence.length - 1 ? styles.phaseRowLast : {}]}
+                wrap={false}
+              >
+                <Text style={styles.phaseNumber}>{index + 1}</Text>
+                <View style={styles.phaseLabel}>
+                  <Text style={styles.cardTitle}>{phase.label}</Text>
+                  <Text style={[styles.mutedText, { color: "#7A991C" }]}>{phase.layer_labels.join(" / ")}</Text>
+                </View>
+                <Text style={[styles.bodyText, { flex: 1 }]}>{truncateText(phase.summary, 260)}</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.softCard}>
+            <Text style={styles.bodyText}>
+              Maintain the current trust signals and re-audit after meaningful page or business changes.
+            </Text>
+          </View>
+        )}
+        {summary.not_first_priority && (
+          <Text style={styles.mutedText}>Not first priority: {truncateText(summary.not_first_priority, 360)}</Text>
+        )}
+        <View style={styles.sourceLine}>
+          <Text style={styles.mutedText}>
+            Sources checked: {sources.length ? sources.join(", ") : "No structured data coverage was available."}
+          </Text>
+        </View>
+      </Section>
+    </>
+  );
+}
+
+function DecisionMetric({ label, value, isLast = false }: { label: string; value: number; isLast?: boolean }) {
+  return (
+    <View style={[styles.metricItem, isLast ? styles.metricItemLast : {}]}>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metaLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function decisionPalette(priority: "immediate" | "high" | "planned" | "monitor") {
+  return {
+    immediate: { border: "#FECACA", background: "#FFF7F7", text: "#B91C1C" },
+    high: { border: "#FDE68A", background: "#FFFBEB", text: "#B45309" },
+    planned: { border: "#BFDBFE", background: "#F5F9FF", text: "#1D4ED8" },
+    monitor: { border: "#A7F3D0", background: "#F3FFF9", text: "#047857" },
+  }[priority];
+}
+
+function checkedDataSources(reportV21: ReportV21): string[] {
+  const coverage = reportV21.data_coverage;
+  return [
+    coverage?.page_content_checked && "Page content",
+    coverage?.gbp_checked && "GBP",
+    coverage?.schema_checked && "Schema",
+    coverage?.contact_page_checked && "Contact page",
+    coverage?.about_page_checked && "About page",
+    coverage?.reviews_checked && "Reviews",
+    coverage?.internal_pages_checked && "Internal pages",
+  ].filter((item): item is string => Boolean(item));
 }
 
 function PageLevelSection({ reportV21 }: { reportV21: ReportV21 }) {
@@ -777,7 +1017,6 @@ function KeyIssuesSection({ reportV21, variant }: { reportV21: ReportV21; varian
               <BulletList items={issue.suggestions} limit={3} maxLength={180} />
             </View>
           )}
-          {variant === "full" && <EvidenceSummary evidence={issue.evidence_items} limit={issue.evidence_items.length} />}
           {variant === "full" && safeList(issue.recommended_actions).map((action) => (
             <ActionCard key={action.id || action.task_title} action={action} />
           ))}

@@ -27,7 +27,7 @@ export function V21ActionItems({ actions, title = "Recommended actions", viewMod
 
 function ActionCard({ item, viewMode }: { item: ActionItem; viewMode: V21ViewMode }) {
   const analyst = isAnalystView(viewMode);
-  const notes = analyst ? safeList(item.implementation_notes) : safeList(item.implementation_notes).filter((note) => !isInternalImplementationNote(note));
+  const notes = safeList(item.implementation_notes).filter((note) => !isInternalImplementationNote(note));
   return (
     <article className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -39,7 +39,7 @@ function ActionCard({ item, viewMode }: { item: ActionItem; viewMode: V21ViewMod
       <div className="mt-4 grid gap-4 md:grid-cols-2"><FieldList label="Where to add" values={item.where_to_add} /><FieldList label="What to add" values={item.what_to_add} /></div>
       {safeList(item.example_copy).filter(Boolean).length > 0 && <FieldList className="mt-4 rounded-xl border border-[#E4EDD2] bg-[#FBFDF5] p-3" label="Example copy" values={item.example_copy} />}
       {item.expected_effect && <p className="mt-4 text-[13px] font-medium leading-relaxed text-gray-600"><span className="font-bold text-[#1A212B]">Expected effect: </span>{item.expected_effect}</p>}
-      {(notes.length > 0 || safeList(item.completion_signals).length > 0) && (
+      {analyst && (notes.length > 0 || safeList(item.completion_signals).length > 0) && (
         <details className="mt-4 border-t border-gray-200 pt-3">
           <summary className="cursor-pointer text-[12px] font-black uppercase tracking-[0.12em] text-gray-500">Implementation detail</summary>
           <div className="mt-3 grid gap-4 md:grid-cols-2"><FieldList label="Implementation notes" values={notes} /><FieldList label="Completion signals" values={item.completion_signals} /></div>

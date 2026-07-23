@@ -1,6 +1,5 @@
 import type { KeyIssue } from "@/lib/report-v21";
 import { V21ActionItems } from "./V21ActionItems";
-import { V21EvidenceList } from "./V21EvidenceList";
 import { formatLayerKey, getPriorityTone, safeList } from "./statusHelpers";
 import { isAnalystView, type V21ViewMode } from "./viewMode";
 
@@ -55,7 +54,6 @@ export function V21KeyIssues({
             </div>
           )}
           <div className="space-y-3">
-            <V21EvidenceList evidenceItems={issue.evidence_items} viewMode={viewMode} density="compact" showEmpty={issue.severity === "high" || issue.severity === "medium"} />
             <V21ActionItems
               actions={issue.recommended_actions}
               viewMode={viewMode}

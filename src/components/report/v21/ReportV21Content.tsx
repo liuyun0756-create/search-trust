@@ -2,7 +2,6 @@
 
 import type { EvidenceItem, KeyIssue, LayerFinding, NormalizedReportV21Result } from "@/lib/report-v21";
 import type { ReactNode } from "react";
-import { useState } from "react";
 import type { Report } from "@/types/database";
 import { V21BrandingHeader } from "./V21BrandingHeader";
 import { V21BusinessPresenceAudit } from "./V21BusinessPresenceAudit";
@@ -11,7 +10,6 @@ import { V21OptimizationPath } from "./V21OptimizationPath";
 import { V21OverallConclusion } from "./V21OverallConclusion";
 import { V21PageLevel } from "./V21PageLevel";
 import { V21TrustLayers } from "./V21TrustLayers";
-import { V21ViewModeToggle } from "./V21ViewModeToggle";
 import type { V21ViewMode } from "./viewMode";
 
 export const V21_SECTION_IDS = {
@@ -31,12 +29,15 @@ export function ReportV21Content({
   normalized,
   rawReport: _rawReport,
   isLoading = false,
+  viewMode = "analyst",
+  sectionIdsEnabled = true,
 }: {
   normalized: NormalizedReportV21Result;
   rawReport: Report;
   isLoading?: boolean;
+  viewMode?: V21ViewMode;
+  sectionIdsEnabled?: boolean;
 }) {
-  const [viewMode, setViewMode] = useState<V21ViewMode>("analyst");
   const report = normalized.reportV21;
   const pageLevel = report.page_level ?? {
     label: "Unknown",
@@ -65,30 +66,29 @@ export function ReportV21Content({
 
   return (
     <div className="space-y-8">
-      <V21ViewModeToggle mode={viewMode} onChange={setViewMode} />
       <V21BrandingHeader reportV21={report} viewMode={viewMode} />
 
-      <Section id={V21_SECTION_IDS["Overall Conclusion"]} title="Overall Conclusion">
+      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Overall Conclusion"] : undefined} title="Overall Conclusion">
         <V21OverallConclusion normalized={normalized} viewMode={viewMode} />
       </Section>
 
-      <Section id={V21_SECTION_IDS["Page Level"]} title="Page Level">
+      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Page Level"] : undefined} title="Page Level">
         <V21PageLevel pageLevel={pageLevel} viewMode={viewMode} />
       </Section>
 
-      <Section id={V21_SECTION_IDS["Key Issues"]} title="Key Issues">
+      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Key Issues"] : undefined} title="Key Issues">
         <V21KeyIssues keyIssues={keyIssues} viewMode={viewMode} />
       </Section>
 
-      <Section id={V21_SECTION_IDS["Trust Layer Breakdown"]} title="Trust Layer Breakdown">
+      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Trust Layer Breakdown"] : undefined} title="Trust Layer Breakdown">
         <V21TrustLayers layers={report.layers} viewMode={viewMode} />
       </Section>
 
-      <Section id={V21_SECTION_IDS["Optimization Path"]} title="Optimization Path">
+      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Optimization Path"] : undefined} title="Optimization Path">
         <V21OptimizationPath optimizationPath={optimizationPath} viewMode={viewMode} />
       </Section>
 
-      <Section id={V21_SECTION_IDS["Business Presence Audit"]} title="Business Presence Audit">
+      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Business Presence Audit"] : undefined} title="Business Presence Audit">
         <V21BusinessPresenceAudit reportV21={report} source={normalized.source} viewMode={viewMode} />
       </Section>
     </div>
@@ -126,7 +126,7 @@ function mergeEvidence(
   return merged;
 }
 
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+function Section({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
     <section id={id} className="scroll-mt-24">
       <div className="relative overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.06)]">

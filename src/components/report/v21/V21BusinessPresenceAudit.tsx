@@ -29,6 +29,7 @@ export function V21BusinessPresenceAudit({
 }) {
   const audit = reportV21.business_presence_audit;
   const showTechnical = isAnalystView(viewMode);
+  const headingId = (id: string) => showTechnical ? id : `client-${id}`;
 
   if (!audit) {
     return (
@@ -63,8 +64,8 @@ export function V21BusinessPresenceAudit({
         A non-scoring audit that turns page, GBP and recent-review observations into a one-time client proposal scope.
       </p>
 
-      <section aria-labelledby="presence-snapshot-title">
-        <SectionHeading icon={ClipboardCheck} eyebrow="Executive snapshot" title="Business presence opportunity" id="presence-snapshot-title" />
+      <section aria-labelledby={headingId("presence-snapshot-title")}>
+        <SectionHeading icon={ClipboardCheck} eyebrow="Executive snapshot" title="Business presence opportunity" id={headingId("presence-snapshot-title")} />
         <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-100 bg-[#F8FAF5] px-5 py-5">
             <div className="flex flex-wrap items-center gap-3">
@@ -82,8 +83,8 @@ export function V21BusinessPresenceAudit({
         </div>
       </section>
 
-      <section aria-labelledby="proposal-work-title">
-        <SectionHeading icon={UserRoundCheck} eyebrow="Recommended scope of work" title="Proposal-ready tasks" id="proposal-work-title" />
+      <section aria-labelledby={headingId("proposal-work-title")}>
+        <SectionHeading icon={UserRoundCheck} eyebrow="Recommended scope of work" title="Proposal-ready tasks" id={headingId("proposal-work-title")} />
         <div className="mt-4 space-y-3">
           {proposalActions.length ? proposalActions.map((action) => (
             <ProposalActionCard key={action.id} action={action} showTechnical={showTechnical} />
@@ -95,8 +96,8 @@ export function V21BusinessPresenceAudit({
         </div>
       </section>
 
-      <section aria-labelledby="presence-alignment-title">
-        <SectionHeading icon={UserRoundCheck} eyebrow="Objective comparison" title="GBP x Page alignment" id="presence-alignment-title" />
+      <section aria-labelledby={headingId("presence-alignment-title")}>
+        <SectionHeading icon={UserRoundCheck} eyebrow="Objective comparison" title="GBP x Page alignment" id={headingId("presence-alignment-title")} />
         <p className="mt-2 text-[12px] font-medium text-gray-500">
           {showTechnical ? "All assessed and unavailable signals are shown." : "Client view highlights only confirmed items that need attention."}
         </p>
@@ -110,8 +111,8 @@ export function V21BusinessPresenceAudit({
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section aria-labelledby="profile-activity-title">
-          <SectionHeading icon={Activity} eyebrow="Profile activity" title="Profile completeness opportunities" id="profile-activity-title" compact />
+        <section aria-labelledby={headingId("profile-activity-title")}>
+          <SectionHeading icon={Activity} eyebrow="Profile activity" title="Profile completeness opportunities" id={headingId("profile-activity-title")} compact />
           <div className="mt-4 rounded-lg border border-gray-200 bg-white p-5">
             <dl className="grid grid-cols-2 gap-x-5 gap-y-5">
               <Detail label="Observed categories" value={profile.categories.join(", ") || "Not verified"} wide />
@@ -124,8 +125,8 @@ export function V21BusinessPresenceAudit({
           </div>
         </section>
 
-        <section aria-labelledby="review-operations-title">
-          <SectionHeading icon={MessagesSquare} eyebrow="Review operations" title="Recent review workload" id="review-operations-title" compact />
+        <section aria-labelledby={headingId("review-operations-title")}>
+          <SectionHeading icon={MessagesSquare} eyebrow="Review operations" title="Recent review workload" id={headingId("review-operations-title")} compact />
           <div className="mt-4 rounded-lg border border-gray-200 bg-white p-5">
             <dl className="grid grid-cols-2 gap-x-5 gap-y-5">
               <Detail label="Recent sample" value={`${reviews.sample_size} / ${reviews.sample_limit}`} />

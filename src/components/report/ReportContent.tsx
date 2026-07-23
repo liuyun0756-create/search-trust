@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Lock, Download,
   Loader2, AlertTriangle,
   Copy, FileText, Link2, CalendarDays, BadgeInfo, CheckCircle2,
-  ChevronDown, X as XIcon,
+  ChevronDown, Eye, X as XIcon,
   RotateCcw, ArrowLeft
 } from 'lucide-react';
 import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
@@ -15,6 +15,7 @@ import type { PdfVariant } from '@/lib/report-v21';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
 import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v21/ReportV21Content';
+import { V21ClientReportPreview } from './v21/V21ClientReportPreview';
 import { PdfInput } from './PdfInput';
 
 type TabId = V21TabId;
@@ -72,19 +73,25 @@ function safeStringList(value: unknown): string[] {
     : [];
 }
 
-function formatGeneratedAt(value: string | null | undefined): string {
-  if (!value) return '';
+function formatGeneratedAt(value: string | null | undefined): { date: string; time: string } {
+  if (!value) return { date: '', time: '' };
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('en-US', {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    hour12: false, timeZone: 'UTC', timeZoneName: 'short',
-  }).format(date);
-}
-
-function compactReportId(value: string | null | undefined): string {
-  if (!value || value.length <= 24) return value || '—';
-  return `${value.slice(0, 12)}…${value.slice(-8)}`;
+  if (Number.isNaN(date.getTime())) return { date: value, time: '' };
+  return {
+    date: new Intl.DateTimeFormat('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(date),
+    time: new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'UTC',
+      timeZoneName: 'short',
+    }).format(date),
+  };
 }
 
 const FailedState = ({
@@ -840,6 +847,7 @@ export function ReportContent({
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'downloading'>('idle');
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [pdfVariant, setPdfVariant] = useState<PdfVariant>('client');
+  const [clientPreviewOpen, setClientPreviewOpen] = useState(false);
   const [agencyName, setAgencyName] = useState('');
   const [clientName, setClientName] = useState('');
   const [footerNote, setFooterNote] = useState('');
@@ -850,6 +858,8 @@ export function ReportContent({
   const [copyToast, setCopyToast] = useState<{ message: string; success: boolean } | null>(null);
   const copyToastTimer = useRef<number | null>(null);
   const isClickScrolling = useRef(false);
+  const clientPreviewScrollY = useRef(0);
+  const clientPreviewTriggerRef = useRef<HTMLButtonElement>(null);
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
   const showFailed = isFailed && !isLoading;
@@ -857,9 +867,18 @@ export function ReportContent({
   const reportV21 = normalized.reportV21;
   const normalizedIsRenderable = reportV21?.schema_version === "2.1" && normalized.source !== "fallback";
   const canExportPdf = normalizedIsRenderable || isReportPdfExportable(report);
+  const canPreviewClientReport = normalizedIsRenderable && !showFailed;
   useEffect(() => () => {
     if (copyToastTimer.current) window.clearTimeout(copyToastTimer.current);
   }, []);
+  useEffect(() => {
+    if (!clientPreviewOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [clientPreviewOpen]);
   // 滚动时自动高亮对应的 tab
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
@@ -1061,11 +1080,37 @@ export function ReportContent({
     }
   };
 
-  const openPdfExport = () => {
-    setPdfVariant('client');
+  const openPdfExport = (variant: PdfVariant = 'client') => {
+    setPdfVariant(variant);
     setPdfBrandingError('');
     setPdfModalOpen(true);
   };
+
+  const openClientPreview = () => {
+    if (!canPreviewClientReport) return;
+    clientPreviewScrollY.current = window.scrollY;
+    setClientPreviewOpen(true);
+  };
+
+  const restoreAuditPosition = useCallback((focusTrigger: boolean) => {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: clientPreviewScrollY.current, behavior: 'auto' });
+      if (focusTrigger) clientPreviewTriggerRef.current?.focus();
+    });
+  }, []);
+
+  const closeClientPreview = useCallback(() => {
+    setClientPreviewOpen(false);
+    restoreAuditPosition(true);
+  }, [restoreAuditPosition]);
+
+  const customizeClientPdf = useCallback(() => {
+    setClientPreviewOpen(false);
+    restoreAuditPosition(false);
+    setPdfVariant('client');
+    setPdfBrandingError('');
+    setPdfModalOpen(true);
+  }, [restoreAuditPosition]);
 
   const handleLogoUpload = (file: File | undefined) => {
     setPdfBrandingError('');
@@ -1100,6 +1145,14 @@ export function ReportContent({
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{copyToast.message}</span>
         </motion.div>
+      )}
+      {clientPreviewOpen && (
+        <V21ClientReportPreview
+          normalized={normalized}
+          rawReport={report}
+          onClose={closeClientPreview}
+          onCustomizeDownload={customizeClientPdf}
+        />
       )}
       {pdfModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#111827]/45 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
@@ -1241,7 +1294,18 @@ export function ReportContent({
           {isPaid && (
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
-                onClick={openPdfExport}
+                ref={clientPreviewTriggerRef}
+                type="button"
+                onClick={openClientPreview}
+                disabled={!canPreviewClientReport}
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl border border-gray-200 bg-white px-5 py-3 text-[14px] font-bold text-[#1A212B] transition-all hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Eye className="h-4 w-4" />
+                Preview Client Report
+              </button>
+              <button
+                type="button"
+                onClick={() => openPdfExport('client')}
                 disabled={pdfStatus === 'downloading' || !canExportPdf}
                 className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#171B22] px-6 py-3 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_14px_28px_rgba(15,23,42,0.16)] disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -1276,7 +1340,7 @@ export function ReportContent({
           </button>
         </div>
 
-        <div className="grid overflow-hidden rounded-2xl border border-gray-200 bg-white md:grid-cols-4">
+        <div className="grid overflow-hidden rounded-2xl border border-gray-200 bg-white md:grid-cols-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1.55fr)]">
           {[
             {
               icon: FileText,
@@ -1296,30 +1360,45 @@ export function ReportContent({
             {
               icon: CalendarDays,
               label: 'Generated',
-              value: generatedAt || '—',
+              value: generatedAt.date || '—',
+              detail: generatedAt.time,
               tone: 'text-[#1A1F2B]',
             },
             {
               icon: BadgeInfo,
               label: 'Report ID',
-              value: compactReportId(displayReportId),
+              value: displayReportId || '—',
               copyValue: displayReportId,
               tone: 'text-[#1A1F2B]',
+              valueClassName: '[overflow-wrap:anywhere]',
             },
           ].map((item, index) => (
             <div
               key={item.label}
-              className={`flex items-center gap-4 px-5 py-5 ${
-                index > 0 ? 'border-t border-gray-200 md:border-l md:border-t-0' : ''
+              className={`flex min-w-0 items-start gap-4 px-5 py-5 ${
+                index === 1
+                  ? 'border-t border-gray-200 md:border-l md:border-t-0'
+                  : index === 2
+                    ? 'border-t border-gray-200 lg:border-l lg:border-t-0'
+                    : index === 3
+                      ? 'border-t border-gray-200 md:border-l lg:border-t-0'
+                      : ''
               }`}
             >
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
+              <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
                 <item.icon className="h-5 w-5" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="mb-1.5 text-[12px] font-bold text-[#8A96A8]">{item.label}</p>
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <p className={`min-w-0 truncate text-[12px] font-bold ${item.tone}`}>{item.value}</p>
+                <div className="flex min-w-0 items-start gap-1.5">
+                  <p
+                    className={`min-w-0 flex-1 text-[12px] font-bold leading-relaxed ${item.tone} ${
+                      'valueClassName' in item ? item.valueClassName : ''
+                    }`}
+                    title={typeof item.value === 'string' ? item.value : undefined}
+                  >
+                    {item.value}
+                  </p>
                   {'copyValue' in item && item.copyValue && (
                     <button type="button" onClick={() => copyText(item.copyValue, 'Report ID copied.')} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-[#1A1F2B]" aria-label="Copy report ID" title="Copy full report ID">
                       <Copy className="h-3.5 w-3.5" />
@@ -1327,7 +1406,7 @@ export function ReportContent({
                   )}
                 </div>
                 {'detail' in item && item.detail && (
-                  <p className="mt-1 truncate text-[11px] font-medium text-[#8A96A8]">{item.detail}</p>
+                  <p className="mt-1 text-[11px] font-medium leading-relaxed text-[#8A96A8]">{item.detail}</p>
                 )}
               </div>
             </div>
@@ -1369,6 +1448,7 @@ export function ReportContent({
           normalized={normalized}
           rawReport={report}
           isLoading={isLoading}
+          viewMode="analyst"
         />
       )}
     </main>

@@ -307,6 +307,28 @@ export interface OptimizationPath {
   completion_signals: string[];
 }
 
+export type ClientDecisionPriority = "immediate" | "high" | "planned" | "monitor";
+export type ClientDecisionStage = "fix_first" | "build_next" | "strengthen_after";
+
+export interface ClientDecisionWorkPhase {
+  stage: ClientDecisionStage;
+  label: string;
+  layer_keys: LayerKey[];
+  layer_labels: string[];
+  summary: string;
+}
+
+export interface ClientDecisionContext {
+  priority_level: ClientDecisionPriority;
+  priority_label: string;
+  why_act_now: string;
+  issue_count: number;
+  affected_layer_count: number;
+  work_phase_count: number;
+  score_interpretation: string;
+  work_sequence: ClientDecisionWorkPhase[];
+}
+
 export interface ClientSummary {
   title: string;
   plain_language_summary: string;
@@ -314,6 +336,7 @@ export interface ClientSummary {
   first_priority: string;
   not_first_priority: string;
   expected_change: string;
+  decision_context?: ClientDecisionContext | null;
 }
 
 export interface AgencyBranding {
