@@ -724,6 +724,32 @@ function ReportsPage() {
             });
             resultSaved = true;
           }
+
+          if (data.status === "failed") {
+            eventSource.close();
+            taskDone = true;
+            if (taskId) completedTaskIdsRef.current.add(taskId);
+            const failurePayload = data.result || data;
+            setReport((prev) => prev?.task_id === taskId ? {
+              ...prev,
+              ...failedReportPatch(taskId, failurePayload, "backend_failed"),
+            } : prev);
+            try {
+              await fetch("/api/report-status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(buildReportStatusPayload({
+                  result: failurePayload,
+                  failed: true,
+                  failure_reason: typeof failurePayload?.error_code === "string"
+                    ? failurePayload.error_code
+                    : "backend_failed",
+                })),
+              });
+            } catch {}
+            await loadHistory();
+            return;
+          }
         }
       } catch {}
 
