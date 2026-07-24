@@ -10,7 +10,7 @@ import { V21OptimizationPath } from "./V21OptimizationPath";
 import { V21OverallConclusion } from "./V21OverallConclusion";
 import { V21PageLevel } from "./V21PageLevel";
 import { V21TrustLayers } from "./V21TrustLayers";
-import type { V21ViewMode } from "./viewMode";
+import { isAnalystView, type V21ViewMode } from "./viewMode";
 
 export const V21_SECTION_IDS = {
   "Overall Conclusion": "section-overall-conclusion",
@@ -39,6 +39,7 @@ export function ReportV21Content({
   sectionIdsEnabled?: boolean;
 }) {
   const report = normalized.reportV21;
+  const analyst = isAnalystView(viewMode);
   const pageLevel = report.page_level ?? {
     label: "Unknown",
     what_it_looks_like: "No structured page-level explanation was available.",
@@ -76,9 +77,11 @@ export function ReportV21Content({
         <V21PageLevel pageLevel={pageLevel} viewMode={viewMode} />
       </Section>
 
-      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Key Issues"] : undefined} title="Key Issues">
-        <V21KeyIssues keyIssues={keyIssues} viewMode={viewMode} />
-      </Section>
+      {analyst && (
+        <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Key Issues"] : undefined} title="Key Issues">
+          <V21KeyIssues keyIssues={keyIssues} viewMode={viewMode} />
+        </Section>
+      )}
 
       <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Trust Layer Breakdown"] : undefined} title="Trust Layer Breakdown">
         <V21TrustLayers layers={report.layers} viewMode={viewMode} />
@@ -88,9 +91,11 @@ export function ReportV21Content({
         <V21OptimizationPath optimizationPath={optimizationPath} viewMode={viewMode} />
       </Section>
 
-      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Business Presence Audit"] : undefined} title="Business Presence Audit">
-        <V21BusinessPresenceAudit reportV21={report} source={normalized.source} viewMode={viewMode} />
-      </Section>
+      {analyst && (
+        <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Business Presence Audit"] : undefined} title="Business Presence Audit">
+          <V21BusinessPresenceAudit reportV21={report} source={normalized.source} viewMode={viewMode} />
+        </Section>
+      )}
     </div>
   );
 }

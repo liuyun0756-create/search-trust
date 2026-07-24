@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import {
   Lock, Download,
   Loader2, AlertTriangle,
-  Copy, FileText, Link2, CalendarDays, BadgeInfo, CheckCircle2,
+  Copy, FileText, Globe2, Link2, CalendarDays, BadgeInfo, CheckCircle2,
   ChevronDown, Eye, X as XIcon,
   RotateCcw, ArrowLeft
 } from 'lucide-react';
@@ -1320,28 +1320,19 @@ export function ReportContent({
           )}
         </div>
 
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#A5D020] bg-[#FBFFF1] px-4 py-3 text-[14px] font-medium text-[#6B7280]">
-          <a
-            href={report.page_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="min-w-0 flex-1 truncate hover:text-[#1A1F2B]"
-            title={report.page_url}
-          >
-            {report.page_url}
-          </a>
-          <button
-            type="button"
-            onClick={() => copyText(report.page_url, 'Report URL copied.')}
-            className="shrink-0 rounded-lg p-1.5 text-[#657083] transition-colors hover:bg-white hover:text-[#1A1F2B]"
-            aria-label="Copy report URL"
-          >
-            <Copy className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="grid overflow-hidden rounded-2xl border border-gray-200 bg-white md:grid-cols-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1.55fr)]">
+        <div className="grid grid-cols-1 gap-x-6 gap-y-6 py-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(0,1.8fr)_minmax(7.5rem,0.8fr)_minmax(8rem,1fr)_minmax(8rem,0.9fr)_minmax(0,1.4fr)]">
           {[
+            {
+              icon: Globe2,
+              label: 'Page URL',
+              value: report.page_url,
+              href: report.page_url,
+              copyValue: report.page_url,
+              copyMessage: 'Report URL copied.',
+              copyLabel: 'Copy report URL',
+              tone: 'text-[#1A1F2B]',
+              valueClassName: '[overflow-wrap:anywhere]',
+            },
             {
               icon: FileText,
               label: 'Page Type',
@@ -1369,38 +1360,52 @@ export function ReportContent({
               label: 'Report ID',
               value: displayReportId || '—',
               copyValue: displayReportId,
+              copyMessage: 'Report ID copied.',
+              copyLabel: 'Copy report ID',
               tone: 'text-[#1A1F2B]',
               valueClassName: '[overflow-wrap:anywhere]',
             },
-          ].map((item, index) => (
+          ].map((item) => (
             <div
               key={item.label}
-              className={`flex min-w-0 items-start gap-4 px-5 py-5 ${
-                index === 1
-                  ? 'border-t border-gray-200 md:border-l md:border-t-0'
-                  : index === 2
-                    ? 'border-t border-gray-200 lg:border-l lg:border-t-0'
-                    : index === 3
-                      ? 'border-t border-gray-200 md:border-l lg:border-t-0'
-                      : ''
-              }`}
+              className="flex min-w-0 items-start gap-3"
             >
-              <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
-                <item.icon className="h-5 w-5" />
+              <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
+                <item.icon className="h-[18px] w-[18px]" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="mb-1.5 text-[12px] font-bold text-[#8A96A8]">{item.label}</p>
+                <p className="mb-1 text-[11px] font-black uppercase tracking-[0.1em] text-[#8A96A8]">{item.label}</p>
                 <div className="flex min-w-0 items-start gap-1.5">
-                  <p
-                    className={`min-w-0 flex-1 text-[12px] font-bold leading-relaxed ${item.tone} ${
-                      'valueClassName' in item ? item.valueClassName : ''
-                    }`}
-                    title={typeof item.value === 'string' ? item.value : undefined}
-                  >
-                    {item.value}
-                  </p>
+                  {'href' in item && item.href ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`min-w-0 flex-1 text-[13px] font-bold leading-relaxed transition-colors hover:text-[#6F8F12] ${item.tone} ${
+                        'valueClassName' in item ? item.valueClassName : ''
+                      }`}
+                      title={item.href}
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    <p
+                      className={`min-w-0 flex-1 text-[13px] font-bold leading-relaxed ${item.tone} ${
+                        'valueClassName' in item ? item.valueClassName : ''
+                      }`}
+                      title={typeof item.value === 'string' ? item.value : undefined}
+                    >
+                      {item.value}
+                    </p>
+                  )}
                   {'copyValue' in item && item.copyValue && (
-                    <button type="button" onClick={() => copyText(item.copyValue, 'Report ID copied.')} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-[#1A1F2B]" aria-label="Copy report ID" title="Copy full report ID">
+                    <button
+                      type="button"
+                      onClick={() => copyText(item.copyValue, item.copyMessage)}
+                      className="shrink-0 rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#1A1F2B]"
+                      aria-label={item.copyLabel}
+                      title={item.copyLabel}
+                    >
                       <Copy className="h-3.5 w-3.5" />
                     </button>
                   )}

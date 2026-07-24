@@ -1099,7 +1099,7 @@ function OptimizationPathSection({ reportV21, variant }: { reportV21: ReportV21;
   const path = reportV21.optimization_path;
   return (
     <Section title="Optimization Path">
-      <ActionSection title="Must Execute Now" actions={path.must_execute_now} limit={variant === "client" ? 3 : undefined} compact={variant === "client"} />
+      {variant === "full" && <ActionSection title="Must Execute Now" actions={path.must_execute_now} />}
       {variant === "full" && <ActionSection title="Address After the Foundation" actions={path.defer_until_later} />}
       <View style={styles.statement}>
         <Text style={styles.cardTitle}>Improvement Sequence</Text>
@@ -1371,10 +1371,10 @@ export function ReportPDFDocument({
         <ReportHeader report={report} reportV21={reportV21} normalized={normalized} brandingOverride={branding} />
         <ExecutiveSummary reportV21={reportV21} variant={variant} />
         <PageLevelSection reportV21={reportV21} />
-        <KeyIssuesSection reportV21={reportV21} variant={variant} />
+        {variant === "full" && <KeyIssuesSection reportV21={reportV21} variant={variant} />}
         <TrustLayersSection reportV21={reportV21} variant={variant} />
         <OptimizationPathSection reportV21={reportV21} variant={variant} />
-        <BusinessPresenceAuditSection reportV21={reportV21} variant={variant} />
+        {variant === "full" && <BusinessPresenceAuditSection reportV21={reportV21} variant={variant} />}
         <MethodFooter />
 
         <View style={styles.fixedFooter} fixed>

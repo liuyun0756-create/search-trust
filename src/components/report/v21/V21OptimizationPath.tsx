@@ -13,7 +13,7 @@ export function V21OptimizationPath({ optimizationPath, viewMode = "analyst" }: 
   const analyst = isAnalystView(viewMode);
   return (
     <div className="space-y-5">
-      <V21ActionItems actions={optimizationPath.must_execute_now} title="Must execute now" viewMode={viewMode} />
+      {analyst && <V21ActionItems actions={optimizationPath.must_execute_now} title="Must execute now" viewMode={viewMode} />}
       {analyst && <V21ActionItems actions={optimizationPath.defer_until_later} title="Address after the foundation" viewMode={viewMode} />}
       {analyst && <V21ActionItems actions={optimizationPath.do_not_prioritize_yet} title="Do not prioritize yet" viewMode={viewMode} />}
       <div className="rounded-[22px] border border-gray-100 bg-white p-5 shadow-sm">
@@ -25,7 +25,7 @@ export function V21OptimizationPath({ optimizationPath, viewMode = "analyst" }: 
           </article>)}
         </div>
       </div>
-      {optimizationPath.fix_order_warning && <div className="rounded-[20px] border border-amber-100 bg-amber-50 p-5"><p className="mb-2 text-[12px] font-black uppercase tracking-[0.14em] text-amber-700">Why order matters</p><p className="text-[14px] font-medium leading-relaxed text-amber-900">{optimizationPath.fix_order_warning}</p></div>}
+      {analyst && optimizationPath.fix_order_warning && <div className="rounded-[20px] border border-amber-100 bg-amber-50 p-5"><p className="mb-2 text-[12px] font-black uppercase tracking-[0.14em] text-amber-700">Why order matters</p><p className="text-[14px] font-medium leading-relaxed text-amber-900">{optimizationPath.fix_order_warning}</p></div>}
     </div>
   );
 }

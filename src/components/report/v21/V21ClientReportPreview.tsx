@@ -100,7 +100,7 @@ export function V21ClientReportPreview({
               </h2>
             </div>
             <p className="mt-0.5 hidden truncate text-[12px] font-medium text-gray-500 md:block">
-              Client-facing conclusions and work scope. Technical evidence, rules and internal implementation detail are excluded.
+              Client-facing conclusions, trust-layer status and improvement sequence. Technical details are excluded.
             </p>
           </div>
 
@@ -130,7 +130,7 @@ export function V21ClientReportPreview({
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#DCE9BE] bg-[#FBFDF5] px-4 py-3 text-[#526315] sm:px-5">
           <Eye className="mt-0.5 h-4 w-4 shrink-0" />
           <p className="text-[12px] font-semibold leading-relaxed sm:text-[13px]">
-            This preview mirrors the client-facing report. Return to the Agency Audit for raw evidence, rule coverage and detailed implementation guidance.
+            This preview mirrors the Client PDF. Return to the Agency Audit for key issues, Business Presence, raw evidence and implementation guidance.
           </p>
         </div>
 
