@@ -229,6 +229,8 @@ export interface ActionItem {
   task_title: string;
   affected_layer: LayerKey;
   related_rule_ids: number[];
+  addressed_findings?: string[];
+  required_changes?: string[];
   where_to_add: string[];
   what_to_add: string[];
   example_copy: string[];
@@ -263,6 +265,7 @@ export interface LayerFinding {
   layer_name: string;
   layer_label: string;
   status: LayerStatus;
+  presentation_mode?: "healthy" | "healthy_with_opportunities" | "attention";
   checked_rule_ids: number[];
   triggered_rule_ids: number[];
   triggered_findings?: string[];

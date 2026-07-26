@@ -67,8 +67,21 @@ export function V21TrustLayers({
         </p>
       </div>
 
-      {orderedLayers.map((layer) => (
-        <article key={layer.layer_key} className="rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm">
+      {orderedLayers.map((layer) => {
+        const findingCount = safeList(layer.triggered_rule_ids).length;
+        const presentationMode = layer.presentation_mode
+          || (layer.status === "good"
+            ? findingCount === 0 ? "healthy" : "healthy_with_opportunities"
+            : "attention");
+        const isHealthy = presentationMode === "healthy";
+        const isHealthyWithOpportunities = presentationMode === "healthy_with_opportunities";
+        const metricLabel = layer.status === "good" ? "Improvement opportunities" : "Findings requiring attention";
+        const findingsTitle = isHealthyWithOpportunities ? "Opportunities to strengthen" : "What needs attention";
+        const fixesTitle = isHealthyWithOpportunities ? "Recommended enhancements" : "Suggested fixes";
+        const actionTitle = isHealthyWithOpportunities ? "Recommended enhancements" : "Consolidated layer actions";
+
+        return (
+          <article key={layer.layer_key} className="rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="mb-1 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">{getLayerDisplayConfig(layer.layer_key).label}</p>
@@ -85,19 +98,19 @@ export function V21TrustLayers({
           {showTechnical && (
             <div className="mb-4 flex flex-wrap gap-2">
               <Metric label="Signals assessed" value={getLayerDisplayConfig(layer.layer_key).signalsAssessed} />
-              <Metric label="Findings requiring attention" value={safeList(layer.triggered_rule_ids).length} />
+              <Metric label={metricLabel} value={findingCount} />
             </div>
           )}
 
           {showTechnical && safeList(layer.triggered_findings).length > 0 && (
-            <div className="mb-4 rounded-2xl border border-amber-100 bg-amber-50/40 p-4">
-              <p className="mb-3 text-[12px] font-black uppercase tracking-[0.12em] text-amber-700">
-                What needs attention ({safeList(layer.triggered_findings).length})
+            <div className={`mb-4 rounded-2xl border p-4 ${isHealthyWithOpportunities ? "border-[#DDE9C4] bg-[#FBFDF5]" : "border-amber-100 bg-amber-50/40"}`}>
+              <p className={`mb-3 text-[12px] font-black uppercase tracking-[0.12em] ${isHealthyWithOpportunities ? "text-[#6F8F16]" : "text-amber-700"}`}>
+                {findingsTitle} ({safeList(layer.triggered_findings).length})
               </p>
               <ul className="grid grid-cols-1 gap-x-6 gap-y-2 lg:grid-cols-2">
                 {safeList(layer.triggered_findings).map((finding, index) => (
                   <li key={`${finding}-${index}`} className="flex gap-2 text-[13px] font-medium leading-relaxed text-gray-700">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                    <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${isHealthyWithOpportunities ? "bg-[#A5D020]" : "bg-amber-500"}`} />
                     <span>{finding}</span>
                   </li>
                 ))}
@@ -105,9 +118,9 @@ export function V21TrustLayers({
             </div>
           )}
 
-          {safeList(layer.suggested_fixes).length > 0 && (
+          {!isHealthy && safeList(layer.suggested_fixes).length > 0 && (
             <div className="mb-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
-              <p className="mb-2 text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">Suggested fixes</p>
+              <p className="mb-2 text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">{fixesTitle}</p>
               <ul className="space-y-1.5">
                 {safeList(layer.suggested_fixes).map((fix, index) => (
                   <li key={`${fix}-${index}`} className="flex gap-2 text-[13px] font-medium leading-relaxed text-gray-600">
@@ -122,11 +135,12 @@ export function V21TrustLayers({
           {showTechnical ? (
             <div className="space-y-3">
               <V21EvidenceList evidenceItems={layer.evidence_items} viewMode={viewMode} showEmpty={layer.status === "weak" || layer.status === "medium"} />
-              <V21ActionItems actions={layer.action_items} title="Layer actions" viewMode={viewMode} />
+              <V21ActionItems actions={layer.action_items} title={actionTitle} viewMode={viewMode} />
             </div>
           ) : null}
-        </article>
-      ))}
+          </article>
+        );
+      })}
     </div>
   );
 }

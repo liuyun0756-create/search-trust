@@ -698,6 +698,18 @@ function ActionCard({ action, compact = false }: { action: ActionItem; compact?:
         <StatusBadge value={action.priority} />
       </View>
       <Field label="Affected Layer" value={displayLayer(action.affected_layer)} maxLength={120} />
+      {!compact && safeList(action.addressed_findings).length > 0 && (
+        <View style={{ marginBottom: 7 }}>
+          <Text style={styles.label}>Addresses {safeList(action.addressed_findings).length} Findings</Text>
+          <BulletList items={action.addressed_findings} maxLength={220} />
+        </View>
+      )}
+      {!compact && safeList(action.required_changes).length > 0 && (
+        <View style={{ marginBottom: 7 }}>
+          <Text style={styles.label}>Required Changes</Text>
+          <BulletList items={action.required_changes} maxLength={260} />
+        </View>
+      )}
       <Field label="Where To Add" value={safeList(action.where_to_add).join("; ")} maxLength={compact ? 160 : 260} />
       <Field label="What To Add" value={safeList(action.what_to_add).join("; ")} maxLength={compact ? 180 : 280} />
       {safeList(action.example_copy).length > 0 && (
@@ -1053,6 +1065,13 @@ function TrustLayersSection({ reportV21, variant }: { reportV21: ReportV21; vari
         {REQUIRED_LAYER_KEYS.map((layerKey, index) => {
           const layer = layerByKey(reportV21, layerKey);
           const config = getLayerDisplayConfig(layerKey);
+          const findingCount = safeList(layer.triggered_rule_ids).length;
+          const presentationMode = layer.presentation_mode
+            || (layer.status === "good"
+              ? findingCount === 0 ? "healthy" : "healthy_with_opportunities"
+              : "attention");
+          const isHealthy = presentationMode === "healthy";
+          const isHealthyWithOpportunities = presentationMode === "healthy_with_opportunities";
           return (
             <View key={layerKey} style={[styles.layerCard, index % 2 === 1 ? styles.layerCardEven : {}]}>
               <View style={styles.layerHeader}>
@@ -1062,16 +1081,16 @@ function TrustLayersSection({ reportV21, variant }: { reportV21: ReportV21; vari
               <Text style={styles.mutedText}>{config.name}</Text>
               <Field label="Assessment" value={layer.summary || layer.explanation} maxLength={230} />
               {variant === "full" && <Text style={styles.mutedText}>
-                Signals assessed: {config.signalsAssessed} / Findings requiring attention: {safeList(layer.triggered_rule_ids).length}
+                Signals assessed: {config.signalsAssessed} / {layer.status === "good" ? "Improvement opportunities" : "Findings requiring attention"}: {findingCount}
               </Text>}
               {variant === "full" && safeList(layer.triggered_findings).length > 0 && (
                 <View style={{ marginTop: 6 }}>
-                  <Text style={styles.label}>What Needs Attention</Text>
-                  <BulletList items={layer.triggered_findings} limit={2} maxLength={120} />
+                  <Text style={styles.label}>{isHealthyWithOpportunities ? "Opportunities To Strengthen" : "What Needs Attention"}</Text>
+                  <BulletList items={layer.triggered_findings} maxLength={150} />
                 </View>
               )}
-              {variant === "full" && <View style={{ marginTop: 6 }}>
-                <Text style={styles.label}>Top Suggested Fixes</Text>
+              {variant === "full" && !isHealthy && safeList(layer.suggested_fixes).length > 0 && <View style={{ marginTop: 6 }}>
+                <Text style={styles.label}>{isHealthyWithOpportunities ? "Recommended Enhancements" : "Suggested Fixes"}</Text>
                 <BulletList items={layer.suggested_fixes} limit={3} maxLength={150} />
               </View>}
               {variant === "full" && <EvidenceSummary evidence={layer.evidence_items} limit={layer.evidence_items.length} />}

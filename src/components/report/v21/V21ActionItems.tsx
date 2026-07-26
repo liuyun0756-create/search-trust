@@ -36,6 +36,12 @@ function ActionCard({ item, viewMode }: { item: ActionItem; viewMode: V21ViewMod
         <span className="rounded-full border border-gray-100 bg-white px-2.5 py-1 text-[11px] font-bold text-gray-500">{item.effort_level} effort</span>
       </div>
       <h4 className="text-[16px] font-black text-[#1A212B]">{item.task_title}</h4>
+      {analyst && (safeList(item.addressed_findings).length > 0 || safeList(item.required_changes).length > 0) && (
+        <div className="mt-4 grid gap-4 rounded-xl border border-[#E4EDD2] bg-[#FBFDF5] p-4 md:grid-cols-2">
+          <FieldList label={`Addresses ${safeList(item.addressed_findings).length} findings`} values={item.addressed_findings} />
+          <FieldList label="Required changes" values={item.required_changes} />
+        </div>
+      )}
       <div className="mt-4 grid gap-4 md:grid-cols-2"><FieldList label="Where to add" values={item.where_to_add} /><FieldList label="What to add" values={item.what_to_add} /></div>
       {safeList(item.example_copy).filter(Boolean).length > 0 && <FieldList className="mt-4 rounded-xl border border-[#E4EDD2] bg-[#FBFDF5] p-3" label="Example copy" values={item.example_copy} />}
       {item.expected_effect && <p className="mt-4 text-[13px] font-medium leading-relaxed text-gray-600"><span className="font-bold text-[#1A212B]">Expected effect: </span>{item.expected_effect}</p>}
