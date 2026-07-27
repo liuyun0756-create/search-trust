@@ -776,7 +776,7 @@ function renderModule(tab: TabId, data: Record<string, any>) {
     case 'Page Level': return <Module2PageLevel data={data} />;
     case 'Key Issues': return <Module3KeyProblems data={data} />;
     case 'Trust Layer Breakdown': return <Module4EightLayers data={data} />;
-    case 'Optimization Path': return <Module5Optimization data={data} />;
+    case 'Implementation Roadmap': return <Module5Optimization data={data} />;
     case 'Business Presence Audit': return <SectionSkeleton />;
   }
 }
@@ -1430,7 +1430,7 @@ export function ReportContent({
 
       {/* Sticky Tab Bar */}
       {!showFailed && <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
-        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {TABS.map((tab) => (
             <button
               key={tab}

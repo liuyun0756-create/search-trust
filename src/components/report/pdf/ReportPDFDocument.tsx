@@ -1,10 +1,13 @@
 import React from "react";
 import { Document, Image, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
+  buildActiveWorkPhases,
   extractGBPAlignmentRows,
+  formatWorkLayer,
   getClientDecisionContext,
   getEffectiveBranding,
   getLayerDisplayConfig,
+  IMPROVEMENT_SEQUENCE,
   normalizeReportToV21,
   REQUIRED_LAYER_KEYS,
 } from "@/lib/report-v21";
@@ -1116,16 +1119,78 @@ function ActionSection({ title, actions, limit, compact = false }: { title: stri
 
 function OptimizationPathSection({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
   const path = reportV21.optimization_path;
+  const activePhases = buildActiveWorkPhases(path);
   return (
-    <Section title="Optimization Path">
-      {variant === "full" && <ActionSection title="Must Execute Now" actions={path.must_execute_now} />}
-      {variant === "full" && <ActionSection title="Address After the Foundation" actions={path.defer_until_later} />}
-      <View style={styles.statement}>
+    <Section title="Implementation Roadmap">
+      <View style={styles.softCard}>
         <Text style={styles.cardTitle}>Improvement Sequence</Text>
-        <Text style={styles.bodyText}>L1-L3 establish a stable business entity. L4-L5 add local, real-world detail. L6-L7 add accountable, unique proof. L8 Algorithm Fit is reassessed after those earlier signals improve.</Text>
+        <Text style={styles.mutedText}>The fixed SearchTrust order for repairing trust signals. This is a method overview, not a progress control.</Text>
+        <View style={[styles.layerGrid, { marginTop: 8 }]}>
+          {IMPROVEMENT_SEQUENCE.map((phase, index) => (
+            <View
+              key={phase.number}
+              style={[styles.layerCard, index % 2 === 1 ? styles.layerCardEven : {}, { backgroundColor: "#F8FAFC" }]}
+            >
+              <Text style={styles.label}>Phase {phase.number} · {phase.layerRange}</Text>
+              <Text style={styles.cardTitle}>{phase.title}</Text>
+              <Text style={styles.mutedText}>{phase.detail}</Text>
+            </View>
+          ))}
+        </View>
+
+        {variant === "full" && (
+          <View style={{ marginTop: 4 }}>
+            <Text style={styles.cardTitle}>Current Audit Work Plan</Text>
+            {activePhases.length ? activePhases.map((phase) => (
+              <View key={phase.number} style={{ marginTop: 6 }}>
+                <Text style={styles.label}>Phase {phase.number} · {phase.layerRange} · {phase.title}</Text>
+                {phase.affectedLayers.map((layerKey) => (
+                  <View key={layerKey} style={{ marginTop: 3 }}>
+                    <Text style={styles.mutedText}>{formatWorkLayer(layerKey)}</Text>
+                    <BulletList
+                      items={phase.actions
+                        .filter((action) => action.affected_layer === layerKey)
+                        .map((action) => `${action.task_title} (${action.priority})`)}
+                      maxLength={150}
+                    />
+                  </View>
+                ))}
+              </View>
+            )) : <Text style={styles.bodyText}>No active remediation work was confirmed in this audit.</Text>}
+          </View>
+        )}
       </View>
-      {variant === "full" && <Field label="Fix Order Warning" value={path.fix_order_warning} maxLength={360} />}
-      {variant === "full" && <><Text style={styles.label}>Completion Signals</Text><BulletList items={path.completion_signals} /></>}
+
+      {variant === "full" && (
+        <View style={styles.statement}>
+          <Text style={styles.cardTitle}>Completion, Observation &amp; Re-audit</Text>
+          <Text style={styles.label}>Completion Gate</Text>
+          <BulletList
+            items={activePhases.length
+              ? activePhases.map((phase) => `Phase ${phase.number}: ${phase.completionGate}`)
+              : ["No active phase requires a completion gate."]}
+            maxLength={210}
+          />
+          <Text style={[styles.label, { marginTop: 5 }]}>Observation Window</Text>
+          <BulletList
+            items={activePhases.length
+              ? activePhases.map((phase) => `Phase ${phase.number}: ${phase.observationWindow}`)
+              : ["Continue normal monitoring and reassess after meaningful page changes."]}
+            maxLength={160}
+          />
+          <Text style={[styles.label, { marginTop: 5 }]}>Re-audit Checkpoint</Text>
+          <BulletList
+            items={[
+              "Run a fresh full audit after the relevant observation window.",
+              "Compare the new rule vector and layer statuses before closing the work.",
+            ]}
+            maxLength={180}
+          />
+          <Text style={[styles.mutedText, { marginTop: 5 }]}>
+            Work on the next phase may begin immediately. The observation window indicates when search impact can be evaluated more reliably.
+          </Text>
+        </View>
+      )}
     </Section>
   );
 }

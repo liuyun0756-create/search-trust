@@ -7,3 +7,4 @@ export * from "./gbpAlignment";
 export * from "./pdfExportability";
 export * from "./branding";
 export * from "./clientDecisionContext";
+export * from "./implementationRoadmap";

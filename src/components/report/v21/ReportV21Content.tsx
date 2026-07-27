@@ -17,7 +17,7 @@ export const V21_SECTION_IDS = {
   "Page Level": "section-page-level",
   "Key Issues": "section-key-issues",
   "Trust Layer Breakdown": "section-trust-layer-breakdown",
-  "Optimization Path": "section-optimization-path",
+  "Implementation Roadmap": "section-implementation-roadmap",
   "Business Presence Audit": "section-business-presence-audit",
 } as const;
 
@@ -87,7 +87,7 @@ export function ReportV21Content({
         <V21TrustLayers layers={report.layers} viewMode={viewMode} />
       </Section>
 
-      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Optimization Path"] : undefined} title="Optimization Path">
+      <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Implementation Roadmap"] : undefined} title="Implementation Roadmap">
         <V21OptimizationPath optimizationPath={optimizationPath} viewMode={viewMode} />
       </Section>
 

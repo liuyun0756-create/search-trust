@@ -1,31 +1,186 @@
-import type { OptimizationPath } from "@/lib/report-v21";
-import { V21ActionItems } from "./V21ActionItems";
+import { CheckCircle2, Clock3, RefreshCw } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  buildActiveWorkPhases,
+  formatWorkLayer,
+  IMPROVEMENT_SEQUENCE,
+  type OptimizationPath,
+} from "@/lib/report-v21";
 import { isAnalystView, type V21ViewMode } from "./viewMode";
 
-const PHASES = [
-  { layers: "L1-L3", title: "Stabilize the business entity", detail: "Establish the basic eligibility, presence, and consistency signals that let the page connect to one real business.", outcome: "A stable foundation for later page improvements." },
-  { layers: "L4-L5", title: "Make the service page locally credible", detail: "Add specific local facts and real-world context that cannot be reused unchanged on any other page.", outcome: "Stronger local relevance and evidence." },
-  { layers: "L6-L7", title: "Add accountable, unique proof", detail: "Support claims with accountable details and page-specific value.", outcome: "More defensible trust and less template-like content." },
-  { layers: "L8", title: "Reassess search-era fit", detail: "Algorithm Fit is an outcome layer. It is reassessed after the earlier trust signals have been improved, rather than treated as a standalone copy task.", outcome: "A clearer view of how the full page is likely to be interpreted." },
-];
-
-export function V21OptimizationPath({ optimizationPath, viewMode = "analyst" }: { optimizationPath: OptimizationPath; viewMode?: V21ViewMode }) {
+export function V21OptimizationPath({
+  optimizationPath,
+  viewMode = "analyst",
+}: {
+  optimizationPath: OptimizationPath;
+  viewMode?: V21ViewMode;
+}) {
   const analyst = isAnalystView(viewMode);
+  const activePhases = buildActiveWorkPhases(optimizationPath);
+
   return (
     <div className="space-y-5">
-      {analyst && <V21ActionItems actions={optimizationPath.must_execute_now} title="Must execute now" viewMode={viewMode} />}
-      {analyst && <V21ActionItems actions={optimizationPath.defer_until_later} title="Address after the foundation" viewMode={viewMode} />}
-      {analyst && <V21ActionItems actions={optimizationPath.do_not_prioritize_yet} title="Do not prioritize yet" viewMode={viewMode} />}
-      <div className="rounded-[22px] border border-gray-100 bg-white p-5 shadow-sm">
-        <p className="mb-4 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">Improvement sequence</p>
-        <div className="grid gap-3 lg:grid-cols-2">
-          {PHASES.map((phase, index) => <article key={phase.layers} className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
-            <div className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#A5D020] text-[12px] font-black text-[#1A212B]">{index + 1}</span><p className="text-[12px] font-black uppercase tracking-[0.12em] text-gray-500">{phase.layers}</p></div>
-            <h3 className="mt-3 text-[16px] font-black text-[#1A212B]">{phase.title}</h3><p className="mt-2 text-[13px] font-medium leading-relaxed text-gray-600">{phase.detail}</p><p className="mt-3 text-[13px] font-bold leading-relaxed text-[#1A212B]">Expected: {phase.outcome}</p>
-          </article>)}
+      <section className="rounded-[22px] border border-gray-100 bg-white p-5 shadow-sm md:p-6">
+        <div>
+          <p className="text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">
+            Improvement sequence
+          </p>
+          <p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-500">
+            The fixed SearchTrust order for repairing trust signals. This is a method overview, not a progress control.
+          </p>
         </div>
-      </div>
-      {analyst && optimizationPath.fix_order_warning && <div className="rounded-[20px] border border-amber-100 bg-amber-50 p-5"><p className="mb-2 text-[12px] font-black uppercase tracking-[0.14em] text-amber-700">Why order matters</p><p className="text-[14px] font-medium leading-relaxed text-amber-900">{optimizationPath.fix_order_warning}</p></div>}
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {IMPROVEMENT_SEQUENCE.map((phase) => (
+            <article
+              key={phase.number}
+              className="min-h-[112px] rounded-xl border border-gray-100 bg-gray-50/70 p-3.5"
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#A5D020] text-[11px] font-black text-[#1A212B]">
+                  {phase.number}
+                </span>
+                <span className="text-[11px] font-black uppercase tracking-[0.1em] text-gray-500">
+                  {phase.layerRange}
+                </span>
+              </div>
+              <h3 className="mt-2.5 text-[14px] font-black leading-snug text-[#1A212B]">
+                {phase.title}
+              </h3>
+              <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-gray-500">
+                {phase.detail}
+              </p>
+            </article>
+          ))}
+        </div>
+
+        {analyst && (
+          <div className="mt-6 border-t border-gray-100 pt-5">
+            <p className="text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">
+              Current audit work plan
+            </p>
+            <p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-500">
+              Confirmed work from this audit, ordered by the lowest affected trust layer.
+            </p>
+
+            {activePhases.length ? (
+              <div className="mt-4 divide-y divide-gray-100 rounded-xl border border-gray-100 bg-[#FCFCFB] px-4">
+                {activePhases.map((phase) => (
+                  <article key={phase.number} className="grid gap-3 py-4 md:grid-cols-[190px_minmax(0,1fr)]">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.1em] text-[#7A8A15]">
+                        Phase {phase.number} · {phase.layerRange}
+                      </p>
+                      <h3 className="mt-1 text-[14px] font-black text-[#1A212B]">{phase.title}</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {phase.affectedLayers.map((layerKey) => {
+                        const actions = phase.actions.filter((action) => action.affected_layer === layerKey);
+                        return (
+                          <div key={layerKey}>
+                            <p className="text-[12px] font-bold text-gray-500">{formatWorkLayer(layerKey)}</p>
+                            <ul className="mt-1.5 space-y-1.5">
+                              {actions.map((action) => (
+                                <li
+                                  key={action.id || action.task_title}
+                                  className="flex items-start gap-2 text-[13px] font-semibold leading-relaxed text-[#1A212B]"
+                                >
+                                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#A5D020]" />
+                                  <span>{action.task_title}</span>
+                                  <span className="shrink-0 text-[11px] font-bold uppercase text-gray-400">
+                                    {action.priority}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-[13px] font-semibold text-emerald-800">
+                No active remediation work was confirmed in this audit.
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {analyst && (
+        <section className="rounded-[22px] border border-gray-100 bg-white p-5 shadow-sm md:p-6">
+          <div>
+            <p className="text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">
+              Completion, observation &amp; re-audit
+            </p>
+            <p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-500">
+              Use completion gates to close implementation work and observation windows to evaluate impact.
+            </p>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <GuidancePanel
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              title="Completion gate"
+              items={
+                activePhases.length
+                  ? activePhases.map((phase) => `Phase ${phase.number}: ${phase.completionGate}`)
+                  : ["No active phase requires a completion gate."]
+              }
+            />
+            <GuidancePanel
+              icon={<Clock3 className="h-4 w-4" />}
+              title="Observation window"
+              items={
+                activePhases.length
+                  ? activePhases.map((phase) => `Phase ${phase.number}: ${phase.observationWindow}`)
+                  : ["Continue normal monitoring and reassess after meaningful page changes."]
+              }
+            />
+            <GuidancePanel
+              icon={<RefreshCw className="h-4 w-4" />}
+              title="Re-audit checkpoint"
+              items={[
+                "Run a fresh full audit after the relevant observation window.",
+                "Compare the new rule vector and layer statuses before closing the work.",
+              ]}
+            />
+          </div>
+
+          <p className="mt-4 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-[12px] font-semibold leading-relaxed text-blue-900">
+            Work on the next phase may begin immediately. The observation window indicates when search impact can be evaluated more reliably.
+          </p>
+        </section>
+      )}
     </div>
+  );
+}
+
+function GuidancePanel({
+  icon,
+  title,
+  items,
+}: {
+  icon: ReactNode;
+  title: string;
+  items: string[];
+}) {
+  return (
+    <article className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+      <div className="flex items-center gap-2 text-[#7A8A15]">
+        {icon}
+        <h3 className="text-[12px] font-black uppercase tracking-[0.1em]">{title}</h3>
+      </div>
+      <ul className="mt-3 space-y-2">
+        {items.map((item) => (
+          <li key={item} className="flex items-start gap-2 text-[12px] font-medium leading-relaxed text-gray-600">
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#A5D020]" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </article>
   );
 }
