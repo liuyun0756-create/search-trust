@@ -387,6 +387,12 @@
         24,
         25
       ],
+      "triggered_findings": [
+        "An identifiable real business entity is not clearly present",
+        "A physical address was not found",
+        "The service area is not clearly declared",
+        "Business hours were not found"
+      ],
       "summary": "The page needs a stronger visible business identity.",
       "explanation": "Visitors should not have to infer who operates the service, where the company works, or how emergency dispatch is handled. A local service page should show this identity before asking for the call.",
       "evidence_items": [
@@ -419,6 +425,18 @@
             22,
             24,
             25
+          ],
+          "addressed_findings": [
+            "An identifiable real business entity is not clearly present",
+            "A physical address was not found",
+            "The service area is not clearly declared",
+            "Business hours were not found"
+          ],
+          "required_changes": [
+            "Make the real business name and identity explicit in prominent visible page areas.",
+            "Add the verified physical address in an appropriate visible contact location.",
+            "State the verified service area clearly and consistently.",
+            "Publish verified operating or availability hours where customers can find them."
           ],
           "where_to_add": [
             "Hero area beside or directly below the primary call button",
@@ -453,43 +471,82 @@
       "layer_key": "entity_consistency",
       "layer_name": "Entity Consistency",
       "layer_label": "L3 Entity Consistency",
-      "status": "not_checked",
-      "checked_rule_ids": [],
-      "triggered_rule_ids": [],
-      "summary": "Cross-source entity consistency was not verified in this sample.",
-      "explanation": "This representative fixture does not include a live business-profile lookup, citation check, schema extraction, or internal page crawl. The page should still prepare consistent identity language so those checks can be evaluated later.",
+      "status": "medium",
+      "checked_rule_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "triggered_rule_ids": [
+        1,
+        2
+      ],
+      "triggered_findings": [
+        "Public business-name wording differs between the page and GBP snapshot",
+        "The public address shown in GBP is missing from the page"
+      ],
+      "summary": "Core identity signals are present, but page-to-profile consistency needs correction.",
+      "explanation": "The representative page and GBP snapshot align on phone, website, hours, and primary service intent. Business-name wording differs, the page omits the public address, and service-area wording is only partially aligned.",
       "evidence_items": [
         {
-          "id": "ev-consistency-not-checked",
-          "source_type": "not_available",
-          "source_label": "Coverage limitation",
+          "id": "ev-consistency-business-name",
+          "source_type": "gbp",
+          "source_label": "GBP x Page alignment",
           "source_url": null,
-          "page_section": "External identity sources",
+          "page_section": "Business identity",
+          "extracted_text": "Express 24HR Plumbing and Drain",
+          "normalized_value": "Express 24HR Plumbing and Drain",
+          "expected_value": "Express 24HR Plumbing & Drain Services",
+          "comparison_result": "mismatch",
+          "confidence": "high",
+          "explanation": "The page and representative GBP snapshot use different public business-name wording."
+        },
+        {
+          "id": "ev-consistency-address",
+          "source_type": "gbp",
+          "source_label": "GBP x Page alignment",
+          "source_url": null,
+          "page_section": "Visible contact areas",
           "extracted_text": null,
-          "normalized_value": "Cross-source consistency not checked",
-          "expected_value": "Business identity compared across checked owned sources",
-          "comparison_result": "not_checked",
-          "confidence": "low",
-          "explanation": "The sample does not include external or internal source comparison data."
+          "normalized_value": null,
+          "expected_value": "1420 Service Way, Orlando, FL 32801",
+          "comparison_result": "missing",
+          "confidence": "high",
+          "explanation": "The representative GBP snapshot includes a public address that is not surfaced on the page."
         }
       ],
       "suggested_fixes": [
-        "Prepare a single approved name, phone, service-area, and hours format for the website before broader checks."
+        "Use one approved public business name across the page and GBP.",
+        "Add the verified public address and align visible service-area wording with the GBP."
       ],
       "action_items": [
         {
           "id": "act-identity-style-guide",
           "priority": "medium",
-          "task_title": "Create one approved website identity format",
+          "task_title": "Standardize the public business identity",
           "affected_layer": "entity_consistency",
-          "related_rule_ids": [],
+          "related_rule_ids": [
+            1,
+            2
+          ],
+          "addressed_findings": [
+            "Public business-name wording differs between the page and GBP snapshot",
+            "The public address shown in GBP is missing from the page"
+          ],
+          "required_changes": [
+            "Choose one verified public business name and use it consistently.",
+            "Add the verified public address to the appropriate visible contact area.",
+            "Align the visible service-area wording with the approved GBP coverage."
+          ],
           "where_to_add": [
-            "Internal content brief",
-            "Header or footer component",
-            "Contact modules used across service pages"
+            "Hero or primary identity block",
+            "Footer contact area",
+            "Reusable contact modules"
           ],
           "what_to_add": [
             "Canonical business name",
+            "Verified public address",
             "Canonical phone format",
             "Canonical service-area sentence",
             "Approved emergency availability wording"
@@ -498,14 +555,14 @@
             "Use this identity format across owned pages: Express 24 Hr Plumbing & Drain, 24-hour emergency plumbing and drain service, [primary phone], serving [local service area]."
           ],
           "implementation_notes": [
-            "This action prepares the site for consistency checks without making any external-profile claim.",
+            "Use verified page and GBP values rather than inventing identity details.",
             "Keep the wording short enough to reuse in headers, footers, and service sections."
           ],
           "completion_signals": [
-            "All owned service-page templates can reuse the same identity block.",
-            "Editors have a single source for business identity language."
+            "The page and GBP use the same approved public business name.",
+            "The page surfaces the verified address and aligned service-area language."
           ],
-          "expected_effect": "Future entity checks become easier because owned-page identity language is controlled.",
+          "expected_effect": "The business becomes easier to verify because its public identity is consistent across the checked surfaces.",
           "effort_level": "small"
         }
       ]
@@ -533,6 +590,12 @@
         4,
         32,
         34
+      ],
+      "triggered_findings": [
+        "Service descriptions remain highly generic",
+        "No meaningful time or activity trace is present",
+        "Local context language was not found",
+        "A specific service case was not found"
       ],
       "summary": "The page topic is specific, but service details need more concrete emergency context.",
       "explanation": "Emergency plumbing language is useful, but the page should explain the actual situations, symptoms, and service paths that local customers recognize.",
@@ -565,6 +628,18 @@
             4,
             32,
             34
+          ],
+          "addressed_findings": [
+            "Service descriptions remain highly generic",
+            "No meaningful time or activity trace is present",
+            "Local context language was not found",
+            "A specific service case was not found"
+          ],
+          "required_changes": [
+            "Replace broad service descriptions with concrete service-specific detail.",
+            "Add a verified date, time reference, recent activity marker, or service timeline.",
+            "Add factual local operating context tied to the checked service area.",
+            "Add one verified service case with the problem, response, and outcome."
           ],
           "where_to_add": [
             "Below the hero identity block",
@@ -612,6 +687,12 @@
         30,
         31
       ],
+      "triggered_findings": [
+        "No non-administrative geographic or entity anchor is present",
+        "No externally verifiable trust clue is present",
+        "Community-level geographic detail was not found",
+        "A concrete landmark reference was not found"
+      ],
       "summary": "The page needs stronger local and operational proof.",
       "explanation": "A service page should connect the claim to visible local operations: service area, dispatch flow, common property conditions, and proof that the company handles real calls.",
       "evidence_items": [
@@ -644,6 +725,18 @@
             11,
             30,
             31
+          ],
+          "addressed_findings": [
+            "No non-administrative geographic or entity anchor is present",
+            "No externally verifiable trust clue is present",
+            "Community-level geographic detail was not found",
+            "A concrete landmark reference was not found"
+          ],
+          "required_changes": [
+            "Add a verified neighborhood, landmark, facility, or operational geographic anchor.",
+            "Add a verifiable external clue that supports the page's real-world service claim.",
+            "Add verified community-level locations that are genuinely served.",
+            "Add a verified landmark or non-administrative place reference relevant to service delivery."
           ],
           "where_to_add": [
             "Mid-page trust section",
@@ -687,6 +780,10 @@
         9,
         10
       ],
+      "triggered_findings": [
+        "The page serves search demand without showing operational responsibility",
+        "Real-world constraints and complex cases are not addressed"
+      ],
       "summary": "The page should make service responsibility clearer.",
       "explanation": "Emergency customers need to know what happens after they call, how pricing or inspection is handled, and what the business will or will not promise before work begins.",
       "evidence_items": [
@@ -716,6 +813,14 @@
           "related_rule_ids": [
             9,
             10
+          ],
+          "addressed_findings": [
+            "The page serves search demand without showing operational responsibility",
+            "Real-world constraints and complex cases are not addressed"
+          ],
+          "required_changes": [
+            "Explain who handles the request and what responsibility the business takes during delivery.",
+            "Describe verified constraints, complex cases, exclusions, or escalation conditions."
           ],
           "where_to_add": [
             "Below emergency scenario blocks",
@@ -760,6 +865,10 @@
         13,
         14
       ],
+      "triggered_findings": [
+        "The page belongs to a highly similar page cluster",
+        "The page lacks a clear reason to be indexed separately"
+      ],
       "summary": "The page has a usable topic but needs more unique local service value.",
       "explanation": "A stronger page should contain details only this business can credibly say: process, coverage, technician approach, emergency triage, and service examples.",
       "evidence_items": [
@@ -789,6 +898,14 @@
           "related_rule_ids": [
             13,
             14
+          ],
+          "addressed_findings": [
+            "The page belongs to a highly similar page cluster",
+            "The page lacks a clear reason to be indexed separately"
+          ],
+          "required_changes": [
+            "Replace reusable cluster copy with page-specific material that cannot be repeated unchanged.",
+            "Add a distinct user purpose or value block that justifies this page being indexed separately."
           ],
           "where_to_add": [
             "Service body",

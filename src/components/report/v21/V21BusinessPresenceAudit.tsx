@@ -12,6 +12,11 @@ import type {
   NormalizedReportSource,
   ReportV21,
 } from "@/lib/report-v21";
+import {
+  getAdditionalBusinessPresenceActions,
+  getProposalOpportunityCopy,
+  NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE,
+} from "@/lib/report-v21";
 import { V21DataCoverage } from "./V21DataCoverage";
 import { V21GBPAlignment } from "./V21GBPAlignment";
 import { isAnalystView, type V21ViewMode } from "./viewMode";
@@ -44,16 +49,8 @@ export function V21BusinessPresenceAudit({
   const summary = audit.summary;
   const profile = audit.profile_activity;
   const reviews = audit.review_audit;
-  const proposalActions = audit.proposal_actions || [];
-  const proposalSummary = audit.proposal_summary || {
-    headline: proposalActions.length
-      ? `${proposalActions.length} proposal-ready work item(s) identified`
-      : "No confirmed work item from the available data",
-    summary: "This saved report predates the proposal summary contract. Available objective checks are shown below.",
-    identity_issue_count: summary.issue_items,
-    profile_opportunity_count: proposalActions.filter((item) => item.business_area === "profile_activity").length,
-    review_action_count: proposalActions.filter((item) => item.business_area === "review_operations").length,
-  };
+  const proposalActions = getAdditionalBusinessPresenceActions(audit.proposal_actions);
+  const proposalOpportunityCopy = getProposalOpportunityCopy(proposalActions.length);
   const visibleAlignment = showTechnical
     ? audit.gbp_page_alignment
     : audit.gbp_page_alignment.filter((item) => ATTENTION_STATUSES.has(item.status));
@@ -69,10 +66,10 @@ export function V21BusinessPresenceAudit({
         <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-100 bg-[#F8FAF5] px-5 py-5">
             <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-[18px] font-black text-[#1A212B]">{proposalSummary.headline}</h3>
+              <h3 className="text-[18px] font-black text-[#1A212B]">{proposalOpportunityCopy.headline}</h3>
               <StatusBadge status={audit.proposal_status === "needs_attention" ? "partial" : audit.proposal_status === "clear" ? "checked" : "not_checked"} />
             </div>
-            <p className="mt-2 max-w-4xl text-[13px] font-medium leading-relaxed text-gray-600">{proposalSummary.summary}</p>
+            <p className="mt-2 max-w-4xl text-[13px] font-medium leading-relaxed text-gray-600">{proposalOpportunityCopy.summary}</p>
           </div>
           <div className="grid grid-cols-2 gap-px bg-gray-200 lg:grid-cols-4">
             <Metric label="Signals assessed" value={summary.assessed_items} />
@@ -89,8 +86,8 @@ export function V21BusinessPresenceAudit({
           {proposalActions.length ? proposalActions.map((action) => (
             <ProposalActionCard key={action.id} action={action} showTechnical={showTechnical} />
           )) : (
-            <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-4 text-[13px] font-semibold leading-relaxed text-emerald-800">
-              No confirmed Business Presence work item was created from the data available for this audit.
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-5 py-4 text-[13px] font-semibold leading-relaxed text-gray-600">
+              {NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE}
             </div>
           )}
         </div>

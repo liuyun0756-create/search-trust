@@ -70,7 +70,7 @@ export function CTABanner() {
               {/* <h4 className="text-white font-bold mb-6">Use Cases</h4> */}
               <ul className="space-y-4 text-sm font-medium">
                 <li><a href="/use-cases" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Use Cases</a></li>
-                <li><a href="#" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Contact</a></li>
+                <li><a href="/use-cases" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Contact</a></li>
                 {/* <li><a href="#" className="text-white hover:text-[#A5D020] transition-colors">Blog</a></li> */}
               </ul>
             </div>

@@ -29,6 +29,7 @@ interface ReportContentProps {
   isPaid?: boolean;
   isLoading?: boolean;
   isHeaderLoading?: boolean;
+  titleLevel?: "h1" | "h2";
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -839,6 +840,7 @@ export function ReportContent({
   isPaid = false,
   isLoading = false,
   isHeaderLoading = false,
+  titleLevel = "h1",
 }: ReportContentProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>('Overall Conclusion');
@@ -853,6 +855,7 @@ export function ReportContent({
   const [footerNote, setFooterNote] = useState('');
   const [agencyLogoData, setAgencyLogoData] = useState('');
   const [agencyLogoName, setAgencyLogoName] = useState('');
+  const [agencyLogoSize, setAgencyLogoSize] = useState(0);
   const [pdfBrandingError, setPdfBrandingError] = useState('');
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copyToast, setCopyToast] = useState<{ message: string; success: boolean } | null>(null);
@@ -860,6 +863,7 @@ export function ReportContent({
   const isClickScrolling = useRef(false);
   const clientPreviewScrollY = useRef(0);
   const clientPreviewTriggerRef = useRef<HTMLButtonElement>(null);
+  const agencyLogoInputRef = useRef<HTMLInputElement>(null);
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
   const showFailed = isFailed && !isLoading;
@@ -917,6 +921,7 @@ export function ReportContent({
   const generatedAt = formatGeneratedAt(report.generated_at || report.created_at);
   const displayReportId = report.external_report_id || report.report_id;
   const isSampleReport = displayReportId?.toLowerCase().includes('sample');
+  const ReportTitleTag = titleLevel;
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : report.page_url;
   const shareTitle = `SearchTrust ${isSampleReport ? 'Sample ' : ''}Report`;
@@ -1115,21 +1120,38 @@ export function ReportContent({
   const handleLogoUpload = (file: File | undefined) => {
     setPdfBrandingError('');
     if (!file) return;
+    setAgencyLogoData('');
+    setAgencyLogoName('');
+    setAgencyLogoSize(0);
     if (!['image/png', 'image/jpeg'].includes(file.type)) {
       setPdfBrandingError('Use a PNG or JPEG logo.');
+      if (agencyLogoInputRef.current) agencyLogoInputRef.current.value = '';
       return;
     }
     if (file.size > 1_000_000) {
       setPdfBrandingError('Use a logo smaller than 1 MB for this PDF export.');
+      if (agencyLogoInputRef.current) agencyLogoInputRef.current.value = '';
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
       setAgencyLogoData(typeof reader.result === 'string' ? reader.result : '');
       setAgencyLogoName(file.name);
+      setAgencyLogoSize(file.size);
     };
-    reader.onerror = () => setPdfBrandingError('The logo could not be read. Please choose another file.');
+    reader.onerror = () => {
+      if (agencyLogoInputRef.current) agencyLogoInputRef.current.value = '';
+      setPdfBrandingError('The logo could not be read. Please choose another file.');
+    };
     reader.readAsDataURL(file);
+  };
+
+  const clearAgencyLogo = () => {
+    setAgencyLogoData('');
+    setAgencyLogoName('');
+    setAgencyLogoSize(0);
+    setPdfBrandingError('');
+    if (agencyLogoInputRef.current) agencyLogoInputRef.current.value = '';
   };
 
   return (
@@ -1182,26 +1204,68 @@ export function ReportContent({
                     onClick={() => setPdfVariant('full')}
                   />
                 </div>
-                <div className="mt-5 rounded-lg border border-[#DCE9BE] bg-white px-4 py-3 text-[12px] font-semibold leading-relaxed text-[#526315]">
+                <p className="mt-4 px-1 text-[11px] font-medium leading-relaxed text-gray-400">
                   {pdfVariant === 'client'
                     ? 'Best for sending with a proposal or presenting findings to a client.'
                     : 'Best for internal delivery, QA and implementation planning.'}
-                </div>
+                </p>
               </div>
               <div className="px-5 py-6 sm:px-7">
                 <p className="text-[11px] font-black uppercase text-gray-400">Optional branding</p>
                 <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                  <PdfInput label="Agency or consultant name" value={agencyName} onChange={setAgencyName} />
-                  <PdfInput label="Client name" value={clientName} onChange={setClientName} />
+                  <PdfInput label="Agency or consultant name" value={agencyName} placeholder="e.g. Northstar SEO" onChange={setAgencyName} />
+                  <PdfInput label="Client name" value={clientName} placeholder="e.g. Acme Plumbing" onChange={setClientName} />
                 </div>
-                <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase text-gray-500">Agency logo</span><input type="file" accept="image/png,image/jpeg" onChange={(event) => handleLogoUpload(event.target.files?.[0])} className="block w-full text-[13px] font-medium text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#F3F8E8] file:px-3 file:py-2 file:text-[12px] file:font-bold file:text-[#506314]" />{agencyLogoName && <p className="mt-2 text-[12px] font-medium text-gray-500">Selected: {agencyLogoName}</p>}</label>
+                <div className="mt-4">
+                  <span className="block text-[12px] font-black uppercase text-gray-500">Agency logo</span>
+                  <span id="agency-logo-help" className="mb-2 mt-1 block text-[11px] font-medium leading-relaxed text-gray-400">
+                    PNG or JPEG · Recommended 512 × 512 px · Maximum 1 MB
+                  </span>
+                  <input
+                    ref={agencyLogoInputRef}
+                    id="agency-logo-upload"
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    tabIndex={-1}
+                    onChange={(event) => handleLogoUpload(event.target.files?.[0])}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => agencyLogoInputRef.current?.click()}
+                      aria-controls="agency-logo-upload"
+                      aria-describedby="agency-logo-help"
+                      className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[#DCE9BE] bg-[#F3F8E8] px-3.5 py-2.5 text-[12px] font-bold text-[#506314] transition-colors hover:border-[#BFD477] hover:bg-[#EAF3D5]"
+                    >
+                      {agencyLogoName ? 'Replace file' : 'Choose file'}
+                    </button>
+                    {!agencyLogoName && <span className="text-[12px] font-medium text-gray-400">No file selected</span>}
+                  </div>
+                  {agencyLogoName && (
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-[#DCE9BE] bg-[#FBFDF5] px-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-[12px] font-bold text-[#1A212B]">{agencyLogoName}</p>
+                        <p className="mt-0.5 text-[11px] font-medium text-gray-400">{Math.max(1, Math.ceil(agencyLogoSize / 1024))} KB selected</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearAgencyLogo}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-[11px] font-bold text-gray-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Remove ${agencyLogoName}`}
+                      >
+                        <XIcon className="h-3.5 w-3.5" />
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase text-gray-500">Footer note</span><textarea value={footerNote} onChange={(event) => setFooterNote(event.target.value)} maxLength={240} rows={3} placeholder="Optional note for this client delivery" className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[14px] font-medium text-[#1A212B] outline-none focus:border-[#A5D020] focus:ring-4 focus:ring-[#A5D020]/10" /></label>
                 <p className="mt-3 text-[11px] font-medium leading-relaxed text-gray-400">Branding is used only for this download and is not saved to the report or database.</p>
                 {pdfBrandingError && <p className="mt-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[13px] font-bold text-red-600">{pdfBrandingError}</p>}
               </div>
             </div>
-            <div className="flex flex-col gap-3 border-t border-gray-100 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-              <p className="text-[12px] font-semibold text-gray-500">{pdfVariant === 'client' ? 'Client-ready PDF' : 'Complete analyst PDF'}</p>
+            <div className="flex flex-col gap-3 border-t border-gray-100 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-7">
               <div className="flex flex-col-reverse gap-3 sm:flex-row">
                 <button type="button" onClick={() => setPdfModalOpen(false)} className="rounded-xl border border-gray-200 px-5 py-3 text-[14px] font-bold text-[#1A212B] hover:bg-gray-50">Cancel</button>
                 <button type="button" onClick={handleDownloadPDF} disabled={pdfStatus === 'downloading'} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#171B22] px-5 py-3 text-[14px] font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">{pdfStatus === 'downloading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{pdfStatus === 'downloading' ? 'Preparing...' : `Download ${pdfVariant === 'client' ? 'Client PDF' : 'Full Audit'}`}</button>
@@ -1287,9 +1351,9 @@ export function ReportContent({
       ) : (
       <section className="mb-8 rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
         <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <h1 className="text-[30px] font-black leading-tight tracking-tight text-[#1A1F2B] md:text-[40px]">
+          <ReportTitleTag className="text-[30px] font-black leading-tight tracking-tight text-[#1A1F2B] md:text-[40px]">
             Trust Audit Report{isSampleReport ? ' (Sample)' : ''}
-          </h1>
+          </ReportTitleTag>
 
           {isPaid && (
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
@@ -1436,15 +1500,16 @@ export function ReportContent({
       {!showFailed && <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
         <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => scrollToSection(tab)}
-              className={`relative rounded-xl px-3 py-3.5 text-[13px] font-bold leading-tight transition-all ${
-                activeTab === tab
-                  ? 'bg-[#1A1F2B] text-white shadow-sm'
-                  : 'bg-white text-gray-400 hover:bg-white hover:text-[#1A1F2B]'
-              }`}
-            >
+      <button
+        key={tab}
+        type="button"
+        onClick={() => scrollToSection(tab)}
+        className={`relative min-h-[64px] rounded-lg px-3 py-3 text-[12px] font-bold leading-tight transition ${
+          activeTab === tab
+            ? 'bg-[#1A1F2B] text-white shadow-lg'
+            : 'bg-[#F3F4F6] text-gray-500 hover:bg-gray-200'
+        }`}
+      >
               {tab}
             </button>
           ))}

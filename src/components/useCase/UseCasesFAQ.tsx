@@ -51,7 +51,7 @@ export function UseCasesFAQ() {
               Frequently asked<br />questions
             </h2>
             <a
-              href="#"
+              href="/use-cases"
               className="inline-flex items-center gap-2 text-[#A5D020] font-bold hover:underline"
             >
               Contact us <ArrowRight size={18} />

@@ -44,7 +44,7 @@ export function WhatMakesDifferent() {
             {/* 右侧 SearchTrust */}
             <div className="w-full md:w-[500px] bg-[#1A1F2B] rounded-[24px] p-10 md:p-14 md:pl-20 z-20 md:-ml-12 shadow-[0_30px_60px_rgba(0,0,0,0.15)]">
               <h3 className="text-[18px] font-bold text-white mb-8">
-                Search Trust report
+                SearchTrust report
               </h3>
               <ul className="space-y-5">
                 {trustItems.map((item) => (

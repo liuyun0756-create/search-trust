@@ -62,7 +62,7 @@ export function FrameworkInProduct() {
                   <feature.icon size={19} strokeWidth={1.7} />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <h3 className="text-[15px] font-bold text-[#1A1F2B]">
+                  <h3 className="text-[17px] font-bold leading-snug text-[#1A1F2B]">
                     {feature.title}
                   </h3>
                   <p className="text-[13px] leading-relaxed text-gray-500 font-medium">

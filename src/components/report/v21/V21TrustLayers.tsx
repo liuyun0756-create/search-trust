@@ -69,6 +69,13 @@ export function V21TrustLayers({
 
       {orderedLayers.map((layer) => {
         const findingCount = safeList(layer.triggered_rule_ids).length;
+        const structuredFindings = safeList(layer.triggered_findings);
+        const actionFindings = safeList(layer.action_items).flatMap((action) => safeList(action.addressed_findings));
+        const displayFindings = Array.from(new Set(
+          (structuredFindings.length > 0 ? structuredFindings : actionFindings)
+            .filter(Boolean)
+        ));
+        const visibleFindings = displayFindings.length > 0 ? displayFindings : [layer.summary];
         const presentationMode = layer.presentation_mode
           || (layer.status === "good"
             ? findingCount === 0 ? "healthy" : "healthy_with_opportunities"
@@ -102,13 +109,13 @@ export function V21TrustLayers({
             </div>
           )}
 
-          {showTechnical && safeList(layer.triggered_findings).length > 0 && (
+          {showTechnical && findingCount > 0 && (
             <div className={`mb-4 rounded-2xl border p-4 ${isHealthyWithOpportunities ? "border-[#DDE9C4] bg-[#FBFDF5]" : "border-amber-100 bg-amber-50/40"}`}>
               <p className={`mb-3 text-[12px] font-black uppercase tracking-[0.12em] ${isHealthyWithOpportunities ? "text-[#6F8F16]" : "text-amber-700"}`}>
-                {findingsTitle} ({safeList(layer.triggered_findings).length})
+                {findingsTitle} ({findingCount})
               </p>
               <ul className="grid grid-cols-1 gap-x-6 gap-y-2 lg:grid-cols-2">
-                {safeList(layer.triggered_findings).map((finding, index) => (
+                {visibleFindings.map((finding, index) => (
                   <li key={`${finding}-${index}`} className="flex gap-2 text-[13px] font-medium leading-relaxed text-gray-700">
                     <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${isHealthyWithOpportunities ? "bg-[#A5D020]" : "bg-amber-500"}`} />
                     <span>{finding}</span>

@@ -75,7 +75,7 @@ export default function SampleReportPage() {
       />
       <SampleReportHero />
       <SampleReportInfo />
-      <SampleReportContent />
+      <SampleReportContent embedded />
       <WhatsInsideReport />
       <KeyInsights />
       <ReportDifference />

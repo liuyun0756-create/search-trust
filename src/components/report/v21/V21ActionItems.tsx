@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { ActionItem } from "@/lib/report-v21";
-import { safeList } from "./statusHelpers";
+import { formatLayerKey, getPriorityTone, safeList } from "./statusHelpers";
 import { isAnalystView, isClientView, isInternalImplementationNote, type V21ViewMode } from "./viewMode";
 
 export function V21ActionItems({ actions, title = "Recommended actions", viewMode = "analyst", maxItems }: {
@@ -31,6 +31,12 @@ function ActionCard({ item, viewMode }: { item: ActionItem; viewMode: V21ViewMod
   return (
     <article className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black uppercase ${getPriorityTone(item.priority)}`}>
+          {item.priority}
+        </span>
+        <span className="rounded-full border border-gray-100 bg-white px-2.5 py-1 text-[11px] font-bold text-gray-500">
+          {formatLayerKey(item.affected_layer)}
+        </span>
         <span className="rounded-full border border-gray-100 bg-white px-2.5 py-1 text-[11px] font-bold text-gray-500">{item.effort_level} effort</span>
       </div>
       <h4 className="text-[16px] font-black text-[#1A212B]">{item.task_title}</h4>

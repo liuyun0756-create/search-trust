@@ -29,7 +29,7 @@ export function FAQAccordion({
     <section className={`relative overflow-hidden py-24 bg-[#F7F9FA] ${className}`}>
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
       <div className="absolute inset-x-0 top-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,249,250,0))] pointer-events-none" />
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+      <div className="container relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* 居中标题 */}
         <div className="text-center mb-12">
@@ -46,7 +46,7 @@ export function FAQAccordion({
         </div>
 
         {/* 白色卡片容器 + 手风琴列表 */}
-        <div className="max-w-3xl mx-auto rounded-[24px] bg-white/70 p-3 shadow-[0_18px_50px_rgba(15,23,42,0.06)] ring-1 ring-gray-100 backdrop-blur-sm">
+        <div className="mx-auto w-full rounded-[24px] bg-white/70 p-3 shadow-[0_18px_50px_rgba(15,23,42,0.06)] ring-1 ring-gray-100 backdrop-blur-sm">
           <div className="space-y-3">
             {items.map((faq, index) => (
               <div

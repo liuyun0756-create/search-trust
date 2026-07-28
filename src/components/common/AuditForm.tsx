@@ -51,11 +51,12 @@ export function AuditForm({ floating = false }: AuditFormProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
         {/* URL Input */}
         <div className="flex flex-col gap-3">
-          <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
+          <label htmlFor="audit-page-url" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
             URL
             <span className="ml-1 text-[#EF4444]">*</span>
           </label>
           <input
+            id="audit-page-url"
             required
             type="url"
             placeholder="Enter the page URL to audit"
@@ -67,10 +68,11 @@ export function AuditForm({ floating = false }: AuditFormProps) {
 
         {/* GBP URL Input */}
         <div className="flex flex-col gap-3">
-          <label className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
+          <label htmlFor="audit-gbp-url" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
             GBP URL
           </label>
           <input
+            id="audit-gbp-url"
             type="url"
             placeholder="Enter the GBP URL"
             value={formData.gbpUrl}

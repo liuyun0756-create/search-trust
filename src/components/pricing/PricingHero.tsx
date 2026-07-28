@@ -49,7 +49,7 @@ export function PricingHero() {
         </p>
       </motion.div>
 
-      <div className="max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
         {/* Standard plan */}
         <motion.div
           whileHover={{ y: -10 }}

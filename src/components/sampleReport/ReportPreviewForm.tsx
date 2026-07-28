@@ -32,10 +32,11 @@ export function ReportPreviewForm() {
 
             <div className="space-y-8">
               <div>
-                <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <label htmlFor="preview-page-url" className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
                   URL <span className="text-[#3B82F6]">required</span>
                 </label>
                 <input
+                  id="preview-page-url"
                   type="url"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
@@ -63,10 +64,11 @@ export function ReportPreviewForm() {
               </div>
 
               <div>
-                <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <label htmlFor="preview-gbp-url" className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
                   GBP URL <span className="text-[#9CA3AF]">optional / recommended</span>
                 </label>
                 <input
+                  id="preview-gbp-url"
                   type="url"
                   value={formData.gbpUrl}
                   onChange={(e) => setFormData({ ...formData, gbpUrl: e.target.value })}

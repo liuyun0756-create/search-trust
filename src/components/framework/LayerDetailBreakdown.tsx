@@ -86,7 +86,7 @@ export function LayerDetailBreakdown() {
         
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-12 items-start">
+        <div className="flex flex-col items-start gap-12 lg:flex-row lg:items-stretch">
           
           {/* 左侧：垂直导航 (层级选择) */}
           <div className="w-full lg:w-1/3 flex flex-col gap-2">
@@ -114,7 +114,7 @@ export function LayerDetailBreakdown() {
           </div>
 
           {/* 右侧：内容展示区 */}
-          <div className="w-full lg:w-2/3 lg:h-[620px]">
+          <div className="w-full lg:w-2/3">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}

@@ -112,6 +112,7 @@ export function V21OverallConclusion({
           value={clientSummary.why_it_matters}
           detail={`First priority: ${clientSummary.first_priority}`}
           icon={CircleHelp}
+          highlighted
         />
       </div>
 
@@ -166,7 +167,6 @@ function ClientDecisionSummary({
   return (
     <div className="space-y-6">
       <div>
-        <h4 className="mb-3 text-[15px] font-black text-[#1A212B]">How to read the three scores</h4>
         <ScoreCards cards={cards} />
         <p className="mt-3 rounded-[16px] border border-indigo-100 bg-indigo-50/40 px-5 py-4 text-[13px] font-semibold leading-relaxed text-gray-700">
           {decision.score_interpretation}

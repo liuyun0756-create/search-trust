@@ -7,7 +7,10 @@ import {
   getClientDecisionContext,
   getEffectiveBranding,
   getLayerDisplayConfig,
+  getAdditionalBusinessPresenceActions,
+  getProposalOpportunityCopy,
   IMPROVEMENT_SEQUENCE,
+  NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE,
   normalizeReportToV21,
   REQUIRED_LAYER_KEYS,
 } from "@/lib/report-v21";
@@ -881,7 +884,6 @@ function ClientExecutiveSummary({ reportV21 }: { reportV21: ReportV21 }) {
           </View>
         </View>
 
-        <Text style={styles.label}>How to read the three scores</Text>
         <View style={styles.scoreRow}>
           <ScoreCard
             label="Trust Status"
@@ -1313,16 +1315,8 @@ function BusinessPresenceAuditSection({ reportV21, variant }: { reportV21: Repor
     : alignment.rows;
   const profile = audit.profile_activity;
   const reviews = audit.review_audit;
-  const proposalActions = audit.proposal_actions || [];
-  const proposalSummary = audit.proposal_summary || {
-    headline: proposalActions.length
-      ? `${proposalActions.length} proposal-ready work item(s) identified`
-      : "No confirmed work item from the available data",
-    summary: "This saved report predates the proposal summary contract. Available objective checks are shown below.",
-    identity_issue_count: audit.summary.issue_items,
-    profile_opportunity_count: 0,
-    review_action_count: 0,
-  };
+  const proposalActions = getAdditionalBusinessPresenceActions(audit.proposal_actions);
+  const proposalOpportunityCopy = getProposalOpportunityCopy(proposalActions.length);
   const distribution = Object.entries(reviews.rating_distribution)
     .sort(([left], [right]) => Number(right) - Number(left))
     .map(([rating, count]) => `${rating}-star: ${count}`)
@@ -1332,15 +1326,15 @@ function BusinessPresenceAuditSection({ reportV21, variant }: { reportV21: Repor
     <Section title="Business Presence Audit">
       <View style={styles.statement}>
         <Text style={styles.label}>Executive Snapshot</Text>
-        <Text style={styles.cardTitle}>{truncateText(proposalSummary.headline, 160)}</Text>
-        <Text style={styles.bodyText}>{truncateText(proposalSummary.summary, 420)}</Text>
+        <Text style={styles.cardTitle}>{truncateText(proposalOpportunityCopy.headline, 160)}</Text>
+        <Text style={styles.bodyText}>{truncateText(proposalOpportunityCopy.summary, 420)}</Text>
         <Text style={styles.bodyText}>
           {audit.summary.assessed_items} signals assessed / {audit.summary.matched_items} aligned / {audit.summary.issue_items} need attention / {audit.summary.not_checked_items} not assessed
         </Text>
         <Text style={styles.mutedText}>These objective checks do not change the eight-layer score.</Text>
       </View>
 
-      <Text style={styles.cardTitle}>Recommended Scope of Work</Text>
+      <Text style={styles.cardTitle}>Proposal-ready tasks</Text>
       {proposalActions.length ? proposalActions.map((action) => (
         <View key={action.id} style={styles.softCard}>
           <View style={styles.row}>
@@ -1353,7 +1347,7 @@ function BusinessPresenceAuditSection({ reportV21, variant }: { reportV21: Repor
           <BulletList items={action.recommended_scope} maxLength={260} />
           {variant === "full" && <Field label="Evidence References" value={action.evidence_keys.join(", ")} maxLength={220} />}
         </View>
-      )) : <Text style={styles.mutedText}>No confirmed Business Presence work item was created from the available data.</Text>}
+      )) : <Text style={styles.mutedText}>{NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE}</Text>}
 
       {visibleAlignment.length > 0 && (
         <View style={{ marginTop: 8 }}>

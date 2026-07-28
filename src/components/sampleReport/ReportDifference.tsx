@@ -17,7 +17,7 @@ export function ReportDifference() {
       ]
     },
     searchTrust: {
-      title: "Search Trust report",
+      title: "SearchTrust report",
       items: [
         "fixed L1-L8 diagnosis",
         "source-traceable findings",
@@ -85,14 +85,14 @@ export function ReportDifference() {
             </ul>
           </div>
 
-          {/* 右侧：Search Trust 报告 */}
+          {/* 右侧：SearchTrust 报告 */}
             <div className="z-20 w-full rounded-[24px] bg-[#1A1F2B] p-10 shadow-[0_30px_60px_rgba(15,23,42,0.16)] md:-ml-12 md:w-[520px] md:pl-20">
               <div className="mb-8 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F4F7E9] ring-1 ring-[#A5D020]/20">
                 <ShieldCheck size={20} className="text-[#A5D020]" />
               </div>
                 <h3 className="text-[22px] md:text-[24px] font-medium text-gray-300">
-                  <span className="font-bold text-white">Search Trust</span> report
+                  <span className="font-bold text-white">SearchTrust</span> report
               </h3>
             </div>
               <div className="mb-8 h-px w-full bg-[#A5D020]/30" />

@@ -8,3 +8,4 @@ export * from "./pdfExportability";
 export * from "./branding";
 export * from "./clientDecisionContext";
 export * from "./implementationRoadmap";
+export * from "./businessPresence";

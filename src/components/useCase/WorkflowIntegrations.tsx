@@ -15,7 +15,7 @@ const workflowStages = [
 export function WorkflowIntegrations() {
   return (
     <section className="pt-20 bg-[#F8F9FB]">
-      <div className="container mx-auto max-w-[1200px] px-8">
+      <div className="container mx-auto max-w-7xl px-8">
         
         {/* 标题部分 */}
         <div className="text-center mb-16">
@@ -25,7 +25,7 @@ export function WorkflowIntegrations() {
             viewport={{ once: true }}
             className="text-[42px] md:text-[54px] font-bold text-[#1A212B] tracking-tight leading-tight"
           >
-            Where <span className="text-[#A5D020]">Search Trust</span> fits in your workflow
+            Where <span className="text-[#A5D020]">SearchTrust</span> fits in your workflow
           </motion.h2>
         </div>
 
@@ -70,7 +70,7 @@ export function WorkflowIntegrations() {
 
         {/* 底部提示 */}
         {/* <p className="mt-10 text-center text-[14px] text-gray-400 font-medium">
-          → Search Trust provides the diagnostic "bridge" when traditional growth plateaus.
+          → SearchTrust provides the diagnostic "bridge" when traditional growth plateaus.
         </p> */}
       </div>
     </section>

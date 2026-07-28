@@ -10,7 +10,15 @@ import type {
 
 export function getClientDecisionContext(report: ReportV21): ClientDecisionContext {
   const existing = report.client_summary?.decision_context;
-  if (isDecisionContext(existing)) return existing;
+  const affectedLayerCount = report.layers.filter(
+    (layer) => layer.status === "weak" || layer.status === "medium",
+  ).length;
+  if (isDecisionContext(existing)) {
+    return {
+      ...existing,
+      affected_layer_count: affectedLayerCount,
+    };
+  }
 
   const issues = Array.isArray(report.key_issues) ? report.key_issues : [];
   const affected = new Set(
@@ -29,7 +37,7 @@ export function getClientDecisionContext(report: ReportV21): ClientDecisionConte
     priority_label: priorityLabel(priorityLevel),
     why_act_now: whyActNow(priorityLevel, earliestKey),
     issue_count: issues.length,
-    affected_layer_count: orderedKeys.length,
+    affected_layer_count: affectedLayerCount,
     work_phase_count: workSequence.length,
     score_interpretation: [
       `Trust Status (${report.overall_status?.label || "Not available"}) describes current page strength.`,

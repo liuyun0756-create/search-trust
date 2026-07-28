@@ -30,7 +30,7 @@ export function UseCasesByTeam() {
 
   return (
     <section className="pt-20 bg-[#F8F9FB]">
-      <div className="container mx-auto max-w-[1300px] px-8">
+      <div className="container mx-auto max-w-7xl px-8">
         <h2 className="text-center text-[36px] md:text-[44px] font-bold text-[#1A212B] mb-6 tracking-tight leading-tight">
           Use cases by team type
         </h2>

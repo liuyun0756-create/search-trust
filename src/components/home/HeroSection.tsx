@@ -55,7 +55,7 @@ export function HeroSection() {
           <div className="flex-1 max-w-2xl">
             <div className="mb-6 pt-3">
               <span className="inline-block px-3 py-1 text-[12px] tracking-[0.2em] font-bold text-[#4A4A5A] border border-gray-200 rounded bg-white/50 backdrop-blur-sm uppercase">
-                Search Trust Insight Engine
+                SearchTrust Insight Engine
               </span>
             </div>
 

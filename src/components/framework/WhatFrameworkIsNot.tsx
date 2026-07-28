@@ -28,7 +28,7 @@ export function WhatFrameworkIsNot() {
             viewport={{ once: true }}
             className="text-[36px] md:text-[52px] font-bold text-[#0B0C0E] leading-[1.1] tracking-tight"
           >
-            What this framework <br /> <span className="text-bar-highlight text-[#0B0C0E]">is not</span>
+            What this framework <span className="text-bar-highlight text-[#0B0C0E]">is not</span>
           </motion.h2>
         </div>
 

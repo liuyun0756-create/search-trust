@@ -39,10 +39,10 @@ export function HowItWorks() {
               </ul>
             </div>
 
-            {/* 右侧卡片 - Search Trust */}
+            {/* 右侧卡片 - SearchTrust */}
             <div className="w-full md:w-[520px] bg-[#1A1F2B] rounded-[24px] p-10 md:p-14 md:pl-20 z-20 md:-ml-12 shadow-[0_30px_60px_rgba(0,0,0,0.15)]">
               <h3 className="text-[18px] font-bold text-white mb-8">
-                What Search Trust gives you
+                What SearchTrust gives you
               </h3>
               <ul className="space-y-5">
                 {[
