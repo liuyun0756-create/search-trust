@@ -3,31 +3,45 @@ import React from 'react';
 const commonWays = [
   {
     tag: "SEO Agencies",
-    text: "Explain trust–related ranking issues faster and with less manual analysis."
+    text: "Turn confirmed trust gaps into a defensible client remediation proposal."
   },
   {
     tag: "Local SEO Specialists",
-    text: "Validate whether city + service pages qualify as real local entity"
+    text: "Review one priority city, service-area, or location page before investing further."
   },
   {
     tag: "Affiliate Marketers",
-    text: "Detect scaled page risk before Google treats pages as spam or doorway content."
+    text: "Identify reusable-page risk and weak local grounding before a larger rollout."
   },
   {
     tag: "Multi-location Businesses",
-    text: "Check whether local pages are distinct, grounded, and entity–aligned across locations."
+    text: "Sample priority location pages for distinct value, evidence, and entity alignment."
   }
 ];
 
 export function CommonWaysSection() {
   return (
-    <section className="py-20 bg-[#0B0C0E] overflow-hidden">
+    <section className="relative isolate overflow-hidden bg-[#0A1629] py-20">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.10] mix-blend-screen"
+        style={{
+          backgroundImage: "url('/images/abstract-lines.jpg')",
+          backgroundPosition: "right center",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-white/10"
+      />
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* 标题 */}
         <div className="text-center mb-16">
           <h2 className="text-[32px] md:text-[40px] font-bold text-white tracking-tight">
-            Common ways teams use Search Trust
+            Common ways teams use SearchTrust
           </h2>
           <div className="section-title-bar" />
         </div>

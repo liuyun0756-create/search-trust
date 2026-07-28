@@ -6,18 +6,21 @@ import { Ban, XCircle, AlertCircle } from 'lucide-react';
 const notItems = [
   {
     icon: Ban,
-    title: "Not the same as a technical issue",
-    desc: "It’s not primarily about crawlability or indexing",
+    title: "Beyond technical health",
+    desc: "A page can be crawlable, indexable, and technically sound while its business identity and real-world proof remain unclear.",
+    meaning: "Technical health gets the page considered; trust signals help it become credible and defensible.",
   },
   {
     icon: XCircle,
-    title: "Not the same as thin content",
-    desc: "A long page can still feel structurally untrustworthy",
+    title: "Beyond content volume",
+    desc: "Word count cannot replace specific local evidence, accountable claims, or a clear reason for the page to exist.",
+    meaning: "Adding more copy may enlarge the page without repairing the trust layer that is failing.",
   },
   {
     icon: AlertCircle,
-    title: "Not the same as ranking loss",
-    desc: "A page may rank briefly and still be structurally unstable",
+    title: "Earlier than ranking loss",
+    desc: "Ranking loss is an outcome, not the diagnosis. A page can gain visibility before its weak structure is exposed.",
+    meaning: "Finding the trust break early helps teams protect gains instead of reacting after rankings become unstable.",
   },
 ];
 
@@ -59,6 +62,9 @@ export function TrustCollapseMeaning() {
                 </h3>
                 <p className="text-[14px] leading-relaxed text-gray-500 font-medium">
                   {item.desc}
+                </p>
+                <p className="mt-2 border-t border-gray-200 pt-3 text-[13px] font-semibold leading-relaxed text-[#3F4A5A]">
+                  {item.meaning}
                 </p>
               </div>
             </div>

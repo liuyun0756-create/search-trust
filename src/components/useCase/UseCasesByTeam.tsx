@@ -9,22 +9,22 @@ export function UseCasesByTeam() {
     {
       icon: Building2,
       title: "SEO Agencies",
-      items: ["pre–publish QA", "stuck page diagnosis", "client reporting"]
+      items: ["one-time client audits", "proposal scoping", "client-ready PDF delivery"]
     },
     {
       icon: MapPin,
       title: "Local SEO Specialists",
-      items: ["local page qualification", "trust breakdown analysis", "page improvement prioritization"]
+      items: ["priority-page diagnosis", "L1-L8 remediation", "re-audit planning"]
     },
     {
       icon: Link2,
       title: "Affiliate Marketers",
-      items: ["scaled page review", "doorway–risk detection", "template quality control"]
+      items: ["priority-page sampling", "template risk review", "pre-rollout quality gates"]
     },
     {
       icon: Globe,
       title: "Multi–location Businesses",
-      items: ["location page consistency", "local entity alignment", "standalone value checks"]
+      items: ["representative page sampling", "local entity alignment", "standalone value checks"]
     }
   ];
 
@@ -35,7 +35,7 @@ export function UseCasesByTeam() {
           Use cases by team type
         </h2>
         <p className="text-center text-[16px] md:text-[18px] text-[#6B7280] mb-16 leading-[1.2]">
-          How different teams use SearchTrust in their daily workflow
+          How different teams use SearchTrust in a one-time audit and remediation workflow
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -8,7 +8,7 @@ export function RelatedResources() {
   const resources = [
     {
       title: "Framework",
-      desc: "Deep dive into the 6-layer trust architecture.",
+      desc: "Deep dive into the 8-layer trust architecture.",
       icon: Layout,
       link: "/framework"
     },

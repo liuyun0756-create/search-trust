@@ -6,14 +6,13 @@ import { LayerDetailBreakdown } from "@/components/framework/LayerDetailBreakdow
 import { TrustCollapseFlow } from "@/components/framework/TrustCollapseFlow";
 import { WhatFrameworkIsNot } from "@/components/framework/WhatFrameworkIsNot";
 import { FrameworkInProduct } from "@/components/framework/FrameworkInProduct";
-import { ExampleFailTrust } from "@/components/framework/ExampleFailTrust";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 import { createPageMetadata, pageSeo } from "@/lib/seo";
 
 const frameworkFAQData = [
   {
     question: "Why eight layers?",
-    answer: "Because local page trust is not built by one signal. The v2.1 framework separates foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit so the report can show where trust actually breaks.",
+    answer: "Because local page trust is not built by one signal. The eight-layer framework separates foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit so the report can show where trust actually breaks.",
   },
   {
     question: "Are all layers equally important?",
@@ -21,7 +20,7 @@ const frameworkFAQData = [
   },
   {
     question: "Is this only for local pages?",
-    answer: "Yes. It may still rank in the short term, but the structure is usually less stable.",
+    answer: "The current framework is built for publicly accessible local service pages, city pages, service-area pages, and location landing pages. It is not a general site-wide SEO scoring model.",
   },
   {
     question: "How is this different from E-E-A-T?",
@@ -29,7 +28,7 @@ const frameworkFAQData = [
   },
   {
     question: "Is this only for Google?",
-    answer: "Mainly for Google and local search today, but it also considers AI citation environments.",
+    answer: "The framework is designed for local search interpretation. It does not claim access to Google internals or guarantee how any search system will rank a page.",
   },
   {
     question: "Is this just another content quality checklist?",
@@ -38,6 +37,10 @@ const frameworkFAQData = [
   {
     question: "Does this replace technical SEO?",
     answer: "No. Technical SEO and this framework focus on different things. Both are important.",
+  },
+  {
+    question: "Does Business Presence Audit change the 8-layer score?",
+    answer: "No. Business Presence Audit is a supplemental, non-scoring review of available public GBP and review data. The L1-L8 assessment remains based on the fixed SearchTrust rule model.",
   },
 ];
 
@@ -71,7 +74,6 @@ export default function FrameworkPage() {
       <TrustCollapseFlow />
       <WhatFrameworkIsNot />
       <FrameworkInProduct />
-      <ExampleFailTrust />
       <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"} items={frameworkFAQData} />
     </>
   );

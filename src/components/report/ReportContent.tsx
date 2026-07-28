@@ -1320,7 +1320,7 @@ export function ReportContent({
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-x-6 gap-y-6 py-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(0,1.8fr)_minmax(7.5rem,0.8fr)_minmax(8rem,1fr)_minmax(8rem,0.9fr)_minmax(0,1.4fr)]">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-5 py-1 lg:grid-flow-col lg:grid-cols-2 lg:grid-rows-3">
           {[
             {
               icon: Globe2,
@@ -1368,20 +1368,22 @@ export function ReportContent({
           ].map((item) => (
             <div
               key={item.label}
-              className="flex min-w-0 items-start gap-3"
+              className="flex min-w-0 items-start gap-3 lg:items-center"
             >
-              <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
                 <item.icon className="h-[18px] w-[18px]" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="mb-1 text-[11px] font-black uppercase tracking-[0.1em] text-[#8A96A8]">{item.label}</p>
-                <div className="flex min-w-0 items-start gap-1.5">
+              <div className="min-w-0 flex-1 lg:grid lg:grid-cols-[5.75rem_minmax(0,1fr)_1.75rem] lg:items-center lg:gap-3">
+                <p className="mb-1 text-[11px] font-black uppercase tracking-[0.1em] text-[#8A96A8] lg:mb-0">
+                  {item.label}
+                </p>
+                <div className="min-w-0">
                   {'href' in item && item.href ? (
                     <a
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`min-w-0 flex-1 text-[13px] font-bold leading-relaxed transition-colors hover:text-[#6F8F12] ${item.tone} ${
+                      className={`block min-w-0 text-[13px] font-bold leading-relaxed transition-colors hover:text-[#6F8F12] ${item.tone} ${
                         'valueClassName' in item ? item.valueClassName : ''
                       }`}
                       title={item.href}
@@ -1390,7 +1392,7 @@ export function ReportContent({
                     </a>
                   ) : (
                     <p
-                      className={`min-w-0 flex-1 text-[13px] font-bold leading-relaxed ${item.tone} ${
+                      className={`min-w-0 text-[13px] font-bold leading-relaxed ${item.tone} ${
                         'valueClassName' in item ? item.valueClassName : ''
                       }`}
                       title={typeof item.value === 'string' ? item.value : undefined}
@@ -1398,20 +1400,22 @@ export function ReportContent({
                       {item.value}
                     </p>
                   )}
-                  {'copyValue' in item && item.copyValue && (
-                    <button
-                      type="button"
-                      onClick={() => copyText(item.copyValue, item.copyMessage)}
-                      className="shrink-0 rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#1A1F2B]"
-                      aria-label={item.copyLabel}
-                      title={item.copyLabel}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
+                  {'detail' in item && item.detail && (
+                    <p className="mt-0.5 text-[11px] font-medium leading-relaxed text-[#8A96A8]">{item.detail}</p>
                   )}
                 </div>
-                {'detail' in item && item.detail && (
-                  <p className="mt-1 text-[11px] font-medium leading-relaxed text-[#8A96A8]">{item.detail}</p>
+                {'copyValue' in item && item.copyValue ? (
+                  <button
+                    type="button"
+                    onClick={() => copyText(item.copyValue, item.copyMessage)}
+                    className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#1A1F2B] lg:mt-0"
+                    aria-label={item.copyLabel}
+                    title={item.copyLabel}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                ) : (
+                  <span className="hidden h-7 w-7 lg:block" aria-hidden="true" />
                 )}
               </div>
             </div>

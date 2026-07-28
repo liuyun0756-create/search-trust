@@ -65,12 +65,12 @@ export function V21BusinessPresenceAudit({
       </p>
 
       <section aria-labelledby={headingId("presence-snapshot-title")}>
-        <SectionHeading icon={ClipboardCheck} eyebrow="Executive snapshot" title="Business presence opportunity" id={headingId("presence-snapshot-title")} />
+        <SectionHeading icon={ClipboardCheck} title="Business presence opportunity" id={headingId("presence-snapshot-title")} />
         <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-100 bg-[#F8FAF5] px-5 py-5">
             <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge status={audit.proposal_status === "needs_attention" ? "partial" : audit.proposal_status === "clear" ? "checked" : "not_checked"} />
               <h3 className="text-[18px] font-black text-[#1A212B]">{proposalSummary.headline}</h3>
+              <StatusBadge status={audit.proposal_status === "needs_attention" ? "partial" : audit.proposal_status === "clear" ? "checked" : "not_checked"} />
             </div>
             <p className="mt-2 max-w-4xl text-[13px] font-medium leading-relaxed text-gray-600">{proposalSummary.summary}</p>
           </div>
@@ -84,7 +84,7 @@ export function V21BusinessPresenceAudit({
       </section>
 
       <section aria-labelledby={headingId("proposal-work-title")}>
-        <SectionHeading icon={UserRoundCheck} eyebrow="Recommended scope of work" title="Proposal-ready tasks" id={headingId("proposal-work-title")} />
+        <SectionHeading icon={UserRoundCheck} title="Proposal-ready tasks" id={headingId("proposal-work-title")} />
         <div className="mt-4 space-y-3">
           {proposalActions.length ? proposalActions.map((action) => (
             <ProposalActionCard key={action.id} action={action} showTechnical={showTechnical} />
@@ -97,10 +97,7 @@ export function V21BusinessPresenceAudit({
       </section>
 
       <section aria-labelledby={headingId("presence-alignment-title")}>
-        <SectionHeading icon={UserRoundCheck} eyebrow="Objective comparison" title="GBP x Page alignment" id={headingId("presence-alignment-title")} />
-        <p className="mt-2 text-[12px] font-medium text-gray-500">
-          {showTechnical ? "All assessed and unavailable signals are shown." : "Client view highlights only confirmed items that need attention."}
-        </p>
+        <SectionHeading icon={UserRoundCheck} title="GBP x Page alignment" id={headingId("presence-alignment-title")} />
         {visibleAlignment.length ? (
           <AlignmentTable rows={visibleAlignment} showTechnical={showTechnical} />
         ) : (
@@ -146,8 +143,7 @@ export function V21BusinessPresenceAudit({
         <details className="group overflow-hidden rounded-lg border border-gray-200 bg-white">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-[#F8FAF5] px-5 py-4">
             <div>
-              <p className="text-[11px] font-black uppercase text-gray-400">Audit coverage & raw evidence</p>
-              <h3 className="mt-1 text-[16px] font-black text-[#1A212B]">Sources, limitations and recent reviews</h3>
+              <h3 className="text-[16px] font-black text-[#1A212B]">Sources, limitations and recent reviews</h3>
             </div>
             <ChevronDown className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" aria-hidden="true" />
           </summary>
@@ -193,7 +189,7 @@ export function V21BusinessPresenceAudit({
 
 function SectionHeading({ icon: Icon, eyebrow, title, id, compact = false }: {
   icon: typeof ClipboardCheck;
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   id: string;
   compact?: boolean;
@@ -204,7 +200,7 @@ function SectionHeading({ icon: Icon, eyebrow, title, id, compact = false }: {
         <Icon className="h-4 w-4" aria-hidden="true" />
       </span>
       <div>
-        <p className="text-[10px] font-black uppercase text-gray-400">{eyebrow}</p>
+        {eyebrow && <p className="text-[10px] font-black uppercase text-gray-400">{eyebrow}</p>}
         <h3 id={id} className={`${compact ? "text-[16px]" : "text-[19px]"} mt-0.5 font-black text-[#1A212B]`}>{title}</h3>
       </div>
     </div>

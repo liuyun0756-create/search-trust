@@ -51,7 +51,7 @@ We reserve the right to change pricing at any time, but any pricing changes will
 
 You are responsible for ensuring that submitted information is accurate and that you have the right to submit the page or material for analysis.
 
-After purchase and required submission, your report will generally be delivered via email or web report within two hours. Delivery times are estimates only and may vary based on demand, technical issues, review requirements, or other operational factors.
+After purchase and required submission, your report will be made available after the audit workflow and structured checks are complete. Processing times vary based on demand, page availability, public data coverage, technical issues, review requirements, or other operational factors.
 
 We are not responsible for delays caused by incorrect information provided by you, unavailable websites, inaccessible pages, third-party failures, or events outside our reasonable control.`,
       },

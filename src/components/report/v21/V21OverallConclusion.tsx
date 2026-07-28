@@ -4,6 +4,7 @@ import {
   type NormalizedReportV21Result,
   type ReportV21,
 } from "@/lib/report-v21";
+import { CircleHelp, Layers3, type LucideIcon } from "lucide-react";
 import { formatLayerKey, getRiskTone, sourceLabel } from "./statusHelpers";
 import { isAnalystView, type V21ViewMode } from "./viewMode";
 
@@ -16,6 +17,7 @@ export function V21OverallConclusion({
 }) {
   const report = normalized.reportV21;
   const showTechnical = isAnalystView(viewMode);
+  const isSampleReport = report.report_id?.startsWith("RPT-SAMPLE-");
   const overallStatus = report.overall_status ?? {
     label: "Unknown",
     level: "medium" as const,
@@ -83,9 +85,11 @@ export function V21OverallConclusion({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-full border border-[#E4EDD2] bg-[#FBFDF5] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#8BAA2B]">
-          {sourceLabel(normalized.source)}
-        </span>
+        {!isSampleReport && (
+          <span className="rounded-full border border-[#E4EDD2] bg-[#FBFDF5] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#8BAA2B]">
+            {sourceLabel(normalized.source)}
+          </span>
+        )}
         {!normalized.valid && (
           <span className="rounded-full border border-amber-100 bg-amber-50 px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-amber-700">
             Limited validation
@@ -93,17 +97,28 @@ export function V21OverallConclusion({
         )}
       </div>
 
+      <ScoreCards cards={cards} />
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <SummaryCard title="Primary Blocking Layer" value={formatLayerKey(primaryBlockingLayer.layer_key)} detail={primaryBlockingLayer.reason} />
-        <SummaryCard title="Why It Matters" value={clientSummary.why_it_matters} detail={`First priority: ${clientSummary.first_priority}`} />
+        <SummaryCard
+          title="Primary Blocking Layer"
+          value={formatLayerKey(primaryBlockingLayer.layer_key)}
+          detail={primaryBlockingLayer.reason}
+          icon={Layers3}
+          highlighted
+        />
+        <SummaryCard
+          title="Why It Matters"
+          value={clientSummary.why_it_matters}
+          detail={`First priority: ${clientSummary.first_priority}`}
+          icon={CircleHelp}
+        />
       </div>
 
       <div className="rounded-[22px] border border-blue-100 bg-blue-50/50 p-6">
         <h3 className="mb-2 text-[20px] font-black tracking-tight text-[#1A212B]">{clientSummary.title}</h3>
         <p className="text-[15px] font-medium leading-relaxed text-gray-700">{clientSummary.plain_language_summary}</p>
       </div>
-
-      <ScoreCards cards={cards} />
 
       {clientSummary.expected_change && (
         <SummaryCard title="Expected Change" value={clientSummary.expected_change} detail={clientSummary.not_first_priority ? `Not first priority: ${clientSummary.not_first_priority}` : ""} />
@@ -150,24 +165,59 @@ function ClientDecisionSummary({
 
   return (
     <div className="space-y-6">
-      <div className={`overflow-hidden rounded-[22px] border ${tone.border} ${tone.background}`}>
-        <div className="p-6 md:p-8">
-          <span className={`inline-flex rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] ${tone.badge}`}>
-            {decision.priority_label}
-          </span>
-          <h3 className="mt-4 text-[24px] font-black tracking-tight text-[#1A212B] md:text-[28px]">
-            {clientSummary.title}
-          </h3>
-          <p className="mt-3 max-w-4xl text-[15px] font-medium leading-relaxed text-gray-700">
-            {clientSummary.plain_language_summary}
-          </p>
-          <div className={`mt-5 border-t pt-5 ${tone.divider}`}>
-            <p className={`text-[11px] font-black uppercase tracking-[0.14em] ${tone.emphasis}`}>
-              Why action is needed now
+      <div>
+        <h4 className="mb-3 text-[15px] font-black text-[#1A212B]">How to read the three scores</h4>
+        <ScoreCards cards={cards} />
+        <p className="mt-3 rounded-[16px] border border-indigo-100 bg-indigo-50/40 px-5 py-4 text-[13px] font-semibold leading-relaxed text-gray-700">
+          {decision.score_interpretation}
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className={`overflow-hidden rounded-[22px] border ${tone.border} ${tone.background}`}>
+          <div className="p-6 md:p-8">
+            <span className={`inline-flex rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] ${tone.badge}`}>
+              {decision.priority_label}
+            </span>
+            <h3 className="mt-4 text-[24px] font-black tracking-tight text-[#1A212B] md:text-[28px]">
+              {clientSummary.title}
+            </h3>
+            <p className="mt-3 max-w-4xl text-[15px] font-medium leading-relaxed text-gray-700">
+              {clientSummary.plain_language_summary}
             </p>
-            <p className="mt-2 max-w-4xl text-[14px] font-semibold leading-relaxed text-gray-700">
-              {decision.why_act_now}
-            </p>
+            <div className={`mt-5 border-t pt-5 ${tone.divider}`}>
+              <p className={`text-[11px] font-black uppercase tracking-[0.14em] ${tone.emphasis}`}>
+                Why action is needed now
+              </p>
+              <p className="mt-2 max-w-4xl text-[14px] font-semibold leading-relaxed text-gray-700">
+                {decision.why_act_now}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[22px] border border-[#DCE8C3] bg-[#FBFDF6] p-6 md:p-8">
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#7A991C]">Recommended approval</p>
+          <div className="mt-4 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">Primary blocking layer</p>
+              <h4 className="mt-2 text-[20px] font-black text-[#1A212B]">
+                {formatLayerKey(primaryBlockingLayer.layer_key)}
+              </h4>
+              <p className="mt-2 text-[13px] font-medium leading-relaxed text-gray-600">
+                {primaryBlockingLayer.reason}
+              </p>
+            </div>
+            <div className="border-t border-[#DCE8C3] pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+              <p className="text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">First priority</p>
+              <p className="mt-2 text-[17px] font-black leading-snug text-[#1A212B]">{clientSummary.first_priority}</p>
+              {clientSummary.expected_change && (
+                <>
+                  <p className="mt-4 text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">Expected change</p>
+                  <p className="mt-2 text-[13px] font-medium leading-relaxed text-gray-600">{clientSummary.expected_change}</p>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -176,39 +226,6 @@ function ClientDecisionSummary({
         <DecisionMetric value={decision.issue_count} label="Confirmed issues" />
         <DecisionMetric value={decision.affected_layer_count} label="Affected trust layers" />
         <DecisionMetric value={decision.work_phase_count} label="Recommended work phases" />
-      </div>
-
-      <div className="rounded-[22px] border border-[#DCE8C3] bg-[#FBFDF6] p-6 md:p-8">
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#7A991C]">Recommended approval</p>
-        <div className="mt-4 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <div>
-            <p className="text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">Primary blocking layer</p>
-            <h4 className="mt-2 text-[20px] font-black text-[#1A212B]">
-              {formatLayerKey(primaryBlockingLayer.layer_key)}
-            </h4>
-            <p className="mt-2 text-[13px] font-medium leading-relaxed text-gray-600">
-              {primaryBlockingLayer.reason}
-            </p>
-          </div>
-          <div className="border-t border-[#DCE8C3] pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-            <p className="text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">First priority</p>
-            <p className="mt-2 text-[17px] font-black leading-snug text-[#1A212B]">{clientSummary.first_priority}</p>
-            {clientSummary.expected_change && (
-              <>
-                <p className="mt-4 text-[12px] font-black uppercase tracking-[0.12em] text-gray-400">Expected change</p>
-                <p className="mt-2 text-[13px] font-medium leading-relaxed text-gray-600">{clientSummary.expected_change}</p>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h4 className="mb-3 text-[15px] font-black text-[#1A212B]">How to read the three scores</h4>
-        <ScoreCards cards={cards} />
-        <p className="mt-3 rounded-[16px] border border-indigo-100 bg-indigo-50/40 px-5 py-4 text-[13px] font-semibold leading-relaxed text-gray-700">
-          {decision.score_interpretation}
-        </p>
       </div>
 
       <div className="overflow-hidden rounded-[20px] border border-gray-200 bg-white">
@@ -306,10 +323,41 @@ function priorityTone(priority: ClientDecisionPriority) {
   }[priority];
 }
 
-function SummaryCard({ title, value, detail }: { title: string; value: string; detail: string }) {
+function SummaryCard({
+  title,
+  value,
+  detail,
+  icon: Icon,
+  highlighted = false,
+}: {
+  title: string;
+  value: string;
+  detail: string;
+  icon?: LucideIcon;
+  highlighted?: boolean;
+}) {
   return (
-    <article className="rounded-[20px] border border-gray-100 bg-gray-50/60 p-5">
-      <p className="mb-2 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">{title}</p>
+    <article
+      className={`rounded-[20px] border p-5 ${
+        highlighted
+          ? "border-[#DCE8C3] bg-[#FBFDF6]"
+          : "border-gray-100 bg-gray-50/60"
+      }`}
+    >
+      {Icon ? (
+        <div className="mb-3 flex items-center gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EAF4D2] text-[#739315]">
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[#52651C]">
+            {title}
+          </p>
+        </div>
+      ) : (
+        <p className="mb-2 text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">
+          {title}
+        </p>
+      )}
       <h4 className="mb-2 text-[17px] font-black text-[#1A212B]">{value}</h4>
       {detail && <p className="text-[13px] font-medium leading-relaxed text-gray-600">{detail}</p>}
     </article>

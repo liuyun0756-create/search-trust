@@ -25,17 +25,17 @@ const benefits = [
   {
     icon: MessageSquare,
     title: 'More credible client communication',
-    description: 'Show clients a structured trust breakdown instead of vague recommendations or opinions.',
+    description: 'Use the client preview and Client PDF to explain priority and scope without exposing internal evidence detail.',
   },
   {
     icon: ClipboardCheck,
     title: 'Better quality control for scaled local SEO',
-    description: 'Review priority pages in a multi-location rollout against trust standards, not just surface-level checks.',
+    description: 'Review representative priority pages in a multi-location rollout against trust standards, not just surface-level checks.',
   },
   {
     icon: ListOrdered,
     title: 'Clearer prioritization of fixes',
-    description: 'Know which trust layer is collapsing and what to fix first — instead of trying everything at once.',
+    description: 'Use the four-phase roadmap, completion gates, and re-audit guidance instead of changing everything at once.',
   },
   {
     icon: TrendingUp,

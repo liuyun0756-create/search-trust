@@ -75,7 +75,7 @@ export function PricingHero() {
                 <span className="pb-2 text-[16px] font-bold text-[#6B7280]">/ submitted URL</span>
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-[#55616F]">
-                A v2.1 trust diagnosis for one submitted page, delivered as a web report with PDF export and a clear fix path.
+                An evidence-backed trust diagnosis for one submitted page, delivered as a web report with PDF export and a clear fix path.
               </p>
             </div>
 

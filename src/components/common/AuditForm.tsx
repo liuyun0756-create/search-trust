@@ -43,8 +43,8 @@ export function AuditForm({ floating = false }: AuditFormProps) {
   };
 
   const wrapperClass = floating
-    ? "absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 z-20 w-full max-w-6xl bg-white rounded-[24px] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100"
-    : "relative z-20 -mt-37 mx-auto max-w-6xl px-6 bg-white rounded-[24px] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100";
+    ? "absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 z-20 w-full max-w-6xl overflow-hidden rounded-2xl border border-[#D9E7AE] bg-white p-10 shadow-[0_24px_64px_rgba(15,23,42,0.14)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[#A5D020]"
+    : "relative z-20 -mt-37 mx-auto max-w-6xl overflow-hidden rounded-2xl border border-[#D9E7AE] bg-white p-10 shadow-[0_24px_64px_rgba(15,23,42,0.14)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[#A5D020]";
 
   return (
     <form onSubmit={handleSubmit} className={wrapperClass}>
@@ -61,7 +61,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
             placeholder="Enter the page URL to audit"
             value={formData.url}
             onChange={(e) => setFormData({...formData, url: e.target.value})}
-            className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all placeholder:text-[#4B5563]"
+            className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
           />
         </div>
 
@@ -75,7 +75,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
             placeholder="Enter the GBP URL"
             value={formData.gbpUrl}
             onChange={(e) => setFormData({...formData, gbpUrl: e.target.value})}
-            className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all placeholder:text-gray-300"
+            className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
           />
         </div>
 
@@ -92,7 +92,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
               aria-label="Page Type"
               value={formData.pageType}
               onChange={(e) => setFormData({...formData, pageType: e.target.value})}
-              className="w-full bg-white border border-gray-100 rounded-xl px-5 py-3.5 text-[14px] appearance-none focus:ring-2 focus:ring-[#A5D020] focus:border-transparent outline-none transition-all cursor-pointer"
+              className="w-full cursor-pointer appearance-none rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
             >
               {PAGE_TYPES.map((type) => (
                 <option key={type} value={type}>{type}</option>
@@ -107,7 +107,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         <button
           type="submit"
           disabled={loading || !formData.url.trim() || !formData.pageType.trim()}
-          className="px-8 py-3 bg-[#1A1F2B] text-white font-bold rounded-xl hover:bg-black hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+          className="flex min-w-[190px] items-center justify-center rounded-lg bg-[#1A1F2B] px-9 py-3.5 font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] transition-all hover:bg-black hover:shadow-[0_14px_30px_rgba(15,23,42,0.24)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
         >
           {loading ? (
             <Loader2 className="animate-spin" size={20} />

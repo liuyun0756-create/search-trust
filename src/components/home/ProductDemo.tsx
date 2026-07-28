@@ -1,57 +1,21 @@
 "use client";
 
 import React from 'react';
-import { Sparkles } from 'lucide-react';
 
 const levels = [
-  { id: "L0", title: "Foundation", desc: "Does the page have a clear service, topic, and local intent foundation?" },
-  { id: "L0-A", title: "Entity Presence", desc: "Can a real business entity be identified from checked signals?" },
-  { id: "L0-B", title: "Entity Consistency", desc: "Do identity signals stay consistent across checked surfaces?" },
-  { id: "L1", title: "Specificity", desc: "Is it concrete enough to feel real, or generic enough to be reused anywhere?" },
-  { id: "L2", title: "Real-World Connection", desc: "Does it connect to places, service context, time, and reality?" },
-  { id: "L3", title: "Accountability", desc: "Does the page reflect real business accountability, not just claims?" },
-  { id: "L4", title: "Page Unique Value", desc: "Does this deserve to exist on its own?" },
-  { id: "L5", title: "Algorithm Fit", desc: "Is the page structure adapted to today's search and AI citation environment?" }
+  { id: "L1", title: "Foundation", desc: "Does the page establish a clear service, topic, and local intent?" },
+  { id: "L2", title: "Entity Presence", desc: "Can a real business entity be identified from the checked signals?" },
+  { id: "L3", title: "Entity Consistency", desc: "Do identity signals remain consistent across the checked sources?" },
+  { id: "L4", title: "Specificity", desc: "Is the content concrete and page-specific rather than reusable?" },
+  { id: "L5", title: "Real-World Connection", desc: "Does the page connect its claims to places, work, time, and real activity?" },
+  { id: "L6", title: "Accountability", desc: "Does the page show who is responsible for the service and its claims?" },
+  { id: "L7", title: "Page Unique Value", desc: "Does the page provide a distinct reason to exist on its own?" },
+  { id: "L8", title: "Algorithm Fit", desc: "After earlier layers are stable, does the page fit current search expectations?" }
 ];
-
-const CurvedConnectors = () => {
-  const ITEM_HEIGHT = 140;
-  const CURVE_RADIUS = 20;
-  const START_X = 20;
-  const LINE_LENGTH = 80;
-  const BRANCH_Y_OFFSET = 44; // 分支线对齐到每行图标中心的偏移量
-
-  const generatePath = () => {
-    const lastY = (levels.length - 1) * ITEM_HEIGHT + BRANCH_Y_OFFSET;
-    let d = `M ${START_X} 0 V ${lastY + CURVE_RADIUS}`;
-
-    levels.forEach((_, index) => {
-      const y = index * ITEM_HEIGHT + BRANCH_Y_OFFSET;
-      d += ` M ${START_X} ${y - CURVE_RADIUS} Q ${START_X} ${y} ${START_X + CURVE_RADIUS} ${y} H ${START_X + LINE_LENGTH}`;
-    });
-    return d;
-  };
-
-  const totalHeight = ITEM_HEIGHT * levels.length - 96;
-
-  return (
-    <svg className="absolute inset-0 z-0 pointer-events-none" width="100%" height={totalHeight}>
-      <path
-        d={generatePath()}
-        stroke="#374151"
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-};
 
 export function ProductDemo() {
   return (
-    <section className="relative min-h-[900px] w-full bg-[#0B0C0E] py-20 flex items-center overflow-hidden">
-      
-      {/* 背景图层 - 修正了背景尺寸和位置 */}
+    <section className="relative w-full overflow-hidden bg-[#0B0C0E] py-20">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div
           className="absolute inset-0 opacity-50"
@@ -64,16 +28,13 @@ export function ProductDemo() {
             WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)',
           }}
         />
-        {/* 压暗渐变，确保文字可读性 */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#0B0C0E]/50 to-[#0B0C0E]" />
       </div>
 
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-          
-          {/* 左侧：标题与文案 */}
-          <div className="lg:sticky lg:top-24 w-full h-full max-w-[640px] flex flex-col">
-            <div className="flex-1">
+          <div className="w-full max-w-[640px] lg:sticky lg:top-24">
+            <div>
               <h2 className="text-[40px] md:text-[44px] font-extrabold text-white leading-[1.1] tracking-tighter">
                 The SearchTrust 8-Layer Trust Model
               </h2>
@@ -83,18 +44,29 @@ export function ProductDemo() {
               </p>
             </div>
 
-            <div className="w-full mt-24">
-               <p className="text-gray-500 text-[14px] font-medium pl-4 leading-relaxed">
-                SearchTrust doesn't just flag issues. It maps them to trust layers, evidence, coverage, and a prioritized fix path.
+            <div className="mt-12 w-full border-l-2 border-[#A5D020] pl-5">
+              <p className="text-gray-400 text-[15px] font-medium leading-relaxed">
+                SearchTrust maps each finding to its trust layer, source evidence, recommended action, and place in the implementation roadmap.
               </p>
             </div>
           </div>
 
-          {/* 右侧：层级列表 */}
-          <div className="relative py-4 w-full max-w-[640px]">
-           <img src="/images/layer-bg.png" alt="" className="w-full h-auto" />
+          <div className="grid w-full max-w-[640px] grid-cols-1 gap-3 sm:grid-cols-2">
+            {levels.map((level) => (
+              <article
+                key={level.id}
+                className="min-h-[164px] border border-white/10 bg-white/[0.04] p-5"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center bg-[#A5D020] text-sm font-extrabold text-[#101217]">
+                    {level.id}
+                  </span>
+                  <h3 className="text-[17px] font-bold text-white">{level.title}</h3>
+                </div>
+                <p className="text-[14px] font-medium leading-6 text-gray-400">{level.desc}</p>
+              </article>
+            ))}
           </div>
-
         </div>
       </div>
     </section>

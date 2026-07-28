@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { Target } from "lucide-react";
+import { Building2, Check, FileSearch, Layers3, Route, Target } from "lucide-react";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
 import { AuditForm } from "@/components/common/AuditForm";
 import { AuditFormModal } from "@/components/common/AuditFormModal";
@@ -59,23 +59,21 @@ export function HeroSection() {
               </span>
             </div>
 
-            <h1 className="text-[44px] md:text-[52px] font-[800] leading-[72px] text-[#1D2531] tracking-tight">
-              Find why Google doesn&apos;t
-              trust <span className="text-[#A5D020]">your local page</span>
-              <br />
-              and what to fix first
+            <h1 className="text-[44px] md:text-[52px] font-[800] leading-[1.15] text-[#1D2531] tracking-tight">
+              Diagnose why a local page struggles to establish trust
+              <span className="text-[#A5D020]"> and what to fix first</span>
             </h1>
 
             <div className="mt-8 space-y-4 w-full">
               <p className="text-[#657083] text-[16px] leading-relaxed">
-                SearchTrust analyzes a submitted local, city, service-area, or location page through a structured trust model and shows where trust breaks down, which layer matters most, and what to fix first.
+                Local pages are more likely to earn and hold stable rankings when their trust signals are clear and consistent. SearchTrust shows where trust breaks down, the evidence behind each finding, and what to fix first.
               </p>
               <div className="flex items-start gap-3 rounded-2xl border border-[#A5D020]/20 bg-[#F4F7E9] px-4 py-3">
                 <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#7FA40F] shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
                   <Target size={15} strokeWidth={2} />
                 </div>
                 <p className="text-[#4B5563] text-[15px] font-semibold leading-relaxed">
-                  Built for local pages that look optimized but still struggle to rank, hold visibility, or compete consistently.
+                  Built for agencies and local SEO teams that need a defensible diagnosis, an executable roadmap, and client-ready delivery.
                 </p>
               </div>
             </div>
@@ -100,12 +98,92 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* 右侧图片空置区域 */}
-          <div className="flex-1 w-full flex justify-end">
-            <div className="w-[600px] h-[560px] rounded-2xl border border-white/60 bg-white/30 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#A5D020]/10 blur-[80px] rounded-full" />
-              <div className="absolute inset-0 flex items-center justify-center text-gray-300 italic font-light">
-                <img src="/images/home-banner-bg.png" alt="Home Banner Background" />
+          <div className="flex w-full flex-1 justify-end">
+            <div className="relative w-full max-w-[600px] overflow-hidden rounded-2xl border border-white/70 bg-white/85 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.10)] backdrop-blur-md sm:p-6">
+              <div className="mb-5 border-b border-gray-100 pb-4">
+                <div>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#8BAF18]">
+                    Agency Audit
+                  </p>
+                  <h2 className="mt-1 text-[20px] font-extrabold text-[#1A1F2B]">Trust Audit Report</h2>
+                  <p className="mt-1 text-[12px] font-medium text-[#7B8495]">One priority local service page</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ["Trust status", "Medium weak", "text-[#2563EB]"],
+                  ["Ranking potential", "Strong", "text-[#059669]"],
+                  ["Risk level", "Medium", "text-[#D97706]"],
+                ].map(([label, value, color]) => (
+                  <div key={label} className="min-h-[88px] border border-gray-100 bg-[#FAFBFC] p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#929BAD]">{label}</p>
+                    <p className={`mt-3 text-[14px] font-extrabold leading-tight ${color}`}>{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="border border-gray-100 bg-white p-4">
+                  <div className="flex items-center gap-2 text-[#1A1F2B]">
+                    <Layers3 size={16} className="text-[#8BAF18]" aria-hidden="true" />
+                    <p className="text-[12px] font-extrabold">L1-L8 Trust Breakdown</p>
+                  </div>
+                  <div className="mt-4 grid grid-cols-4 gap-1.5">
+                    {["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8"].map((layer, index) => (
+                      <span
+                        key={layer}
+                        className={`flex h-8 items-center justify-center text-[10px] font-extrabold ${
+                          index === 2 || index === 3
+                            ? "bg-[#FFF3E5] text-[#B45309]"
+                            : "bg-[#ECFDF5] text-[#047857]"
+                        }`}
+                      >
+                        {layer}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex items-center gap-2 text-[11px] font-semibold text-[#657083]">
+                    <FileSearch size={14} aria-hidden="true" />
+                    Evidence and observations
+                  </div>
+                </div>
+
+                <div className="border border-gray-100 bg-white p-4">
+                  <div className="flex items-center gap-2 text-[#1A1F2B]">
+                    <Route size={16} className="text-[#8BAF18]" aria-hidden="true" />
+                    <p className="text-[12px] font-extrabold">Implementation Roadmap</p>
+                  </div>
+                  <div className="mt-4 space-y-2.5">
+                    {[
+                      "Stabilize the entity",
+                      "Build local credibility",
+                      "Add accountable proof",
+                      "Reassess search fit",
+                    ].map((phase, index) => (
+                      <div key={phase} className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#A5D020] text-[9px] font-extrabold text-[#172009]">
+                          {index + 1}
+                        </span>
+                        <span className="text-[10px] font-semibold text-[#657083]">{phase}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3 border border-[#DDE8BD] bg-[#F7FAEE] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Building2 size={16} className="text-[#789B11]" aria-hidden="true" />
+                  <div>
+                    <p className="text-[11px] font-extrabold text-[#263018]">Business Presence Audit</p>
+                    <p className="text-[9px] font-medium text-[#718052]">Supplemental, non-scoring checks</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-[10px] font-bold text-[#4B6410]">
+                  <Check size={13} aria-hidden="true" />
+                  Checked
+                </div>
               </div>
             </div>
           </div>

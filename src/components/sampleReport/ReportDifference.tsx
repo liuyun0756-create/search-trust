@@ -19,11 +19,11 @@ export function ReportDifference() {
     searchTrust: {
       title: "Search Trust report",
       items: [
-        "layer-based diagnosis",
-        "identifies dominant failure point",
-        "explains local trust weakness",
-        "prioritizes fixes by structural impact",
-        "built for local page interpretation"
+        "fixed L1-L8 diagnosis",
+        "source-traceable findings",
+        "executable layer actions",
+        "four-phase implementation order",
+        "agency and client delivery formats"
       ]
     }
   };
@@ -31,13 +31,13 @@ export function ReportDifference() {
   const featureCards = [
     {
       icon: FileSearch,
-      title: "Not just issue detection",
-      desc: "It explains why the page feels untrustworthy.",
+      title: "Evidence remains inspectable",
+      desc: "Confirmed findings stay connected to source excerpts and missing-signal observations.",
     },
     {
       icon: Target,
-      title: "Not all findings are equal",
-      desc: "It identifies the dominant layer, not just a long list.",
+      title: "Findings become work items",
+      desc: "Layer actions include placement, implementation detail, expected effects, and completion signals.",
     },
     {
       icon: Layers,
@@ -46,8 +46,8 @@ export function ReportDifference() {
     },
     {
       icon: Route,
-      title: "Fixes are ordered by trust impact",
-      desc: "Users know what to change first.",
+      title: "Work follows layer dependency",
+      desc: "The roadmap shows what to complete, observe, and re-audit before the next phase.",
     },
   ];
 

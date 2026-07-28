@@ -10,9 +10,8 @@ export function V21PageLevel({ pageLevel, viewMode: _viewMode = "analyst" }: { p
   return (
     <div className="space-y-5">
       <div className="rounded-[22px] border border-gray-100 bg-gray-50/60 p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[12px] font-black uppercase tracking-[0.14em] text-gray-400">Current Assessment</p>
-          <span className="rounded-full border border-[#E4EDD2] bg-[#FBFDF5] px-3 py-1.5 text-[12px] font-black text-[#7E9F20]">
+        <div className="mb-4 flex flex-wrap items-center">
+          <span className="rounded-full border border-[#DCE8C3] bg-[#F5F9EB] px-3.5 py-1.5 text-[12px] font-black text-[#66820F]">
             {pageLevel.label}
           </span>
         </div>

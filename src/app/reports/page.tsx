@@ -156,7 +156,7 @@ function EmptyState() {
           No reports yet
         </h2>
         <p className="text-[15px] text-[#6B7280] font-medium mb-10 leading-relaxed">
-          Run your first Trust Audit to diagnose why Google doesn&apos;t trust your local page.
+          Run your first Trust Audit to identify weak trust signals, review the evidence, and see what to fix first.
         </p>
         <RunAuditButton className="bg-[#1D2531] text-white px-10 py-4 rounded-full font-bold text-[15px] hover:bg-black transition-all shadow-lg">
           Run a Trust Audit

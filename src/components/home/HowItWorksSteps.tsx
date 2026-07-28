@@ -10,18 +10,18 @@ const steps = [
   },
   {
     icon: Clock,
-    title: "Analyze trust signals",
-    desc: "We scan structural patterns related to specificity, anchors, accountability, and page value.",
+    title: "Collect available evidence",
+    desc: "The audit checks page content and, when available, public GBP and recent review data.",
   },
   {
     icon: CheckCircle2,
-    title: "Map the trust breakdown",
-    desc: "Each issue is mapped to your page's dominant trust failure layer.",
+    title: "Assess the L1-L8 model",
+    desc: "Fixed rules map each confirmed finding to its trust layer without changing the scoring model.",
   },
   {
     icon: MousePointer2,
-    title: "Get actionable output",
-    desc: "Receive a trust report with findings, likely Google interpretation, and lowest-cost next steps.",
+    title: "Deliver the work plan",
+    desc: "Use the full Agency Audit, four-phase roadmap, client preview, and two PDF formats.",
   },
 ];
 
@@ -43,7 +43,7 @@ export function HowItWorksSteps() {
           {steps.map((s, i) => (
             <div
               key={i}
-              className={`relative px-8 py-6 bg-white flex flex-col items-start transition-colors hover:bg-gray-50/50 
+              className={`relative min-h-[230px] px-8 py-6 bg-white flex flex-col items-start transition-colors hover:bg-gray-50/50
                 ${i !== steps.length - 1 ? 'border-b md:border-b-0 md:border-r border-gray-100' : ''}`}
             >
               {/* 右上角超大数字背景 */}

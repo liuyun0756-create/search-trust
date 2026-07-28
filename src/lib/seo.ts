@@ -60,27 +60,27 @@ export function createPageMetadata({
 
 export const pageSeo = {
   home: {
-    title: "SearchTrust | Evidence-Backed Local Page Trust Reports",
+    title: "SearchTrust | Evidence-Backed Local Page Trust Audit",
     description:
-      "SearchTrust analyzes local pages and business entities with an evidence-backed 8-layer trust diagnosis for local SEO teams and agencies.",
+      "Audit one local page with an evidence-backed L1-L8 model, traceable findings, executable actions, a four-phase implementation roadmap, and client-ready PDF delivery.",
     path: "/",
   },
   framework: {
     title: "8-Layer Local Trust Framework | SearchTrust",
     description:
-      "Learn the SearchTrust framework for diagnosing local page trust across foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit.",
+      "See how SearchTrust evaluates L1 Foundation through L8 Algorithm Fit, connects findings to evidence, and orders remediation without changing the fixed scoring model.",
     path: "/framework",
   },
   sampleReport: {
     title: "Sample Local SEO Trust Audit Report | SearchTrust",
     description:
-      "Preview a SearchTrust report showing trust status, ranking potential, risk level, key issues, trust layers, and prioritized fixes for a local page.",
+      "Explore a real-format SearchTrust report with L1-L8 findings, source evidence, layer actions, a four-phase implementation roadmap, Business Presence Audit, and two PDF formats.",
     path: "/sample-report",
   },
   useCases: {
     title: "Use Cases | SearchTrust for SEO Agencies and Local SEO",
     description:
-      "See how SEO agencies, local SEO teams, affiliate operators, and multi-location businesses use SearchTrust to diagnose local page trust issues.",
+      "Use SearchTrust for agency client audits, proposal scoping, stuck-page diagnosis, pre-publish reviews, staged remediation, and priority-page sampling.",
     path: "/use-cases",
   },
   pricing: {

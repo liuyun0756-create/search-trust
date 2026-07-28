@@ -152,7 +152,7 @@ export interface BusinessPresenceAudit {
   profile_activity: ProfileActivity;
   review_audit: ReviewAudit;
   citations: {
-    status: "not_checked";
+    status: AuditStatus;
     reason: string;
   };
   proposal_status?: BusinessPresenceProposalStatus;

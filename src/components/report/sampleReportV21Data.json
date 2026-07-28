@@ -1,27 +1,29 @@
 {
   "schema_version": "2.1",
-  "report_id": "RPT-SAMPLE-V21",
+  "report_id": "RPT-SAMPLE-001",
   "analyzed_url": "https://express24hrplumbinganddrain.com/",
   "page_type": "Service Page",
   "generated_at": "2026-07-09T00:00:00Z",
   "gbp_status": {
-    "status": "not_checked",
+    "status": "checked",
+    "source": "system_discovered",
     "gbp_url": null,
-    "reason": "No live GBP lookup was performed for this representative sample fixture."
+    "reason": "A representative GBP snapshot is included to demonstrate the sample report."
   },
   "data_coverage": {
     "page_content_checked": true,
-    "gbp_checked": false,
-    "schema_checked": false,
-    "contact_page_checked": false,
-    "about_page_checked": false,
-    "reviews_checked": false,
-    "internal_pages_checked": false,
-    "competitor_pages_checked": false,
+    "gbp_checked": true,
+    "schema_checked": true,
+    "contact_page_checked": true,
+    "about_page_checked": true,
+    "reviews_checked": true,
+    "internal_pages_checked": true,
+    "competitor_pages_checked": true,
+    "citations_checked": true,
+    "geo_grid_checked": true,
     "limitations": [
-      "This sample is a representative v2.1 fixture and may not reflect a fresh crawl of the live site.",
-      "GBP was not checked in this report, so GBP alignment could not be verified.",
-      "Schema markup, contact page, about page, reviews, internal pages, and competitor pages were not checked for this representative fixture."
+      "This sample uses representative data and may not reflect a fresh crawl of the live site.",
+      "The page, GBP, review, citation, competitor, and market records are static demonstration data."
     ]
   },
   "business_presence_audit": {
@@ -35,51 +37,51 @@
       {
         "key": "gbp_profile",
         "label": "GBP profile",
-        "status": "not_checked",
-        "detail": "No live GBP lookup was performed for this representative sample."
+        "status": "checked",
+        "detail": "A representative public GBP snapshot is included in this sample."
       },
       {
         "key": "gbp_page_alignment",
         "label": "GBP x Page alignment",
-        "status": "not_checked",
-        "detail": "GBP alignment requires a live public GBP result."
+        "status": "checked",
+        "detail": "Seven page and GBP signals were compared."
       },
       {
         "key": "profile_activity",
         "label": "GBP categories and activity",
-        "status": "not_checked",
-        "detail": "Categories, photos and posts were not requested for this sample."
+        "status": "checked",
+        "detail": "Categories, public photo activity, and recent post activity were reviewed."
       },
       {
         "key": "recent_reviews",
         "label": "Recent review sample",
-        "status": "not_checked",
-        "detail": "No recent review records were requested for this sample."
+        "status": "checked",
+        "detail": "A representative sample of 30 recent reviews was assessed for ratings and owner replies."
       },
       {
         "key": "citations",
         "label": "External citations / NAP network",
-        "status": "not_checked",
-        "detail": "Citation provider integration is deferred for this release."
+        "status": "checked",
+        "detail": "Representative directory records were reviewed for business-name, address, and phone consistency."
       }
     ],
     "summary": {
-      "assessed_items": 0,
-      "matched_items": 0,
-      "issue_items": 0,
-      "not_checked_items": 7
+      "assessed_items": 7,
+      "matched_items": 4,
+      "issue_items": 3,
+      "not_checked_items": 0
     },
     "gbp_page_alignment": [
       {
         "key": "business_name",
         "evidence_id": "bp-business_name",
         "label": "Business name",
-        "status": "not_checked",
+        "status": "mismatch",
         "page_value": "Express 24HR Plumbing and Drain",
-        "gbp_value": null,
+        "gbp_value": "Express 24HR Plumbing & Drain Services",
         "page_source": "Representative sample page",
-        "gbp_source": null,
-        "explanation": "GBP data was not available, so no comparison was made.",
+        "gbp_source": "Representative GBP snapshot",
+        "explanation": "The page and GBP use different business-name wording, so the public identity should be standardized.",
         "related_layer": "entity_consistency",
         "included_in_score": false
       },
@@ -87,12 +89,12 @@
         "key": "phone",
         "evidence_id": "bp-phone",
         "label": "Phone",
-        "status": "not_checked",
-        "page_value": null,
-        "gbp_value": null,
-        "page_source": null,
-        "gbp_source": null,
-        "explanation": "GBP data was not available, so no comparison was made.",
+        "status": "match",
+        "page_value": "(407) 555-0148",
+        "gbp_value": "(407) 555-0148",
+        "page_source": "Representative page contact block",
+        "gbp_source": "Representative GBP snapshot",
+        "explanation": "The primary phone number is aligned across the page and GBP.",
         "related_layer": "entity_consistency",
         "included_in_score": false
       },
@@ -100,12 +102,12 @@
         "key": "address",
         "evidence_id": "bp-address",
         "label": "Address",
-        "status": "not_checked",
+        "status": "missing",
         "page_value": null,
-        "gbp_value": null,
-        "page_source": null,
-        "gbp_source": null,
-        "explanation": "GBP data was not available, so no comparison was made.",
+        "gbp_value": "1420 Service Way, Orlando, FL 32801",
+        "page_source": "Representative page contact areas",
+        "gbp_source": "Representative GBP snapshot",
+        "explanation": "The GBP shows a public address, but the representative page does not surface the same address.",
         "related_layer": "entity_consistency",
         "included_in_score": false
       },
@@ -113,12 +115,12 @@
         "key": "website",
         "evidence_id": "bp-website",
         "label": "Website",
-        "status": "not_checked",
+        "status": "match",
         "page_value": "https://express24hrplumbinganddrain.com/",
-        "gbp_value": null,
+        "gbp_value": "https://express24hrplumbinganddrain.com/",
         "page_source": "Representative sample URL",
-        "gbp_source": null,
-        "explanation": "GBP data was not available, so no comparison was made.",
+        "gbp_source": "Representative GBP snapshot",
+        "explanation": "The GBP website points to the audited domain.",
         "related_layer": "entity_consistency",
         "included_in_score": false
       },
@@ -126,12 +128,12 @@
         "key": "opening_hours",
         "evidence_id": "bp-opening_hours",
         "label": "Opening hours",
-        "status": "not_checked",
+        "status": "match",
         "page_value": "24-hour emergency service messaging",
-        "gbp_value": null,
+        "gbp_value": "Open 24 hours",
         "page_source": "Representative sample page",
-        "gbp_source": null,
-        "explanation": "GBP data was not available, so no comparison was made.",
+        "gbp_source": "Representative GBP snapshot",
+        "explanation": "The page's emergency availability claim is consistent with the GBP hours.",
         "related_layer": "entity_consistency",
         "included_in_score": false
       },
@@ -139,12 +141,12 @@
         "key": "service_area",
         "evidence_id": "bp-service_area",
         "label": "Service area",
-        "status": "not_checked",
-        "page_value": null,
-        "gbp_value": null,
-        "page_source": null,
-        "gbp_source": null,
-        "explanation": "The public GBP source was not checked for service-area data.",
+        "status": "partial",
+        "page_value": "Orlando and surrounding communities",
+        "gbp_value": "Orlando, Winter Park, Maitland",
+        "page_source": "Representative service-area copy",
+        "gbp_source": "Representative GBP snapshot",
+        "explanation": "The page uses broad coverage language while the GBP names specific service areas.",
         "related_layer": "entity_consistency",
         "included_in_score": false
       },
@@ -152,61 +154,129 @@
         "key": "categories",
         "evidence_id": "bp-categories",
         "label": "Categories / service intent",
-        "status": "not_checked",
+        "status": "match",
         "page_value": "Emergency plumbing and drain service",
-        "gbp_value": null,
+        "gbp_value": "Plumber; Drainage service",
         "page_source": "Representative sample page topic",
-        "gbp_source": null,
-        "explanation": "GBP categories were not available, so no comparison was made.",
+        "gbp_source": "Representative GBP snapshot",
+        "explanation": "The GBP categories support the primary service intent shown on the page.",
         "related_layer": "entity_consistency",
         "included_in_score": false
       }
     ],
     "profile_activity": {
-      "status": "not_checked",
-      "categories": [],
-      "category_source": "not_available",
-      "photo_count": null,
-      "latest_photo_date": null,
-      "photo_status": "not_checked",
-      "post_count": null,
-      "latest_post_date": null,
-      "post_status": "not_checked",
+      "status": "checked",
+      "categories": ["Plumber", "Drainage service"],
+      "category_source": "observed",
+      "photo_count": 18,
+      "latest_photo_date": "2026-06-21",
+      "photo_status": "checked",
+      "post_count": 3,
+      "latest_post_date": "2026-06-14",
+      "post_status": "checked",
       "limitations": [
-        "GBP profile data was unavailable for this representative sample."
+        "Photo and post activity is representative static sample data."
       ]
     },
     "review_audit": {
-      "status": "not_checked",
-      "total_reviews": null,
-      "sample_size": 0,
+      "status": "checked",
+      "total_reviews": 184,
+      "sample_size": 30,
       "sample_limit": 30,
-      "latest_review_date": null,
-      "rating_distribution": {},
-      "owner_reply_count": 0,
-      "owner_reply_rate": null,
-      "unanswered_count": 0,
-      "low_rating_count": 0,
-      "low_rating_unanswered_count": 0,
-      "detailed_positive_count": 0,
-      "reviews": [],
+      "latest_review_date": "2026-06-28",
+      "rating_distribution": {
+        "5": 24,
+        "4": 3,
+        "3": 1,
+        "2": 1,
+        "1": 1
+      },
+      "owner_reply_count": 25,
+      "owner_reply_rate": 0.833,
+      "unanswered_count": 5,
+      "low_rating_count": 3,
+      "low_rating_unanswered_count": 2,
+      "detailed_positive_count": 12,
+      "reviews": [
+        {
+          "author": "Sample Customer A",
+          "rating": 5,
+          "date": "2026-06-28",
+          "text": "The technician explained the repair clearly, arrived within the stated window, and left the work area clean.",
+          "owner_reply": "Thank you for sharing the details of your service experience."
+        },
+        {
+          "author": "Sample Customer B",
+          "rating": 2,
+          "date": "2026-06-17",
+          "text": "The repair was completed, but communication about the arrival time could have been clearer.",
+          "owner_reply": null
+        },
+        {
+          "author": "Sample Customer C",
+          "rating": 5,
+          "date": "2026-05-30",
+          "text": "Fast help with a blocked drain and a clear explanation of what caused the problem.",
+          "owner_reply": "We appreciate the feedback and are glad the team could help."
+        }
+      ],
       "limitations": [
-        "No recent public review records were requested for this representative sample."
+        "Review metrics and excerpts are representative static sample data, not a fresh public review pull."
       ]
     },
     "citations": {
-      "status": "not_checked",
-      "reason": "Citation provider integration is deferred for this release."
+      "status": "checked",
+      "reason": "Representative directory records were checked for NAP consistency in this static sample."
     },
-    "proposal_status": "limited",
+    "proposal_status": "needs_attention",
     "proposal_summary": {
-      "headline": "No confirmed work item from the available data",
-      "summary": "GBP and recent-review data were not requested for this representative sample, so the audit avoids definite conclusions for those areas.",
-      "identity_issue_count": 0,
+      "headline": "Three proposal-ready opportunities identified",
+      "summary": "The representative audit found two identity-alignment gaps and a manageable review-response backlog that can be converted into a focused client work scope.",
+      "identity_issue_count": 2,
       "profile_opportunity_count": 0,
-      "review_action_count": 0
+      "review_action_count": 1
     },
-    "proposal_actions": []
+    "proposal_actions": [
+      {
+        "id": "bp-action-identity",
+        "priority": "high",
+        "business_area": "identity_alignment",
+        "title": "Standardize the public business identity",
+        "rationale": "The business name and address presentation are not fully aligned between the page and representative GBP snapshot.",
+        "recommended_scope": [
+          "Use one approved business name across visible page sections",
+          "Add the public address to the appropriate contact area",
+          "Review repeated identity fields before publication"
+        ],
+        "evidence_keys": ["bp-business_name", "bp-address"]
+      },
+      {
+        "id": "bp-action-service-area",
+        "priority": "medium",
+        "business_area": "identity_alignment",
+        "title": "Clarify the public service area",
+        "rationale": "The page uses broad coverage wording while the representative GBP snapshot lists specific communities.",
+        "recommended_scope": [
+          "Confirm the approved service-area list",
+          "Use consistent coverage language on the page and GBP",
+          "Avoid implying service in locations the business does not cover"
+        ],
+        "evidence_keys": ["bp-service_area"]
+      },
+      {
+        "id": "bp-action-reviews",
+        "priority": "medium",
+        "business_area": "review_operations",
+        "title": "Clear the recent review-response backlog",
+        "rationale": "Five reviews in the representative recent sample have no owner response, including two lower-rated reviews.",
+        "recommended_scope": [
+          "Respond first to unanswered 1-3 star reviews",
+          "Address the remaining recent unanswered reviews",
+          "Use detailed positive reviews as proof candidates only with client approval"
+        ],
+        "evidence_keys": ["recent_reviews"]
+      }
+    ]
   },
   "overall_status": {
     "label": "Medium Weak",
@@ -267,7 +337,7 @@
       "layer_id": 1,
       "layer_key": "foundation",
       "layer_name": "Eligibility",
-      "layer_label": "L0 Foundation",
+      "layer_label": "L1 Foundation",
       "status": "good",
       "checked_rule_ids": [
         17,
@@ -302,7 +372,7 @@
       "layer_id": 2,
       "layer_key": "entity_presence",
       "layer_name": "Entity Presence",
-      "layer_label": "L0-A Entity Presence",
+      "layer_label": "L2 Entity Presence",
       "status": "weak",
       "checked_rule_ids": [
         21,
@@ -382,7 +452,7 @@
       "layer_id": 3,
       "layer_key": "entity_consistency",
       "layer_name": "Entity Consistency",
-      "layer_label": "L0-B Entity Consistency",
+      "layer_label": "L3 Entity Consistency",
       "status": "not_checked",
       "checked_rule_ids": [],
       "triggered_rule_ids": [],
@@ -444,7 +514,7 @@
       "layer_id": 4,
       "layer_key": "specificity",
       "layer_name": "Specificity",
-      "layer_label": "L1 Specificity",
+      "layer_label": "L4 Specificity",
       "status": "medium",
       "checked_rule_ids": [
         1,
@@ -527,7 +597,7 @@
       "layer_id": 5,
       "layer_key": "real_world_connection",
       "layer_name": "Real-World Connection",
-      "layer_label": "L2 Real-World Connection",
+      "layer_label": "L5 Real-World Connection",
       "status": "weak",
       "checked_rule_ids": [
         3,
@@ -606,7 +676,7 @@
       "layer_id": 6,
       "layer_key": "accountability",
       "layer_name": "Accountability",
-      "layer_label": "L3 Accountability",
+      "layer_label": "L6 Accountability",
       "status": "medium",
       "checked_rule_ids": [
         9,
@@ -679,7 +749,7 @@
       "layer_id": 7,
       "layer_key": "page_unique_value",
       "layer_name": "Page Unique Value",
-      "layer_label": "L4 Page Unique Value",
+      "layer_label": "L7 Page Unique Value",
       "status": "medium",
       "checked_rule_ids": [
         13,
@@ -751,7 +821,7 @@
       "layer_id": 8,
       "layer_key": "algorithm_fit",
       "layer_name": "Algorithm Fit",
-      "layer_label": "L5 Algorithm Fit",
+      "layer_label": "L8 Algorithm Fit",
       "status": "good",
       "checked_rule_ids": [
         15,

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, Download, Eye, X } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import type { NormalizedReportV21Result } from "@/lib/report-v21";
 import type { Report } from "@/types/database";
 import { ReportV21Content } from "./ReportV21Content";
@@ -86,15 +86,14 @@ export function V21ClientReportPreview({
             type="button"
             onClick={onClose}
             className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-bold text-[#1A212B] transition-colors hover:border-gray-300 hover:bg-gray-50"
-            aria-label="Back to audit"
+            aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Back to Audit</span>
+            <span className="hidden sm:inline">Back</span>
           </button>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 shrink-0 text-[#86A916]" />
               <h2 id="client-report-preview-title" className="whitespace-nowrap text-[14px] font-black tracking-tight text-[#1A212B] sm:text-[18px]">
                 Client Report Preview
               </h2>
@@ -114,26 +113,10 @@ export function V21ClientReportPreview({
             <span className="sm:hidden">Download</span>
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#1A212B] lg:inline-flex"
-            aria-label="Close client report preview"
-            title="Close preview"
-          >
-            <X className="h-5 w-5" />
-          </button>
         </div>
       </header>
 
       <div className="mx-auto max-w-[1600px] px-3 py-5 sm:px-6 sm:py-7 lg:px-10 lg:py-10">
-        <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#DCE9BE] bg-[#FBFDF5] px-4 py-3 text-[#526315] sm:px-5">
-          <Eye className="mt-0.5 h-4 w-4 shrink-0" />
-          <p className="text-[12px] font-semibold leading-relaxed sm:text-[13px]">
-            This preview mirrors the Client PDF. Return to the Agency Audit for key issues, Business Presence, raw evidence and implementation guidance.
-          </p>
-        </div>
-
         <ReportV21Content
           normalized={normalized}
           rawReport={rawReport}

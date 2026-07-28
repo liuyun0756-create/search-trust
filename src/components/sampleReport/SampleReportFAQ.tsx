@@ -22,7 +22,7 @@ const faqData = [
   },
   {
     question: "How is the report delivered?",
-    answer: "After payment, you submit the URL you want reviewed. Your report is delivered by email within two hours.",
+    answer: "After you submit a publicly accessible URL, the audit runs its structured checks and makes the completed report available in your account.",
   },
   {
     question: "Is the report automated?",

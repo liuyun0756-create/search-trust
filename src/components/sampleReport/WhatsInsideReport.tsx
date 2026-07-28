@@ -7,33 +7,33 @@ import { motion } from 'framer-motion';
 const sections = [
   {
     icon: BarChart3,
-    title: 'Current trust status',
-    desc: 'A page-level summary of current structural trust strength.',
+    title: 'Overall decision summary',
+    desc: 'The primary blocking layer, current trust status, urgency, and first priority.',
   },
   {
     icon: Compass,
-    title: 'Page interpretation',
-    desc: 'Why the page can participate, stall, or stay unstable.',
+    title: 'Page-level interpretation',
+    desc: 'The current assessment, existing foundation, main limitation, and likely outcome.',
   },
   {
     icon: Target,
-    title: 'Primary blocking layer',
-    desc: 'The trust layer where the current weakness matters most.',
+    title: 'Key Issues with actions',
+    desc: 'Confirmed issues with judgement, impact, suggestions, and executable work items.',
   },
   {
     icon: Layers,
-    title: '8-layer trust breakdown',
-    desc: 'Weaknesses organized across foundation, entity, specificity, accountability, value, and algorithm-fit layers.',
+    title: 'L1-L8 trust breakdown',
+    desc: 'Signals assessed, findings requiring attention, source evidence, and layer actions.',
   },
   {
     icon: Zap,
-    title: 'Data coverage and safe GBP alignment',
-    desc: 'What was checked, what was unavailable, and whether structured GBP alignment can be shown safely.',
+    title: 'Four-phase roadmap',
+    desc: 'Ordered remediation with completion gates, observation guidance, and re-audit timing.',
   },
   {
     icon: FileText,
-    title: 'PDF export and client-ready views',
-    desc: 'Client View, Analyst View, and PDF output for agency reporting workflows.',
+    title: 'Business Presence and delivery',
+    desc: 'Public GBP checks plus a client preview, Client PDF, and Full Audit PDF.',
   },
 ];
 

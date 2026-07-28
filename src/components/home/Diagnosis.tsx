@@ -34,8 +34,8 @@ const diagnosisFeatures = [
   },
   {
     id: "6",
-    title: "Lowest-Cost Fix Suggestions",
-    desc: "Get specific, minimal actions to improve trust without rewriting everything.",
+    title: "Implementation Roadmap",
+    desc: "Move through four ordered phases with completion signals, observation guidance, and re-audit timing.",
     icon: Wrench,
   }
 ];

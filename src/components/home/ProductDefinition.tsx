@@ -3,10 +3,11 @@
 import { CheckCircle2, XCircle } from "lucide-react";
 
 const isItems = [
-  "A structured trust diagnosis for local and service-area pages",
-  "A way to explain why a page feels optimized but still underperforms",
-  "A prioritization tool for fixing local page weaknesses",
-  "A report built for page-level trust interpretation",
+  "A fixed L1-L8 trust diagnosis for one local page",
+  "A source-traceable record of confirmed findings",
+  "An implementation roadmap ordered by trust-layer dependency",
+  "An Agency Audit with a separate client-ready delivery format",
+  "A supplemental Business Presence review when public data is available",
 ];
 
 const isNotItems = [
@@ -28,7 +29,7 @@ export function ProductDefinition() {
             </h2>
             <div className="section-title-bar" />
             <p className="mx-auto mt-6 max-w-2xl text-[15px] md:text-[16px] font-medium leading-relaxed text-[#657083]">
-              SearchTrust is a trust diagnosis layer for local pages. It clarifies the job it does, and the jobs it deliberately does not try to replace.
+              SearchTrust is a page-level audit and delivery system for local SEO work. Its supplemental Business Presence section supports one-time proposal scoping without changing the L1-L8 score.
             </p>
           </div>
 

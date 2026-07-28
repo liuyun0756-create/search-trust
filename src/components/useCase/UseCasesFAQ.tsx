@@ -32,7 +32,7 @@ const faqData = [
   {
     question: 'Can multi-location brands use it?',
     answer:
-      'Yes, especially for reviewing page differentiation and local grounding. Multi-location brands can audit across all location pages to ensure consistency and standalone value.',
+      'Yes. Start with one priority or representative location page, use the findings to define the work pattern, and then audit additional pages deliberately.',
   },
 ];
 

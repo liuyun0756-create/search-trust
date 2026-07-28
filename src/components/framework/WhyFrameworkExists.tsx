@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, BarChart3, Bot, Filter } from 'lucide-react';
+import { Target, BarChart3, Bot, Filter, ShieldCheck } from 'lucide-react';
 
 const reasons = [
   {
@@ -21,6 +21,11 @@ const reasons = [
     icon: Filter,
     title: "Trust as the Real Filter",
     desc: "As a result, trust has become the true separator of quality.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "More Stable Visibility",
+    desc: "Search visibility is more likely to remain stable when a page consistently presents clear, verifiable trust signals.",
   }
 ];
 

@@ -2,28 +2,28 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Lightbulb, Eye, Route } from 'lucide-react';
+import { ScanSearch, Quote, ClipboardList, Route } from 'lucide-react';
 
 const features = [
   {
-    icon: AlertTriangle,
-    title: "Primary Blocking Layer",
-    desc: "Identifies which v2.1 trust layer is limiting the page most.",
+    icon: ScanSearch,
+    title: "Signals Assessed and Findings",
+    desc: "Shows the fixed signal count for each layer and the confirmed items that need attention.",
   },
   {
-    icon: Lightbulb,
-    title: "Why This Layer Matters",
-    desc: "Explains how the weakness affects page and entity trust structure.",
+    icon: Quote,
+    title: "Evidence and Observations",
+    desc: "Keeps source excerpts and missing-signal observations available for verification.",
   },
   {
-    icon: Eye,
-    title: "Evidence and Coverage",
-    desc: "Shows available evidence, checked data sources, and important limitations.",
+    icon: ClipboardList,
+    title: "Layer Actions",
+    desc: "Turns the layer's confirmed findings into implementation tasks with completion signals.",
   },
   {
     icon: Route,
-    title: "Lowest Cost Recovery Path",
-    desc: "Provides a prioritized fix strategy tied to the affected trust layer.",
+    title: "Implementation Roadmap",
+    desc: "Orders remediation into four phases with completion gates, observation guidance, and re-audit timing.",
   },
 ];
 
@@ -43,26 +43,11 @@ export function FrameworkInProduct() {
             How the framework appears inside SearchTrust
           </motion.h2>
           <p className="text-[16px] text-gray-500 font-medium max-w-xl mx-auto">
-            Issues aren't just listed — they are mapped to specific trust layers with a clear path to recovery.
+            Findings, evidence, and actions remain connected inside the layer, while the roadmap controls the order of work.
           </p>
         </div>
 
-        {/* 左图右卡片 */}
-        <div className="flex flex-col lg:flex-row gap-8 items-stretch max-w-5xl mx-auto">
-          {/* 左侧大图 */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="lg:w-[45%] flex-shrink-0"
-          >
-            <div className="bg-[#F8F9FA] rounded-[24px] border border-gray-100 overflow-hidden h-full">
-              <img src="/images/framework-flow.svg" alt="Framework in Product" className="w-full h-full object-contain" />
-            </div>
-          </motion.div>
-
-          {/* 右侧 2x2 卡片网格 */}
-          <div className="lg:w-[55%] grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -86,7 +71,6 @@ export function FrameworkInProduct() {
                 </div>
               </motion.div>
             ))}
-          </div>
         </div>
 
       </div>

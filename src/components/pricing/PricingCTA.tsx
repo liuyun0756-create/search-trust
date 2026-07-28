@@ -21,32 +21,19 @@ export function PricingCTA() {
       <div className="relative z-10 mx-auto max-w-[1300px]">
         <motion.div
           whileHover={{ scale: 1.01 }}
-          className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-white bg-white/78 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md md:p-12"
+          className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-white bg-white/78 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md md:px-12 md:py-14"
         >
-          <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="text-left">
-              <h2 className="mb-8 max-w-2xl text-[30px] font-bold leading-tight tracking-tight text-[#1A1F2B] md:text-[42px]">
-                Purchase your first report and see how{' '}
-                <span className="text-bar-highlight">SearchTrust diagnoses trust breakdown</span>
-                {' '}on a real page.
-              </h2>
-              <RunAuditButton
-                className="inline-flex items-center justify-center rounded-xl bg-[#1A1F2B] px-8 py-4 font-bold text-white transition-colors hover:bg-black"
-              >
-                Buy One Report
-              </RunAuditButton>
-            </div>
-
-            <div className="relative hidden min-h-[260px] lg:block">
-              <div className="absolute -right-10 -top-8 h-44 w-44 rounded-full bg-[#A5D020]/20 blur-[70px]" />
-              <div className="absolute right-0 top-1/2 w-[420px] -translate-y-1/2 overflow-hidden rounded-[24px] border border-[#A5D020]/20 bg-white shadow-[0_20px_48px_rgba(15,23,42,0.12)]">
-                <img
-                  src="/images/sample-report.png"
-                  alt="SearchTrust sample report preview"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
+          <div className="relative z-10 flex flex-col items-center text-center">
+            <h2 className="mb-8 max-w-3xl text-[30px] font-bold leading-tight tracking-tight text-[#1A1F2B] md:text-[42px]">
+              Purchase your first report and see how{' '}
+              <span className="text-bar-highlight">SearchTrust diagnoses trust breakdown</span>
+              {' '}on a real page.
+            </h2>
+            <RunAuditButton
+              className="inline-flex items-center justify-center rounded-xl bg-[#1A1F2B] px-8 py-4 font-bold text-white transition-colors hover:bg-black"
+            >
+              Buy One Report
+            </RunAuditButton>
           </div>
         </motion.div>
 

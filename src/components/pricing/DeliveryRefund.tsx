@@ -26,7 +26,7 @@ export function DeliveryRefund() {
             <div className="space-y-4 max-w-lg">
               <p className="text-[18px] text-[#1A212B] font-bold leading-relaxed">
                 After payment, submit the URL you want reviewed.
-                Your report will be delivered via <span>e-mail within two hours</span>.
+                Your report becomes available after the audit workflow and structured checks are complete.
 
               </p>
               <p className="text-[16px] text-[#6B7280] font-medium leading-relaxed">
