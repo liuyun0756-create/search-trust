@@ -63,7 +63,9 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#A5D020]/10 blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none" />
 
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close audit form"
               className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-100 text-gray-400 hover:text-[#1A212B] hover:shadow-sm transition-all z-20"
             >
               <X size={18} strokeWidth={2.5} />

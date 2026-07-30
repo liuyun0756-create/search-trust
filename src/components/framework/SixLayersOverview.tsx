@@ -12,7 +12,7 @@ const layers = [
   { id: "L5", title: "Real-World Connection", icon: MapPin, question: "Does it connect to actual places, service reality, and local context?" },
   { id: "L6", title: "Accountability", icon: Building2, question: "Does it show process, responsibility, boundaries, and next-step clarity?" },
   { id: "L7", title: "Page Unique Value", icon: UserCheck, question: "Does the page deserve to exist on its own?" },
-  { id: "L8", title: "Algorithm Fit", icon: Diamond, question: "Does the page support clear interpretation by users and search systems?" },
+  { id: "L8", title: "Algorithm Fit", icon: Diamond, question: "Can users, traditional search engines, and AI search systems clearly interpret the page?" },
 ];
 
 export function SixLayersOverview() {

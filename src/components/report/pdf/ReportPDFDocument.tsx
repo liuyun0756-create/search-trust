@@ -116,19 +116,6 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     lineHeight: 1.25,
   },
-  sourceBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 9,
-    color: "#475569",
-    fontSize: 7.5,
-    fontWeight: 700,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    marginBottom: 10,
-  },
   agencyPanel: {
     borderWidth: 1,
     borderColor: "#E4EDD2",
@@ -547,12 +534,6 @@ function safeList<T>(value: T[] | undefined | null): T[] {
   return Array.isArray(value) ? value : [];
 }
 
-function sourceLabel(source: NormalizedReportV21Result["source"]): string {
-  if (source === "native") return "Native v2.1";
-  if (source === "legacy_adapted") return "Legacy adapted";
-  return "Fallback";
-}
-
 function labelize(value: string): string {
   return value
     .split("_")
@@ -741,12 +722,10 @@ function ActionCard({ action, compact = false }: { action: ActionItem; compact?:
 function ReportHeader({
   report,
   reportV21,
-  normalized,
   brandingOverride,
 }: {
   report: Report;
   reportV21: ReportV21;
-  normalized: NormalizedReportV21Result;
   brandingOverride?: EffectiveBranding;
 }) {
   const branding = brandingOverride ?? getEffectiveBranding(reportV21);
@@ -762,7 +741,6 @@ function ReportHeader({
     <View style={styles.headerCard}>
       <Text style={styles.eyebrow}>SearchTrust Trust Audit Report</Text>
       <Text style={styles.title}>Trust Audit Report</Text>
-      <Text style={styles.sourceBadge}>{sourceLabel(normalized.source)}</Text>
       {showBranding && (
         <View style={styles.agencyPanel}>
           <View style={styles.agencyHeader}>
@@ -1446,7 +1424,7 @@ export function ReportPDFDocument({
   return (
     <Document title={`SearchTrust Report ${reportId}`} author="SearchTrust" subject="Trust Audit Report" creator="SearchTrust">
       <Page size="A4" style={styles.page} wrap>
-        <ReportHeader report={report} reportV21={reportV21} normalized={normalized} brandingOverride={branding} />
+        <ReportHeader report={report} reportV21={reportV21} brandingOverride={branding} />
         <ExecutiveSummary reportV21={reportV21} variant={variant} />
         <PageLevelSection reportV21={reportV21} />
         {variant === "full" && <KeyIssuesSection reportV21={reportV21} variant={variant} />}

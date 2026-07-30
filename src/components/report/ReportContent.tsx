@@ -1060,9 +1060,10 @@ export function ReportContent({
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        const message = err?.error === 'Report is still generating'
-          ? 'Report is still generating'
-          : 'PDF export failed. Please try again after the report finishes saving.';
+        const serverError = typeof err?.error === 'string' ? err.error : '';
+        const message = !serverError || serverError === 'Internal server error'
+          ? 'PDF export failed due to a server error. Please try again.'
+          : serverError;
         throw new Error(message);
       }
 

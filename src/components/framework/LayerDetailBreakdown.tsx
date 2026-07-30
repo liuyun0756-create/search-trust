@@ -64,10 +64,10 @@ const layerDetails = [
   {
     id: "L8",
     title: "Algorithm Fit",
-    whatItAnswers: "Does the page support clear interpretation by users and search systems?",
-    criteria: ["Clear, scannable information structure", "Entity and service details that can be interpreted consistently", "Helpful organization for users and automated systems"],
-    failures: ["Template structure obscures the page purpose", "Important information is difficult to extract", "Organization weakens the overall page interpretation"],
-    searchInterpretation: "The page may be indexable, but its structure can still weaken how clearly the full page is interpreted.",
+    whatItAnswers: "Can users, traditional search engines, and AI search systems clearly interpret the page?",
+    criteria: ["Clear, scannable information structure", "Entity and service details that can be interpreted consistently", "Organization that supports extraction, citation, and retrieval"],
+    failures: ["Template structure obscures the page purpose", "Key information is difficult for search and AI systems to extract", "The page is difficult to cite or surface confidently"],
+    searchInterpretation: "The page may be indexable, but unclear structure can still limit how confidently traditional and AI search systems interpret, cite, and surface it.",
   },
 ];
 

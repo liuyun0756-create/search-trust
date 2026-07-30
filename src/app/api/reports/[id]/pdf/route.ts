@@ -208,6 +208,11 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const branding = parseBranding(body?.branding);
     const variant = parseVariant(body?.pdf_variant);
+
+    if (id === SAMPLE_REPORT_V21.id || id === SAMPLE_REPORT_V21.report_id) {
+      return renderReportPdf(SAMPLE_REPORT_V21, branding, variant);
+    }
+
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

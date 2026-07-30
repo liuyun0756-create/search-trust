@@ -10,7 +10,7 @@ const levels = [
   { id: "L5", title: "Real-World Connection", desc: "Does the page connect its claims to places, work, time, and real activity?" },
   { id: "L6", title: "Accountability", desc: "Does the page show who is responsible for the service and its claims?" },
   { id: "L7", title: "Page Unique Value", desc: "Does the page provide a distinct reason to exist on its own?" },
-  { id: "L8", title: "Algorithm Fit", desc: "After earlier layers are stable, does the page fit current search expectations?" }
+  { id: "L8", title: "Algorithm Fit", desc: "After earlier layers are stable, does the page fit current search and AI citation expectations?" }
 ];
 
 export function ProductDemo() {

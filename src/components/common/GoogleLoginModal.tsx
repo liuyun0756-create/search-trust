@@ -55,7 +55,9 @@ export function GoogleLoginModal({ isOpen, onClose, onSignInStart }: GoogleLogin
 
             {/* Close button */}
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close sign-in dialog"
               className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-100 text-gray-400 hover:text-[#1A212B] hover:shadow-sm transition-all z-20"
             >
               <X size={18} strokeWidth={2.5} />

@@ -22,7 +22,7 @@ export function RelatedResources() {
       title: "Product Overview",
       desc: "Learn how SearchTrust transforms your SEO.",
       icon: BookOpen,
-      link: "#"
+      link: "/"
     },
     {
       title: "Pricing",

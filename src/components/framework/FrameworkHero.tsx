@@ -32,6 +32,12 @@ export function FrameworkHero() {
 
           {/* 左侧文字区域 */}
           <div className="flex-1 max-w-2xl">
+            <div className="mb-6 pt-3">
+              <span className="inline-block rounded border border-gray-200 bg-white/50 px-3 py-1 text-[12px] font-bold uppercase tracking-[0.2em] text-[#4A4A5A] backdrop-blur-sm">
+                SearchTrust Methodology
+              </span>
+            </div>
+
             <h1 className="text-[44px] md:text-[52px] font-[800] leading-[1.15] text-[#1D2531] tracking-tight">
               The 8-Layer Local <br />
               Trust <span className="text-bar-highlight text-[#1D2531]">Model</span>

@@ -12,7 +12,7 @@ const collapseSteps = [
   { level: "L5", title: "Real-World Connection", desc: "Without real-world connection, local claims become weak.", icon: MapPin },
   { level: "L6", title: "Accountability", desc: "Without accountability, service responsibility remains unclear.", icon: UserCheck },
   { level: "L7", title: "Page Unique Value", desc: "Without page unique value, the page feels unnecessary.", icon: FileText },
-  { level: "L8", title: "Algorithm Fit", desc: "Algorithm Fit is reassessed after the earlier trust layers have been improved.", icon: Clock },
+  { level: "L8", title: "Algorithm Fit", desc: "Once the earlier layers are strong, assess whether traditional and AI search systems can clearly interpret, cite, and surface the page.", icon: Clock },
 ];
 
 export function TrustCollapseFlow() {
