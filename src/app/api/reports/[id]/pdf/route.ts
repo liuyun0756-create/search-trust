@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ReportPDFDocument } from "@/components/report/pdf/ReportPDFDocument";
 import { SAMPLE_REPORT_V21 } from "@/components/report/sampleReportV21";
 import { getReportPdfExportabilitySignals, isReportPdfExportable } from "@/lib/report-v21";
+import { findUserReportByIdentifier } from "@/lib/server/reportLookup";
 import type { EffectiveBranding, PdfVariant } from "@/lib/report-v21";
 import type { Report } from "@/types/database";
 
@@ -115,15 +116,7 @@ export async function GET(
     }
 
     const supabase = createServerClient();
-    const query = supabase
-      .from("reports")
-      .select("*")
-      .eq("user_id", user.userId);
-
-    const isUUID = /^[0-9a-f]{8}-/.test(id);
-    const { data, error } = await (isUUID
-      ? query.eq("id", id).single()
-      : query.eq("report_id", id).single());
+    const { data, error } = await findUserReportByIdentifier(supabase, user.userId, id);
 
     if (error || !data) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
@@ -217,9 +210,7 @@ export async function POST(
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const supabase = createServerClient();
-    const query = supabase.from("reports").select("*").eq("user_id", user.userId);
-    const isUUID = /^[0-9a-f]{8}-/.test(id);
-    const { data, error } = await (isUUID ? query.eq("id", id).single() : query.eq("report_id", id).single());
+    const { data, error } = await findUserReportByIdentifier(supabase, user.userId, id);
     if (error || !data) return NextResponse.json({ error: "Report not found" }, { status: 404 });
 
     const report = data as Report;

@@ -1,13 +1,14 @@
 import React from "react";
 import { Document, Image, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
-  buildActiveWorkPhases,
+  buildAuditWorkPhases,
   extractGBPAlignmentRows,
   formatWorkLayer,
   getClientDecisionContext,
   getEffectiveBranding,
   getLayerDisplayConfig,
   getAdditionalBusinessPresenceActions,
+  getProposalActionDisplayCopy,
   getProposalOpportunityCopy,
   IMPROVEMENT_SEQUENCE,
   NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE,
@@ -40,7 +41,8 @@ const STATUS_COLORS: Record<string, string> = {
   high: "#DC2626",
   strong: "#059669",
   competitive: "#4F46E5",
-  improvable: "#D97706",
+  medium_weak: "#2563EB",
+  improvable: "#4F46E5",
   weak_status: "#DC2626",
 };
 
@@ -121,7 +123,7 @@ const styles = StyleSheet.create({
     borderColor: "#E4EDD2",
     borderRadius: 10,
     backgroundColor: "#FBFDF5",
-    padding: 10,
+    padding: 12,
     marginBottom: 12,
   },
   agencyBadge: {
@@ -135,32 +137,62 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     paddingVertical: 3,
     paddingHorizontal: 7,
-    marginBottom: 6,
     textTransform: "uppercase",
   },
-  agencyTitle: {
-    color: "#111827",
-    fontSize: 11,
-    fontWeight: 700,
-    marginBottom: 3,
-    lineHeight: 1.25,
+  agencyRelationship: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    marginTop: 9,
   },
-  agencyText: {
-    color: "#4B5563",
-    fontSize: 8,
-    lineHeight: 1.35,
-    marginBottom: 2,
-  },
-  agencyHeader: {
+  agencyParty: {
+    width: "49%",
+    minHeight: 62,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E4EDD2",
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    padding: 10,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+  },
+  agencyPartyLast: {
+    marginRight: 0,
+  },
+  agencyPartyOnly: {
+    width: "100%",
+    marginRight: 0,
+  },
+  agencyPartyCopy: {
+    flex: 1,
+  },
+  agencyPartyLabel: {
+    color: "#7A8A15",
+    fontSize: 7,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  agencyPartyName: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: 700,
+    lineHeight: 1.2,
+  },
+  agencyNote: {
+    color: "#4B5563",
+    fontSize: 7.5,
+    lineHeight: 1.35,
+    marginTop: 8,
+    paddingTop: 7,
+    borderTopWidth: 1,
+    borderTopColor: "#E4EDD2",
   },
   agencyLogo: {
-    width: 34,
-    height: 34,
+    width: 38,
+    height: 38,
     objectFit: "contain",
-    marginRight: 8,
+    marginRight: 10,
   },
   scoreRow: {
     flexDirection: "row",
@@ -730,6 +762,9 @@ function ReportHeader({
 }) {
   const branding = brandingOverride ?? getEffectiveBranding(reportV21);
   const showBranding = branding.enabled && Boolean(branding.agencyName || branding.clientName || branding.agencyLogoData);
+  const hasAgencyIdentity = Boolean(branding.agencyName || branding.agencyLogoData);
+  const hasClientIdentity = Boolean(branding.clientName);
+  const isSampleReport = report.id === "sample-v21" || reportV21.report_id === "RPT-SAMPLE-001";
   const infoItems = [
     { label: "Page Type", value: reportV21.page_type || report.page_type || "Service Page" },
     { label: "GBP Status", value: labelize(reportV21.gbp_status.status) },
@@ -739,18 +774,36 @@ function ReportHeader({
 
   return (
     <View style={styles.headerCard}>
-      <Text style={styles.eyebrow}>SearchTrust Trust Audit Report</Text>
-      <Text style={styles.title}>Trust Audit Report</Text>
+      <Text style={styles.title}>{isSampleReport ? "Trust Audit Report (Sample)" : "Trust Audit Report"}</Text>
       {showBranding && (
         <View style={styles.agencyPanel}>
-          <View style={styles.agencyHeader}>
-            {branding.agencyLogoData && <Image src={branding.agencyLogoData} style={styles.agencyLogo} />}
-            <View><Text style={styles.agencyBadge}>Agency report</Text></View>
+          <Text style={styles.agencyBadge}>Agency report</Text>
+          <View style={styles.agencyRelationship}>
+            {hasAgencyIdentity && (
+              <View style={[styles.agencyParty, !hasClientIdentity ? styles.agencyPartyOnly : {}]}>
+                {branding.agencyLogoData && <Image src={branding.agencyLogoData} style={styles.agencyLogo} />}
+                <View style={styles.agencyPartyCopy}>
+                  <Text style={styles.agencyPartyLabel}>Prepared by agency</Text>
+                  <Text style={styles.agencyPartyName}>
+                    {truncateText(branding.agencyName || "Agency", 90)}
+                  </Text>
+                </View>
+              </View>
+            )}
+            {hasClientIdentity && (
+              <View style={[
+                styles.agencyParty,
+                styles.agencyPartyLast,
+                !hasAgencyIdentity ? styles.agencyPartyOnly : {},
+              ]}>
+                <View style={styles.agencyPartyCopy}>
+                  <Text style={styles.agencyPartyLabel}>Prepared for client</Text>
+                  <Text style={styles.agencyPartyName}>{truncateText(branding.clientName, 90)}</Text>
+                </View>
+              </View>
+            )}
           </View>
-          {branding.clientName && <Text style={styles.agencyTitle}>Prepared for {truncateText(branding.clientName, 90)}</Text>}
-          {branding.agencyName && <Text style={styles.agencyText}>Prepared by {truncateText(branding.agencyName, 90)}</Text>}
-          <Text style={styles.agencyText}>Trust framework by SearchTrust</Text>
-          {branding.footerNote && <Text style={styles.agencyText}>{truncateText(branding.footerNote, 160)}</Text>}
+          {branding.footerNote && <Text style={styles.agencyNote}>{truncateText(branding.footerNote, 160)}</Text>}
         </View>
       )}
       <View style={styles.urlBox}>
@@ -797,7 +850,7 @@ function ExecutiveSummary({ reportV21, variant }: { reportV21: ReportV21; varian
         />
       </View>
 
-      <Section title="Executive Summary">
+      <Section title="Overall Conclusion">
         <View style={styles.statement}>
           <Text style={styles.cardTitle}>{safeText(reportV21.client_summary.title, "Client Summary")}</Text>
           <Text style={styles.bodyText}>{truncateText(reportV21.client_summary.plain_language_summary, 520)}</Text>
@@ -823,10 +876,16 @@ function ClientExecutiveSummary({ reportV21 }: { reportV21: ReportV21 }) {
   const decision = getClientDecisionContext(reportV21);
   const palette = decisionPalette(decision.priority_level);
   const sources = checkedDataSources(reportV21);
+  const clientPhaseGroups = IMPROVEMENT_SEQUENCE
+    .map((sequence) => ({
+      sequence,
+      items: decision.work_sequence.filter((item) => item.phase_number === sequence.number),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <>
-      <Section title="Client Decision Summary">
+      <Section title="Overall Conclusion">
         <View style={[styles.decisionBanner, { borderColor: palette.border, backgroundColor: palette.background }]}>
           <Text style={[styles.priorityBadge, { borderColor: palette.border, color: palette.text, backgroundColor: "#FFFFFF" }]}>
             {decision.priority_label}
@@ -840,9 +899,9 @@ function ClientExecutiveSummary({ reportV21 }: { reportV21: ReportV21 }) {
         </View>
 
         <View style={styles.metricRow}>
-          <DecisionMetric label="Confirmed issues" value={decision.issue_count} />
+          <DecisionMetric label="Confirmed findings" value={decision.issue_count} />
           <DecisionMetric label="Affected trust layers" value={decision.affected_layer_count} />
-          <DecisionMetric label="Recommended work phases" value={decision.work_phase_count} isLast />
+          <DecisionMetric label="Recommended focus areas" value={decision.work_phase_count} isLast />
         </View>
 
         <View style={styles.approvalCard}>
@@ -890,18 +949,26 @@ function ClientExecutiveSummary({ reportV21 }: { reportV21: ReportV21 }) {
         <Text style={styles.label}>Recommended work sequence</Text>
         {decision.work_sequence.length ? (
           <View style={styles.phaseList}>
-            {decision.work_sequence.map((phase, index) => (
+            {clientPhaseGroups.map(({ sequence, items }, index) => (
               <View
-                key={phase.stage}
-                style={[styles.phaseRow, index === decision.work_sequence.length - 1 ? styles.phaseRowLast : {}]}
+                key={sequence.number}
+                style={[styles.phaseRow, index === clientPhaseGroups.length - 1 ? styles.phaseRowLast : {}]}
                 wrap={false}
               >
-                <Text style={styles.phaseNumber}>{index + 1}</Text>
                 <View style={styles.phaseLabel}>
-                  <Text style={styles.cardTitle}>{phase.label}</Text>
-                  <Text style={[styles.mutedText, { color: "#7A991C" }]}>{phase.layer_labels.join(" / ")}</Text>
+                  <Text style={[styles.label, { color: "#7A991C" }]}>
+                    Phase {sequence.number} · {sequence.layerRange}
+                  </Text>
+                  <Text style={styles.cardTitle}>{sequence.title}</Text>
                 </View>
-                <Text style={[styles.bodyText, { flex: 1 }]}>{truncateText(phase.summary, 260)}</Text>
+                <View style={{ flex: 1 }}>
+                  {items.map((item) => (
+                    <View key={item.layer_keys.join("-")} style={{ marginBottom: 6 }}>
+                      <Text style={styles.mutedText}>{item.layer_labels[0]}</Text>
+                      <Text style={styles.bodyText}>{truncateText(item.summary, 260)}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             ))}
           </View>
@@ -911,9 +978,6 @@ function ClientExecutiveSummary({ reportV21 }: { reportV21: ReportV21 }) {
               Maintain the current trust signals and re-audit after meaningful page or business changes.
             </Text>
           </View>
-        )}
-        {summary.not_first_priority && (
-          <Text style={styles.mutedText}>Not first priority: {truncateText(summary.not_first_priority, 360)}</Text>
         )}
         <View style={styles.sourceLine}>
           <Text style={styles.mutedText}>
@@ -959,7 +1023,7 @@ function checkedDataSources(reportV21: ReportV21): string[] {
 function PageLevelSection({ reportV21 }: { reportV21: ReportV21 }) {
   const pageLevel = reportV21.page_level;
   return (
-    <Section title="Page Level Assessment">
+    <Section title="Page Level">
       <View style={styles.row}>
         <Text style={[styles.cardTitle, { marginBottom: 0, flex: 1 }]}>{safeText(pageLevel.label)}</Text>
       </View>
@@ -1043,7 +1107,7 @@ function layerByKey(reportV21: ReportV21, layerKey: LayerKey): LayerFinding {
 
 function TrustLayersSection({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
   return (
-    <Section title="8-Layer Trust Model">
+    <Section title="Trust Layer Breakdown">
       <View style={styles.layerGrid}>
         {REQUIRED_LAYER_KEYS.map((layerKey, index) => {
           const layer = layerByKey(reportV21, layerKey);
@@ -1061,11 +1125,19 @@ function TrustLayersSection({ reportV21, variant }: { reportV21: ReportV21; vari
                 <Text style={styles.layerTitle}>{config.label}</Text>
                 <StatusBadge value={layer.status} />
               </View>
-              <Text style={styles.mutedText}>{config.name}</Text>
-              <Field label="Assessment" value={layer.summary || layer.explanation} maxLength={230} />
-              {variant === "full" && <Text style={styles.mutedText}>
-                Signals assessed: {config.signalsAssessed} / {layer.status === "good" ? "Improvement opportunities" : "Findings requiring attention"}: {findingCount}
-              </Text>}
+              {variant === "client" ? (
+                <Text style={[styles.mutedText, { marginTop: 8 }]}>
+                  Findings requiring attention: {findingCount}
+                </Text>
+              ) : (
+                <>
+                  <Text style={styles.mutedText}>{config.name}</Text>
+                  <Field label="Assessment" value={layer.summary || layer.explanation} maxLength={230} />
+                  <Text style={styles.mutedText}>
+                    Signals assessed: {config.signalsAssessed} / {layer.status === "good" ? "Improvement opportunities" : "Findings requiring attention"}: {findingCount}
+                  </Text>
+                </>
+              )}
               {variant === "full" && safeList(layer.triggered_findings).length > 0 && (
                 <View style={{ marginTop: 6 }}>
                   <Text style={styles.label}>{isHealthyWithOpportunities ? "Opportunities To Strengthen" : "What Needs Attention"}</Text>
@@ -1098,30 +1170,30 @@ function ActionSection({ title, actions, limit, compact = false }: { title: stri
 }
 
 function OptimizationPathSection({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
-  const path = reportV21.optimization_path;
-  const activePhases = buildActiveWorkPhases(path);
+  const allWorkPhases = buildAuditWorkPhases(reportV21);
   return (
     <Section title="Implementation Roadmap">
       <View style={styles.softCard}>
-        <Text style={styles.cardTitle}>Improvement Sequence</Text>
-        <Text style={styles.mutedText}>The fixed SearchTrust order for repairing trust signals. This is a method overview, not a progress control.</Text>
-        <View style={[styles.layerGrid, { marginTop: 8 }]}>
-          {IMPROVEMENT_SEQUENCE.map((phase, index) => (
-            <View
-              key={phase.number}
-              style={[styles.layerCard, index % 2 === 1 ? styles.layerCardEven : {}, { backgroundColor: "#F8FAFC" }]}
-            >
-              <Text style={styles.label}>Phase {phase.number} · {phase.layerRange}</Text>
-              <Text style={styles.cardTitle}>{phase.title}</Text>
-              <Text style={styles.mutedText}>{phase.detail}</Text>
+        {variant === "full" ? (
+          <>
+            <Text style={styles.cardTitle}>Improvement Sequence</Text>
+            <Text style={styles.mutedText}>The fixed SearchTrust order for repairing trust signals. This is a method overview, not a progress control.</Text>
+            <View style={[styles.layerGrid, { marginTop: 8 }]}>
+              {IMPROVEMENT_SEQUENCE.map((phase, index) => (
+                <View
+                  key={phase.number}
+                  style={[styles.layerCard, index % 2 === 1 ? styles.layerCardEven : {}, { backgroundColor: "#F8FAFC" }]}
+                >
+                  <Text style={styles.label}>Phase {phase.number} · {phase.layerRange}</Text>
+                  <Text style={styles.cardTitle}>{phase.title}</Text>
+                  <Text style={styles.mutedText}>{phase.detail}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
 
-        {variant === "full" && (
-          <View style={{ marginTop: 4 }}>
-            <Text style={styles.cardTitle}>Current Audit Work Plan</Text>
-            {activePhases.length ? activePhases.map((phase) => (
+            <View style={{ marginTop: 4 }}>
+            <Text style={styles.cardTitle}>Audit Work Plan</Text>
+            {allWorkPhases.length ? allWorkPhases.map((phase) => (
               <View key={phase.number} style={{ marginTop: 6 }}>
                 <Text style={styles.label}>Phase {phase.number} · {phase.layerRange} · {phase.title}</Text>
                 {phase.affectedLayers.map((layerKey) => (
@@ -1136,8 +1208,32 @@ function OptimizationPathSection({ reportV21, variant }: { reportV21: ReportV21;
                   </View>
                 ))}
               </View>
-            )) : <Text style={styles.bodyText}>No active remediation work was confirmed in this audit.</Text>}
-          </View>
+            )) : <Text style={styles.bodyText}>No remediation work was confirmed in this audit.</Text>}
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.cardTitle}>Recommended Implementation Plan</Text>
+            <Text style={styles.mutedText}>
+              These are the work phases confirmed by this audit. Detailed implementation tasks remain in the Full Trust Audit.
+            </Text>
+            {allWorkPhases.length ? (
+              <View style={[styles.layerGrid, { marginTop: 8 }]}>
+                {allWorkPhases.map((phase, index) => (
+                  <View
+                    key={phase.number}
+                    style={[styles.layerCard, index % 2 === 1 ? styles.layerCardEven : {}, { backgroundColor: "#FBFDF6" }]}
+                  >
+                    <Text style={styles.label}>Phase {phase.number} · {phase.layerRange}</Text>
+                    <Text style={styles.cardTitle}>{phase.title}</Text>
+                    <Text style={styles.mutedText}>{phase.detail}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.bodyText}>No active implementation phase was confirmed in this audit.</Text>
+            )}
+          </>
         )}
       </View>
 
@@ -1146,15 +1242,15 @@ function OptimizationPathSection({ reportV21, variant }: { reportV21: ReportV21;
           <Text style={styles.cardTitle}>Completion, Observation &amp; Re-audit</Text>
           <Text style={styles.label}>Completion Gate</Text>
           <BulletList
-            items={activePhases.length
-              ? activePhases.map((phase) => `Phase ${phase.number}: ${phase.completionGate}`)
+            items={allWorkPhases.length
+              ? allWorkPhases.map((phase) => `Phase ${phase.number}: ${phase.completionGate}`)
               : ["No active phase requires a completion gate."]}
             maxLength={210}
           />
           <Text style={[styles.label, { marginTop: 5 }]}>Observation Window</Text>
           <BulletList
-            items={activePhases.length
-              ? activePhases.map((phase) => `Phase ${phase.number}: ${phase.observationWindow}`)
+            items={allWorkPhases.length
+              ? allWorkPhases.map((phase) => `Phase ${phase.number}: ${phase.observationWindow}`)
               : ["Continue normal monitoring and reassess after meaningful page changes."]}
             maxLength={160}
           />
@@ -1288,6 +1384,14 @@ function BusinessPresenceAuditSection({ reportV21, variant }: { reportV21: Repor
   }
 
   const alignment = extractGBPAlignmentRows(reportV21);
+  const alignmentUnavailable = new Set(["not_checked", "not_applicable", "error"]);
+  const alignmentAttention = new Set(["mismatch", "missing", "partial"]);
+  const alignmentSummary = {
+    assessed: alignment.rows.filter((row) => !alignmentUnavailable.has(row.status)).length,
+    matched: alignment.rows.filter((row) => row.status === "match").length,
+    issues: alignment.rows.filter((row) => alignmentAttention.has(row.status)).length,
+    unavailable: alignment.rows.filter((row) => alignmentUnavailable.has(row.status)).length,
+  };
   const visibleAlignment = variant === "client"
     ? alignment.rows.filter((row) => ["mismatch", "missing", "partial"].includes(row.status))
     : alignment.rows;
@@ -1307,25 +1411,28 @@ function BusinessPresenceAuditSection({ reportV21, variant }: { reportV21: Repor
         <Text style={styles.cardTitle}>{truncateText(proposalOpportunityCopy.headline, 160)}</Text>
         <Text style={styles.bodyText}>{truncateText(proposalOpportunityCopy.summary, 420)}</Text>
         <Text style={styles.bodyText}>
-          {audit.summary.assessed_items} signals assessed / {audit.summary.matched_items} aligned / {audit.summary.issue_items} need attention / {audit.summary.not_checked_items} not assessed
+          {alignmentSummary.assessed} signals assessed / {alignmentSummary.matched} aligned / {alignmentSummary.issues} need attention / {alignmentSummary.unavailable} not assessed
         </Text>
         <Text style={styles.mutedText}>These objective checks do not change the eight-layer score.</Text>
       </View>
 
       <Text style={styles.cardTitle}>Proposal-ready tasks</Text>
-      {proposalActions.length ? proposalActions.map((action) => (
-        <View key={action.id} style={styles.softCard}>
-          <View style={styles.row}>
-            <Text style={[styles.cardTitle, { flex: 1, marginBottom: 0 }]}>{truncateText(action.title, 140)}</Text>
-            <StatusBadge value={action.priority} />
+      {proposalActions.length ? proposalActions.map((action) => {
+        const copy = getProposalActionDisplayCopy(action);
+        return (
+          <View key={action.id} style={styles.softCard}>
+            <View style={styles.row}>
+              <Text style={[styles.cardTitle, { flex: 1, marginBottom: 0 }]}>{truncateText(copy.title, 140)}</Text>
+              <StatusBadge value={action.priority} />
+            </View>
+            <Field label="Business Area" value={labelize(action.business_area)} />
+            <Field label="Why This Task Matters" value={copy.rationale} maxLength={420} />
+            <Text style={styles.label}>What the Agency Should Deliver</Text>
+            <BulletList items={copy.recommended_scope} maxLength={300} />
+            {variant === "full" && <Field label="Evidence References" value={action.evidence_keys.join(", ")} maxLength={220} />}
           </View>
-          <Field label="Business Area" value={labelize(action.business_area)} />
-          <Field label="Why This Work" value={action.rationale} maxLength={360} />
-          <Text style={styles.label}>Suggested Work Scope</Text>
-          <BulletList items={action.recommended_scope} maxLength={260} />
-          {variant === "full" && <Field label="Evidence References" value={action.evidence_keys.join(", ")} maxLength={220} />}
-        </View>
-      )) : <Text style={styles.mutedText}>{NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE}</Text>}
+        );
+      }) : <Text style={styles.mutedText}>{NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE}</Text>}
 
       {visibleAlignment.length > 0 && (
         <View style={{ marginTop: 8 }}>
@@ -1431,7 +1538,7 @@ export function ReportPDFDocument({
         <TrustLayersSection reportV21={reportV21} variant={variant} />
         <OptimizationPathSection reportV21={reportV21} variant={variant} />
         {variant === "full" && <BusinessPresenceAuditSection reportV21={reportV21} variant={variant} />}
-        <MethodFooter />
+        {variant === "full" && <MethodFooter />}
 
         <View style={styles.fixedFooter} fixed>
           <Text>SearchTrust</Text>

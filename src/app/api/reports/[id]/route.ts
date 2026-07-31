@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
+import { findUserReportByIdentifier } from "@/lib/server/reportLookup";
 
 export async function GET(
   request: NextRequest,
@@ -14,17 +15,7 @@ export async function GET(
 
     const { id } = await params;
     const supabase = createServerClient();
-
-    // Support both Supabase id (UUID) and report_id (RPT-xxx)
-    const query = supabase
-      .from("reports")
-      .select("*")
-      .eq("user_id", user.userId);
-
-    const isUUID = /^[0-9a-f]{8}-/.test(id);
-    const { data, error } = await (isUUID
-      ? query.eq("id", id).single()
-      : query.eq("report_id", id).single());
+    const { data, error } = await findUserReportByIdentifier(supabase, user.userId, id);
 
     if (error || !data) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
@@ -75,16 +66,23 @@ export async function PATCH(
     }
 
     const supabase = createServerClient();
-    const query = supabase
+    const { data: existingReport, error: lookupError } = await findUserReportByIdentifier(
+      supabase,
+      user.userId,
+      id
+    );
+
+    if (lookupError || !existingReport) {
+      return NextResponse.json({ error: "Report not found" }, { status: 404 });
+    }
+
+    const { data, error } = await supabase
       .from("reports")
       .update(updateData)
       .eq("user_id", user.userId)
-      .select("*");
-
-    const isUUID = /^[0-9a-f]{8}-/.test(id);
-    const { data, error } = await (isUUID
-      ? query.eq("id", id).single()
-      : query.eq("report_id", id).single());
+      .eq("id", existingReport.id)
+      .select("*")
+      .single();
 
     if (error || !data) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });

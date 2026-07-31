@@ -43,10 +43,14 @@ export function V21TrustLayers({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {orderedLayers.map((layer) => {
             const config = getLayerDisplayConfig(layer.layer_key);
+            const findingCount = safeList(layer.triggered_rule_ids).length;
             return (
               <article key={layer.layer_key} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                 <p className="text-[11px] font-black uppercase tracking-[0.12em] text-gray-400">{config.label}</p>
-                <p className="mt-2 text-[14px] font-black text-[#1A212B]">{config.name}</p>
+                <p className="mt-2 text-[13px] font-semibold text-gray-500">
+                  Findings requiring attention:{" "}
+                  <span className="font-black text-[#1A212B]">{findingCount}</span>
+                </p>
                 <span className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black uppercase ${getLayerStatusTone(layer.status)}`}>
                   {getLayerStatusLabel(layer.status)}
                 </span>

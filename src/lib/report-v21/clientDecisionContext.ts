@@ -1,4 +1,5 @@
 import { getLayerDisplayConfig, REQUIRED_LAYER_KEYS } from "./layerConfig";
+import { buildAuditWorkPhases } from "./implementationRoadmap";
 import type {
   ClientDecisionContext,
   ClientDecisionPriority,
@@ -10,13 +11,27 @@ import type {
 
 export function getClientDecisionContext(report: ReportV21): ClientDecisionContext {
   const existing = report.client_summary?.decision_context;
+  const confirmedFindingCount = report.layers.reduce((total, layer) => {
+    const findingCount = Array.isArray(layer.triggered_findings)
+      ? layer.triggered_findings.length
+      : 0;
+    const ruleCount = Array.isArray(layer.triggered_rule_ids)
+      ? layer.triggered_rule_ids.length
+      : 0;
+    return total + (findingCount || ruleCount);
+  }, 0);
   const affectedLayerCount = report.layers.filter(
     (layer) => layer.status === "weak" || layer.status === "medium",
   ).length;
+  const workSequence = buildWorkSequence(report);
+  const workPhaseCount = new Set(workSequence.map((item) => item.phase_number)).size;
   if (isDecisionContext(existing)) {
     return {
       ...existing,
+      issue_count: confirmedFindingCount,
       affected_layer_count: affectedLayerCount,
+      work_phase_count: workPhaseCount,
+      work_sequence: workSequence,
     };
   }
 
@@ -30,15 +45,14 @@ export function getClientDecisionContext(report: ReportV21): ClientDecisionConte
   const earliestKey = orderedKeys[0];
   const earliestNumber = earliestKey ? REQUIRED_LAYER_KEYS.indexOf(earliestKey) + 1 : null;
   const priorityLevel = priorityForLayer(earliestNumber);
-  const workSequence = buildWorkSequence(orderedKeys);
 
   return {
     priority_level: priorityLevel,
     priority_label: priorityLabel(priorityLevel),
     why_act_now: whyActNow(priorityLevel, earliestKey),
-    issue_count: issues.length,
+    issue_count: confirmedFindingCount,
     affected_layer_count: affectedLayerCount,
-    work_phase_count: workSequence.length,
+    work_phase_count: workPhaseCount,
     score_interpretation: [
       `Trust Status (${report.overall_status?.label || "Not available"}) describes current page strength.`,
       `Ranking Potential (${report.ranking_potential?.label || "Not available"}) describes the upside available after repair.`,
@@ -79,60 +93,31 @@ function whyActNow(priority: ClientDecisionPriority, earliestKey?: LayerKey): st
   return `Core foundations are holding, but the confirmed gaps begin at ${layerLabel} and still limit how distinctive and defensible the page can become.`;
 }
 
-function buildWorkSequence(orderedKeys: LayerKey[]): ClientDecisionWorkPhase[] {
-  if (!orderedKeys.length) return [];
+function buildWorkSequence(report: ReportV21): ClientDecisionWorkPhase[] {
+  const workPhases = buildAuditWorkPhases(report);
+  const plannedLayerKeys = workPhases.flatMap((phase) => phase.affectedLayers);
 
-  const earliestKey = orderedKeys[0];
-  const earliestIndex = REQUIRED_LAYER_KEYS.indexOf(earliestKey);
-  const buildNext = orderedKeys
-    .slice(1)
-    .filter((key) => REQUIRED_LAYER_KEYS.indexOf(key) <= 4);
-  const strengthenAfter = orderedKeys
-    .filter((key) => REQUIRED_LAYER_KEYS.indexOf(key) >= 5 && key !== earliestKey);
-  const phases = [
-    phase(
-      "fix_first",
-      "Fix first",
-      [earliestKey],
-      `Resolve ${getLayerDisplayConfig(earliestKey).label} before investing in later-layer work.`,
-    ),
-  ];
+  return plannedLayerKeys.map((layerKey) => {
+    const layer = report.layers.find((candidate) => candidate.layer_key === layerKey);
+    const layerPosition = REQUIRED_LAYER_KEYS.indexOf(layerKey);
+    const phaseNumber: 1 | 2 | 3 | 4 = layerPosition <= 2
+      ? 1
+      : layerPosition <= 4
+        ? 2
+        : layerPosition <= 6
+          ? 3
+          : 4;
 
-  if (buildNext.length) {
-    phases.push(phase(
-      "build_next",
-      "Build next",
-      buildNext,
-      "Build the next page-level trust foundations after the first blocker is resolved.",
-    ));
-  }
-  if (strengthenAfter.length) {
-    phases.push(phase(
-      "strengthen_after",
-      "Strengthen after",
-      strengthenAfter,
-      "Strengthen accountability, differentiation, and current search-era fit.",
-    ));
-  }
-  if (earliestIndex >= 5 && phases.length === 1) {
-    phases[0].summary = `Strengthen ${getLayerDisplayConfig(earliestKey).label} as the first confirmed opportunity.`;
-  }
-  return phases;
-}
-
-function phase(
-  stage: ClientDecisionStage,
-  label: string,
-  layerKeys: LayerKey[],
-  summary: string,
-): ClientDecisionWorkPhase {
-  return {
-    stage,
-    label,
-    layer_keys: layerKeys,
-    layer_labels: layerKeys.map((key) => getLayerDisplayConfig(key).label),
-    summary,
-  };
+    return {
+      stage: "current" as ClientDecisionStage,
+      phase_number: phaseNumber,
+      label: getLayerDisplayConfig(layerKey).label,
+      layer_keys: [layerKey],
+      layer_labels: [getLayerDisplayConfig(layerKey).label],
+      task_titles: [],
+      summary: layer?.explanation || layer?.summary || "This trust layer needs to be strengthened before the page can compete more reliably.",
+    };
+  });
 }
 
 function isDecisionContext(value: unknown): value is ClientDecisionContext {

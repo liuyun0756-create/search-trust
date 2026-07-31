@@ -311,13 +311,15 @@ export interface OptimizationPath {
 }
 
 export type ClientDecisionPriority = "immediate" | "high" | "planned" | "monitor";
-export type ClientDecisionStage = "fix_first" | "build_next" | "strengthen_after";
+export type ClientDecisionStage = "current" | "later" | "not_now";
 
 export interface ClientDecisionWorkPhase {
   stage: ClientDecisionStage;
+  phase_number: 1 | 2 | 3 | 4;
   label: string;
   layer_keys: LayerKey[];
   layer_labels: string[];
+  task_titles: string[];
   summary: string;
 }
 

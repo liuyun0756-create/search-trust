@@ -14,12 +14,16 @@ import type {
 } from "@/lib/report-v21";
 import {
   getAdditionalBusinessPresenceActions,
+  getEffectiveGBPAlignmentStatus,
+  getProposalActionDisplayCopy,
   getProposalOpportunityCopy,
   NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE,
+  SERVICE_AREA_GBP_MISSING_EXPLANATION,
 } from "@/lib/report-v21";
 import { V21DataCoverage } from "./V21DataCoverage";
 import { V21GBPAlignment } from "./V21GBPAlignment";
 import { isAnalystView, type V21ViewMode } from "./viewMode";
+import { HorizontalScrollArea } from "@/components/ui/HorizontalScrollArea";
 
 const ATTENTION_STATUSES = new Set<AuditComparisonStatus>(["mismatch", "missing", "partial"]);
 
@@ -46,14 +50,26 @@ export function V21BusinessPresenceAudit({
     );
   }
 
-  const summary = audit.summary;
   const profile = audit.profile_activity;
   const reviews = audit.review_audit;
   const proposalActions = getAdditionalBusinessPresenceActions(audit.proposal_actions);
   const proposalOpportunityCopy = getProposalOpportunityCopy(proposalActions.length);
+  const alignmentRows = audit.gbp_page_alignment.map((item) => {
+    const status = getEffectiveGBPAlignmentStatus({
+      fieldKey: item.key,
+      status: item.status,
+      pageValue: item.page_value,
+      gbpValue: item.gbp_value,
+      gbpChecked: reportV21.gbp_status.status === "checked",
+    });
+    return status === item.status
+      ? item
+      : { ...item, status, explanation: SERVICE_AREA_GBP_MISSING_EXPLANATION };
+  });
+  const displaySummary = summarizeAlignment(alignmentRows);
   const visibleAlignment = showTechnical
-    ? audit.gbp_page_alignment
-    : audit.gbp_page_alignment.filter((item) => ATTENTION_STATUSES.has(item.status));
+    ? alignmentRows
+    : alignmentRows.filter((item) => ATTENTION_STATUSES.has(item.status));
 
   return (
     <div className="space-y-8">
@@ -72,10 +88,10 @@ export function V21BusinessPresenceAudit({
             <p className="mt-2 max-w-4xl text-[13px] font-medium leading-relaxed text-gray-600">{proposalOpportunityCopy.summary}</p>
           </div>
           <div className="grid grid-cols-2 gap-px bg-gray-200 lg:grid-cols-4">
-            <Metric label="Signals assessed" value={summary.assessed_items} />
-            <Metric label="Aligned" value={summary.matched_items} tone="text-emerald-700" />
-            <Metric label="Needs attention" value={summary.issue_items} tone="text-red-700" />
-            <Metric label="Data limits" value={summary.not_checked_items} tone="text-gray-500" />
+            <Metric label="Signals assessed" value={displaySummary.assessed_items} />
+            <Metric label="Aligned" value={displaySummary.matched_items} tone="text-emerald-700" />
+            <Metric label="Needs attention" value={displaySummary.issue_items} tone="text-red-700" />
+            <Metric label="Data limits" value={displaySummary.not_checked_items} tone="text-gray-500" />
           </div>
         </div>
       </section>
@@ -205,18 +221,23 @@ function SectionHeading({ icon: Icon, eyebrow, title, id, compact = false }: {
 }
 
 function ProposalActionCard({ action, showTechnical }: { action: BusinessPresenceProposalAction; showTechnical: boolean }) {
+  const copy = getProposalActionDisplayCopy(action);
+
   return (
     <article className="rounded-lg border border-gray-200 bg-white px-5 py-5">
       <div className="flex flex-wrap items-center gap-2">
         <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${priorityTone(action.priority)}`}>{action.priority}</span>
         <span className="text-[11px] font-black uppercase text-gray-400">{areaLabel(action.business_area)}</span>
       </div>
-      <h4 className="mt-3 text-[16px] font-black text-[#1A212B]">{action.title}</h4>
-      <p className="mt-2 text-[13px] font-medium leading-relaxed text-gray-600">{action.rationale}</p>
+      <h4 className="mt-3 text-[16px] font-black text-[#1A212B]">{copy.title}</h4>
+      <div className="mt-3">
+        <p className="text-[10px] font-black uppercase tracking-wide text-gray-400">Why this task matters</p>
+        <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-gray-600">{copy.rationale}</p>
+      </div>
       <div className="mt-4 border-t border-gray-100 pt-4">
-        <p className="text-[10px] font-black uppercase text-gray-400">Suggested work scope</p>
+        <p className="text-[10px] font-black uppercase tracking-wide text-gray-400">What the agency should deliver</p>
         <ul className="mt-2 grid gap-2 md:grid-cols-2">
-          {action.recommended_scope.map((item) => (
+          {copy.recommended_scope.map((item) => (
             <li key={item} className="flex gap-2 text-[12px] font-semibold leading-relaxed text-gray-600">
               <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#A5D020]" />
               <span>{item}</span>
@@ -231,10 +252,25 @@ function ProposalActionCard({ action, showTechnical }: { action: BusinessPresenc
   );
 }
 
+function summarizeAlignment(
+  rows: NonNullable<ReportV21["business_presence_audit"]>["gbp_page_alignment"],
+) {
+  const unavailable = new Set<AuditComparisonStatus>(["not_checked", "not_applicable", "error"]);
+  return {
+    assessed_items: rows.filter((item) => !unavailable.has(item.status)).length,
+    matched_items: rows.filter((item) => item.status === "match").length,
+    issue_items: rows.filter((item) => ATTENTION_STATUSES.has(item.status)).length,
+    not_checked_items: rows.filter((item) => unavailable.has(item.status)).length,
+  };
+}
+
 function AlignmentTable({ rows, showTechnical }: { rows: NonNullable<ReportV21["business_presence_audit"]>["gbp_page_alignment"]; showTechnical: boolean }) {
   return (
     <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
-      <div className="hidden overflow-x-auto md:block">
+      <HorizontalScrollArea
+        className="hidden md:block"
+        label="GBP and page alignment comparison table"
+      >
         <table className="w-full min-w-[900px] border-collapse text-left">
           <thead className="bg-[#F8FAF5]">
             <tr>
@@ -255,7 +291,7 @@ function AlignmentTable({ rows, showTechnical }: { rows: NonNullable<ReportV21["
             ))}
           </tbody>
         </table>
-      </div>
+      </HorizontalScrollArea>
       <div className="divide-y divide-gray-100 md:hidden">
         {rows.map((item) => (
           <div key={item.key} className="bg-white px-4 py-4">

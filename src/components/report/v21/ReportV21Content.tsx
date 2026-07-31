@@ -88,7 +88,7 @@ export function ReportV21Content({
       </Section>
 
       <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Implementation Roadmap"] : undefined} title="Implementation Roadmap">
-        <V21OptimizationPath optimizationPath={optimizationPath} viewMode={viewMode} />
+        <V21OptimizationPath reportV21={{ ...report, optimization_path: optimizationPath }} viewMode={viewMode} />
       </Section>
 
       {analyst && (

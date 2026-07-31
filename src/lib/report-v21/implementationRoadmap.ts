@@ -1,5 +1,5 @@
 import { getLayerDisplayConfig, REQUIRED_LAYER_KEYS } from "./layerConfig";
-import type { ActionItem, LayerKey, OptimizationPath } from "./types";
+import type { ActionItem, LayerKey, OptimizationPath, ReportV21 } from "./types";
 
 export interface ImprovementSequencePhase {
   number: 1 | 2 | 3 | 4;
@@ -13,6 +13,12 @@ export interface ImprovementSequencePhase {
 export interface ActiveWorkPhase extends ImprovementSequencePhase {
   affectedLayers: LayerKey[];
   actions: ActionItem[];
+}
+
+export interface OptimizationActionGroups {
+  current: ActionItem[];
+  later: ActionItem[];
+  notNow: ActionItem[];
 }
 
 export const IMPROVEMENT_SEQUENCE: ImprovementSequencePhase[] = [
@@ -58,32 +64,25 @@ const PHASE_LAYERS: Record<ImprovementSequencePhase["number"], LayerKey[]> = {
 };
 
 export function getOptimizationActions(path: OptimizationPath): ActionItem[] {
-  const seen = new Set<string>();
-  const result: ActionItem[] = [];
-  const candidates = [
-    ...safeActions(path.must_execute_now),
-    ...safeActions(path.defer_until_later),
-    ...safeActions(path.do_not_prioritize_yet),
-    ...safeRoadmapActions(path),
-  ];
-
-  for (const action of candidates) {
-    const key = action.id || `${action.affected_layer}:${action.task_title}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(action);
-  }
-
-  return result.sort((left, right) => {
-    const layerDifference = REQUIRED_LAYER_KEYS.indexOf(left.affected_layer)
-      - REQUIRED_LAYER_KEYS.indexOf(right.affected_layer);
-    return layerDifference || left.task_title.localeCompare(right.task_title);
-  });
+  const groups = getOptimizationActionGroups(path);
+  return [...groups.current, ...groups.later, ...groups.notNow];
 }
 
-export function buildActiveWorkPhases(path: OptimizationPath): ActiveWorkPhase[] {
-  const actions = getOptimizationActions(path);
+export function getOptimizationActionGroups(path: OptimizationPath): OptimizationActionGroups {
+  const current = safeActions(path.must_execute_now);
+  const later = safeActions(path.defer_until_later);
+  const notNow = safeActions(path.do_not_prioritize_yet);
+  const hasExplicitGroups = current.length > 0 || later.length > 0 || notNow.length > 0;
+  const seen = new Set<string>();
 
+  return {
+    current: normalizeActions(hasExplicitGroups ? current : safeRoadmapActions(path), seen),
+    later: normalizeActions(later, seen),
+    notNow: normalizeActions(notNow, seen),
+  };
+}
+
+export function buildWorkPhases(actions: ActionItem[]): ActiveWorkPhase[] {
   return IMPROVEMENT_SEQUENCE.flatMap((phase) => {
     const layerKeys = PHASE_LAYERS[phase.number];
     const phaseActions = actions.filter((action) => layerKeys.includes(action.affected_layer));
@@ -98,6 +97,37 @@ export function buildActiveWorkPhases(path: OptimizationPath): ActiveWorkPhase[]
   });
 }
 
+export function buildAuditWorkPhases(
+  report: Pick<ReportV21, "layers" | "optimization_path">,
+): ActiveWorkPhase[] {
+  const affectedLayers = report.layers.filter(
+    (layer) => layer.status === "weak" || layer.status === "medium",
+  );
+  const affectedLayerKeys = new Set(affectedLayers.map((layer) => layer.layer_key));
+  const pathActions = (report.optimization_path
+    ? getOptimizationActions(report.optimization_path)
+    : [])
+    .filter((action) => affectedLayerKeys.has(action.affected_layer));
+  const affectedLayerActions = affectedLayers
+    .flatMap((layer) => safeActions(layer.action_items));
+
+  return buildWorkPhases(
+    normalizeActions([...pathActions, ...affectedLayerActions], new Set<string>()),
+  );
+}
+
+export function buildActiveWorkPhases(path: OptimizationPath): ActiveWorkPhase[] {
+  return buildWorkPhases(getOptimizationActionGroups(path).current);
+}
+
+export function buildDeferredWorkPhases(path: OptimizationPath): ActiveWorkPhase[] {
+  return buildWorkPhases(getOptimizationActionGroups(path).later);
+}
+
+export function buildNotNowWorkPhases(path: OptimizationPath): ActiveWorkPhase[] {
+  return buildWorkPhases(getOptimizationActionGroups(path).notNow);
+}
+
 export function formatWorkLayer(layerKey: LayerKey): string {
   const layerNumber = REQUIRED_LAYER_KEYS.indexOf(layerKey) + 1;
   return `L${layerNumber} ${getLayerDisplayConfig(layerKey).name}`;
@@ -110,4 +140,21 @@ function safeActions(value: ActionItem[] | null | undefined): ActionItem[] {
 function safeRoadmapActions(path: OptimizationPath): ActionItem[] {
   if (!Array.isArray(path.roadmap)) return [];
   return path.roadmap.flatMap((phase) => safeActions(phase.action_items));
+}
+
+function normalizeActions(actions: ActionItem[], seen: Set<string>): ActionItem[] {
+  const result: ActionItem[] = [];
+
+  for (const action of actions) {
+    const key = action.id || `${action.affected_layer}:${action.task_title}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(action);
+  }
+
+  return result.sort((left, right) => {
+    const layerDifference = REQUIRED_LAYER_KEYS.indexOf(left.affected_layer)
+      - REQUIRED_LAYER_KEYS.indexOf(right.affected_layer);
+    return layerDifference || left.task_title.localeCompare(right.task_title);
+  });
 }

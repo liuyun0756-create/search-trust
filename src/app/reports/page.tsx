@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileSearch, CheckCircle } from "lucide-react";
+import { FileSearch, FileQuestion, CheckCircle } from "lucide-react";
 import { ReportContent } from "@/components/report/ReportContent";
 import { ReportHistory } from "@/components/report/ReportHistory";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
@@ -166,6 +166,44 @@ function EmptyState() {
   );
 }
 
+function ReportLookupErrorState({
+  message,
+  onViewReports,
+}: {
+  message: string;
+  onViewReports: () => void;
+}) {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-lg rounded-[28px] border border-gray-100 bg-white px-8 py-12 text-center shadow-sm"
+      >
+        <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#E4EDD2] bg-[#FBFDF5]">
+          <FileQuestion className="h-7 w-7 text-[#8EB51B]" />
+        </div>
+        <p className="mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#8BAA2B]">
+          Report lookup
+        </p>
+        <h2 className="mb-3 text-[28px] font-bold tracking-tighter text-[#1A212B]">
+          Report unavailable
+        </h2>
+        <p className="mx-auto mb-8 max-w-md text-[15px] font-medium leading-relaxed text-[#6B7280]">
+          {message}
+        </p>
+        <button
+          type="button"
+          onClick={onViewReports}
+          className="rounded-full bg-[#1D2531] px-8 py-3.5 text-[14px] font-bold text-white shadow-lg transition-colors hover:bg-black"
+        >
+          View my reports
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
 function DetailLoadingState({ text = "Loading report..." }: { text?: string }) {
   return (
     <div className="flex-1 flex items-center justify-center min-h-[480px] bg-white rounded-[24px] border border-gray-100 shadow-sm">
@@ -214,6 +252,7 @@ function ReportsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<{ date: string; items: { id: string; url: string; reportId: string; status?: string }[] }[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [reportLoadError, setReportLoadError] = useState<string | null>(null);
   const [sseActive, setSseActive] = useState(false);
   const [sseProgress, setSseProgress] = useState<{ stage?: string; percent?: number; message?: string } | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -365,22 +404,36 @@ function ReportsPage() {
 
     const cached = reportCacheRef.current.get(id);
     if (cached) {
+      setReportLoadError(null);
       setReport(cached);
       setActiveReportId(cached.id);
       return;
     }
 
     setIsLoading(true);
+    setReportLoadError(null);
     try {
       const res = await fetch(`/api/reports/${id}`);
-      if (!res.ok) throw new Error("Failed to fetch report");
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Sign in with the account that created this report, then try again.");
+        }
+        if (res.status === 404) {
+          throw new Error("We couldn't find this report in your account. Check the report link or open it from your report history.");
+        }
+        throw new Error("The report could not be loaded right now. Please try again.");
+      }
       const data = await res.json();
       reportCacheRef.current.set(data.id, data);
       reportCacheRef.current.set(data.report_id, data);
+      if (data.external_report_id) reportCacheRef.current.set(data.external_report_id, data);
+      setReportLoadError(null);
       setReport(data);
       setActiveReportId(data.id);
     } catch (error) {
       console.error("Failed to fetch report:", error);
+      setReport(null);
+      setReportLoadError(error instanceof Error ? error.message : "The report could not be loaded right now.");
     } finally {
       setIsLoading(false);
     }
@@ -788,7 +841,11 @@ function ReportsPage() {
   useEffect(() => {
     if (taskId) return;
     if (selectedReportId) {
-      if (report?.id === selectedReportId || report?.report_id === selectedReportId) return;
+      if (
+        report?.id === selectedReportId ||
+        report?.report_id === selectedReportId ||
+        report?.external_report_id === selectedReportId
+      ) return;
       fetchReport(selectedReportId);
       return;
     }
@@ -797,9 +854,18 @@ function ReportsPage() {
       setActiveReportId(firstId);
       fetchReport(firstId);
     }
-  }, [taskId, selectedReportId, history, fetchReport, report?.id, report?.report_id]);
+  }, [
+    taskId,
+    selectedReportId,
+    history,
+    fetchReport,
+    report?.id,
+    report?.report_id,
+    report?.external_report_id,
+  ]);
 
   const handleSelect = (id: string) => {
+    setReportLoadError(null);
     setActiveReportId(id);
     if (report?.id !== id) setReport(null);
     router.replace(`/reports?report_id=${id}`);
@@ -815,12 +881,29 @@ function ReportsPage() {
     report?.module_5_optimization
   );
 
-  if (!paymentReturnLoading && !isPaymentReturn && !historyLoading && !hasReports && !report) {
+  if (!paymentReturnLoading && !isPaymentReturn && !historyLoading && !hasReports && !report && !reportLoadError) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
         <BackHeader />
         <div className="max-w-7xl mx-auto px-6 pt-12 pb-24">
           <EmptyState />
+        </div>
+      </div>
+    );
+  }
+
+  if (!paymentReturnLoading && !isPaymentReturn && !historyLoading && !hasReports && !report && reportLoadError) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
+        <BackHeader />
+        <div className="mx-auto flex min-h-[calc(100vh-96px)] max-w-7xl px-6 py-12">
+          <ReportLookupErrorState
+            message={reportLoadError}
+            onViewReports={() => {
+              setReportLoadError(null);
+              router.replace("/reports");
+            }}
+          />
         </div>
       </div>
     );
@@ -877,6 +960,14 @@ function ReportsPage() {
                   ? sseProgress?.message || "Generating report..."
                   : "Loading report..."
             }
+          />
+        ) : reportLoadError ? (
+          <ReportLookupErrorState
+            message={reportLoadError}
+            onViewReports={() => {
+              setReportLoadError(null);
+              router.replace("/reports");
+            }}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400">

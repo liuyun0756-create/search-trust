@@ -1,6 +1,8 @@
 import {
   getClientDecisionContext,
+  IMPROVEMENT_SEQUENCE,
   type ClientDecisionPriority,
+  type ClientDecisionWorkPhase,
   type NormalizedReportV21Result,
   type ReportV21,
 } from "@/lib/report-v21";
@@ -223,35 +225,20 @@ function ClientDecisionSummary({
       </div>
 
       <div className="grid overflow-hidden rounded-[18px] border border-gray-200 bg-white sm:grid-cols-3 sm:divide-x sm:divide-gray-200">
-        <DecisionMetric value={decision.issue_count} label="Confirmed issues" />
+        <DecisionMetric value={decision.issue_count} label="Confirmed findings" />
         <DecisionMetric value={decision.affected_layer_count} label="Affected trust layers" />
-        <DecisionMetric value={decision.work_phase_count} label="Recommended work phases" />
+        <DecisionMetric value={decision.work_phase_count} label="Recommended focus areas" />
       </div>
 
       <div className="overflow-hidden rounded-[20px] border border-gray-200 bg-white">
         <div className="border-b border-gray-100 px-5 py-4 md:px-6">
           <h4 className="text-[15px] font-black text-[#1A212B]">Recommended work sequence</h4>
-          {clientSummary.not_first_priority && (
-            <p className="mt-1 text-[12px] font-medium leading-relaxed text-gray-500">
-              Not first priority: {clientSummary.not_first_priority}
-            </p>
-          )}
+          <p className="mt-1 text-[12px] font-medium leading-relaxed text-gray-500">
+            The affected trust layers from the Full Trust Audit, summarized without implementation detail.
+          </p>
         </div>
         {decision.work_sequence.length ? (
-          <ol className="divide-y divide-gray-100">
-            {decision.work_sequence.map((phase, index) => (
-              <li key={phase.stage} className="grid gap-3 px-5 py-4 md:grid-cols-[44px_160px_1fr] md:items-start md:px-6">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#A5D020] text-[13px] font-black text-[#1A212B]">
-                  {index + 1}
-                </span>
-                <div>
-                  <p className="text-[13px] font-black text-[#1A212B]">{phase.label}</p>
-                  <p className="mt-1 text-[11px] font-bold text-[#7A991C]">{phase.layer_labels.join(" · ")}</p>
-                </div>
-                <p className="text-[13px] font-medium leading-relaxed text-gray-600">{phase.summary}</p>
-              </li>
-            ))}
-          </ol>
+          <ClientWorkSequenceList phases={decision.work_sequence} />
         ) : (
           <p className="px-5 py-5 text-[13px] font-medium leading-relaxed text-gray-600 md:px-6">
             Maintain the current trust signals and re-audit after meaningful page or business changes.
@@ -264,6 +251,50 @@ function ClientDecisionSummary({
         {checked.length ? checked.join(", ") : "No structured data coverage was available."}
       </p>
     </div>
+  );
+}
+
+function ClientWorkSequenceList({
+  phases,
+}: {
+  phases: ClientDecisionWorkPhase[];
+}) {
+  const phaseGroups = IMPROVEMENT_SEQUENCE
+    .map((sequence) => ({
+      sequence,
+      items: phases.filter((phase) => phase.phase_number === sequence.number),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  return (
+    <section className="px-5 py-4 md:px-6">
+      <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-100 bg-[#FCFCFB] px-4">
+        {phaseGroups.map(({ sequence, items }) => (
+          <article
+            key={sequence.number}
+            className="grid gap-4 py-4 md:grid-cols-[210px_minmax(0,1fr)]"
+          >
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-[#7A8A15]">
+                Phase {sequence.number} · {sequence.layerRange}
+              </p>
+              <h3 className="mt-1 text-[14px] font-black text-[#1A212B]">{sequence.title}</h3>
+            </div>
+            <div className="space-y-4">
+              {items.map((item) => (
+                <div key={item.layer_keys.join("-")}>
+                  <p className="text-[12px] font-bold text-gray-500">{item.layer_labels[0]}</p>
+                  <p className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">
+                    What this affects
+                  </p>
+                  <p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-600">{item.summary}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

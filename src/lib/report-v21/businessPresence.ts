@@ -1,7 +1,7 @@
 import type { BusinessPresenceProposalAction } from "./types";
 
 export const NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE =
-  "No additional proposal-ready opportunities were identified from the checked business-presence data. Any overlapping page remediation is already covered in the Trust Layer Breakdown and Implementation Roadmap.";
+  "No additional off-site tasks were identified from the checked business-presence data. Page-level fixes are already listed in the Trust Layer Breakdown and Implementation Roadmap.";
 
 export function getAdditionalBusinessPresenceActions(
   actions?: BusinessPresenceProposalAction[] | null,
@@ -17,14 +17,83 @@ export function getProposalOpportunityCopy(count: number): {
 } {
   if (count === 0) {
     return {
-      headline: "No additional proposal-ready opportunities identified",
+      headline: "No additional off-site tasks identified",
       summary:
-        "No additional off-site work was identified from the checked business-presence data. Overlapping page remediation remains documented in the earlier report sections.",
+        "The checked GBP and recent-review data did not produce another client task. Page-level work remains documented in the earlier report sections.",
     };
   }
 
   return {
-    headline: `${count} proposal-ready ${count === 1 ? "opportunity" : "opportunities"} identified`,
-    summary: `The checked business-presence data produced ${count} additional off-site operational ${count === 1 ? "opportunity" : "opportunities"} not already covered in the Trust Layer Breakdown and Implementation Roadmap.`,
+    headline: `${count} client-ready ${count === 1 ? "task" : "tasks"} identified`,
+    summary:
+      "Each task below explains why the work is needed and what the agency should deliver. These off-site tasks do not change the eight-layer page score.",
   };
+}
+
+export function getProposalActionDisplayCopy(
+  action: BusinessPresenceProposalAction,
+): Pick<BusinessPresenceProposalAction, "title" | "rationale" | "recommended_scope"> {
+  const count = action.rationale.match(/\b(\d+)\b/)?.[1];
+
+  switch (action.id) {
+    case "bp-action-add-photos":
+      return {
+        title: "Create and publish a current GBP photo set",
+        rationale:
+          "The GBP profile has no public photos, so prospective customers cannot see current visual proof of the business, team or completed work.",
+        recommended_scope: [
+          "Prepare an approved set of authentic exterior, team, service and completed-work photos.",
+          "Upload the approved images to GBP with clear, accurate descriptions.",
+          "Provide the client with a reusable photo checklist for future updates.",
+        ],
+      };
+    case "bp-action-add-posts":
+      return {
+        title: "Publish the first GBP business update",
+        rationale:
+          "The GBP profile has no published updates, leaving no recent public signal about services, availability or completed work.",
+        recommended_scope: [
+          "Draft and publish one accurate update about a current service, availability or completed job.",
+          "Include an approved image and a clear next step for prospective customers.",
+          "Provide a simple topic plan for the next three GBP updates.",
+        ],
+      };
+    case "bp-action-low-rating-replies":
+      return {
+        title: "Resolve unanswered low-rating reviews",
+        rationale: `${count ? `${count} recent` : "Recent"} 1-3 star review${count === "1" ? "" : "s"} ${count === "1" ? "has" : "have"} no owner reply. ${count === "1" ? "This review needs" : "These reviews need"} a timely response and may require service-recovery follow-up.`,
+        recommended_scope: [
+          "Review each unanswered 1-3 star review with the client and identify any service-recovery case.",
+          "Prepare a factual, non-defensive, individualized reply for each review.",
+          "Deliver an approval-ready reply list and flag cases that need private follow-up before publishing.",
+        ],
+      };
+    case "bp-action-review-backlog":
+      return {
+        title: "Complete replies for the remaining recent reviews",
+        rationale: `${count ? `${count} additional recent` : "Some recent"} review${count === "1" ? "" : "s"} ${count === "1" ? "has" : "have"} no owner reply. Completing ${count === "1" ? "this reply" : "these replies"} gives the client a consistent review-response process.`,
+        recommended_scope: [
+          "Prepare a concise, specific reply for each remaining unanswered recent review.",
+          "Personalize every reply to the customer's feedback and avoid repeated templates.",
+          "Deliver the replies in an approval-ready list with a recommended publishing order.",
+        ],
+      };
+    case "bp-action-proof-candidates":
+      return {
+        title: "Turn detailed reviews into approved customer proof",
+        rationale: `${count || "Several"} recent 4-5 star review${count === "1" ? "" : "s"} ${count === "1" ? "includes" : "include"} specific customer detail that could support relevant service pages, case examples and client proposals.`,
+        recommended_scope: [
+          "Select 3-5 reviews with specific service, response or outcome details.",
+          "Organize the strongest proof into reusable themes without changing the reviewer meaning.",
+          "Recommend where each approved quote should appear, such as a service page, case example or proposal.",
+          "Obtain client approval and confirm platform rules before publishing any quote.",
+        ],
+      };
+    default:
+      return {
+        title: action.title,
+        rationale: action.rationale,
+        recommended_scope: action.recommended_scope,
+      };
+  }
 }
