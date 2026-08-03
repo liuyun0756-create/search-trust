@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { RunAuditButton } from '@/components/common/RunAuditButton';
+import { PurchaseReportButton } from '@/components/common/PurchaseReportButton';
 
 function ComingSoonPattern({ variant = "layers" }: { variant?: "layers" | "agency" }) {
   const accents =
@@ -79,9 +79,9 @@ export function PricingHero() {
               </p>
             </div>
 
-            <RunAuditButton className="group w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 border border-[#1A212B] shadow-[0_14px_30px_rgba(26,33,43,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-black hover:shadow-[0_18px_36px_rgba(165,208,32,0.28)]">
+            <PurchaseReportButton trackingSource="pricing_primary" className="group w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 border border-[#1A212B] shadow-[0_14px_30px_rgba(26,33,43,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-black hover:shadow-[0_18px_36px_rgba(165,208,32,0.28)]">
               Buy One Report <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </RunAuditButton>
+            </PurchaseReportButton>
 
             <div className="my-6 rounded-[24px] border border-[#EDF0E3] bg-[#F8FAF3] p-5">
               <p className="mb-4 text-[12px] font-black uppercase tracking-[0.14em] text-[#7FA40F]">

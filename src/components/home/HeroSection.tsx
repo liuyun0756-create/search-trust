@@ -15,23 +15,15 @@ export function HeroSection() {
   const [devModalOpen, setDevModalOpen] = useState(false);
   const [devPaymentOpen, setDevPaymentOpen] = useState(false);
   const [devSubmitting] = useState(false);
-  const [devFormData, setDevFormData] = useState<{ url: string; gbpUrl: string; pageType: string } | null>(null);
 
-  const handleDevSubmit = useCallback((data: { url: string; gbpUrl: string; pageType: string }) => {
-    // Skip login + credits check, go straight to payment
-    setDevFormData(data);
+  const handleDevSubmit = useCallback((_data: { url: string; gbpUrl: string; pageType: string }) => {
+    // Dev-only checkout smoke test. Purchasing never auto-runs an audit.
     setDevModalOpen(false);
     setDevPaymentOpen(true);
   }, []);
 
-  const handleDevPaymentSuccess = useCallback(() => {
-    setDevPaymentOpen(false);
-    // PaymentModal redirects to Dodo, return_url handles the rest
-  }, []);
-
   const handleDevPaymentClose = useCallback(() => {
     setDevPaymentOpen(false);
-    setDevFormData(null);
   }, []);
 
   return (
@@ -197,15 +189,13 @@ export function HeroSection() {
         <>
           <AuditFormModal
             isOpen={devModalOpen}
-            onClose={() => { setDevModalOpen(false); setDevFormData(null); }}
+            onClose={() => setDevModalOpen(false)}
             onSubmit={handleDevSubmit}
             submitting={devSubmitting}
           />
           <PaymentModal
             isOpen={devPaymentOpen}
             onClose={handleDevPaymentClose}
-            onSuccess={handleDevPaymentSuccess}
-            formData={devFormData}
           />
         </>
       )}

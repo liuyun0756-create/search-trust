@@ -7,7 +7,7 @@ import {
   type ReportV21,
 } from "@/lib/report-v21";
 import { CircleHelp, Layers3, type LucideIcon } from "lucide-react";
-import { formatLayerKey, getRiskTone, sourceLabel } from "./statusHelpers";
+import { formatLayerKey, getRiskTone } from "./statusHelpers";
 import { isAnalystView, type V21ViewMode } from "./viewMode";
 
 export function V21OverallConclusion({
@@ -19,7 +19,6 @@ export function V21OverallConclusion({
 }) {
   const report = normalized.reportV21;
   const showTechnical = isAnalystView(viewMode);
-  const isSampleReport = report.report_id?.startsWith("RPT-SAMPLE-");
   const overallStatus = report.overall_status ?? {
     label: "Unknown",
     level: "medium" as const,
@@ -86,18 +85,13 @@ export function V21OverallConclusion({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        {!isSampleReport && (
-          <span className="rounded-full border border-[#E4EDD2] bg-[#FBFDF5] px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#8BAA2B]">
-            {sourceLabel(normalized.source)}
-          </span>
-        )}
-        {!normalized.valid && (
+      {!normalized.valid && (
+        <div className="flex flex-wrap items-center gap-3">
           <span className="rounded-full border border-amber-100 bg-amber-50 px-3 py-1.5 text-[12px] font-black uppercase tracking-[0.12em] text-amber-700">
             Limited validation
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       <ScoreCards cards={cards} />
 

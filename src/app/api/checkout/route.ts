@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createServerClient } from "@/lib/supabase";
 import { captureServerEvent } from "@/lib/analytics-server";
@@ -9,7 +9,7 @@ const DODO_API_KEY = process.env.DODO_API_KEY!;
 const DODO_PRODUCT_ID = process.env.DODO_PRODUCT_ID!;
 const DEV_MODE = process.env.DEV_BYPASS_AUTH === "true";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const { userId } = await auth();
 
@@ -40,14 +40,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const formData: { url?: string; pageType?: string; gbpUrl?: string } = body.formData || {};
-
-    // Encode form data into return_url so we can auto-submit after payment
+    // Buying a report only adds one credit. Audit details are collected later
+    // from a separate "Run a Trust Audit" action.
     const returnParams = new URLSearchParams({ payment: "return" });
-    if (formData.url) returnParams.set("audit_url", formData.url);
-    if (formData.pageType) returnParams.set("audit_page_type", formData.pageType);
-    if (formData.gbpUrl) returnParams.set("audit_gbp_url", formData.gbpUrl);
 
     const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/reports?${returnParams.toString()}`;
 
@@ -83,11 +78,7 @@ export async function POST(req: NextRequest) {
     await captureServerEvent({
       distinctId: effectiveUserId,
       event: "checkout created",
-      properties: getAuditEventProperties({
-        url: formData.url,
-        pageType: formData.pageType,
-        gbpUrl: formData.gbpUrl,
-      }),
+      properties: getAuditEventProperties({}, { source: "credit_purchase" }),
     });
 
     return NextResponse.json({ checkout_url });

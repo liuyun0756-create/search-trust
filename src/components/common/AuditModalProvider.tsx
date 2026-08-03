@@ -12,12 +12,14 @@ import { getAuditEventProperties, getCreditsBucket } from "@/lib/analytics-prope
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 const OPEN_AUDIT_AFTER_LOGIN_KEY = "searchtrust_open_audit_after_login";
+const OPEN_PURCHASE_AFTER_LOGIN_KEY = "searchtrust_open_purchase_after_login";
 
 type AuditFormData = { url: string; gbpUrl: string; pageType: string };
 
 interface AuditModalContextType {
   openLogin: () => void;
   openAuditForm: (initialValues?: Partial<AuditFormData>) => void;
+  openPurchase: () => void;
   submitAuditForm: (data: AuditFormData) => Promise<void>;
   credits: number | null;
   refreshCredits: (options?: { force?: boolean }) => Promise<number | null>;
@@ -42,7 +44,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
   const [credits, setCredits] = useState<number | null>(null);
   const creditsLoadedRef = useRef(false);
   const creditsRequestRef = useRef<Promise<number | null> | null>(null);
-  // 缓存表单数据，等登录/支付完成后继续
+  // 缓存表单数据，等登录完成后回填审计表单。
   const [pendingFormData, setPendingFormData] = useState<AuditFormData | null>(null);
 
   const savePendingAudit = useCallback((data: AuditFormData) => {
@@ -110,6 +112,26 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     track("login modal opened");
     setLoginOpen(true);
   }, []);
+
+  const openPurchase = useCallback(() => {
+    clearPendingAudit();
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(OPEN_AUDIT_AFTER_LOGIN_KEY);
+    }
+
+    if (isLoaded && isSignedIn) {
+      track("checkout modal opened", { source: "pricing" });
+      setPaymentOpen(true);
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(OPEN_PURCHASE_AFTER_LOGIN_KEY, "1");
+    }
+    track("login modal opened", { source: "purchase_cta" });
+    setLoginOpen(true);
+  }, [clearPendingAudit, isLoaded, isSignedIn]);
+
   const openAuditForm = useCallback((initialValues?: Partial<AuditFormData>) => {
     const defaults = initialValues?.url
       ? {
@@ -120,18 +142,32 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       : null;
 
     if (isLoaded && isSignedIn) {
-      if (defaults) setPendingFormData(defaults);
-      track("audit form opened", { source: "cta" });
-      setAuditFormOpen(true);
+      void (async () => {
+        const availableCredits = creditsLoadedRef.current ? credits : await refreshCredits();
+        if (availableCredits != null && availableCredits <= 0) {
+          track("audit blocked no credits", {
+            credits_bucket: getCreditsBucket(availableCredits),
+            source: "audit_cta_credit_check",
+          });
+          clearPendingAudit();
+          router.push("/pricing");
+          return;
+        }
+
+        if (defaults) setPendingFormData(defaults);
+        track("audit form opened", { source: "cta" });
+        setAuditFormOpen(true);
+      })();
       return;
     }
     if (defaults) savePendingAudit(defaults);
     if (typeof window !== "undefined") {
+      sessionStorage.removeItem(OPEN_PURCHASE_AFTER_LOGIN_KEY);
       sessionStorage.setItem(OPEN_AUDIT_AFTER_LOGIN_KEY, "1");
     }
     track("login modal opened", { source: "audit_cta" });
     setLoginOpen(true);
-  }, [isLoaded, isSignedIn, savePendingAudit]);
+  }, [clearPendingAudit, credits, isLoaded, isSignedIn, refreshCredits, router, savePendingAudit]);
 
   const buildReportRoute = useCallback((params: {
     report_id: string;
@@ -169,9 +205,9 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
             source: "api_response",
           })
         );
-        savePendingAudit(data);
         setAuditFormOpen(false);
-        setPaymentOpen(true);
+        clearPendingAudit();
+        router.push("/pricing");
         return;
       }
       alert(error instanceof Error ? error.message : "Something went wrong. Please try again.");
@@ -179,9 +215,9 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       submissionRef.current = false;
       setSubmitting(false);
     }
-  }, [buildReportRoute, clearPendingAudit, router, savePendingAudit]);
+  }, [buildReportRoute, clearPendingAudit, router]);
 
-  // 核心流程：填信息 → 判断登录 → 判断 credits → 跑报告/弹支付
+  // 审计提交仍在服务端兜底检查 credits，避免前端缓存过期。
   const handleSubmit = useCallback(async (data: AuditFormData) => {
     track(
       "audit submitted",
@@ -214,10 +250,9 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
             source: "client_credit_check",
           })
         );
-        // 弹支付弹窗
-        savePendingAudit(data);
         setAuditFormOpen(false);
-        setPaymentOpen(true);
+        clearPendingAudit();
+        router.push("/pricing");
         return;
       }
     } catch {
@@ -226,48 +261,31 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
 
     // Step 3: 跑报告
     await runReport(data);
-  }, [credits, isSignedIn, refreshCredits, runReport, savePendingAudit]);
+  }, [clearPendingAudit, credits, isSignedIn, refreshCredits, router, runReport, savePendingAudit]);
 
   // Clerk/OAuth 回来后页面可能已刷新；如果之前已有表单数据，回填表单让用户确认后再提交。
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     if (typeof window === "undefined") return;
+
+    if (sessionStorage.getItem(OPEN_PURCHASE_AFTER_LOGIN_KEY) === "1") {
+      sessionStorage.removeItem(OPEN_PURCHASE_AFTER_LOGIN_KEY);
+      sessionStorage.removeItem(OPEN_AUDIT_AFTER_LOGIN_KEY);
+      setLoginOpen(false);
+      clearPendingAudit();
+      track("checkout modal opened", { source: "login_return" });
+      setPaymentOpen(true);
+      return;
+    }
+
     if (sessionStorage.getItem(OPEN_AUDIT_AFTER_LOGIN_KEY) !== "1") return;
 
     sessionStorage.removeItem(OPEN_AUDIT_AFTER_LOGIN_KEY);
     setLoginOpen(false);
 
     const pending = readPendingAudit();
-    if (pending) {
-      setPendingFormData(pending);
-      track(
-        "audit form opened",
-        getAuditEventProperties(pending, { source: "login_return" })
-      );
-      setAuditFormOpen(true);
-      return;
-    }
-
-    track("audit form opened", { source: "login_return" });
-    setAuditFormOpen(true);
-  }, [handleSubmit, isLoaded, isSignedIn, readPendingAudit]);
-
-  // 支付成功回调
-  const handlePaymentSuccess = useCallback(async () => {
-    setPaymentOpen(false);
-    await refreshCredits({ force: true });
-    const data = pendingFormData || readPendingAudit();
-    if (data) {
-      track(
-        "audit submitted",
-        getAuditEventProperties(data, {
-          source: "payment_success_resume",
-          credits_bucket: getCreditsBucket(credits),
-        })
-      );
-      await runReport(data);
-    }
-  }, [credits, pendingFormData, readPendingAudit, refreshCredits, runReport]);
+    openAuditForm(pending || undefined);
+  }, [clearPendingAudit, isLoaded, isSignedIn, openAuditForm, readPendingAudit]);
 
   const handlePaymentClose = useCallback(() => {
     setPaymentOpen(false);
@@ -275,7 +293,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
   }, [clearPendingAudit]);
 
   return (
-    <AuditModalContext.Provider value={{ openLogin, openAuditForm, submitAuditForm: handleSubmit, credits, refreshCredits }}>
+    <AuditModalContext.Provider value={{ openLogin, openAuditForm, openPurchase, submitAuditForm: handleSubmit, credits, refreshCredits }}>
       {children}
       <GoogleLoginModal
         isOpen={loginOpen}
@@ -284,6 +302,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
           clearPendingAudit();
           if (typeof window !== "undefined") {
             sessionStorage.removeItem(OPEN_AUDIT_AFTER_LOGIN_KEY);
+            sessionStorage.removeItem(OPEN_PURCHASE_AFTER_LOGIN_KEY);
           }
         }}
         onSignInStart={() => setLoginOpen(false)}
@@ -298,8 +317,6 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       <PaymentModal
         isOpen={paymentOpen}
         onClose={handlePaymentClose}
-        onSuccess={handlePaymentSuccess}
-        formData={pendingFormData}
       />
     </AuditModalContext.Provider>
   );

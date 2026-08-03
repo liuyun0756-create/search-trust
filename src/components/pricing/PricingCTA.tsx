@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { RunAuditButton } from '@/components/common/RunAuditButton';
+import { PurchaseReportButton } from '@/components/common/PurchaseReportButton';
 
 export function PricingCTA() {
   return (
@@ -31,11 +31,12 @@ export function PricingCTA() {
               <br className="hidden md:block" />
               on a real page.
             </h2>
-            <RunAuditButton
+            <PurchaseReportButton
+              trackingSource="pricing_footer"
               className="inline-flex items-center justify-center rounded-xl bg-[#1A1F2B] px-8 py-4 font-bold text-white transition-colors hover:bg-black"
             >
               Buy One Report
-            </RunAuditButton>
+            </PurchaseReportButton>
           </div>
         </motion.div>
 

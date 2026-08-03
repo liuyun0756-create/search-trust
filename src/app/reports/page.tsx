@@ -4,17 +4,15 @@ import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileSearch, FileQuestion, CheckCircle } from "lucide-react";
+import { FileSearch, FileQuestion } from "lucide-react";
 import { ReportContent } from "@/components/report/ReportContent";
 import { ReportHistory } from "@/components/report/ReportHistory";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
 import { BackHeader } from "@/components/common/BackHeader";
 import { useAuditModal } from "@/components/common/AuditModalProvider";
-import { submitAudit } from "@/lib/submit-audit";
 import type { Report } from "@/types/database";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_REPORT_API_BASE_URL || "https://searchtrust-rd-production.up.railway.app/api/v1";
-const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 
 function mergeReportMeta(report: Report, meta: Record<string, any>): Report {
   return {
@@ -130,17 +128,6 @@ function failedReportPatch(taskId: string | null, payload: unknown, fallbackReas
   };
 }
 
-function buildReportRoute(params: {
-  report_id: string;
-  task_id?: string | null;
-  database_report_id?: string | null;
-}) {
-  const search = new URLSearchParams({ report_id: params.report_id });
-  if (params.task_id) search.set("task_id", params.task_id);
-  if (params.database_report_id) search.set("database_report_id", params.database_report_id);
-  return `/reports?${search.toString()}`;
-}
-
 function EmptyState() {
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -239,8 +226,6 @@ function ReportsPage() {
     console.log("[ReportsPage] URL params:", {
       full_url: typeof window !== "undefined" ? window.location.href : "",
       payment: searchParams.get("payment"),
-      audit_url: searchParams.get("audit_url"),
-      audit_page_type: searchParams.get("audit_page_type"),
       task_id: searchParams.get("task_id"),
       report_id: searchParams.get("report_id"),
       database_report_id: searchParams.get("database_report_id"),
@@ -255,7 +240,6 @@ function ReportsPage() {
   const [reportLoadError, setReportLoadError] = useState<string | null>(null);
   const [sseActive, setSseActive] = useState(false);
   const [sseProgress, setSseProgress] = useState<{ stage?: string; percent?: number; message?: string } | null>(null);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentReturnLoading, setPaymentReturnLoading] = useState(false);
   const processedPaymentRef = useRef<string | null>(null);
@@ -299,25 +283,22 @@ function ReportsPage() {
     selectedReportId,
   ]);
 
-  // Handle payment success redirect — auto-submit audit if form data is present
+  // Confirm a completed credit purchase. Purchasing and running an audit are
+  // deliberately separate flows, so no report is started from this callback.
   useEffect(() => {
     const paymentParam = searchParams.get("payment");
     if (paymentParam !== "success" && paymentParam !== "return") return;
-    sessionStorage.removeItem(PENDING_AUDIT_STORAGE_KEY);
     // Wait for Clerk session to be ready after external redirect
     if (!isLoaded) return;
 
-    const auditUrl = searchParams.get("audit_url");
-    const auditPageType = searchParams.get("audit_page_type");
-    const auditGbpUrl = searchParams.get("audit_gbp_url");
     const paymentId = searchParams.get("payment_id");
     const paymentStatus = searchParams.get("status");
 
-    console.log("[PaymentReturn]", { auditUrl, auditPageType, auditGbpUrl, paymentId, paymentStatus, isSignedIn, isLoaded });
+    console.log("[PaymentReturn]", { paymentId, paymentStatus, isSignedIn, isLoaded });
 
     if (paymentStatus && paymentStatus !== "succeeded") {
       setPaymentReturnLoading(false);
-      setPaymentError("Payment was not completed. No report was generated.");
+      setPaymentError("Payment was not completed. No report credit was added.");
       router.replace("/pricing?payment=failed");
       const timer = setTimeout(() => setPaymentError(null), 5000);
       return () => clearTimeout(timer);
@@ -326,8 +307,7 @@ function ReportsPage() {
     if (paymentId && processedPaymentRef.current === paymentId) return;
     if (paymentId) processedPaymentRef.current = paymentId;
 
-    if (auditUrl && auditPageType && auditGbpUrl && paymentId && isSignedIn) {
-      // Payment returned with form data → auto-submit the audit
+    if (paymentId && isSignedIn) {
       (async () => {
         try {
           setPaymentReturnLoading(true);
@@ -340,7 +320,7 @@ function ReportsPage() {
           if (!confirmRes.ok) {
             const err = await confirmRes.json().catch(() => ({}));
             if (err.status && err.status !== "succeeded") {
-              setPaymentError("Payment was not completed. No report was generated.");
+              setPaymentError("Payment was not completed. No report credit was added.");
               router.replace("/pricing?payment=failed");
               setTimeout(() => setPaymentError(null), 5000);
               return;
@@ -349,18 +329,11 @@ function ReportsPage() {
           }
 
           await refreshCredits({ force: true });
-
-          const result = await submitAudit({
-            url: auditUrl,
-            pageType: auditPageType,
-            gbpUrl: auditGbpUrl,
-          });
-          console.log("[PaymentReturn] submitAudit result:", result);
-          router.replace(buildReportRoute(result));
+          router.replace("/pricing?payment=success");
         } catch (err) {
-          console.error("Auto-submit after payment failed:", err);
+          console.error("Payment confirmation failed:", err);
           const msg = err instanceof Error ? err.message : "Unknown error";
-          setPaymentError(`Payment could not start the report: ${msg}`);
+          setPaymentError(`Payment could not be confirmed: ${msg}`);
           router.replace("/pricing?payment=failed");
           setTimeout(() => setPaymentError(null), 5000);
         } finally {
@@ -368,9 +341,8 @@ function ReportsPage() {
         }
       })();
     } else {
-      // Payment returned without form data or not signed in
-      console.warn("[PaymentReturn] Missing data or not signed in, showing toast only");
-      setPaymentError("Payment return was incomplete. No report was generated.");
+      console.warn("[PaymentReturn] Missing payment id or signed-in session");
+      setPaymentError("Payment return was incomplete. Your credit could not be confirmed.");
       const timer = setTimeout(() => setPaymentError(null), 5000);
       router.replace("/pricing?payment=failed");
       return () => clearTimeout(timer);
@@ -912,17 +884,6 @@ function ReportsPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A212B] selection:bg-[#A5D020]/30">
       <AnimatePresence>
-        {paymentSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[#1D2531] text-white px-5 py-3 rounded-full shadow-lg"
-          >
-            <CheckCircle size={16} className="text-[#A5D020]" />
-            <span className="text-sm font-bold">Payment successful! Credit added.</span>
-          </motion.div>
-        )}
         {paymentError && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -955,7 +916,7 @@ function ReportsPage() {
           <DetailLoadingState
             text={
               paymentReturnLoading || isPaymentReturn
-                ? "Confirming payment and starting your report..."
+                ? "Confirming payment and adding your report credit..."
                 : sseActive
                   ? sseProgress?.message || "Generating report..."
                   : "Loading report..."

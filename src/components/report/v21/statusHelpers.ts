@@ -37,12 +37,6 @@ export function formatLayerKey(layerKey: LayerKey | string): string {
   return getLayerDisplayConfig(layerKey).label;
 }
 
-export function sourceLabel(source: string): string {
-  if (source === "native") return "Native v2.1";
-  if (source === "legacy_adapted") return "Legacy adapted";
-  return "Fallback";
-}
-
 export function yesNo(value: boolean): string {
   return value ? "Yes" : "No";
 }
