@@ -145,7 +145,7 @@ export function V21TrustLayers({
 
           {showTechnical ? (
             <div className="space-y-3">
-              <V21EvidenceList evidenceItems={layer.evidence_items} viewMode={viewMode} showEmpty={layer.status === "weak" || layer.status === "medium"} />
+              <V21EvidenceList evidenceItems={layer.evidence_items} viewMode={viewMode} />
               <V21ActionItems actions={layer.action_items} title={actionTitle} viewMode={viewMode} />
             </div>
           ) : null}
