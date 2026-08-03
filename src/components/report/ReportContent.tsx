@@ -969,7 +969,10 @@ export function ReportContent({
     router.push('/reports');
   };
 
-  const isGbpStatusLoading = report.status === 'pending' && typeof report.gbp_connected !== 'boolean';
+  const isGbpStatusLoading =
+    report.status === 'pending' &&
+    isLoading &&
+    typeof report.gbp_connected !== 'boolean';
   const normalizedGbpStatus = reportV21.gbp_status?.status || 'not_checked';
   const gbpSourceLabel = reportV21.gbp_status?.source === 'user_provided'
     ? 'Provided by user'

@@ -537,6 +537,33 @@ function ReportsPage() {
     setSseActive(true);
     setSseProgress(null);
 
+    const markCurrentReportFailed = (
+      payload: unknown,
+      fallbackReason: string,
+    ) => {
+      const patch = failedReportPatch(taskId, payload, fallbackReason);
+      setReport((prev) => {
+        if (!prev) return prev;
+        const matchesTask = prev.task_id === taskId;
+        const matchesPendingReport = Boolean(
+          pendingReportId && (
+            prev.id === pendingReportId ||
+            prev.report_id === pendingReportId ||
+            prev.external_report_id === pendingReportId
+          )
+        );
+        if (!matchesTask && !matchesPendingReport) return prev;
+
+        const failedReport = { ...prev, ...patch } as Report;
+        reportCacheRef.current.set(failedReport.id, failedReport);
+        reportCacheRef.current.set(failedReport.report_id, failedReport);
+        if (failedReport.external_report_id) {
+          reportCacheRef.current.set(failedReport.external_report_id, failedReport);
+        }
+        return failedReport;
+      });
+    };
+
     const handleDone = async (result: any) => {
       const persistableResult = getPersistableResult(result);
       console.debug("[report persistence] SSE done", {
@@ -561,10 +588,7 @@ function ReportsPage() {
           hasData: Boolean(asRecord(result)?.data),
         });
         setSseActive(false);
-        setReport((prev) => prev?.task_id === taskId ? {
-          ...prev,
-          ...failedReportPatch(taskId, result, "empty_result"),
-        } : prev);
+        markCurrentReportFailed(result, "empty_result");
 
         // Mark as failed — delete the empty report record
         try {
@@ -686,10 +710,7 @@ function ReportsPage() {
           setSseActive(false);
           taskDone = true;
           if (taskId) completedTaskIdsRef.current.add(taskId);
-          setReport((prev) => prev?.task_id === taskId ? {
-            ...prev,
-            ...failedReportPatch(taskId, data.result || data, "backend_failed"),
-          } : prev);
+          markCurrentReportFailed(data.result || data, "backend_failed");
 
           try {
             await fetch("/api/report-status", {
@@ -755,10 +776,7 @@ function ReportsPage() {
             taskDone = true;
             if (taskId) completedTaskIdsRef.current.add(taskId);
             const failurePayload = data.result || data;
-            setReport((prev) => prev?.task_id === taskId ? {
-              ...prev,
-              ...failedReportPatch(taskId, failurePayload, "backend_failed"),
-            } : prev);
+            markCurrentReportFailed(failurePayload, "backend_failed");
             try {
               await fetch("/api/report-status", {
                 method: "POST",
@@ -794,10 +812,7 @@ function ReportsPage() {
             })),
           });
         } catch {}
-        setReport((prev) => prev?.task_id === taskId ? {
-          ...prev,
-          ...failedReportPatch(taskId, null, "fallback_no_result"),
-        } : prev);
+        markCurrentReportFailed(null, "fallback_no_result");
       }
 
       // Reload history but keep the current report surface visible.
