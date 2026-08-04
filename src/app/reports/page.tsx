@@ -505,7 +505,13 @@ function ReportsPage() {
   }, [loadHistory]);
 
   useEffect(() => {
-    if (!report || report.external_report_id) return;
+    if (
+      !report ||
+      report.external_report_id ||
+      report.status === "pending" ||
+      report.status === "failed" ||
+      !hasPersistableReportContent(report)
+    ) return;
     loadReportMeta(report);
   }, [
     report?.id,
@@ -514,6 +520,16 @@ function ReportsPage() {
     report?.page_url,
     report?.page_type,
     report?.gbp_url,
+    report?.status,
+    report?.report_v2_1,
+    report?.module_1_overview,
+    report?.module_2_page_level,
+    report?.module_3_key_problems,
+    report?.module_4_eight_layers,
+    report?.module_5_optimization,
+    report?.trust_status,
+    report?.ranking_potential,
+    report?.risk_level,
     loadReportMeta,
   ]);
 
@@ -867,6 +883,8 @@ function ReportsPage() {
     report?.module_4_eight_layers ||
     report?.module_5_optimization
   );
+  const reportHasContent = hasPersistableReportContent(report);
+  const isWaitingForReport = Boolean(report?.status === "pending" && !reportHasContent);
 
   if (!paymentReturnLoading && !isPaymentReturn && !historyLoading && !hasReports && !report && !reportLoadError) {
     return (
@@ -918,12 +936,20 @@ function ReportsPage() {
           onSelect={handleSelect}
           isLoading={historyLoading}
         />
-        {report ? (
+        {report && !isWaitingForReport ? (
           <ReportContent
             report={report}
             isPaid={report.status === "paid_full"}
             isHeaderLoading={isLoading}
             isLoading={sseActive && !reportHasModules}
+          />
+        ) : isWaitingForReport ? (
+          <DetailLoadingState
+            text={
+              report?.task_id
+                ? sseProgress?.message || "Generating report..."
+                : "Preparing analysis..."
+            }
           />
         ) : historyLoading ? (
           <DetailLoadingState />

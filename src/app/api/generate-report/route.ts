@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const recentCutoff = new Date(Date.now() - 60_000).toISOString();
     const { data: recentPending } = await supabase
       .from("reports")
-      .select("id, report_id, task_id")
+      .select("id, report_id, task_id, access_type")
       .eq("user_id", user.userId)
       .eq("page_url", url)
       .eq("status", "pending")
@@ -96,56 +96,101 @@ export async function POST(request: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(1);
 
-    if (recentPending?.[0]) {
+    if (recentPending?.[0]?.task_id) {
       return NextResponse.json({
         task_id: recentPending[0].task_id,
         report_id: recentPending[0].report_id,
         database_report_id: recentPending[0].id,
-        pending_initialization: !recentPending[0].task_id,
       });
     }
 
-    const { data: previousCompleted } = await supabase
-      .from("reports")
-      .select("id")
-      .eq("user_id", user.userId)
-      .in("status", ["free_preview", "paid_full"])
-      .limit(1);
+    // Do not leave older pre-task rows in a permanent "pending" state. They
+    // cannot ever reconnect to SSE because no backend task was created.
+    if (!recentPending?.[0]) {
+      const { error: stalePendingError } = await supabase
+        .from("reports")
+        .update({
+          status: "failed",
+          error_code: "TASK_INITIALIZATION_INCOMPLETE",
+          failure_reason: "task_initialization_incomplete",
+          user_message: "The analysis did not start successfully. Please retry the audit.",
+          retryable: true,
+        })
+        .eq("user_id", user.userId)
+        .eq("page_url", url)
+        .eq("status", "pending")
+        .is("task_id", null)
+        .lt("created_at", recentCutoff);
 
-    const accessType =
-      user.auditCredits > 1 || (previousCompleted?.length ?? 0) > 0
-        ? "paid_credit"
-        : "free_trial";
+      if (stalePendingError) {
+        console.error("Failed to close stale pending reports:", stalePendingError);
+      }
+    }
 
-    const reportId = `RPT-${Date.now().toString(36).toUpperCase()}`;
-    const { data: insertedReport, error: insertError } = await supabase
-      .from("reports")
-      .insert({
-        report_id: reportId,
-        user_id: user.userId,
-        page_url: url,
-        page_type: normalizedPageType,
-        gbp_url: normalizedGbpUrl,
-        status: "pending",
-        access_type: accessType,
-      })
-      .select("id, report_id")
-      .single();
+    let reportId: string;
+    let insertedReport: { id: string; report_id: string } | null;
+    let accessType: string;
 
-    if (insertError) {
-      console.error("Supabase insert error:", insertError);
-      await captureServerEvent({
-        distinctId: analyticsDistinctId,
-        event: "report generation failed",
-        properties: { ...analyticsProperties, failure_reason: "report_insert_failed" },
+    // A previous request can leave a pending row behind before task_id is
+    // persisted (for example after a serverless timeout). Reuse that row and
+    // actually initialize the backend task instead of returning a null task_id
+    // that the browser can only poll forever.
+    if (recentPending?.[0]) {
+      reportId = recentPending[0].report_id;
+      insertedReport = {
+        id: recentPending[0].id,
+        report_id: recentPending[0].report_id,
+      };
+      accessType = recentPending[0].access_type || "paid_credit";
+      console.warn("[report creation recovery] initializing orphaned pending report", {
+        reportId,
+        databaseReportId: insertedReport.id,
       });
-      return NextResponse.json(
-        {
-          error: "Failed to save report",
-          detail: process.env.NODE_ENV === "production" ? undefined : insertError.message,
-        },
-        { status: 500 }
-      );
+    } else {
+      const { data: previousCompleted } = await supabase
+        .from("reports")
+        .select("id")
+        .eq("user_id", user.userId)
+        .in("status", ["free_preview", "paid_full"])
+        .limit(1);
+
+      accessType =
+        user.auditCredits > 1 || (previousCompleted?.length ?? 0) > 0
+          ? "paid_credit"
+          : "free_trial";
+
+      reportId = `RPT-${Date.now().toString(36).toUpperCase()}`;
+      const { data, error: insertError } = await supabase
+        .from("reports")
+        .insert({
+          report_id: reportId,
+          user_id: user.userId,
+          page_url: url,
+          page_type: normalizedPageType,
+          gbp_url: normalizedGbpUrl,
+          status: "pending",
+          access_type: accessType,
+        })
+        .select("id, report_id")
+        .single();
+
+      insertedReport = data;
+
+      if (insertError || !insertedReport) {
+        console.error("Supabase insert error:", insertError);
+        await captureServerEvent({
+          distinctId: analyticsDistinctId,
+          event: "report generation failed",
+          properties: { ...analyticsProperties, failure_reason: "report_insert_failed" },
+        });
+        return NextResponse.json(
+          {
+            error: "Failed to save report",
+            detail: process.env.NODE_ENV === "production" ? undefined : insertError?.message,
+          },
+          { status: 500 }
+        );
+      }
     }
 
     await captureServerEvent({
@@ -158,7 +203,7 @@ export async function POST(request: NextRequest) {
       reportId,
       databaseReportId: insertedReport?.id ?? null,
       taskId: null,
-      inserted: Boolean(insertedReport),
+      inserted: !recentPending?.[0],
       taskIdPersisted: false,
     });
 

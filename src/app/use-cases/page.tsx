@@ -1,5 +1,6 @@
 import { UseCasesHero } from "@/components/useCase/UseCasesHero";
 import { WhyTeamsTurnToUs } from "@/components/useCase/WhyTeamsTurnToUs";
+import { CommunityScenario } from "@/components/useCase/CommunityScenario";
 import { PrimaryUseCasesOverview } from "@/components/useCase/PrimaryUseCasesOverview";
 import { UseCasesByTeam } from "@/components/useCase/UseCasesByTeam";
 import { WorkflowSection } from "@/components/useCase/WorkflowSection";
@@ -64,6 +65,7 @@ export default function UseCasesPage() {
       />
       <UseCasesHero />
       <WhyTeamsTurnToUs />
+      <CommunityScenario />
       <PrimaryUseCasesOverview />
       <UseCasesByTeam />
       <WorkflowIntegrations />
