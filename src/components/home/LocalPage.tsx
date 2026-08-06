@@ -44,7 +44,7 @@ export function LocalPage() {
 
         {/* 左图右内容 */}
         <div className="grid grid-cols-1 lg:grid-cols-[500px_minmax(0,1fr)] gap-12 lg:gap-16 max-w-7xl mx-auto items-stretch px-4">
-          <div className="flex min-h-[500px] w-full flex-col bg-[#151922] p-7 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-9">
+          <div className="flex min-h-[500px] w-full flex-col overflow-hidden rounded-[28px] bg-[#151922] p-7 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-9">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#A5D020]">What the audit separates</p>
             <h3 className="mt-3 max-w-sm text-[27px] font-extrabold leading-tight text-white">
               Content volume is only one part of local page trust

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, Download } from "lucide-react";
+import { Download } from "lucide-react";
+import { BackButton } from "@/components/common/BackControl";
 import type { NormalizedReportV21Result } from "@/lib/report-v21";
 import type { Report } from "@/types/database";
 import { ReportV21Content } from "./ReportV21Content";
@@ -81,16 +82,11 @@ export function V21ClientReportPreview({
     >
       <header className="sticky top-0 z-20 border-b border-[#DDE2E8] bg-white/95 shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur-xl">
         <div className="mx-auto flex min-h-[72px] max-w-[1600px] items-center gap-3 px-4 py-3 sm:px-6 lg:px-10">
-          <button
+          <BackButton
             ref={closeButtonRef}
-            type="button"
             onClick={onClose}
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-bold text-[#1A212B] transition-colors hover:border-gray-300 hover:bg-gray-50"
             aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Back</span>
-          </button>
+          />
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

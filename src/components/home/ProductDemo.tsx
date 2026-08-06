@@ -55,7 +55,7 @@ export function ProductDemo() {
             {levels.map((level) => (
               <article
                 key={level.id}
-                className="min-h-[164px] border border-white/10 bg-white/[0.04] p-5"
+                className="min-h-[164px] overflow-hidden rounded-[20px] border border-white/10 bg-white/[0.04] p-5"
               >
                 <div className="mb-4 flex items-center gap-3">
                   <span className="flex h-9 w-9 items-center justify-center bg-[#A5D020] text-sm font-extrabold text-[#101217]">

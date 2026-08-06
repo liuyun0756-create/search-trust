@@ -8,7 +8,7 @@ import {
   Loader2, AlertTriangle,
   Copy, FileText, Globe2, Link2, CalendarDays, BadgeInfo, CheckCircle2,
   ChevronDown, Eye, X as XIcon,
-  RotateCcw, ArrowLeft
+  RotateCcw
 } from 'lucide-react';
 import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
 import type { PdfVariant } from '@/lib/report-v21';
@@ -17,6 +17,7 @@ import { useAuditModal } from '@/components/common/AuditModalProvider';
 import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v21/ReportV21Content';
 import { V21ClientReportPreview } from './v21/V21ClientReportPreview';
 import { PdfInput } from './PdfInput';
+import { BackButton } from '@/components/common/BackControl';
 
 type TabId = V21TabId;
 
@@ -145,14 +146,11 @@ const FailedState = ({
           <RotateCcw className="h-4 w-4" />
           Retry analysis
         </button>
-        <button
-          type="button"
+        <BackButton
           onClick={onBack}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-[14px] font-bold text-[#1A212B] transition-all hover:bg-gray-50"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
-        </button>
+          Back
+        </BackButton>
       </div>
 
       <details className="mt-8 rounded-2xl border border-gray-100 bg-white p-5">

@@ -98,9 +98,14 @@ function EvidenceFieldCard({ group }: { group: EvidenceGroup }) {
         {sources.map((source) => (
           <div key={source.key} className="grid grid-cols-1 gap-2 px-4 py-3 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-4">
             <dt className="text-[12px] font-bold text-gray-500">{source.label}</dt>
-            <dd className="min-w-0 space-y-2.5">
+            <dd className="min-w-0">
               {source.items.map((item, index) => (
-                <EvidenceValue key={item.id || `${source.key}-${index}`} item={item} />
+                <div
+                  key={item.id || `${source.key}-${index}`}
+                  className={index > 0 ? "mt-2.5 border-t border-gray-100 pt-2.5" : ""}
+                >
+                  <EvidenceValue item={item} />
+                </div>
               ))}
             </dd>
           </div>
@@ -124,27 +129,24 @@ function EvidenceValue({ item }: { item: EvidenceItem }) {
 
 function groupEvidenceItems(items: EvidenceItem[]): EvidenceGroup[] {
   const groups: EvidenceGroup[] = [];
-  const groupedFields = new Map<string, EvidenceGroup>();
+  const groupedEvidence = new Map<string, EvidenceGroup>();
 
   items.forEach((item, index) => {
     const field = evidenceField(item);
-    if (!field) {
-      groups.push({
-        key: `evidence-${item.id || index}`,
-        title: item.source_label || "Evidence",
-        items: [item],
-      });
-      return;
-    }
+    const normalizedTitle = normalizeLabel(item.source_label);
+    const groupKey = field?.key || (
+      normalizedTitle ? `label-${normalizedTitle}` : `evidence-${item.id || index}`
+    );
+    const groupTitle = field?.title || item.source_label || "Evidence";
 
-    const existing = groupedFields.get(field.key);
+    const existing = groupedEvidence.get(groupKey);
     if (existing) {
       existing.items.push(item);
       return;
     }
 
-    const group = { key: `field-${field.key}`, title: field.title, items: [item] };
-    groupedFields.set(field.key, group);
+    const group = { key: `field-${groupKey}`, title: groupTitle, items: [item] };
+    groupedEvidence.set(groupKey, group);
     groups.push(group);
   });
 
