@@ -25,7 +25,7 @@ export function V21GBPAlignment({
       <LimitedState
         title="GBP alignment unavailable"
         message={GBP_NOT_VERIFIED_MESSAGE}
-        detail={gbpStatus === "not_found" || gbpStatus === "error" ? reason ?? undefined : undefined}
+        detail={gbpStatus === "not_found" || gbpStatus === "ambiguous" || gbpStatus === "error" ? reason ?? undefined : undefined}
       />
     );
   }

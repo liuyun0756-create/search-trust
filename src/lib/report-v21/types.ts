@@ -9,7 +9,7 @@ export type LayerKey =
   | "algorithm_fit";
 
 export type LayerStatus = "good" | "medium" | "weak" | "not_checked";
-export type GBPStatusValue = "checked" | "not_checked" | "not_found" | "error";
+export type GBPStatusValue = "checked" | "not_checked" | "not_found" | "ambiguous" | "error";
 export type GBPSource = "user_provided" | "system_discovered" | "not_available";
 export type OverallStatusLevel = "weak" | "medium_weak" | "medium" | "strong" | "high";
 export type RankingPotentialLevel = "low" | "competitive" | "improvable" | "strong";

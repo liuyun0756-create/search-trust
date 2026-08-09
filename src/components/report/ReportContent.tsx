@@ -979,6 +979,9 @@ export function ReportContent({
       : reportV21.gbp_status?.source === 'not_available'
         ? 'No source available'
         : 'Source not recorded';
+  const gbpStatusDetail = normalizedGbpStatus === 'ambiguous'
+    ? reportV21.gbp_status?.reason || 'Multiple candidates need confirmation'
+    : gbpSourceLabel;
   const gbpStatus = isGbpStatusLoading
     ? {
         value: (
@@ -1005,6 +1008,13 @@ export function ReportContent({
             iconTone: 'text-red-500',
             iconBg: 'bg-red-50',
           }
+        : normalizedGbpStatus === 'ambiguous'
+          ? {
+              value: 'Needs confirmation',
+              tone: 'text-amber-600',
+              iconTone: 'text-amber-600',
+              iconBg: 'bg-amber-50',
+            }
         : normalizedGbpStatus === 'error'
           ? {
               value: 'Error',
@@ -1409,7 +1419,7 @@ export function ReportContent({
               icon: Link2,
               label: 'GBP URL Status',
               value: gbpStatus.value,
-              detail: gbpSourceLabel,
+              detail: gbpStatusDetail,
               tone: gbpStatus.tone,
               iconTone: gbpStatus.iconTone,
               iconBg: gbpStatus.iconBg,

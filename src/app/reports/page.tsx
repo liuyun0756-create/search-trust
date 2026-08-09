@@ -259,6 +259,7 @@ function ReportsPage() {
     result: unknown;
     failed?: boolean;
     failure_reason?: string;
+    terminal_failure_confirmed?: boolean;
   }) => {
     const reportId = pendingReportId || report?.report_id || selectedReportId || undefined;
     const databaseReportId = isDatabaseReportId(report?.id)
@@ -273,6 +274,7 @@ function ReportsPage() {
       result: payload.result,
       failed: payload.failed,
       failure_reason: payload.failure_reason,
+      terminal_failure_confirmed: payload.terminal_failure_confirmed,
     };
   }, [
     payloadTaskId,
@@ -615,6 +617,7 @@ function ReportsPage() {
               result: null,
               failed: true,
               failure_reason: "empty_result",
+              terminal_failure_confirmed: true,
             })),
           });
         } catch {}
@@ -705,10 +708,98 @@ function ReportsPage() {
 
     const eventSource = new EventSource(`${BACKEND_URL}/task/${taskId}/stream`);
     let taskDone = false;
+    let cancelled = false;
+    let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
+    let recoveryInFlight = false;
+
+    const clearRecoveryTimer = () => {
+      if (recoveryTimer) {
+        clearTimeout(recoveryTimer);
+        recoveryTimer = null;
+      }
+    };
+
+    const handleBackendFailure = async (payload: unknown) => {
+      if (taskDone || cancelled) return;
+      taskDone = true;
+      clearRecoveryTimer();
+      eventSource.close();
+      setSseActive(false);
+      completedTaskIdsRef.current.add(taskId);
+      markCurrentReportFailed(payload, "backend_failed");
+
+      const record = asRecord(payload);
+      try {
+        await fetch("/api/report-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildReportStatusPayload({
+            result: payload,
+            failed: true,
+            failure_reason: typeof record?.error_code === "string"
+              ? record.error_code
+              : "backend_failed",
+            terminal_failure_confirmed: true,
+          })),
+        });
+      } catch {}
+
+      await loadHistory();
+    };
+
+    const scheduleRecoveryPoll = (delay = 1500) => {
+      if (taskDone || cancelled || recoveryTimer) return;
+      recoveryTimer = setTimeout(() => {
+        recoveryTimer = null;
+        void recoverTaskStatus();
+      }, delay);
+    };
+
+    const recoverTaskStatus = async () => {
+      if (taskDone || cancelled || recoveryInFlight) return;
+      recoveryInFlight = true;
+      try {
+        const res = await fetch(`${BACKEND_URL}/task/${taskId}`, { cache: "no-store" });
+        if (!res.ok) {
+          // A temporary 404/5xx or network edge failure is not proof that the
+          // backend task failed. Keep the pending report recoverable.
+          scheduleRecoveryPoll(3000);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.progress) setSseProgress(data.progress);
+
+        if (data.status === "done") {
+          taskDone = true;
+          clearRecoveryTimer();
+          eventSource.close();
+          await handleDone(data.result);
+          return;
+        }
+
+        if (data.status === "failed") {
+          await handleBackendFailure(data.result || data);
+          return;
+        }
+
+        // Includes known active states and unknown non-terminal states. The
+        // SSE connection can reconnect in parallel; polling is only recovery.
+        scheduleRecoveryPoll(3000);
+      } catch {
+        scheduleRecoveryPoll(3000);
+      } finally {
+        recoveryInFlight = false;
+      }
+    };
 
     eventSource.onmessage = async (event) => {
       try {
         const data = JSON.parse(event.data);
+
+        // The stream recovered, so the fallback poller can stand down until a
+        // future transport error occurs.
+        clearRecoveryTimer();
 
         if (data.progress) {
           setSseProgress(data.progress);
@@ -722,27 +813,7 @@ function ReportsPage() {
         }
 
         if (data.status === "failed") {
-          eventSource.close();
-          setSseActive(false);
-          taskDone = true;
-          if (taskId) completedTaskIdsRef.current.add(taskId);
-          markCurrentReportFailed(data.result || data, "backend_failed");
-
-          try {
-            await fetch("/api/report-status", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(buildReportStatusPayload({
-                result: data.result || null,
-                failed: true,
-                failure_reason: typeof data.result?.error_code === "string"
-                  ? data.result.error_code
-                  : "backend_failed",
-              })),
-            });
-          } catch {}
-
-          await loadHistory();
+          await handleBackendFailure(data.result || data);
           return;
         }
       } catch (err) {
@@ -750,92 +821,17 @@ function ReportsPage() {
       }
     };
 
-    eventSource.onerror = async () => {
-      if (taskDone) return;
-
-      let resultSaved = false;
-
-      // A long-running Dify report can close one SSE connection before the task
-      // completes. Keep EventSource open so the browser reconnects while the
-      // backend still reports an active task.
-      try {
-        const res = await fetch(`${BACKEND_URL}/task/${taskId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (["queued", "scraping", "analyzing", "reporting"].includes(data.status)) {
-            if (data.progress) setSseProgress(data.progress);
-            console.log("SSE reconnecting while report generation continues", { taskId, status: data.status });
-            return;
-          }
-
-          const persistableResult = getPersistableResult(data.result);
-          if (data.status === "done" && persistableResult) {
-            eventSource.close();
-            taskDone = true;
-            if (taskId) completedTaskIdsRef.current.add(taskId);
-            console.debug("[report persistence] fallback posting report-status", {
-              taskId,
-              hasReportV21: Boolean(persistableResult.report_v2_1),
-              hasScore: Boolean(persistableResult.score),
-              resultKeys: safeResultKeys(persistableResult),
-            });
-            await fetch("/api/report-status", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(buildReportStatusPayload({ result: persistableResult })),
-            });
-            resultSaved = true;
-          }
-
-          if (data.status === "failed") {
-            eventSource.close();
-            taskDone = true;
-            if (taskId) completedTaskIdsRef.current.add(taskId);
-            const failurePayload = data.result || data;
-            markCurrentReportFailed(failurePayload, "backend_failed");
-            try {
-              await fetch("/api/report-status", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(buildReportStatusPayload({
-                  result: failurePayload,
-                  failed: true,
-                  failure_reason: typeof failurePayload?.error_code === "string"
-                    ? failurePayload.error_code
-                    : "backend_failed",
-                })),
-              });
-            } catch {}
-            await loadHistory();
-            return;
-          }
-        }
-      } catch {}
-
-      eventSource.close();
-      setSseActive(false);
-
-      if (!resultSaved) {
-        // Task not found or no result — clean up the empty report
-        try {
-          await fetch("/api/report-status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(buildReportStatusPayload({
-              result: null,
-              failed: true,
-              failure_reason: "fallback_no_result",
-            })),
-          });
-        } catch {}
-        markCurrentReportFailed(null, "fallback_no_result");
-      }
-
-      // Reload history but keep the current report surface visible.
-      await loadHistory();
+    eventSource.onerror = () => {
+      if (taskDone || cancelled) return;
+      // EventSource reconnects automatically. Polling the task endpoint gives
+      // us an independent recovery path, but a transport error never becomes
+      // a synthetic report failure.
+      scheduleRecoveryPoll(500);
     };
 
     return () => {
+      cancelled = true;
+      clearRecoveryTimer();
       eventSource.close();
     };
   }, [taskId, pendingReportId, loadHistory, refreshCredits, buildReportStatusPayload, router]);

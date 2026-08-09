@@ -158,7 +158,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { task_id, result, failed, report_id, reportId, database_report_id } = body;
+    const {
+      task_id,
+      result,
+      failed,
+      failure_reason,
+      terminal_failure_confirmed,
+      report_id,
+      reportId,
+      database_report_id,
+    } = body;
     const requestReportId = report_id || reportId || null;
 
     if (!task_id && !requestReportId && !database_report_id) {
@@ -417,8 +426,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Failed: mark the report failed, don't deduct credits
+    // A client-side disconnect, timeout, or temporary task lookup miss is not
+    // proof that the backend task failed. Only persist a terminal failure when
+    // the caller observed an explicit backend `failed` state (or an explicit
+    // terminal `done` response whose report payload was invalid).
     if (failed && !persistableResult) {
+      if (terminal_failure_confirmed !== true) {
+        console.warn("[report-status] rejected unconfirmed terminal failure", {
+          taskId: task_id ?? null,
+          reportId: report.report_id ?? requestReportId,
+          failureReason: failure_reason ?? null,
+        });
+        return NextResponse.json({
+          ok: false,
+          saved: false,
+          status: "pending",
+          reason: "terminal_failure_not_confirmed",
+          reportId: report.id,
+        }, { status: 409 });
+      }
       await supabase.from("reports").update({ status: "failed" }).eq("id", report.id);
       return NextResponse.json({ ok: true, saved: false, status: "failed", reportId: report.id });
     }
