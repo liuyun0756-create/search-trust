@@ -178,7 +178,7 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
           </div>
         </div>
 
-        <div className="p-8 sm:p-10 lg:p-12">
+        <div className="flex flex-col p-8 sm:p-10 lg:p-12">
           <div className="grid gap-5">
             <div className="rounded-[24px] border border-black/[0.07] bg-white p-6 shadow-[0_8px_30px_rgba(26,31,43,0.04)]">
               <div className="mb-4 flex items-center gap-3">
@@ -227,20 +227,21 @@ function ScenarioCard({ scenario, index }: { scenario: Scenario; index: number }
           </div>
 
           <div
-            className={`mt-5 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between ${scenario.dividerClass}`}
+            className={`mt-7 flex items-center justify-between gap-4 border-t pt-3 lg:mt-auto lg:pt-5 ${scenario.dividerClass}`}
           >
-            <p className="max-w-[430px] text-[11px] leading-4 text-[#8A93A3]">
-              Independent commentary on a public discussion; not a customer case or endorsement.
+            <p className="text-[10px] leading-4 text-[#929BAA] sm:text-[11px]">
+              Independent commentary; not a customer case.
             </p>
             <a
               href={scenario.sourceUrl}
               target="_blank"
               rel="noopener noreferrer nofollow"
-              className="group inline-flex shrink-0 items-center gap-2 text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#1A1F2B] transition-colors hover:text-[#759813] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A5D020] focus-visible:ring-offset-4"
+              aria-label="Open the original public discussion"
+              className="group inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-black/[0.08] bg-white/75 px-3 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#1A1F2B] transition-[color,border-color,background-color] hover:border-[#B7DC43] hover:bg-white hover:text-[#759813] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A5D020] focus-visible:ring-offset-3"
             >
-              Read the original discussion
+              Source
               <ArrowUpRight
-                size={16}
+                size={14}
                 className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 aria-hidden="true"
               />
