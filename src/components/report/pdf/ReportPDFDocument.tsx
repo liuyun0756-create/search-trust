@@ -5,6 +5,8 @@ import {
   extractGBPAlignmentRows,
   formatWorkLayer,
   getClientDecisionContext,
+  getDisplayLayerFinding,
+  getDisplaySignalsAssessed,
   getEffectiveBranding,
   getLayerDisplayConfig,
   getAdditionalBusinessPresenceActions,
@@ -1110,7 +1112,10 @@ function TrustLayersSection({ reportV21, variant }: { reportV21: ReportV21; vari
     <Section title="Trust Layer Breakdown">
       <View style={styles.layerGrid}>
         {REQUIRED_LAYER_KEYS.map((layerKey, index) => {
-          const layer = layerByKey(reportV21, layerKey);
+          const layer = getDisplayLayerFinding(
+            layerByKey(reportV21, layerKey),
+            reportV21.gbp_status?.status,
+          );
           const config = getLayerDisplayConfig(layerKey);
           const findingCount = safeList(layer.triggered_rule_ids).length;
           const presentationMode = layer.presentation_mode
@@ -1134,7 +1139,7 @@ function TrustLayersSection({ reportV21, variant }: { reportV21: ReportV21; vari
                   <Text style={styles.mutedText}>{config.name}</Text>
                   <Field label="Assessment" value={layer.summary || layer.explanation} maxLength={230} />
                   <Text style={styles.mutedText}>
-                    Signals assessed: {config.signalsAssessed} / {layer.status === "good" ? "Improvement opportunities" : "Findings requiring attention"}: {findingCount}
+                    Signals assessed: {getDisplaySignalsAssessed(layer)} / {layer.status === "good" ? "Improvement opportunities" : "Findings requiring attention"}: {findingCount}
                   </Text>
                 </>
               )}

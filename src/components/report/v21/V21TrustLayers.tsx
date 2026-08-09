@@ -1,4 +1,11 @@
-import { REQUIRED_LAYER_KEYS, getLayerDisplayConfig, type LayerFinding } from "@/lib/report-v21";
+import {
+  REQUIRED_LAYER_KEYS,
+  getDisplayLayerFinding,
+  getDisplaySignalsAssessed,
+  getLayerDisplayConfig,
+  type GBPStatusValue,
+  type LayerFinding,
+} from "@/lib/report-v21";
 import { V21ActionItems } from "./V21ActionItems";
 import { V21EvidenceList } from "./V21EvidenceList";
 import { getLayerStatusLabel, getLayerStatusTone, safeList } from "./statusHelpers";
@@ -6,16 +13,18 @@ import { isAnalystView, type V21ViewMode } from "./viewMode";
 
 export function V21TrustLayers({
   layers,
+  gbpStatus,
   viewMode = "analyst",
 }: {
   layers?: LayerFinding[] | null;
+  gbpStatus?: GBPStatusValue | null;
   viewMode?: V21ViewMode;
 }) {
   const showTechnical = isAnalystView(viewMode);
   const layerMap = new Map(safeList(layers).map((layer) => [layer.layer_key, layer]));
   const orderedLayers = REQUIRED_LAYER_KEYS.map((layerKey, index) => {
     const config = getLayerDisplayConfig(layerKey);
-    return layerMap.get(layerKey) || {
+    const layer = layerMap.get(layerKey) || {
       layer_id: index + 1,
       layer_key: layerKey,
       layer_name: config.name,
@@ -29,6 +38,7 @@ export function V21TrustLayers({
       suggested_fixes: [],
       action_items: [],
     };
+    return getDisplayLayerFinding(layer, gbpStatus);
   });
 
   if (!showTechnical) {
@@ -108,7 +118,7 @@ export function V21TrustLayers({
 
           {showTechnical && (
             <div className="mb-4 flex flex-wrap gap-2">
-              <Metric label="Signals assessed" value={getLayerDisplayConfig(layer.layer_key).signalsAssessed} />
+              <Metric label="Signals assessed" value={getDisplaySignalsAssessed(layer)} />
               <Metric label={metricLabel} value={findingCount} />
             </div>
           )}

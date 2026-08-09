@@ -84,7 +84,11 @@ export function ReportV21Content({
       )}
 
       <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Trust Layer Breakdown"] : undefined} title="Trust Layer Breakdown">
-        <V21TrustLayers layers={report.layers} viewMode={viewMode} />
+        <V21TrustLayers
+          layers={report.layers}
+          gbpStatus={report.gbp_status?.status}
+          viewMode={viewMode}
+        />
       </Section>
 
       <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Implementation Roadmap"] : undefined} title="Implementation Roadmap">

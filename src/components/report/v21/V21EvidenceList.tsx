@@ -48,7 +48,7 @@ export function V21EvidenceList({
   showEmpty?: boolean;
 }) {
   const [expanded, setExpanded] = useState(density === "compact");
-  const items = safeList(evidenceItems);
+  const items = safeList(evidenceItems).filter(hasReadableEvidence);
 
   if (!isAnalystView(viewMode)) return null;
   if (!items.length) {
@@ -177,6 +177,8 @@ function groupEvidenceBySource(items: EvidenceItem[]): EvidenceSourceGroup[] {
 
 function evidenceField(item: EvidenceItem): { key: string; title: string } | null {
   const label = normalizeLabel(item.source_label);
+  const ruleField = ruleEvidenceField(item.id);
+  if (ruleField) return ruleField;
 
   if (item.source_type === "review" || /\b(review|testimonial)s?\b/.test(label)) {
     return { key: "customer-reviews", title: "Customer reviews" };
@@ -196,6 +198,36 @@ function evidenceField(item: EvidenceItem): { key: string; title: string } | nul
   return match ? { key: match.key, title: match.title } : null;
 }
 
+function ruleEvidenceField(id: string): { key: string; title: string } | null {
+  const match = String(id || "").match(/(?:^|-)rule-(\d+)(?:-|$)/);
+  const ruleId = Number(match?.[1]);
+  const fields: Record<number, { key: string; title: string }> = {
+    3: { key: "geographic-context", title: "Geographic context" },
+    4: { key: "time-context", title: "Time and activity context" },
+    6: { key: "page-imagery", title: "Page imagery" },
+    7: { key: "service-process", title: "Service process" },
+    8: { key: "calls-to-action", title: "Calls to action" },
+    9: { key: "service-accountability", title: "Service responsibility and follow-up" },
+    10: { key: "service-accountability", title: "Service responsibility and follow-up" },
+    11: { key: "trust-signals", title: "Verifiable trust signals" },
+    12: { key: "service-accountability", title: "Service responsibility and follow-up" },
+    14: { key: "page-value", title: "Page purpose and value" },
+    21: { key: "business-identity", title: "Business identity" },
+    22: { key: "address", title: "Address" },
+    23: { key: "phone", title: "Phone" },
+    24: { key: "service-area", title: "Service area" },
+    25: { key: "business-hours", title: "Business hours" },
+    30: { key: "geographic-context", title: "Geographic context" },
+    31: { key: "geographic-context", title: "Geographic context" },
+    32: { key: "local-context", title: "Local context" },
+    33: { key: "service-boundary", title: "Service boundary" },
+    34: { key: "service-examples", title: "Service examples" },
+    35: { key: "customer-context", title: "Customer context" },
+    36: { key: "time-context", title: "Time and activity context" },
+  };
+  return fields[ruleId] || null;
+}
+
 function normalizeLabel(value: string): string {
   return String(value || "")
     .toLowerCase()
@@ -206,14 +238,37 @@ function normalizeLabel(value: string): string {
 
 function recordedValue(item: EvidenceItem): string {
   const extracted = String(item.extracted_text || "").trim();
-  if (extracted) return extracted;
+  if (extracted && !isTechnicalNoise(extracted)) return cleanMissingPrefix(extracted);
 
   const normalized = String(item.normalized_value || "").trim();
-  if (normalized) return normalized;
+  if (normalized && !isTechnicalNoise(normalized)) return cleanMissingPrefix(normalized);
 
   if (item.comparison_result === "missing") return "Not found in the checked scope";
   if (item.comparison_result === "not_checked") return "No evidence was available in this audit";
   return "No recorded value";
+}
+
+function hasReadableEvidence(item: EvidenceItem): boolean {
+  const extracted = String(item.extracted_text || "").trim();
+  const normalized = String(item.normalized_value || "").trim();
+  if (extracted && !isTechnicalNoise(extracted)) return true;
+  if (normalized && !isTechnicalNoise(normalized)) return true;
+  return !extracted && !normalized;
+}
+
+function cleanMissingPrefix(value: string): string {
+  return value.replace(/^not found in (?:the )?checked (?:page )?scope:\s*/i, "").trim();
+}
+
+function isTechnicalNoise(value: string): boolean {
+  const normalized = value.toLowerCase();
+  if (["data:image", "base64,", "<svg", "viewbox=", "xmlns="].some((marker) => normalized.includes(marker))) {
+    return true;
+  }
+  if (normalized.includes("wp-content/uploads") && (value.includes("![") || value.length > 180)) {
+    return true;
+  }
+  return value.length > 220 && ((value.match(/%/g)?.length || 0) >= 5 || (value.match(/\//g)?.length || 0) >= 8);
 }
 
 function displaySection(value?: string | null): string | null {
