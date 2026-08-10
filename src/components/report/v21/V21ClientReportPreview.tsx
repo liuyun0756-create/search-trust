@@ -95,7 +95,7 @@ export function V21ClientReportPreview({
               </h2>
             </div>
             <p className="mt-0.5 hidden truncate text-[12px] font-medium text-gray-500 md:block">
-              Client-facing conclusions, trust-layer status and improvement sequence. Technical details are excluded.
+              Client-facing conclusions, trust-layer status, improvement sequence and additional business-presence opportunities.
             </p>
           </div>
 

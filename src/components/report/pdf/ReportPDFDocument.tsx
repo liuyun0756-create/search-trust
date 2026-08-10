@@ -10,6 +10,7 @@ import {
   getEffectiveBranding,
   getLayerDisplayConfig,
   getAdditionalBusinessPresenceActions,
+  getClientBusinessPresenceOpportunities,
   getProposalActionDisplayCopy,
   getProposalOpportunityCopy,
   IMPROVEMENT_SEQUENCE,
@@ -696,6 +697,7 @@ function EvidenceSummary({ evidence, limit = 1 }: { evidence?: EvidenceItem[]; l
         optionalText(item.source_label),
         optionalText(item.page_section),
         optionalText(item.extracted_text),
+        optionalText(item.normalized_value),
         optionalText(item.explanation),
       ].filter(Boolean);
       return parts.join(": ");
@@ -1507,6 +1509,47 @@ function BusinessPresenceAuditSection({ reportV21, variant }: { reportV21: Repor
   );
 }
 
+function ClientBusinessPresenceOpportunitiesSection({ reportV21 }: { reportV21: ReportV21 }) {
+  const opportunities = getClientBusinessPresenceOpportunities(
+    reportV21.business_presence_audit?.proposal_actions,
+  );
+
+  if (!opportunities.length) return null;
+
+  return (
+    <Section title="Business Presence Opportunities">
+      <View style={styles.statement}>
+        <Text style={styles.label}>Beyond the target page</Text>
+        <Text style={styles.cardTitle}>
+          {opportunities.length} additional business presence {opportunities.length === 1 ? "opportunity" : "opportunities"}
+        </Text>
+        <Text style={styles.bodyText}>
+          These opportunities come directly from the Business Presence Audit and are separate from the page-level findings and implementation roadmap.
+        </Text>
+      </View>
+
+      {opportunities.map((opportunity, index) => (
+        <View key={opportunity.id} style={styles.softCard} wrap={false}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>
+                Opportunity {String(index + 1).padStart(2, "0")} · {labelize(opportunity.businessArea)}
+              </Text>
+              <Text style={styles.cardTitle}>{truncateText(opportunity.title, 150)}</Text>
+            </View>
+            <StatusBadge value={opportunity.priority} />
+          </View>
+          <Field label="Current Situation" value={opportunity.currentSituation} maxLength={420} />
+          <Field label="Recommended Next Step" value={opportunity.recommendedAction} maxLength={420} />
+          {opportunity.expectedBenefit && (
+            <Field label="What This Can Improve" value={opportunity.expectedBenefit} maxLength={420} />
+          )}
+        </View>
+      ))}
+    </Section>
+  );
+}
+
 function MethodFooter() {
   return (
     <View style={styles.methodFooter}>
@@ -1542,6 +1585,7 @@ export function ReportPDFDocument({
         {variant === "full" && <KeyIssuesSection reportV21={reportV21} variant={variant} />}
         <TrustLayersSection reportV21={reportV21} variant={variant} />
         <OptimizationPathSection reportV21={reportV21} variant={variant} />
+        {variant === "client" && <ClientBusinessPresenceOpportunitiesSection reportV21={reportV21} />}
         {variant === "full" && <BusinessPresenceAuditSection reportV21={reportV21} variant={variant} />}
         {variant === "full" && <MethodFooter />}
 

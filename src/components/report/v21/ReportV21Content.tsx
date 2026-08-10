@@ -1,10 +1,17 @@
 "use client";
 
-import type { EvidenceItem, KeyIssue, LayerFinding, NormalizedReportV21Result } from "@/lib/report-v21";
+import {
+  getClientBusinessPresenceOpportunities,
+  type EvidenceItem,
+  type KeyIssue,
+  type LayerFinding,
+  type NormalizedReportV21Result,
+} from "@/lib/report-v21";
 import type { ReactNode } from "react";
 import type { Report } from "@/types/database";
 import { V21BrandingHeader } from "./V21BrandingHeader";
 import { V21BusinessPresenceAudit } from "./V21BusinessPresenceAudit";
+import { V21ClientBusinessPresenceOpportunities } from "./V21ClientBusinessPresenceOpportunities";
 import { V21KeyIssues } from "./V21KeyIssues";
 import { V21OptimizationPath } from "./V21OptimizationPath";
 import { V21OverallConclusion } from "./V21OverallConclusion";
@@ -55,6 +62,9 @@ export function ReportV21Content({
     completion_signals: [],
   };
   const keyIssues = enrichKeyIssues(report.key_issues, report.layers);
+  const clientBusinessPresenceOpportunities = getClientBusinessPresenceOpportunities(
+    report.business_presence_audit?.proposal_actions,
+  );
 
   if (isLoading) {
     return (
@@ -94,6 +104,12 @@ export function ReportV21Content({
       <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Implementation Roadmap"] : undefined} title="Implementation Roadmap">
         <V21OptimizationPath reportV21={{ ...report, optimization_path: optimizationPath }} viewMode={viewMode} />
       </Section>
+
+      {!analyst && clientBusinessPresenceOpportunities.length > 0 && (
+        <Section title="Business Presence Opportunities">
+          <V21ClientBusinessPresenceOpportunities opportunities={clientBusinessPresenceOpportunities} />
+        </Section>
+      )}
 
       {analyst && (
         <Section id={sectionIdsEnabled ? V21_SECTION_IDS["Business Presence Audit"] : undefined} title="Business Presence Audit">

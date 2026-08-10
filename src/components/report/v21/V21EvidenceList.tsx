@@ -133,10 +133,14 @@ function groupEvidenceItems(items: EvidenceItem[]): EvidenceGroup[] {
 
   items.forEach((item, index) => {
     const field = evidenceField(item);
+    const ruleId = evidenceRuleId(item.id);
     const normalizedTitle = normalizeLabel(item.source_label);
-    const groupKey = field?.key || (
+    const semanticKey = field?.key || (
       normalizedTitle ? `label-${normalizedTitle}` : `evidence-${item.id || index}`
     );
+    // One triggered rule must remain one evidence card. Values from the same
+    // rule (for example page and GBP values) still belong in the same card.
+    const groupKey = ruleId ? `rule-${ruleId}-${semanticKey}` : semanticKey;
     const groupTitle = field?.title || item.source_label || "Evidence";
 
     const existing = groupedEvidence.get(groupKey);
@@ -199,33 +203,54 @@ function evidenceField(item: EvidenceItem): { key: string; title: string } | nul
 }
 
 function ruleEvidenceField(id: string): { key: string; title: string } | null {
-  const match = String(id || "").match(/(?:^|-)rule-(\d+)(?:-|$)/);
-  const ruleId = Number(match?.[1]);
+  const ruleId = evidenceRuleId(id);
   const fields: Record<number, { key: string; title: string }> = {
-    3: { key: "geographic-context", title: "Geographic context" },
-    4: { key: "time-context", title: "Time and activity context" },
+    1: { key: "local-specificity", title: "Local specificity" },
+    2: { key: "service-specificity", title: "Service specificity" },
+    3: { key: "real-world-anchor", title: "Real-world geographic anchor" },
+    4: { key: "activity-trace", title: "Time and activity trace" },
     6: { key: "page-imagery", title: "Page imagery" },
-    7: { key: "service-process", title: "Service process" },
+    7: { key: "first-person-work", title: "First-person work detail" },
     8: { key: "calls-to-action", title: "Calls to action" },
-    9: { key: "service-accountability", title: "Service responsibility and follow-up" },
-    10: { key: "service-accountability", title: "Service responsibility and follow-up" },
+    9: { key: "operational-responsibility", title: "Operational responsibility" },
+    10: { key: "limits-complex-cases", title: "Limits and complex cases" },
     11: { key: "trust-signals", title: "Verifiable trust signals" },
-    12: { key: "service-accountability", title: "Service responsibility and follow-up" },
-    14: { key: "page-value", title: "Page purpose and value" },
+    12: { key: "outcome-follow-up", title: "Outcome and follow-up" },
+    13: { key: "similar-page-pattern", title: "Similar-page pattern" },
+    14: { key: "standalone-value", title: "Standalone page value" },
+    15: { key: "current-trust-signals", title: "Current trust signals" },
+    16: { key: "search-demand-purpose", title: "Search-demand purpose" },
+    17: { key: "business-identity-scope", title: "Business identity scope" },
+    18: { key: "entity-category-fit", title: "Entity category fit" },
+    19: { key: "sitewide-consistency", title: "Sitewide entity consistency" },
+    20: { key: "entity-qualification", title: "Entity qualification" },
     21: { key: "business-identity", title: "Business identity" },
     22: { key: "address", title: "Address" },
     23: { key: "phone", title: "Phone" },
     24: { key: "service-area", title: "Service area" },
     25: { key: "business-hours", title: "Business hours" },
-    30: { key: "geographic-context", title: "Geographic context" },
-    31: { key: "geographic-context", title: "Geographic context" },
+    26: { key: "business-name", title: "Business name" },
+    27: { key: "address", title: "Address" },
+    28: { key: "phone", title: "Phone" },
+    29: { key: "service-area", title: "Service area" },
+    30: { key: "community-context", title: "Community-level context" },
+    31: { key: "landmark-reference", title: "Landmark reference" },
     32: { key: "local-context", title: "Local context" },
     33: { key: "service-boundary", title: "Service boundary" },
-    34: { key: "service-examples", title: "Service examples" },
+    34: { key: "specific-service-case", title: "Specific service case" },
     35: { key: "customer-context", title: "Customer context" },
     36: { key: "time-context", title: "Time and activity context" },
+    37: { key: "review-service-detail", title: "Review service detail" },
+    38: { key: "review-geography", title: "Review geographic context" },
+    39: { key: "review-topic-fit", title: "Review topic alignment" },
   };
-  return fields[ruleId] || null;
+  return ruleId ? fields[ruleId] || null : null;
+}
+
+function evidenceRuleId(id: string): number | null {
+  const match = String(id || "").match(/(?:^|-)rule-(\d+)(?:-|$)/);
+  const value = Number(match?.[1]);
+  return Number.isInteger(value) && value > 0 ? value : null;
 }
 
 function normalizeLabel(value: string): string {
