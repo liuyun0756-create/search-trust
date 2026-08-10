@@ -14,7 +14,12 @@ const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 const OPEN_AUDIT_AFTER_LOGIN_KEY = "searchtrust_open_audit_after_login";
 const OPEN_PURCHASE_AFTER_LOGIN_KEY = "searchtrust_open_purchase_after_login";
 
-type AuditFormData = { url: string; gbpUrl: string; pageType: string };
+type AuditFormData = {
+  url: string;
+  gbpUrl: string;
+  locationContext: string;
+  pageType: string;
+};
 
 interface AuditModalContextType {
   openLogin: () => void;
@@ -69,6 +74,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       return {
         url: parsed.url,
         gbpUrl: parsed.gbpUrl || "",
+        locationContext: parsed.locationContext || "",
         pageType: parsed.pageType,
       };
     } catch {
@@ -137,6 +143,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       ? {
           url: initialValues.url,
           gbpUrl: initialValues.gbpUrl || "",
+          locationContext: initialValues.locationContext || "",
           pageType: initialValues.pageType || "Service Page",
         }
       : null;
@@ -190,6 +197,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
         url: data.url,
         pageType: data.pageType,
         gbpUrl: data.gbpUrl,
+        locationContext: data.locationContext,
       });
       clearPendingAudit();
       setAuditFormOpen(false);

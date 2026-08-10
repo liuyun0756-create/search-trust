@@ -2,10 +2,12 @@ export async function submitAudit({
   url,
   pageType,
   gbpUrl,
+  locationContext,
 }: {
   url: string;
   pageType: string;
   gbpUrl: string;
+  locationContext?: string;
 }): Promise<{
   task_id: string | null;
   report_id: string;
@@ -19,6 +21,7 @@ export async function submitAudit({
       url: url.trim(),
       page_type: pageType,
       gbp_url: gbpUrl?.trim() || undefined,
+      location_context: locationContext?.trim() || undefined,
     }),
   });
 

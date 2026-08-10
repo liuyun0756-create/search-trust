@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Globe, MapPin, LayoutTemplate, ArrowRight } from "lucide-react";
+import { X, Globe, MapPin, MapPinned, LayoutTemplate, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PAGE_TYPES } from "@/lib/constants";
 
 interface AuditFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { url: string; gbpUrl: string; pageType: string }) => void;
+  onSubmit: (data: { url: string; gbpUrl: string; locationContext: string; pageType: string }) => void;
   submitting?: boolean;
-  initialValues?: { url: string; gbpUrl: string; pageType: string } | null;
+  initialValues?: { url: string; gbpUrl: string; locationContext: string; pageType: string } | null;
 }
 
 export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialValues }: AuditFormModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [url, setUrl] = useState("");
   const [gbpUrl, setGbpUrl] = useState("");
+  const [locationContext, setLocationContext] = useState("");
   const [pageType, setPageType] = useState("Service Page");
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
       document.body.style.overflow = "hidden";
       setUrl(initialValues?.url || "");
       setGbpUrl(initialValues?.gbpUrl || "");
+      setLocationContext(initialValues?.locationContext || "");
       setPageType(initialValues?.pageType || "Service Page");
     } else {
       document.body.style.overflow = "";
@@ -35,7 +37,12 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
 
   const handleSubmit = () => {
     if (!url.trim() || !pageType.trim() || submitting) return;
-    onSubmit({ url: url.trim(), gbpUrl: gbpUrl.trim(), pageType });
+    onSubmit({
+      url: url.trim(),
+      gbpUrl: gbpUrl.trim(),
+      locationContext: locationContext.trim(),
+      pageType,
+    });
   };
 
   return (
@@ -118,6 +125,26 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
                       className="w-full bg-white border border-gray-100 rounded-xl pl-11 pr-4 py-3.5 text-[14px] font-medium text-[#1A212B] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20 transition-all"
                     />
                   </div>
+                </div>
+
+                {/* Optional location context for multi-location brands */}
+                <div>
+                  <label className="text-[12px] font-black uppercase tracking-widest text-gray-400 mb-2 block">
+                    Target location <span className="font-medium normal-case tracking-normal">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <MapPinned size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+                    <input
+                      type="text"
+                      value={locationContext}
+                      onChange={(e) => setLocationContext(e.target.value)}
+                      placeholder="Manhattan, NY or 10001"
+                      className="w-full bg-white border border-gray-100 rounded-xl pl-11 pr-4 py-3.5 text-[14px] font-medium text-[#1A212B] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20 transition-all"
+                    />
+                  </div>
+                  <p className="mt-2 text-[11px] font-medium leading-relaxed text-gray-400">
+                    Use this when one brand page switches between several local branches.
+                  </p>
                 </div>
 
                 {/* Page Type */}

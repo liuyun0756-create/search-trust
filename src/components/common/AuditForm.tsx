@@ -15,6 +15,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
   const [formData, setFormData] = useState({
     url: '',
     gbpUrl: '',
+    locationContext: '',
     pageType: 'Service Page',
   });
 
@@ -32,6 +33,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         url: formData.url.trim(),
         pageType: formData.pageType,
         gbpUrl: formData.gbpUrl.trim(),
+        locationContext: formData.locationContext.trim(),
       });
     } catch (err) {
       console.error("Submit error:", err);
@@ -48,7 +50,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className={wrapperClass}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+      <div className="grid grid-cols-1 gap-8 mb-10 md:grid-cols-2 xl:grid-cols-4">
         {/* URL Input */}
         <div className="flex flex-col gap-3">
           <label htmlFor="audit-page-url" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
@@ -77,6 +79,22 @@ export function AuditForm({ floating = false }: AuditFormProps) {
             placeholder="Enter the GBP URL"
             value={formData.gbpUrl}
             onChange={(e) => setFormData({...formData, gbpUrl: e.target.value})}
+            className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
+          />
+        </div>
+
+        {/* Optional branch context for multi-location brands */}
+        <div className="flex flex-col gap-3">
+          <label htmlFor="audit-location-context" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
+            Target location
+            <span className="ml-1 text-[12px] font-medium text-[#929BAD]">optional</span>
+          </label>
+          <input
+            id="audit-location-context"
+            type="text"
+            placeholder="City, state, or ZIP"
+            value={formData.locationContext}
+            onChange={(e) => setFormData({...formData, locationContext: e.target.value})}
             className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
           />
         </div>

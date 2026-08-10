@@ -58,9 +58,11 @@ export async function POST(request: NextRequest) {
     analyticsDistinctId = user.clerkUserId;
 
     const body = await request.json();
-    const { url, page_type, gbp_url } = body;
+    const { url, page_type, gbp_url, location_context } = body;
     const normalizedPageType = PAGE_TYPE_MAP[page_type] || page_type;
     const normalizedGbpUrl = typeof gbp_url === "string" ? gbp_url.trim() : "";
+    const normalizedLocationContext =
+      typeof location_context === "string" ? location_context.trim().slice(0, 120) : "";
     analyticsProperties = getAuditEventProperties(
       { url, pageType: normalizedPageType, gbpUrl: normalizedGbpUrl },
       { credits_bucket: getCreditsBucket(user.auditCredits) }
@@ -207,7 +209,12 @@ export async function POST(request: NextRequest) {
       taskIdPersisted: false,
     });
 
-    console.log("/analyze接口，后端Received report generation request:", { url, page_type: normalizedPageType, gbp_url: normalizedGbpUrl });
+    console.log("/analyze接口，后端Received report generation request:", {
+      url,
+      page_type: normalizedPageType,
+      gbp_url: normalizedGbpUrl,
+      location_context: normalizedLocationContext,
+    });
     // 1. 调后端创建任务
     let analyzeRes: Response;
     try {
@@ -219,6 +226,7 @@ export async function POST(request: NextRequest) {
           page_type: normalizedPageType,
           language: "English",
           gbp_url: normalizedGbpUrl,
+          location_context: normalizedLocationContext,
         }),
       });
     } catch (error) {
