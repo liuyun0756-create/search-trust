@@ -2,6 +2,7 @@
 
 import {
   getClientBusinessPresenceOpportunities,
+  sortKeyIssuesByLayerPriority,
   type EvidenceItem,
   type KeyIssue,
   type LayerFinding,
@@ -128,10 +129,12 @@ function enrichKeyIssues(
     (Array.isArray(layers) ? layers : []).map((layer) => [layer.layer_key, layer.evidence_items]),
   );
 
-  return (Array.isArray(keyIssues) ? keyIssues : []).map((issue) => ({
-    ...issue,
-    evidence_items: mergeEvidence(issue.evidence_items, layerEvidence.get(issue.affected_layer)),
-  }));
+  return sortKeyIssuesByLayerPriority(
+    (Array.isArray(keyIssues) ? keyIssues : []).map((issue) => ({
+      ...issue,
+      evidence_items: mergeEvidence(issue.evidence_items, layerEvidence.get(issue.affected_layer)),
+    })),
+  );
 }
 
 function mergeEvidence(

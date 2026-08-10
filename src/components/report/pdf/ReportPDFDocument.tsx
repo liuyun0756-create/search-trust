@@ -17,6 +17,7 @@ import {
   NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE,
   normalizeReportToV21,
   REQUIRED_LAYER_KEYS,
+  sortKeyIssuesByLayerPriority,
 } from "@/lib/report-v21";
 import type {
   ActionItem,
@@ -1053,7 +1054,7 @@ function PageLevelSection({ reportV21 }: { reportV21: ReportV21 }) {
 }
 
 function KeyIssuesSection({ reportV21, variant }: { reportV21: ReportV21; variant: PdfVariant }) {
-  const allIssues = safeList(reportV21.key_issues);
+  const allIssues = sortKeyIssuesByLayerPriority(reportV21.key_issues);
   const issues = variant === "client" ? allIssues.slice(0, 2) : allIssues;
   return (
     <Section title="Key Issues">

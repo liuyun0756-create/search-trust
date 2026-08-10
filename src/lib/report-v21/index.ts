@@ -10,3 +10,4 @@ export * from "./clientDecisionContext";
 export * from "./implementationRoadmap";
 export * from "./businessPresence";
 export * from "./layerPresentation";
+export * from "./keyIssueOrdering";
