@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Globe, MapPin, MapPinned, LayoutTemplate, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  AuditLocationModeTabs,
+  type AuditLocationMode,
+} from "@/components/common/AuditLocationModeTabs";
 import { PAGE_TYPES } from "@/lib/constants";
 
 interface AuditFormModalProps {
@@ -18,6 +22,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
   const [url, setUrl] = useState("");
   const [gbpUrl, setGbpUrl] = useState("");
   const [locationContext, setLocationContext] = useState("");
+  const [locationMode, setLocationMode] = useState<AuditLocationMode>("single");
   const [pageType, setPageType] = useState("Service Page");
 
   useEffect(() => {
@@ -26,6 +31,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
       setUrl(initialValues?.url || "");
       setGbpUrl(initialValues?.gbpUrl || "");
       setLocationContext(initialValues?.locationContext || "");
+      setLocationMode(initialValues?.locationContext ? "multi" : "single");
       setPageType(initialValues?.pageType || "Service Page");
     } else {
       document.body.style.overflow = "";
@@ -40,9 +46,16 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
     onSubmit({
       url: url.trim(),
       gbpUrl: gbpUrl.trim(),
-      locationContext: locationContext.trim(),
+      locationContext: locationMode === "multi" ? locationContext.trim() : "",
       pageType,
     });
+  };
+
+  const handleLocationModeChange = (mode: AuditLocationMode) => {
+    setLocationMode(mode);
+    if (mode === "single") {
+      setLocationContext("");
+    }
   };
 
   return (
@@ -91,6 +104,12 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
                 Enter the page details to generate a comprehensive trust diagnosis report.
               </p>
 
+              <AuditLocationModeTabs
+                value={locationMode}
+                onChange={handleLocationModeChange}
+                className="mb-7 w-full justify-center"
+              />
+
               <div className="space-y-5">
                 {/* URL */}
                 <div>
@@ -127,26 +146,27 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
                   </div>
                 </div>
 
-                {/* Optional location context for multi-location brands */}
-                <div>
-                  <label className="mb-2 block text-[12px] font-black uppercase tracking-widest text-gray-400">
-                    Target location <span className="font-medium normal-case tracking-normal">(optional)</span>
-                  </label>
-                  <div className="relative">
-                    <MapPinned size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                    <input
-                      type="text"
-                      value={locationContext}
-                      onChange={(e) => setLocationContext(e.target.value)}
-                      placeholder="City, state, or ZIP"
-                      aria-describedby="modal-location-context-help"
-                      className="w-full bg-white border border-gray-100 rounded-xl pl-11 pr-4 py-3.5 text-[14px] font-medium text-[#1A212B] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20 transition-all"
-                    />
+                {locationMode === "multi" && (
+                  <div>
+                    <label className="mb-2 block text-[12px] font-black uppercase tracking-widest text-gray-400">
+                      Target city or region
+                    </label>
+                    <div className="relative">
+                      <MapPinned size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+                      <input
+                        type="text"
+                        value={locationContext}
+                        onChange={(e) => setLocationContext(e.target.value)}
+                        placeholder="City, state — e.g. Manhattan, NY"
+                        aria-describedby="modal-location-context-help"
+                        className="w-full bg-white border border-gray-100 rounded-xl pl-11 pr-4 py-3.5 text-[14px] font-medium text-[#1A212B] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20 transition-all"
+                      />
+                    </div>
+                    <p id="modal-location-context-help" className="mt-2 text-[11px] font-medium leading-relaxed text-gray-400">
+                      Use the city and state for the target branch.
+                    </p>
                   </div>
-                  <p id="modal-location-context-help" className="mt-2 text-[11px] font-medium leading-relaxed text-gray-400">
-                    For multi-location brand URLs.
-                  </p>
-                </div>
+                )}
 
                 {/* Page Type */}
                 <div>
