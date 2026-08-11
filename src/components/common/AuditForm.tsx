@@ -50,9 +50,9 @@ export function AuditForm({ floating = false }: AuditFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className={wrapperClass}>
-      <div className="grid grid-cols-1 gap-8 mb-10 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-10 grid grid-cols-1 gap-x-8 gap-y-7 md:grid-cols-2">
         {/* URL Input */}
-        <div className="flex flex-col gap-3">
+        <div className="order-1 flex flex-col gap-3">
           <label htmlFor="audit-page-url" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
             URL
             <span className="ml-1 text-[#EF4444]">*</span>
@@ -69,7 +69,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         </div>
 
         {/* GBP URL Input */}
-        <div className="flex flex-col gap-3">
+        <div className="order-3 flex flex-col gap-3">
           <label htmlFor="audit-gbp-url" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
             GBP URL
           </label>
@@ -84,8 +84,8 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         </div>
 
         {/* Optional branch context for multi-location brands */}
-        <div className="flex flex-col gap-3">
-          <label htmlFor="audit-location-context" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
+        <div className="order-4 flex flex-col gap-3">
+          <label htmlFor="audit-location-context" className="text-[14px] font-bold tracking-tight text-[#1A1F2B]">
             Target location
             <span className="ml-1 text-[12px] font-medium text-[#929BAD]">optional</span>
           </label>
@@ -95,12 +95,16 @@ export function AuditForm({ floating = false }: AuditFormProps) {
             placeholder="City, state, or ZIP"
             value={formData.locationContext}
             onChange={(e) => setFormData({...formData, locationContext: e.target.value})}
+            aria-describedby="audit-location-context-help"
             className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
           />
+          <p id="audit-location-context-help" className="text-[11px] font-medium leading-4 text-[#7C8799]">
+            For multi-location brand URLs.
+          </p>
         </div>
 
         {/* Page Type Select */}
-        <div className="flex flex-col gap-3">
+        <div className="order-2 flex flex-col gap-3">
           <label htmlFor="audit-page-type" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
             Page Type
             <span className="ml-1 text-[#EF4444]">*</span>

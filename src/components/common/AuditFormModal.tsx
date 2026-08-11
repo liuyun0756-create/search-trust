@@ -129,7 +129,7 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
 
                 {/* Optional location context for multi-location brands */}
                 <div>
-                  <label className="text-[12px] font-black uppercase tracking-widest text-gray-400 mb-2 block">
+                  <label className="mb-2 block text-[12px] font-black uppercase tracking-widest text-gray-400">
                     Target location <span className="font-medium normal-case tracking-normal">(optional)</span>
                   </label>
                   <div className="relative">
@@ -138,12 +138,13 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
                       type="text"
                       value={locationContext}
                       onChange={(e) => setLocationContext(e.target.value)}
-                      placeholder="Manhattan, NY or 10001"
+                      placeholder="City, state, or ZIP"
+                      aria-describedby="modal-location-context-help"
                       className="w-full bg-white border border-gray-100 rounded-xl pl-11 pr-4 py-3.5 text-[14px] font-medium text-[#1A212B] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20 transition-all"
                     />
                   </div>
-                  <p className="mt-2 text-[11px] font-medium leading-relaxed text-gray-400">
-                    Use this when one brand page switches between several local branches.
+                  <p id="modal-location-context-help" className="mt-2 text-[11px] font-medium leading-relaxed text-gray-400">
+                    For multi-location brand URLs.
                   </p>
                 </div>
 
