@@ -1334,8 +1334,8 @@ function AlignmentTable({ rows }: { rows: GBPAlignmentRow[] }) {
       {visibleRows.map((row, index) => (
         <View key={`${row.field_key}-${index}`} style={[styles.tableRow, index === visibleRows.length - 1 ? styles.tableRowLast : {}]}>
           <View style={[styles.tableCell, { width: "18%" }]}><Text style={styles.tableText}>{truncateText(row.field_label, 45)}</Text></View>
-          <View style={[styles.tableCell, { width: "25%" }]}><Text style={styles.tableText}>{truncateText(row.page_value, 90)}</Text></View>
-          <View style={[styles.tableCell, { width: "25%" }]}><Text style={styles.tableText}>{truncateText(row.gbp_value, 90)}</Text></View>
+          <View style={[styles.tableCell, { width: "25%" }]}><Text style={styles.tableText}>{truncateText(row.page_value, 360)}</Text></View>
+          <View style={[styles.tableCell, { width: "25%" }]}><Text style={styles.tableText}>{truncateText(row.gbp_value, 360)}</Text></View>
           <View style={[styles.tableCell, { width: "14%" }]}><Text style={styles.tableText}>{labelize(row.status)}</Text></View>
           <View style={[styles.tableCell, styles.tableCellLast, { width: "18%" }]}><Text style={styles.tableText}>{truncateText(row.suggested_fix || row.impact, 100)}</Text></View>
         </View>

@@ -316,11 +316,11 @@ function Metric({ label, value, tone = "text-[#1A212B]" }: { label: string; valu
 }
 
 function ValueCell({ value, source }: { value?: string | null; source?: string | null }) {
-  return <td className="max-w-[240px] border-b border-gray-100 px-4 py-4"><p className="break-words text-[12px] font-bold leading-relaxed text-gray-700">{value || "Not returned"}</p>{source && <p className="mt-1 text-[10px] font-medium text-gray-400">{source}</p>}</td>;
+  return <td className="max-w-[240px] border-b border-gray-100 px-4 py-4"><p className="whitespace-pre-line break-words text-[12px] font-bold leading-relaxed text-gray-700">{value || "Not returned"}</p>{source && <p className="mt-1 text-[10px] font-medium text-gray-400">{source}</p>}</td>;
 }
 
 function Detail({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
-  return <div className={wide ? "col-span-2" : ""}><dt className="text-[10px] font-black uppercase text-gray-400">{label}</dt><dd className="mt-1 break-words text-[13px] font-bold leading-relaxed text-gray-700">{value}</dd></div>;
+  return <div className={wide ? "col-span-2" : ""}><dt className="text-[10px] font-black uppercase text-gray-400">{label}</dt><dd className="mt-1 whitespace-pre-line break-words text-[13px] font-bold leading-relaxed text-gray-700">{value}</dd></div>;
 }
 
 function Limitations({ values }: { values: string[] }) {

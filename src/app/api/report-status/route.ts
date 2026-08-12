@@ -177,6 +177,8 @@ export async function POST(request: NextRequest) {
     const persistableResult = unwrapPersistableReportResult(result);
     const hasLegacyScore = Boolean(persistableResult?.score);
     const reportV21 = getReportV21(persistableResult?.report_v2_1);
+    const sourceFacts = asRecord(persistableResult?.source_facts);
+    const pipelineDiagnostics = asRecord(persistableResult?.pipeline_diagnostics);
     const hasReportV21 = Boolean(reportV21);
     const hasLegacyModules = Boolean(persistableResult && hasLegacyModuleFields(persistableResult));
     const hasCards = Boolean(persistableResult && hasStatusCards(persistableResult));
@@ -480,6 +482,8 @@ export async function POST(request: NextRequest) {
       ranking_potential: normalizeScoreValue(persistableResult.ranking_potential),
       risk_level: normalizeScoreValue(persistableResult.risk_level),
       generated_at: persistableResult.generated_at || reportV21?.generated_at || null,
+      last_progress_at: new Date().toISOString(),
+      estimated_completion_at: null,
     };
 
     if (persistableResult.page_url || reportV21?.analyzed_url) {
@@ -495,6 +499,8 @@ export async function POST(request: NextRequest) {
       updateData.gbp_connected = persistableResult.gbp_connected;
     }
     if (hasReportV21) updateData.report_v2_1 = reportV21;
+    if (sourceFacts) updateData.source_facts = sourceFacts;
+    if (pipelineDiagnostics) updateData.pipeline_diagnostics = pipelineDiagnostics;
 
     if (parsed) {
       if (parsed.module_1_overview) updateData.module_1_overview = parsed.module_1_overview;
@@ -515,6 +521,33 @@ export async function POST(request: NextRequest) {
       .eq("id", report.id)
       .select("*")
       .single();
+
+    const optionalRuntimeFields = [
+      "source_facts",
+      "pipeline_diagnostics",
+      "last_progress_at",
+      "estimated_completion_at",
+    ];
+    const hasMissingOptionalField = Boolean(
+      updateError && optionalRuntimeFields.some((field) => isMissingColumnError(updateError, field))
+    );
+    if (updateError && hasMissingOptionalField) {
+      const fallbackUpdateData = { ...updateData };
+      for (const field of optionalRuntimeFields) delete fallbackUpdateData[field];
+      console.error("[report-status saved fallback] optional report fields unavailable", {
+        reportId: report.report_id ?? requestReportId,
+        omittedFields: optionalRuntimeFields,
+      });
+      const fallback = await supabase
+        .from("reports")
+        .update(fallbackUpdateData)
+        .eq("id", report.id)
+        .select("*")
+        .single();
+      completedReport = fallback.data;
+      updateError = fallback.error;
+      for (const field of optionalRuntimeFields) delete updateData[field];
+    }
 
     if (updateError && updateData.report_v2_1 && isMissingColumnError(updateError, "report_v2_1")) {
       const fallbackUpdateData = { ...updateData };

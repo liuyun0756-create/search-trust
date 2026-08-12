@@ -656,6 +656,8 @@ function ReportsPage() {
           module_4_eight_layers: parsed?.module_4_eight_layers || persistableResult.module_4_eight_layers || null,
           module_5_optimization: parsed?.module_5_optimization || persistableResult.module_5_optimization || null,
           report_v2_1: persistableResult.report_v2_1 || prev?.report_v2_1 || null,
+          source_facts: asRecord(persistableResult.source_facts) || prev?.source_facts || null,
+          pipeline_diagnostics: asRecord(persistableResult.pipeline_diagnostics) || prev?.pipeline_diagnostics || null,
           created_at: prev?.created_at || new Date().toISOString(),
         };
         reportCacheRef.current.set(completedReport.id, completedReport);

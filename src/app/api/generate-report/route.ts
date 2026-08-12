@@ -272,16 +272,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Backend analyze failed (${analyzeRes.status}): ${errText}` }, { status: 502 });
     }
 
-    const { task_id } = await analyzeRes.json();
+    const analyzePayload = await analyzeRes.json();
+    const task_id = analyzePayload.task_id;
+    const estimatedSeconds = Number(analyzePayload.estimated_seconds);
+    const analysisStartedAt = new Date().toISOString();
+    const estimatedCompletionAt = Number.isFinite(estimatedSeconds) && estimatedSeconds > 0
+      ? new Date(Date.now() + estimatedSeconds * 1000).toISOString()
+      : null;
 
     // 2. 更新 task_id，等待 SSE 完成后填充模块
-    const { data: taskIdUpdate, error } = await supabase
+    let { data: taskIdUpdate, error } = await supabase
       .from("reports")
-      .update({ task_id })
+      .update({
+        task_id,
+        analysis_started_at: analysisStartedAt,
+        last_progress_at: analysisStartedAt,
+        estimated_completion_at: estimatedCompletionAt,
+      })
       .eq("report_id", reportId)
       .eq("user_id", user.userId)
       .select("id, report_id, task_id")
       .single();
+
+    const taskIdentityErrorText = error ? `${error.message || ""} ${error.details || ""}` : "";
+    if (error && ["analysis_started_at", "last_progress_at", "estimated_completion_at"].some(
+      (field) => taskIdentityErrorText.includes(field)
+    )) {
+      console.error("[report creation fallback] runtime columns unavailable; saving task identity only", {
+        reportId,
+        taskIdSuffix: typeof task_id === "string" ? task_id.slice(-8) : null,
+      });
+      const fallback = await supabase
+        .from("reports")
+        .update({ task_id })
+        .eq("report_id", reportId)
+        .eq("user_id", user.userId)
+        .select("id, report_id, task_id")
+        .single();
+      taskIdUpdate = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.error("Supabase task_id update error:", error);
