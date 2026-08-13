@@ -119,7 +119,14 @@ export function AuditForm({ floating = false }: AuditFormProps) {
   );
 
   const locationField = (
-    <div className="flex flex-col gap-3">
+    <div
+      aria-hidden={locationMode === 'single'}
+      className={`flex flex-col gap-3 transition-opacity duration-150 md:col-start-1 md:row-start-2 ${
+        locationMode === 'multi'
+          ? 'visible opacity-100'
+          : 'invisible pointer-events-none opacity-0'
+      }`}
+    >
       <label htmlFor="audit-location-context" className="text-[14px] font-bold tracking-tight text-[#1A1F2B]">
         Target city or region
       </label>
@@ -129,6 +136,7 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         placeholder="City, state — e.g. Manhattan, NY"
         value={formData.locationContext}
         onChange={(e) => setFormData({...formData, locationContext: e.target.value})}
+        disabled={locationMode === 'single'}
         aria-describedby="audit-location-context-help"
         className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
       />
@@ -144,33 +152,27 @@ export function AuditForm({ floating = false }: AuditFormProps) {
         <AuditLocationModeTabs value={locationMode} onChange={handleLocationModeChange} />
       </div>
 
-      {locationMode === 'single' ? (
-        <div className="mb-10 grid grid-cols-1 gap-x-8 gap-y-7 md:grid-cols-3">
-          {pageUrlField}
-          {gbpUrlField}
-          {pageTypeField}
+      {/* Keep one grid in both modes so existing fields never reflow when the
+          optional multi-location field becomes visible. The hidden grid cell
+          also keeps this centered floating panel at a constant height. */}
+      <div className="grid grid-cols-1 gap-x-8 gap-y-7 md:grid-cols-3">
+        {pageUrlField}
+        {gbpUrlField}
+        {pageTypeField}
+        {locationField}
+        <div className="flex h-full items-center justify-center md:col-start-2 md:row-start-2">
+          <button
+            type="submit"
+            disabled={loading || !formData.url.trim() || !formData.pageType.trim()}
+            className="flex min-w-[190px] items-center justify-center rounded-lg bg-[#1A1F2B] px-9 py-3.5 font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] transition-all hover:bg-black hover:shadow-[0_14px_30px_rgba(15,23,42,0.24)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
+          >
+            {loading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <span className="text-[15px] tracking-tight">Run a Trust Audit</span>
+            )}
+          </button>
         </div>
-      ) : (
-        <div className="mb-10 grid grid-cols-1 gap-x-8 gap-y-7 md:grid-cols-2">
-          {pageUrlField}
-          {pageTypeField}
-          {gbpUrlField}
-          {locationField}
-        </div>
-      )}
-
-      <div className="flex justify-center">
-        <button
-          type="submit"
-          disabled={loading || !formData.url.trim() || !formData.pageType.trim()}
-          className="flex min-w-[190px] items-center justify-center rounded-lg bg-[#1A1F2B] px-9 py-3.5 font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] transition-all hover:bg-black hover:shadow-[0_14px_30px_rgba(15,23,42,0.24)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
-        >
-          {loading ? (
-            <Loader2 className="animate-spin" size={20} />
-          ) : (
-            <span className="text-[15px] tracking-tight">Run a Trust Audit</span>
-          )}
-        </button>
       </div>
     </form>
   );
