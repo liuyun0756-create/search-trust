@@ -48,33 +48,6 @@ const FIELD_LABELS: Record<GBPAlignmentFieldKey, string> = {
 
 const VALID_STATUSES: GBPAlignmentStatus[] = ["match", "mismatch", "partial", "missing", "not_checked", "not_applicable", "error"];
 const DEFAULT_RELATED_LAYERS: LayerKey[] = ["entity_presence", "entity_consistency"];
-export const SERVICE_AREA_GBP_MISSING_EXPLANATION =
-  "The page identifies a service area, but the checked GBP response did not return one.";
-
-export function getEffectiveGBPAlignmentStatus({
-  fieldKey,
-  status,
-  pageValue,
-  gbpValue,
-  gbpChecked,
-}: {
-  fieldKey: string;
-  status: GBPAlignmentStatus;
-  pageValue?: string | null;
-  gbpValue?: string | null;
-  gbpChecked: boolean;
-}): GBPAlignmentStatus {
-  if (
-    fieldKey === "service_area"
-    && gbpChecked
-    && status === "not_checked"
-    && Boolean(pageValue?.trim())
-    && !gbpValue?.trim()
-  ) {
-    return "mismatch";
-  }
-  return status;
-}
 
 export function extractGBPAlignmentRows(reportV21: ReportV21): GBPAlignmentExtractionResult {
   const warnings: string[] = [];
@@ -94,20 +67,7 @@ export function extractGBPAlignmentRows(reportV21: ReportV21): GBPAlignmentExtra
       warnings.push(`Dropped invalid GBP alignment row at index ${index}.`);
       return [];
     }
-    const status = getEffectiveGBPAlignmentStatus({
-      fieldKey: normalized.field_key,
-      status: normalized.status,
-      pageValue: normalized.page_value,
-      gbpValue: normalized.gbp_value,
-      gbpChecked: reportV21.gbp_status.status === "checked",
-    });
-    return [{
-      ...normalized,
-      status,
-      impact: status !== normalized.status
-        ? SERVICE_AREA_GBP_MISSING_EXPLANATION
-        : normalized.impact,
-    }];
+    return [normalized];
   });
 
   return {

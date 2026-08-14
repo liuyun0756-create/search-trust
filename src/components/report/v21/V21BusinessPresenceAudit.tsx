@@ -14,11 +14,9 @@ import type {
 } from "@/lib/report-v21";
 import {
   getAdditionalBusinessPresenceActions,
-  getEffectiveGBPAlignmentStatus,
   getProposalActionDisplayCopy,
   getProposalOpportunityCopy,
   NO_ADDITIONAL_PROPOSAL_TASKS_MESSAGE,
-  SERVICE_AREA_GBP_MISSING_EXPLANATION,
 } from "@/lib/report-v21";
 import { V21DataCoverage } from "./V21DataCoverage";
 import { V21GBPAlignment } from "./V21GBPAlignment";
@@ -54,18 +52,7 @@ export function V21BusinessPresenceAudit({
   const reviews = audit.review_audit;
   const proposalActions = getAdditionalBusinessPresenceActions(audit.proposal_actions);
   const proposalOpportunityCopy = getProposalOpportunityCopy(proposalActions.length);
-  const alignmentRows = audit.gbp_page_alignment.map((item) => {
-    const status = getEffectiveGBPAlignmentStatus({
-      fieldKey: item.key,
-      status: item.status,
-      pageValue: item.page_value,
-      gbpValue: item.gbp_value,
-      gbpChecked: reportV21.gbp_status.status === "checked",
-    });
-    return status === item.status
-      ? item
-      : { ...item, status, explanation: SERVICE_AREA_GBP_MISSING_EXPLANATION };
-  });
+  const alignmentRows = audit.gbp_page_alignment;
   const displaySummary = summarizeAlignment(alignmentRows);
   const visibleAlignment = showTechnical
     ? alignmentRows
