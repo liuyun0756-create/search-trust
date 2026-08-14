@@ -6,7 +6,7 @@ import {
   formatWorkLayer,
   getClientDecisionContext,
   getDisplayLayerFinding,
-  getDisplaySignalsAssessed,
+  getDisplaySignalsAssessedLabel,
   getEffectiveBranding,
   getLayerDisplayConfig,
   getAdditionalBusinessPresenceActions,
@@ -1142,7 +1142,7 @@ function TrustLayersSection({ reportV21, variant }: { reportV21: ReportV21; vari
                   <Text style={styles.mutedText}>{config.name}</Text>
                   <Field label="Assessment" value={layer.summary || layer.explanation} maxLength={230} />
                   <Text style={styles.mutedText}>
-                    Signals assessed: {getDisplaySignalsAssessed(layer)} / {layer.status === "good" ? "Improvement opportunities" : "Findings requiring attention"}: {findingCount}
+                    Signals assessed: {getDisplaySignalsAssessedLabel(layer)} / {layer.status === "good" ? "Improvement opportunities" : "Findings requiring attention"}: {findingCount}
                   </Text>
                 </>
               )}

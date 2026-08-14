@@ -37,5 +37,13 @@ export function getDisplayLayerFinding(
 export function getDisplaySignalsAssessed(layer: LayerFinding): number {
   return layer.status === "not_checked"
     ? 0
-    : getLayerDisplayConfig(layer.layer_key).signalsAssessed;
+    : layer.layer_key === "entity_consistency"
+      ? new Set(layer.checked_rule_ids || []).size
+      : getLayerDisplayConfig(layer.layer_key).signalsAssessed;
+}
+
+export function getDisplaySignalsAssessedLabel(layer: LayerFinding): string {
+  const assessed = getDisplaySignalsAssessed(layer);
+  if (layer.layer_key !== "entity_consistency") return String(assessed);
+  return `${assessed} of ${getLayerDisplayConfig(layer.layer_key).signalsAssessed}`;
 }

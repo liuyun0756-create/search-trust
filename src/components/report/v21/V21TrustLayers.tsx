@@ -1,7 +1,7 @@
 import {
   REQUIRED_LAYER_KEYS,
   getDisplayLayerFinding,
-  getDisplaySignalsAssessed,
+  getDisplaySignalsAssessedLabel,
   getLayerDisplayConfig,
   type GBPStatusValue,
   type LayerFinding,
@@ -118,7 +118,7 @@ export function V21TrustLayers({
 
           {showTechnical && (
             <div className="mb-4 flex flex-wrap gap-2">
-              <Metric label="Signals assessed" value={getDisplaySignalsAssessed(layer)} />
+              <Metric label="Signals assessed" value={getDisplaySignalsAssessedLabel(layer)} />
               <Metric label={metricLabel} value={findingCount} />
             </div>
           )}
@@ -166,7 +166,7 @@ export function V21TrustLayers({
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, value }: { label: string; value: number | string }) {
   return (
     <span className="rounded-full border border-gray-100 bg-gray-50 px-3 py-1.5 text-[12px] font-bold text-gray-500">
       {label}: {value}
