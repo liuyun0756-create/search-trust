@@ -28,7 +28,7 @@ export async function getCurrentUser() {
 
   const { data: newUser } = await supabase
     .from("users")
-    .insert({ clerk_user_id: clerkUserId, email, name, audit_credits: 1 })
+    .insert({ clerk_user_id: clerkUserId, email, name, audit_credits: 5 })
     .select("id, audit_credits")
     .single();
 
