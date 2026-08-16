@@ -18,6 +18,7 @@ import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v2
 import { V21ClientReportPreview } from './v21/V21ClientReportPreview';
 import { PdfInput } from './PdfInput';
 import { BackButton } from '@/components/common/BackControl';
+import { useAuthenticatedFetch } from '@/lib/use-authenticated-fetch';
 
 type TabId = V21TabId;
 
@@ -863,6 +864,7 @@ export function ReportContent({
   const clientPreviewTriggerRef = useRef<HTMLButtonElement>(null);
   const agencyLogoInputRef = useRef<HTMLInputElement>(null);
   const { openAuditForm } = useAuditModal();
+  const authenticatedFetch = useAuthenticatedFetch();
   const isFailed = report.status === 'failed';
   const showFailed = isFailed && !isLoading;
   const normalized = normalizeReportToV21(report);
@@ -1033,7 +1035,7 @@ export function ReportContent({
     if (!email || emailStatus === 'sending') return;
     setEmailStatus('sending');
     try {
-      const res = await fetch('/api/send-report', {
+      const res = await authenticatedFetch('/api/send-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reportId: report.id, email }),
@@ -1056,7 +1058,7 @@ export function ReportContent({
     setPdfBrandingError('');
     setPdfStatus('downloading');
     try {
-      const res = await fetch(`/api/reports/${report.id}/pdf`, {
+      const res = await authenticatedFetch(`/api/reports/${report.id}/pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -11,6 +11,7 @@ import { RunAuditButton } from "@/components/common/RunAuditButton";
 import { BackHeader } from "@/components/common/BackHeader";
 import { useAuditModal } from "@/components/common/AuditModalProvider";
 import type { Report } from "@/types/database";
+import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_REPORT_API_BASE_URL || "https://searchtrust-rd-production.up.railway.app/api/v1";
 
@@ -220,6 +221,7 @@ function ReportsPage() {
   const isPaymentReturn = paymentReturnParam === "success" || paymentReturnParam === "return";
   const { isSignedIn, isLoaded } = useUser();
   const { refreshCredits } = useAuditModal();
+  const authenticatedFetch = useAuthenticatedFetch();
 
   // Debug: log all params on mount
   useEffect(() => {
@@ -313,7 +315,7 @@ function ReportsPage() {
       (async () => {
         try {
           setPaymentReturnLoading(true);
-          const confirmRes = await fetch("/api/checkout/confirm", {
+          const confirmRes = await authenticatedFetch("/api/checkout/confirm", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ payment_id: paymentId }),
@@ -349,7 +351,7 @@ function ReportsPage() {
       router.replace("/pricing?payment=failed");
       return () => clearTimeout(timer);
     }
-  }, [searchParams, isLoaded, isSignedIn, refreshCredits, router]);
+  }, [authenticatedFetch, searchParams, isLoaded, isSignedIn, refreshCredits, router]);
 
   // Load history from API
   const loadHistory = useCallback(async () => {
@@ -358,7 +360,7 @@ function ReportsPage() {
     }
 
     try {
-      const res = await fetch("/api/reports");
+      const res = await authenticatedFetch("/api/reports");
       if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data)) setHistory(data);
@@ -366,7 +368,7 @@ function ReportsPage() {
     } finally {
       setHistoryLoading(false);
     }
-  }, [isLoaded]);
+  }, [authenticatedFetch, isLoaded]);
 
   useEffect(() => {
     loadHistory();
@@ -387,7 +389,7 @@ function ReportsPage() {
     setIsLoading(true);
     setReportLoadError(null);
     try {
-      const res = await fetch(`/api/reports/${id}`);
+      const res = await authenticatedFetch(`/api/reports/${id}`);
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error("Sign in with the account that created this report, then try again.");
@@ -411,7 +413,7 @@ function ReportsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoaded]);
+  }, [authenticatedFetch, isLoaded]);
 
   // A duplicate browser submit can find the report row before its task_id is
   // persisted. Refresh that pending row until it is ready for the SSE stream.
@@ -424,7 +426,7 @@ function ReportsPage() {
 
     const refreshPendingReport = async () => {
       try {
-        const res = await fetch(`/api/reports/${pendingId}`, { cache: "no-store" });
+        const res = await authenticatedFetch(`/api/reports/${pendingId}`, { cache: "no-store" });
         if (!res.ok || cancelled) return;
         const nextReport = await res.json() as Report;
         if (cancelled) return;
@@ -448,7 +450,7 @@ function ReportsPage() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [report?.id, report?.report_id, report?.status, report?.task_id]);
+  }, [authenticatedFetch, report?.id, report?.report_id, report?.status, report?.task_id]);
 
   const loadReportMeta = useCallback(async (baseReport: Report) => {
     if (!baseReport.page_url || !baseReport.page_type) return;
@@ -470,7 +472,7 @@ function ReportsPage() {
         page_type: metaPageType,
       });
       if (baseReport.gbp_url) params.set("gbp_url", baseReport.gbp_url);
-      const res = await fetch(`/api/report-meta?${params.toString()}`);
+      const res = await authenticatedFetch(`/api/report-meta?${params.toString()}`);
       if (!res.ok) return;
       const meta = await res.json();
       setReport((prev) => {
@@ -488,7 +490,7 @@ function ReportsPage() {
             item.id === baseReport.id ? { ...item, reportId: meta.report_id } : item
           )),
         })));
-        fetch(`/api/reports/${baseReport.report_id}`, {
+        authenticatedFetch(`/api/reports/${baseReport.report_id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -504,7 +506,7 @@ function ReportsPage() {
     } catch (error) {
       console.error("Failed to fetch report meta:", error);
     }
-  }, [loadHistory]);
+  }, [authenticatedFetch, loadHistory]);
 
   useEffect(() => {
     if (
@@ -610,7 +612,7 @@ function ReportsPage() {
 
         // Mark as failed — delete the empty report record
         try {
-          await fetch("/api/report-status", {
+          await authenticatedFetch("/api/report-status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(buildReportStatusPayload({
@@ -676,7 +678,7 @@ function ReportsPage() {
       });
 
       try {
-        const saveRes = await fetch("/api/report-status", {
+        const saveRes = await authenticatedFetch("/api/report-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(buildReportStatusPayload({ result: persistableResult })),
@@ -732,7 +734,7 @@ function ReportsPage() {
 
       const record = asRecord(payload);
       try {
-        await fetch("/api/report-status", {
+        await authenticatedFetch("/api/report-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(buildReportStatusPayload({

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { X, CreditCard, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics-client";
+import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 
@@ -15,12 +16,13 @@ interface PaymentModalProps {
 export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const handlePay = async () => {
     setLoading(true);
     track("checkout clicked", { source: "credit_purchase" });
     try {
-      const res = await fetch("/api/checkout", {
+      const res = await authenticatedFetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),

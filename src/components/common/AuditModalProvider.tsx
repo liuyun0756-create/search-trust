@@ -9,6 +9,7 @@ import { PaymentModal } from "@/components/common/PaymentModal";
 import { submitAudit } from "@/lib/submit-audit";
 import { track } from "@/lib/analytics-client";
 import { getAuditEventProperties, getCreditsBucket } from "@/lib/analytics-properties";
+import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 const OPEN_AUDIT_AFTER_LOGIN_KEY = "searchtrust_open_audit_after_login";
@@ -41,6 +42,7 @@ export function useAuditModal() {
 export function AuditModalProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useUser();
+  const authenticatedFetch = useAuthenticatedFetch();
   const [loginOpen, setLoginOpen] = useState(false);
   const [auditFormOpen, setAuditFormOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -88,7 +90,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
 
     creditsRequestRef.current = (async () => {
       try {
-        const res = await fetch("/api/user/credits");
+        const res = await authenticatedFetch("/api/user/credits");
         if (!res.ok) return credits;
         const data = await res.json();
         const nextCredits = typeof data.credits === "number" ? data.credits : null;
@@ -103,7 +105,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
     })();
 
     return creditsRequestRef.current;
-  }, [credits]);
+  }, [authenticatedFetch, credits]);
 
   // Fetch credits on sign-in
   useEffect(() => {
@@ -198,7 +200,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
         pageType: data.pageType,
         gbpUrl: data.gbpUrl,
         locationContext: data.locationContext,
-      });
+      }, authenticatedFetch);
       clearPendingAudit();
       setAuditFormOpen(false);
       router.push(buildReportRoute(result));
@@ -223,7 +225,7 @@ export function AuditModalProvider({ children }: { children: ReactNode }) {
       submissionRef.current = false;
       setSubmitting(false);
     }
-  }, [buildReportRoute, clearPendingAudit, router]);
+  }, [authenticatedFetch, buildReportRoute, clearPendingAudit, router]);
 
   // 审计提交仍在服务端兜底检查 credits，避免前端缓存过期。
   const handleSubmit = useCallback(async (data: AuditFormData) => {

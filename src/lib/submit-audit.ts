@@ -8,13 +8,13 @@ export async function submitAudit({
   pageType: string;
   gbpUrl: string;
   locationContext?: string;
-}): Promise<{
+}, request: typeof fetch = fetch): Promise<{
   task_id: string | null;
   report_id: string;
   database_report_id?: string | null;
   pending_initialization?: boolean;
 }> {
-  const res = await fetch("/api/generate-report", {
+  const res = await request("/api/generate-report", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
