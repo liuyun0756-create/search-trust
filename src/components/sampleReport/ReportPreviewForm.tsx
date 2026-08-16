@@ -32,10 +32,11 @@ export function ReportPreviewForm() {
 
             <div className="space-y-8">
               <div>
-                <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <label htmlFor="preview-page-url" className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
                   URL <span className="text-[#3B82F6]">required</span>
                 </label>
                 <input
+                  id="preview-page-url"
                   type="url"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
@@ -63,10 +64,11 @@ export function ReportPreviewForm() {
               </div>
 
               <div>
-                <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <label htmlFor="preview-gbp-url" className="block text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2">
                   GBP URL <span className="text-[#9CA3AF]">optional / recommended</span>
                 </label>
                 <input
+                  id="preview-gbp-url"
                   type="url"
                   value={formData.gbpUrl}
                   onChange={(e) => setFormData({ ...formData, gbpUrl: e.target.value })}
@@ -100,9 +102,9 @@ export function ReportPreviewForm() {
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-[3px] h-4 bg-[#3B82F6]" />
-                <h4 className="text-[14px] font-bold text-[#1A1F2B]">Dominant failure layer</h4>
+                <h4 className="text-[14px] font-bold text-[#1A1F2B]">Primary blocking layer</h4>
               </div>
-              <p className="text-[14px] font-bold text-[#6B7280] mb-2">L2 — Weak real-world anchors</p>
+              <p className="text-[14px] font-bold text-[#6B7280] mb-2">L2 — Weak real-world connection</p>
               <div className="bg-[#F9FAFB] p-4 rounded-lg border border-gray-100">
                 <p className="text-[13px] leading-relaxed text-gray-500">
                   这页已经具备基本的服务相关性和本地指向性，但在实体信任、现实连接和页面独立价值上仍有明显短板。

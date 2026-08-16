@@ -1,5 +1,6 @@
 import { UseCasesHero } from "@/components/useCase/UseCasesHero";
 import { WhyTeamsTurnToUs } from "@/components/useCase/WhyTeamsTurnToUs";
+import { CommunityScenario } from "@/components/useCase/CommunityScenario";
 import { PrimaryUseCasesOverview } from "@/components/useCase/PrimaryUseCasesOverview";
 import { UseCasesByTeam } from "@/components/useCase/UseCasesByTeam";
 import { WorkflowSection } from "@/components/useCase/WorkflowSection";
@@ -9,11 +10,11 @@ import { FAQAccordion } from "@/components/common/FAQAccordion";
 const useCasesFAQData = [
   {
     question: 'Which use case is best for agencies?',
-    answer: 'Agency reporting + pre-publish review + stuck page diagnosis. These three use cases cover the most common agency needs: validating pages before they go live, diagnosing why existing pages underperform, and communicating findings to clients in a structured way.',
+    answer: 'Start with a one-time client audit and proposal. The full audit supports internal diagnosis and scoping, while the client preview and client-ready PDF explain the problem, priority, and recommended work without exposing internal evidence detail.',
   },
   {
     question: 'Can I use SearchTrust before publishing pages?',
-    answer: 'Yes, that is one of the clearest MVP use cases. Run a trust audit on any URL — including staging or preview URLs — to catch structural trust issues before they reach search engines.',
+    answer: 'Yes, provided the page is publicly accessible to the audit workflow. It can identify weak local grounding, template risk, and trust gaps before a public rollout.',
   },
   {
     question: 'Is it useful for AI-generated local pages?',
@@ -25,11 +26,15 @@ const useCasesFAQData = [
   },
   {
     question: 'Is this only for local SEO?',
-    answer: 'The MVP is primarily built for local pages and local trust diagnosis. The L0–L5 framework is designed specifically for pages that need to establish entity authority in local search contexts.',
+    answer: 'The MVP is primarily built for local pages and local trust diagnosis. The v2.1 8-layer framework is designed for pages that need to establish entity authority, evidence, and accountability in local search contexts.',
   },
   {
     question: 'Can multi-location brands use it?',
-    answer: 'Yes, especially for reviewing page differentiation and local grounding. Multi-location brands can audit across all location pages to ensure consistency and standalone value.',
+    answer: 'Yes. The current product audits one priority URL at a time, so multi-location teams can sample high-value or underperforming pages before applying the findings more broadly.',
+  },
+  {
+    question: 'Does SearchTrust manage or monitor GBP?',
+    answer: 'No. When public GBP data is available, Business Presence Audit adds a one-time, non-scoring review of page alignment, profile activity, and a recent review sample. It is not an ongoing GBP management or monitoring service.',
   },
 ];
 import {WorkflowIntegrations} from "@/components/useCase/WorkflowIntegrations";
@@ -60,6 +65,7 @@ export default function UseCasesPage() {
       />
       <UseCasesHero />
       <WhyTeamsTurnToUs />
+      <CommunityScenario />
       <PrimaryUseCasesOverview />
       <UseCasesByTeam />
       <WorkflowIntegrations />

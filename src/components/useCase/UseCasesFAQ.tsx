@@ -27,12 +27,12 @@ const faqData = [
   {
     question: 'Is this only for local SEO?',
     answer:
-      'The MVP is primarily built for local pages and local trust diagnosis. The L0–L5 framework is designed specifically for pages that need to establish entity authority in local search contexts.',
+      'The MVP is primarily built for local pages and local trust diagnosis. The v2.1 8-layer framework is designed for pages that need to establish entity authority, evidence, and accountability in local search contexts.',
   },
   {
     question: 'Can multi-location brands use it?',
     answer:
-      'Yes, especially for reviewing page differentiation and local grounding. Multi-location brands can audit across all location pages to ensure consistency and standalone value.',
+      'Yes. Start with one priority or representative location page, use the findings to define the work pattern, and then audit additional pages deliberately.',
   },
 ];
 
@@ -51,7 +51,7 @@ export function UseCasesFAQ() {
               Frequently asked<br />questions
             </h2>
             <a
-              href="#"
+              href="/use-cases"
               className="inline-flex items-center gap-2 text-[#A5D020] font-bold hover:underline"
             >
               Contact us <ArrowRight size={18} />

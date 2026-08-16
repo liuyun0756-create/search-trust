@@ -9,12 +9,12 @@ export function HowItWorks() {
         {/* 顶部标题区域 */}
         <div className="text-center mb-20">
           <h2 className="text-[36px] md:text-[44px] font-[700] text-[#1A1F2B] leading-[1.2]">
-            Most SEO tools measure performance <br />
-            They don’t explain trust failure
+            Performance tools show what changed <br />
+            SearchTrust shows what needs attention
           </h2>
           <div className="section-title-bar" />
           <p className="mt-6 text-[#6B7280] text-[15px] md:text-[16px] max-w-4xl mx-auto font-medium">
-            Traditional SEO tools tell you what changed Search Trust tells you why Google may still not trust the page.
+            SearchTrust turns checked page, GBP, and review data into a structured diagnosis with evidence, actions, and a clear implementation order.
           </p>
         </div>
 
@@ -39,19 +39,19 @@ export function HowItWorks() {
               </ul>
             </div>
 
-            {/* 右侧卡片 - Search Trust */}
+            {/* 右侧卡片 - SearchTrust */}
             <div className="w-full md:w-[520px] bg-[#1A1F2B] rounded-[24px] p-10 md:p-14 md:pl-20 z-20 md:-ml-12 shadow-[0_30px_60px_rgba(0,0,0,0.15)]">
               <h3 className="text-[18px] font-bold text-white mb-8">
-                What Search Trust gives you
+                What SearchTrust gives you
               </h3>
               <ul className="space-y-5">
                 {[
-                  'Trust collapse diagnosis',
-                  'Programmatic / doorway risk clues',
-                  'Local specificity analysis',
-                  'Real-world anchor weakness',
-                  'Likely Google interpretation',
-                  'Lowest-cost fixes first'
+                  'Evidence-backed L1-L8 diagnosis',
+                  'Source-traceable findings',
+                  'Page and GBP alignment when available',
+                  'Layer-specific implementation actions',
+                  'Four-phase implementation roadmap',
+                  'Agency and client-ready PDF formats'
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-gray-200 text-[16px] font-medium">
                     <Check size={18} className="text-[#A5D020] flex-shrink-0" />

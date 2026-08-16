@@ -8,6 +8,9 @@ const isPublicRoute = createRouteMatcher([
   "/use-cases",
   "/pricing",
   "/policy",
+  "/terms",
+  "/privacy",
+  "/refund-policy",
   "/reports",
   "/api/webhook/(.*)",
   "/api/generate-report",
@@ -18,7 +21,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/user/credits",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
+export const proxy = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect();
   }

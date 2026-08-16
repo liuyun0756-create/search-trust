@@ -6,52 +6,68 @@ import { CheckCircle2, XCircle, Info, ChevronRight } from 'lucide-react';
 
 const layerDetails = [
    {
-    id: "L0",
-    title: "Relevance",
-    whatItAnswers: "Does this page qualify to enter the evaluation process, or should it not be competing at all?",
-    criteria: ["Does the page clearly target a real search intent?", "Is it a meaningful local page rather than a filler expansion page?", "Is there a clear service / location / entity relationship?"],
-    failures: ["The page intent is vague or ambiguous", "The service-city relationship does not hold", "It reads more like a bulk placeholder than a real entry page"],
-    googleInterpretation: "This page may not represent a distinct local destination worth surfacing.",
-  },
-  {
     id: "L1",
-    title: "Entity Clarity",
-    whatItAnswers: "Is the page specific enough, or could any city name be swapped in?",
-    criteria: ["Does it include local details?", "Does it contain service context that cannot be easily replicated?", "Does it avoid generic city-template language?"],
-    failures: ["Too much generic description", "Content is reusable with a simple city-name swap", "Headers, paragraphs, and FAQs are all highly templated"],
-    googleInterpretation: "The page appears location-labeled rather than genuinely local.",
+    title: "Foundation",
+    whatItAnswers: "Does this page have the basic topic, service, location, and intent foundation needed for a local trust diagnosis?",
+    criteria: ["Clear service and page purpose", "A meaningful local or service-area intent", "A coherent service / location / entity relationship"],
+    failures: ["Page intent is vague or ambiguous", "Service and location relationship is unclear", "The page reads more like a placeholder than a real entry page"],
+    searchInterpretation: "The page may have content, but the basic local trust foundation is not yet stable.",
   },
   {
     id: "L2",
-    title: "Proof Signals",
-    whatItAnswers: "Is the page grounded in real-world evidence?",
-    criteria: ["Specific locations", "Service scenarios", "Operational timelines", "Coverage area logic", "Connections to the real local environment"],
-    failures: ["The page only says 'we serve this city'", "No traces of real locations, scenarios, or timelines", "Lacks operational realism"],
-    googleInterpretation: "Claims are present, but grounding is weak.",
+    title: "Entity Presence",
+    whatItAnswers: "Can a real business or organization be identified from the page and available checked signals?",
+    criteria: ["Clear business name and identity cues", "Visible contact or ownership signals", "Entity details that connect the page to a real operator"],
+    failures: ["The page explains the service but not who provides it", "Business identity is thin or hidden", "Important entity signals are missing from the checked content"],
+    searchInterpretation: "The page may explain an offer, but the responsible entity is not strongly established.",
   },
   {
     id: "L3",
-    title: "Local Fit",
-    whatItAnswers: "Does the page reflect a structure where a real business takes responsibility?",
-    criteria: ["Clear business identity", "Operational legitimacy", "Contact / ownership / responsibility cues", "Service accountability signals"],
-    failures: ["All claims, no accountability", "No clear business responsibility structure", "The page looks like a lead-gen shell"],
-    googleInterpretation: "The page describes services, but accountability remains unclear.",
+    title: "Entity Consistency",
+    whatItAnswers: "Do the checked identity signals point to the same business entity?",
+    criteria: ["Consistent name, phone, address, and service scope", "Aligned identity across page, footer, contact/about pages, and available GBP data", "No conflicting entity or brand signals"],
+    failures: ["Different surfaces describe the business differently", "Contact or service area signals conflict", "Entity signals feel fragmented"],
+    searchInterpretation: "Trust signals may be present, but they may not consolidate cleanly around one entity.",
   },
   {
     id: "L4",
-    title: "Structural Trust",
-    whatItAnswers: "Does this page deserve to exist on its own?",
-    criteria: ["Is it just a slight rewrite of the main page?", "If this page were removed, what would users lose?", "Does it provide independent value?"],
-    failures: ["The page merely repeats existing site content", "No unique purpose or unique information", "Very low standalone visit value"],
-    googleInterpretation: "This page may exist for coverage rather than value.",
+    title: "Specificity",
+    whatItAnswers: "Does the page feel specific and grounded, or generic and reusable?",
+    criteria: ["Specific local/service details", "Scenario language that cannot be copied to any city", "Examples, FAQs, or details tied to this page's actual purpose"],
+    failures: ["Too much generic description", "Content is reusable with a simple location swap", "Headers, paragraphs, and FAQs are highly templated"],
+    searchInterpretation: "The page may be relevant, but it still reads like a generic local template.",
   },
   {
     id: "L5",
-    title: "Standalone Value",
-    whatItAnswers: "Is the page adapted to the current search environment?",
-    criteria: ["Is it still stuck in old-school SEO template thinking?", "Does it account for AI overviews, citations, and entity understanding?", "Is it structured clearly enough to be explainable and extractable?"],
-    failures: ["Outdated structure, keyword-stuffed, lacking extractable information", "Not suitable for AI system citation", "Unfriendly to modern search parsing methods"],
-    googleInterpretation: "The page may be indexable, but not citation-ready or structurally competitive.",
+    title: "Real-World Connection",
+    whatItAnswers: "Does the page connect to real places, service reality, and local context?",
+    criteria: ["Specific locations or service context", "Operational timelines or service scenarios", "Coverage logic connected to the real local environment"],
+    failures: ["The page only states that it serves an area", "No traces of real locations, scenarios, or timelines", "Local claims lack operational realism"],
+    searchInterpretation: "Claims are present, but real-world grounding is weak.",
+  },
+  {
+    id: "L6",
+    title: "Accountability",
+    whatItAnswers: "Does the page show process, responsibility, boundaries, and next-step clarity?",
+    criteria: ["Clear service process", "Responsibility and ownership cues", "Limitations, expectations, or next steps that make the service accountable"],
+    failures: ["All claims, little accountability", "No clear responsibility structure", "The page looks more like a lead-gen shell than a service entry point"],
+    searchInterpretation: "The page describes services, but accountability remains unclear.",
+  },
+  {
+    id: "L7",
+    title: "Page Unique Value",
+    whatItAnswers: "Does this page deserve to exist on its own?",
+    criteria: ["A unique purpose beyond keyword coverage", "Content that would be missed if the page were removed", "Clear differentiation from related service/location pages"],
+    failures: ["The page mostly repeats existing site content", "No unique purpose or unique information", "Low standalone visit value"],
+    searchInterpretation: "The page may exist for coverage rather than meaningful standalone value.",
+  },
+  {
+    id: "L8",
+    title: "Algorithm Fit",
+    whatItAnswers: "Can users, traditional search engines, and AI search systems clearly interpret the page?",
+    criteria: ["Clear, scannable information structure", "Entity and service details that can be interpreted consistently", "Organization that supports extraction, citation, and retrieval"],
+    failures: ["Template structure obscures the page purpose", "Key information is difficult for search and AI systems to extract", "The page is difficult to cite or surface confidently"],
+    searchInterpretation: "The page may be indexable, but unclear structure can still limit how confidently traditional and AI search systems interpret, cite, and surface it.",
   },
 ];
 
@@ -70,7 +86,7 @@ export function LayerDetailBreakdown() {
         
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-12 items-start">
+        <div className="flex flex-col items-start gap-12 lg:flex-row lg:items-stretch">
           
           {/* 左侧：垂直导航 (层级选择) */}
           <div className="w-full lg:w-1/3 flex flex-col gap-2">
@@ -98,7 +114,7 @@ export function LayerDetailBreakdown() {
           </div>
 
           {/* 右侧：内容展示区 */}
-          <div className="w-full lg:w-2/3 min-h-[560px]">
+          <div className="w-full lg:w-2/3">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -106,17 +122,17 @@ export function LayerDetailBreakdown() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                className="bg-gray-50/50 rounded-[40px] p-8 md:p-12 border border-gray-100 h-full"
+                className="flex h-full flex-col rounded-[40px] border border-gray-100 bg-gray-50/50 p-8 md:p-12"
               >
                 {/* 核心问题区域 */}
-                <div className="mb-12">
+                <div className="mb-10 lg:min-h-[112px]">
                   <span className="text-[11px] font-bold text-[#A5D020] uppercase tracking-[0.2em] mb-4 block">Key Inquiry</span>
                   <h3 className="text-[24px] md:text-[28px] font-bold text-[#0B0C0E] leading-snug">
                     {layerDetails[activeTab].whatItAnswers}
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="grid flex-1 grid-cols-1 gap-10 md:grid-cols-2">
                   
                   {/* 可写内容 / 核心信号 */}
                   <div className="space-y-6">
@@ -151,14 +167,14 @@ export function LayerDetailBreakdown() {
                   </div>
                 </div>
 
-                {/* Google 视角 - 底部横幅样式 */}
-                <div className="mt-12 p-8 rounded-[24px] bg-[#0B0C0E] relative overflow-hidden group">
+                {/* Search interpretation - 底部横幅样式 */}
+                <div className="relative mt-10 overflow-hidden rounded-[24px] bg-[#0B0C0E] p-8">
                   <div className="absolute top-0 right-0 p-4 opacity-10 text-[#A5D020]">
                     <Info size={64} />
                   </div>
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-3 block">Google's Possible Interpretation</span>
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-3 block">Search Interpretation</span>
                   <p className="text-[17px] text-white font-medium italic relative z-10 leading-relaxed">
-                    "{layerDetails[activeTab].googleInterpretation}"
+                    "{layerDetails[activeTab].searchInterpretation}"
                   </p>
                 </div>
 

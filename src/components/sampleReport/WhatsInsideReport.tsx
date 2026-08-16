@@ -7,33 +7,33 @@ import { motion } from 'framer-motion';
 const sections = [
   {
     icon: BarChart3,
-    title: 'Current trust status',
-    desc: 'A page-level summary of current structural trust strength.',
+    title: 'Overall decision summary',
+    desc: 'The primary blocking layer, current trust status, urgency, and first priority.',
   },
   {
     icon: Compass,
-    title: 'Page interpretation',
-    desc: 'Why the page can participate, stall, or stay unstable.',
+    title: 'Page-level interpretation',
+    desc: 'The current assessment, existing foundation, main limitation, and likely outcome.',
   },
   {
     icon: Target,
-    title: 'Dominant failure layer',
-    desc: 'The layer where trust breakdown matters most.',
+    title: 'Key Issues with actions',
+    desc: 'Confirmed issues with judgement, impact, suggestions, and executable work items.',
   },
   {
     icon: Layers,
-    title: 'Key issues by layer',
-    desc: 'Weaknesses organized through the six-layer model.',
+    title: 'L1-L8 trust breakdown',
+    desc: 'Signals assessed, findings requiring attention, source evidence, and layer actions.',
   },
   {
     icon: Zap,
-    title: 'Prioritized improvement path',
-    desc: 'What to fix first, next, and later.',
+    title: 'Four-phase roadmap',
+    desc: 'Ordered remediation with completion gates, observation guidance, and re-audit timing.',
   },
   {
     icon: FileText,
-    title: 'Strategic recommendations',
-    desc: 'Guidance focused on trust impact, not just issue listing.',
+    title: 'Business Presence and delivery',
+    desc: 'Public GBP checks plus a client preview, Client PDF, and Full Audit PDF.',
   },
 ];
 

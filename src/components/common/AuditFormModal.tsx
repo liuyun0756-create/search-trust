@@ -1,22 +1,28 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Globe, MapPin, LayoutTemplate, ArrowRight } from "lucide-react";
+import { X, Globe, MapPin, MapPinned, LayoutTemplate, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  AuditLocationModeTabs,
+  type AuditLocationMode,
+} from "@/components/common/AuditLocationModeTabs";
 import { PAGE_TYPES } from "@/lib/constants";
 
 interface AuditFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { url: string; gbpUrl: string; pageType: string }) => void;
+  onSubmit: (data: { url: string; gbpUrl: string; locationContext: string; pageType: string }) => void;
   submitting?: boolean;
-  initialValues?: { url: string; gbpUrl: string; pageType: string } | null;
+  initialValues?: { url: string; gbpUrl: string; locationContext: string; pageType: string } | null;
 }
 
 export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialValues }: AuditFormModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [url, setUrl] = useState("");
   const [gbpUrl, setGbpUrl] = useState("");
+  const [locationContext, setLocationContext] = useState("");
+  const [locationMode, setLocationMode] = useState<AuditLocationMode>("single");
   const [pageType, setPageType] = useState("Service Page");
 
   useEffect(() => {
@@ -24,6 +30,8 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
       document.body.style.overflow = "hidden";
       setUrl(initialValues?.url || "");
       setGbpUrl(initialValues?.gbpUrl || "");
+      setLocationContext(initialValues?.locationContext || "");
+      setLocationMode(initialValues?.locationContext ? "multi" : "single");
       setPageType(initialValues?.pageType || "Service Page");
     } else {
       document.body.style.overflow = "";
@@ -35,7 +43,19 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
 
   const handleSubmit = () => {
     if (!url.trim() || !pageType.trim() || submitting) return;
-    onSubmit({ url: url.trim(), gbpUrl: gbpUrl.trim(), pageType });
+    onSubmit({
+      url: url.trim(),
+      gbpUrl: gbpUrl.trim(),
+      locationContext: locationMode === "multi" ? locationContext.trim() : "",
+      pageType,
+    });
+  };
+
+  const handleLocationModeChange = (mode: AuditLocationMode) => {
+    setLocationMode(mode);
+    if (mode === "single") {
+      setLocationContext("");
+    }
   };
 
   return (
@@ -63,7 +83,9 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#A5D020]/10 blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none" />
 
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close audit form"
               className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-100 text-gray-400 hover:text-[#1A212B] hover:shadow-sm transition-all z-20"
             >
               <X size={18} strokeWidth={2.5} />
@@ -81,6 +103,12 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
               <p className="text-[14px] text-[#6B7280] font-medium leading-relaxed mb-8">
                 Enter the page details to generate a comprehensive trust diagnosis report.
               </p>
+
+              <AuditLocationModeTabs
+                value={locationMode}
+                onChange={handleLocationModeChange}
+                className="mb-7 w-full justify-center"
+              />
 
               <div className="space-y-5">
                 {/* URL */}
@@ -117,6 +145,28 @@ export function AuditFormModal({ isOpen, onClose, onSubmit, submitting, initialV
                     />
                   </div>
                 </div>
+
+                {locationMode === "multi" && (
+                  <div>
+                    <label className="mb-2 block text-[12px] font-black uppercase tracking-widest text-gray-400">
+                      Target city or region
+                    </label>
+                    <div className="relative">
+                      <MapPinned size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+                      <input
+                        type="text"
+                        value={locationContext}
+                        onChange={(e) => setLocationContext(e.target.value)}
+                        placeholder="City, state — e.g. Manhattan, NY"
+                        aria-describedby="modal-location-context-help"
+                        className="w-full bg-white border border-gray-100 rounded-xl pl-11 pr-4 py-3.5 text-[14px] font-medium text-[#1A212B] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#A5D020]/20 transition-all"
+                      />
+                    </div>
+                    <p id="modal-location-context-help" className="mt-2 text-[11px] font-medium leading-relaxed text-gray-400">
+                      Use the city and state for the target branch.
+                    </p>
+                  </div>
+                )}
 
                 {/* Page Type */}
                 <div>

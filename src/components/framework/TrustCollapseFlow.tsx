@@ -2,15 +2,17 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Target, MapPin, UserCheck, FileText, Clock } from 'lucide-react';
+import { Shield, Target, MapPin, UserCheck, FileText, Clock, Fingerprint, Link2 } from 'lucide-react';
 
 const collapseSteps = [
-  { level: "L0", title: "Qualification", desc: "If a page fails qualification, deeper trust signals barely matter.", icon: Shield },
-  { level: "L1", title: "Specificity", desc: "If it passes qualification but lacks specificity, it begins to look templated.", icon: Target },
-  { level: "L2", title: "Real-World Anchors", desc: "Without real-world anchors, local claims become weak.", icon: MapPin },
-  { level: "L3", title: "Responsibility", desc: "Without responsibility, business legitimacy is unclear.", icon: UserCheck },
-  { level: "L4", title: "Standalone Value", desc: "Without standalone value, the page feels unnecessary.", icon: FileText },
-  { level: "L5", title: "Era Fit", desc: "Without era fit, it may be visible but not competitive.", icon: Clock },
+  { level: "L1", title: "Foundation", desc: "If the page lacks a clear service, topic, and local intent foundation, deeper evidence has less impact.", icon: Shield },
+  { level: "L2", title: "Entity Presence", desc: "Without visible entity presence, the page struggles to show who is responsible for the service.", icon: Fingerprint },
+  { level: "L3", title: "Entity Consistency", desc: "If identity signals conflict, trust evidence is harder to consolidate around one business.", icon: Link2 },
+  { level: "L4", title: "Specificity", desc: "If the page lacks specificity, it begins to feel templated or reusable.", icon: Target },
+  { level: "L5", title: "Real-World Connection", desc: "Without real-world connection, local claims become weak.", icon: MapPin },
+  { level: "L6", title: "Accountability", desc: "Without accountability, service responsibility remains unclear.", icon: UserCheck },
+  { level: "L7", title: "Page Unique Value", desc: "Without page unique value, the page feels unnecessary.", icon: FileText },
+  { level: "L8", title: "Algorithm Fit", desc: "Once the earlier layers are strong, assess whether traditional and AI search systems can clearly interpret, cite, and surface the page.", icon: Clock },
 ];
 
 export function TrustCollapseFlow() {
@@ -28,9 +30,18 @@ export function TrustCollapseFlow() {
           >
             How trust collapses across layers
           </motion.h2>
-          {/* <p className="text-[16px] text-gray-500 font-medium max-w-xl mx-auto">
-            Each layer builds on the one below. If a lower layer fails, everything above collapses.
-          </p> */}
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.08 }}
+            className="mx-auto max-w-3xl text-[16px] font-medium leading-relaxed text-gray-500"
+          >
+            Google can interpret a local page more confidently when its business identity,
+            local relevance, and real-world evidence remain clear and consistent. When an
+            earlier trust layer breaks, the signals above it become harder to connect and
+            less likely to support stable search visibility.
+          </motion.p>
         </div>
 
         {/* 2x3 功能网格 */}
@@ -53,12 +64,12 @@ export function TrustCollapseFlow() {
 
               {/* 文字内容 */}
               <div className="flex flex-col gap-2">
-                {/* <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <span className="text-[11px] font-black text-[#A5D020] tracking-tight">{step.level}</span>
                   <h3 className="text-[16px] font-bold text-[#1A1F2B]">
                     {step.title}
                   </h3>
-                </div> */}
+                </div>
                 <p className="text-[14px] leading-relaxed text-gray-500 font-medium">
                   {step.desc}
                 </p>

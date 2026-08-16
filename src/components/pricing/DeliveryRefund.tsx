@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, RotateCcw, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export function DeliveryRefund() {
   return (
-    <section className="bg-[#FFFFFF] pt-20 px-6">
+    <section className="overflow-hidden bg-[#FFFFFF] px-6 pt-20">
       <div className="max-w-7xl mx-auto space-y-32">
         
         {/* 1. Delivery Section: 文字左 + 图片右 */}
@@ -17,16 +17,13 @@ export function DeliveryRefund() {
             viewport={{ once: true }}
             className="flex-1"
           >
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-sm text-[#A5D020] border border-gray-100">
-              <Clock size={24} strokeWidth={2.5} />
-            </div>
             <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A212B] tracking-tighter leading-[1.1] mb-6">
               Delivery
             </h2>
             <div className="space-y-4 max-w-lg">
               <p className="text-[18px] text-[#1A212B] font-bold leading-relaxed">
                 After payment, submit the URL you want reviewed.
-                Your report will be delivered via <span>e-mail within two hours</span>.
+                Your report becomes available after the audit workflow and structured checks are complete.
 
               </p>
               <p className="text-[16px] text-[#6B7280] font-medium leading-relaxed">
@@ -41,7 +38,7 @@ export function DeliveryRefund() {
             viewport={{ once: true }}
             className="flex-1 w-full"
           >
-            <div className="w-[600px] h-[275px] rounded-[32px] bg-white border border-gray-100 shadow-sm overflow-hidden">
+            <div className="aspect-[600/275] w-full max-w-[600px] overflow-hidden rounded-[32px] border border-gray-100 bg-white shadow-sm">
               <img src="/images/delivery-bg.jpg" alt="Delivery" className="w-full h-full object-cover" />
             </div>
           </motion.div>
@@ -55,9 +52,6 @@ export function DeliveryRefund() {
             viewport={{ once: true }}
             className="flex-1 lg:-ml-4"
           >
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-sm text-[#A5D020] border border-gray-100">
-              <RotateCcw size={24} strokeWidth={2.5} />
-            </div>
             <h2 className="text-[36px] md:text-[42px] font-bold text-[#1A212B] tracking-tighter leading-[1.1] mb-6">
               Refund policy
             </h2>
@@ -84,7 +78,7 @@ export function DeliveryRefund() {
             viewport={{ once: true }}
             className="flex-1 w-full"
           >
-            <div className="w-full max-w-[598px] h-[273px] rounded-[32px] overflow-hidden">
+            <div className="aspect-[598/273] w-full max-w-[598px] overflow-hidden rounded-[32px]">
               <img src="/images/refund-bg.jpg" alt="Refund Policy" className="w-full h-full object-cover" />
             </div>
           </motion.div>

@@ -12,16 +12,16 @@ export function SampleReportInfo() {
       items: [
         "a local service page",
         "a city / location-intent landing page",
-        "a page reviewed as a trust diagnosis example"
+        "one priority URL reviewed through the fixed L1-L8 model"
       ]
     },
     {
       icon: Target,
       title: "Purpose of the sample",
       items: [
-        "to show how the report is structured",
-        "to explain how SearchTrust applies the framework",
-        "to preview the kind of findings and recommendations you receive"
+        "to show the complete Agency Audit structure",
+        "to connect findings, evidence, and layer actions",
+        "to preview the implementation roadmap and client delivery formats"
       ]
     }
   ];

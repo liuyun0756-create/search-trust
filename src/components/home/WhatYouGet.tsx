@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, AlertTriangle, Star, Send } from 'lucide-react';
+import { Shield, ScanSearch, ListOrdered, Send } from 'lucide-react';
 
 interface CardItem {
   title: string;
@@ -18,19 +18,19 @@ interface WhatYouGetProps {
 const defaultBenefits = [
   {
     icon: Shield,
-    title: "A six-layer trust diagnosis for one submitted page",
+    title: "A complete evidence-backed L1-L8 diagnosis for one submitted page",
   },
   {
-    icon: AlertTriangle,
-    title: "The dominant failure point holding the page back",
+    icon: ScanSearch,
+    title: "Confirmed findings with source evidence you can trace back to the page",
   },
   {
-    icon: Star,
-    title: "Prioritized recommendations based on trust impact",
+    icon: ListOrdered,
+    title: "A four-phase implementation roadmap with completion and re-audit guidance",
   },
   {
     icon: Send,
-    title: "Delivery by email within two hours of submission",
+    title: "A full Agency Audit plus a simplified client preview and client-ready PDF",
   }
 ];
 

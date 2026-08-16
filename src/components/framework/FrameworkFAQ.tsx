@@ -5,9 +5,9 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const faqData = [
   {
-    question: "Why six layers?",
+    question: "Why eight layers?",
     answer:
-      "Because trust is not built by random signals. It forms through a structured sequence, and six layers describe that structure more clearly than scattered factors.",
+      "Because local page trust is not built by one signal. The eight-layer framework separates foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit so the report can show where trust actually breaks.",
   },
   {
     question: "Are all layers equally important?",
@@ -17,17 +17,17 @@ const faqData = [
   {
     question: "Is this only for local pages?",
     answer:
-      "Yes. It may still rank in the short term, but the structure is usually less stable.",
+      "The current framework is built for publicly accessible local service pages, city pages, service-area pages, and location landing pages. It is not a general site-wide SEO scoring model.",
   },
   {
     question: "How is this different from E-E-A-T?",
     answer:
-      "E-E-A-T is a broad quality lens. L0–L5 is a page-structure diagnosis model.",
+      "E-E-A-T is a broad quality lens. SearchTrust is a page and entity trust diagnosis model built for local pages and agency reporting.",
   },
   {
     question: "Is this only for Google?",
     answer:
-      "Mainly for Google and local search today, but it also considers AI citation environments.",
+      "The framework is designed for local search interpretation. It does not claim access to Google internals or guarantee how any search system will rank a page.",
   },
   {
     question: "Is this just another content quality checklist?",

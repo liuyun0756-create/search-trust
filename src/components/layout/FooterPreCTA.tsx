@@ -25,7 +25,7 @@ export function FooterPreCTA() {
               <span className="block lg:whitespace-nowrap">See where trust breaks.</span>
             </h2>
             <p className="mt-6 max-w-3xl text-[18px] font-medium leading-relaxed tracking-normal text-[#4B5563] md:text-[20px]">
-              Run a trust audit to understand how Google may interpret your page — and what to fix first.
+              Run a trust audit to see which signals are supported by evidence, where trust needs attention, and what to fix first.
             </p>
           </div>
 

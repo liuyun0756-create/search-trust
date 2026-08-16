@@ -60,27 +60,27 @@ export function createPageMetadata({
 
 export const pageSeo = {
   home: {
-    title: "SearchTrust | Find Why Google Doesn't Trust Your Local Pages",
+    title: "SearchTrust | Evidence-Backed Local Page Trust Audit",
     description:
-      "SearchTrust analyzes local pages and business entities to explain why Google may not trust them, using a trust diagnosis model for local SEO and SEO agencies.",
+      "Audit one local page with an evidence-backed L1-L8 model, traceable findings, executable actions, a four-phase implementation roadmap, and client-ready PDF delivery.",
     path: "/",
   },
   framework: {
-    title: "Google Trust Collapse Framework for Local SEO | SearchTrust",
+    title: "8-Layer Local Trust Framework | SearchTrust",
     description:
-      "Learn the SearchTrust framework for diagnosing why local pages fail trust across eligibility, entity presence, consistency, specificity, real-world signals, accountability, and algorithm fit.",
+      "See how SearchTrust evaluates L1 Foundation through L8 Algorithm Fit, connects findings to evidence, and orders remediation without changing the fixed scoring model.",
     path: "/framework",
   },
   sampleReport: {
     title: "Sample Local SEO Trust Audit Report | SearchTrust",
     description:
-      "Preview a SearchTrust report showing trust status, ranking potential, risk level, key issues, trust layers, and prioritized fixes for a local page.",
+      "Explore a real-format SearchTrust report with L1-L8 findings, source evidence, layer actions, a four-phase implementation roadmap, Business Presence Audit, and two PDF formats.",
     path: "/sample-report",
   },
   useCases: {
     title: "Use Cases | SearchTrust for SEO Agencies and Local SEO",
     description:
-      "See how SEO agencies, local SEO teams, affiliate operators, and multi-location businesses use SearchTrust to diagnose local page trust issues.",
+      "Use SearchTrust for agency client audits, proposal scoping, stuck-page diagnosis, pre-publish reviews, staged remediation, and priority-page sampling.",
     path: "/use-cases",
   },
   pricing: {

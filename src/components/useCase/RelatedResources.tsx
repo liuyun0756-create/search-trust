@@ -8,7 +8,7 @@ export function RelatedResources() {
   const resources = [
     {
       title: "Framework",
-      desc: "Deep dive into the 6-layer trust architecture.",
+      desc: "Deep dive into the 8-layer trust architecture.",
       icon: Layout,
       link: "/framework"
     },
@@ -20,9 +20,9 @@ export function RelatedResources() {
     },
     {
       title: "Product Overview",
-      desc: "Learn how Search Trust transforms your SEO.",
+      desc: "Learn how SearchTrust transforms your SEO.",
       icon: BookOpen,
-      link: "#"
+      link: "/"
     },
     {
       title: "Pricing",
@@ -35,7 +35,7 @@ export function RelatedResources() {
   return (
     // 延续 image_c2903c.png 的冷灰背景规范
     <section className="pt-20 bg-[#F8F9FB]">
-      <div className="container mx-auto max-w-[1300px] px-8">
+      <div className="container mx-auto max-w-7xl px-8">
         
         {/* 标题：延续大字号、深灰蓝、高字重风格 */}
         <div className="text-center mb-20">

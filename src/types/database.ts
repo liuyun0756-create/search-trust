@@ -21,6 +21,9 @@ export interface Report {
   status: "pending" | "free_preview" | "paid_full" | "failed";
   access_type?: "free_trial" | "paid_credit" | "unlocked";
   completed_at?: string | null;
+  analysis_started_at?: string | null;
+  last_progress_at?: string | null;
+  estimated_completion_at?: string | null;
   trust_status: string | null;
   ranking_potential: string | null;
   risk_level: string | null;
@@ -30,6 +33,16 @@ export interface Report {
   module_3_key_problems: Record<string, any> | null;
   module_4_eight_layers: Record<string, any> | null;
   module_5_optimization: Record<string, any> | null;
+  report_v2_1?: unknown | null;
+  pipeline_diagnostics?: Record<string, any> | null;
+  source_facts?: Record<string, any> | null;
+  error_code?: string | null;
+  error_message?: string | null;
+  user_message?: string | null;
+  retryable?: boolean | null;
+  validation_errors?: string[] | null;
+  warnings?: string[] | null;
+  failure_reason?: string | null;
   created_at: string;
 }
 
@@ -52,6 +65,7 @@ export type GenerateReportRequest = {
 
 export type GenerateReportResponse = {
   report_id: string;
+  database_report_id?: string | null;
   page_url: string;
   page_type: string;
   gbp_url: string | null;
@@ -66,4 +80,7 @@ export type GenerateReportResponse = {
   module_3_key_problems: Record<string, any>;
   module_4_eight_layers: Record<string, any>;
   module_5_optimization: Record<string, any>;
+  report_v2_1?: unknown | null;
+  pipeline_diagnostics?: Record<string, any> | null;
+  source_facts?: Record<string, any> | null;
 };

@@ -56,7 +56,13 @@ export function Header() {
 
         <HeaderUserActions />
 
-        <button className="md:hidden p-2 text-[#1D2531]" onClick={() => setMobileOpen(!mobileOpen)}>
+        <button
+          type="button"
+          className="md:hidden p-2 text-[#1D2531]"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileOpen}
+        >
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>

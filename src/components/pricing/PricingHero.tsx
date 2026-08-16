@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { RunAuditButton } from '@/components/common/RunAuditButton';
+import { PurchaseReportButton } from '@/components/common/PurchaseReportButton';
 
 function ComingSoonPattern({ variant = "layers" }: { variant?: "layers" | "agency" }) {
   const accents =
@@ -49,7 +49,7 @@ export function PricingHero() {
         </p>
       </motion.div>
 
-      <div className="max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
         {/* Standard plan */}
         <motion.div
           whileHover={{ y: -10 }}
@@ -75,13 +75,13 @@ export function PricingHero() {
                 <span className="pb-2 text-[16px] font-bold text-[#6B7280]">/ submitted URL</span>
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-[#55616F]">
-                A structured trust diagnosis for one submitted page, delivered as a clear report with the first fix to prioritize.
+                An evidence-backed trust diagnosis for one submitted page, delivered as a web report with PDF export and a clear fix path.
               </p>
             </div>
 
-            <RunAuditButton className="group w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 border border-[#1A212B] shadow-[0_14px_30px_rgba(26,33,43,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-black hover:shadow-[0_18px_36px_rgba(165,208,32,0.28)]">
+            <PurchaseReportButton trackingSource="pricing_primary" className="group w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 border border-[#1A212B] shadow-[0_14px_30px_rgba(26,33,43,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-black hover:shadow-[0_18px_36px_rgba(165,208,32,0.28)]">
               Buy One Report <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </RunAuditButton>
+            </PurchaseReportButton>
 
             <div className="my-6 rounded-[24px] border border-[#EDF0E3] bg-[#F8FAF3] p-5">
               <p className="mb-4 text-[12px] font-black uppercase tracking-[0.14em] text-[#7FA40F]">
@@ -90,11 +90,12 @@ export function PricingHero() {
               <ul className="space-y-3 text-[14px] font-medium text-[#3E4651]">
               {[
                 '1 page / 1 submitted URL',
-                'L0–L5 trust framework evaluation',
-                'Current trust status',
-                'Dominant failure layer',
-                'Key findings by layer',
-                'Prioritized improvement path',
+                '8-layer trust model evaluation',
+                'Trust status, ranking potential, and risk level',
+                'Evidence-backed key issues',
+                'Data coverage and safe GBP alignment status',
+                'Client / Analyst report views and PDF export',
+                'Light agency-ready branding placeholders',
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-[#86B800]" />

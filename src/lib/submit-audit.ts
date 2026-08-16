@@ -2,11 +2,18 @@ export async function submitAudit({
   url,
   pageType,
   gbpUrl,
+  locationContext,
 }: {
   url: string;
   pageType: string;
   gbpUrl: string;
-}): Promise<{ task_id: string; report_id: string }> {
+  locationContext?: string;
+}): Promise<{
+  task_id: string | null;
+  report_id: string;
+  database_report_id?: string | null;
+  pending_initialization?: boolean;
+}> {
   const res = await fetch("/api/generate-report", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -14,6 +21,7 @@ export async function submitAudit({
       url: url.trim(),
       page_type: pageType,
       gbp_url: gbpUrl?.trim() || undefined,
+      location_context: locationContext?.trim() || undefined,
     }),
   });
 

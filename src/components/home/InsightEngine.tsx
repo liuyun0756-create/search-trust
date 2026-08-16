@@ -1,25 +1,26 @@
 "use client";
 
-// InsightEngine: 首页"为什么页面优化了却不排名"的三卡片洞察区块
+import { FileCheck2, Route, ScanSearch } from "lucide-react";
+
 export function InsightEngine() {
   const cards = [
     {
-      name: "SEO Agencies",
-      role: "Local SEO Specialist",
-      title: "They look optimised — but don't rank",
-      desc: "Local pages with correct NAP data, keyword-rich content, and clean markup still underperform. The missing variable isn't visible in a standard audit.",
+      eyebrow: "Surface audit",
+      title: "A page can pass common checks and still underperform",
+      desc: "Keywords, contact details, and clean markup do not explain whether the page has enough entity consistency, evidence, and page-specific value.",
+      icon: FileCheck2,
     },
     {
-      name: "Sophia Martinez",
-      role: "Digital Marketing Expert",
-      title: "Google lacks trust, not information",
-      desc: "Google's local ranking algorithm weighs trust signals: entity consistency, citation authority, co-occurrence patterns. Most tools ignore all of these.",
+      eyebrow: "Trust diagnosis",
+      title: "The missing context is often structural",
+      desc: "SearchTrust separates foundation, entity signals, local specificity, real-world connection, accountability, and standalone value.",
+      icon: ScanSearch,
     },
     {
-      name: "Emma Wilson",
-      role: "Digital Marketing Expert",
-      title: "Performance scores hide the real problem",
-      desc: "A 94 PageSpeed score on a page Google won't trust is noise. Measurement without diagnosis wastes months of effort and budget.",
+      eyebrow: "Implementation planning",
+      title: "A useful audit must show what to repair first",
+      desc: "The report turns confirmed findings into actions and a staged roadmap so later improvements do not distract from an earlier blocker.",
+      icon: Route,
     }
   ];
 
@@ -38,25 +39,18 @@ export function InsightEngine() {
 
         {/* 三个卡片网格 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {cards.map((card, index) => (
+          {cards.map((card) => (
             <div 
-              key={index} 
+              key={card.eyebrow}
               className="bg-[#F8F9FA] rounded-[24px] p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
             >
-              {/* 人物信息区域 */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-                 <img src={`/images/user${index + 1}.png`} alt={card.name} className="w-full h-full object-cover" />
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EDF5D4] text-[#789B11]">
+                  <card.icon size={19} strokeWidth={1.8} aria-hidden="true" />
                 </div>
-                <div>
-                  <p className="text-[15px] font-bold text-[#1A1F2B]">{card.name}</p>
-                  <span className="inline-block px-2 py-0.5 mt-1 text-[11px] font-medium text-[#6B7280] border border-gray-200 rounded-md bg-white">
-                    {card.role}
-                  </span>
-                </div>
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#7B8495]">{card.eyebrow}</p>
               </div>
 
-              {/* 内容 */}
               <h3 className="text-[18px] font-bold text-[#1A1F2B] mb-4 leading-snug">
                 {card.title}
               </h3>
@@ -66,21 +60,6 @@ export function InsightEngine() {
             </div>
           ))}
         </div>
-
-        {/* 底部引用区块 */}
-        {/* <div className="rounded-[18px] border border-[#A5D020]/30 bg-[#A5D020]/5 p-8 md:p-10">
-          <div className="max-w-7xl">
-            <p className="text-[18px] md:text-[20px] font-bold text-[#1A1F2B] leading-relaxed">
-              &quot;Most SEO tools measure performance. They don&apos;t explain trust failure — and that&apos;s the gap SearchTrust was built to close.&quot;
-            </p>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="w-6 h-[1px] bg-gray-400"></span>
-              <span className="text-[14px] text-[#6B7280] font-medium italic">
-                SearchTrust founding insight
-              </span>
-            </div>
-          </div>
-        </div> */}
 
       </div>
     </section>

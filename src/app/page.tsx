@@ -8,8 +8,6 @@ import {ReportPreview} from "@/components/home/ReportPreview";
 import { Diagnosis } from "@/components/home/Diagnosis";
 import {AuditSection} from "@/components/home/AuditSection";
 import {CommonWaysSection} from "@/components/home/CommonWaysSection";
-import {ComparisonTable} from "@/components/home/ComparisonTable";
-import {ProductRoadmap} from "@/components/home/ProductRoadmap";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 import {AuditForm} from "@/components/common/AuditForm";
 import {WhatYouGet} from "@/components/home/WhatYouGet";
@@ -19,27 +17,35 @@ import { createPageMetadata, pageSeo, siteUrl } from "@/lib/seo";
 const homeFAQData = [
   {
     question: "How is SearchTrust different from a standard SEO audit tool?",
-    answer: "Standard SEO tools measure performance signals: backlinks, traffic, content length, technical errors. SearchTrust diagnoses trust signals — specifically why Google might withhold trust from a page even when standard signals look correct. It's a different instrument for a different question."
+    answer: "Standard SEO tools measure performance signals: backlinks, traffic, content length, and technical errors. SearchTrust diagnoses page and entity trust structure: what evidence is present, which trust layer is weak, and what to fix first."
   },
   {
-    question: "What is the L0–L5 Trust Collapse Model?",
-    answer: "The L0-L5 model is a structural framework designed to diagnose whether a page qualifies as a real local entity entry point, covering layers from basic qualification to modern era-fit."
+    question: "What is the SearchTrust 8-layer trust model?",
+    answer: "It is a structured local trust diagnosis model covering foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit."
   },
   {
     question: "Does SearchTrust work for any type of local page?",
-    answer: "Yes, it is designed for service area businesses, multi-location brands, and local lead-gen pages that need to establish entity authority."
+    answer: "SearchTrust is designed for publicly accessible local service pages, city pages, service-area pages, and location landing pages. The current product audits one priority URL at a time."
   },
   {
     question: "Is this a replacement for my existing SEO tools?",
-    answer: "No, it's a diagnostic layer that sits on top of tools like Ahrefs or Semrush to explain the 'why' behind ranking plateaus that those tools can't detect."
+    answer: "No. It complements technical SEO, analytics, and rank tracking by showing which checked trust signals need attention, the evidence behind each finding, and the order in which to address them."
   },
   {
     question: "How long does a trust audit take?",
-    answer: "A single-page audit is processed in real-time, typically providing a full Trust Collapse Report in under 60 seconds."
+    answer: "A single-page audit usually generates a web report shortly after processing. Delivery timing may vary by page availability, data coverage, and workflow load."
   },
   {
     question: "Can I run trust audits in bulk?",
-    answer: "Bulk auditing is available for enterprise teams managing hundreds or thousands of location pages simultaneously."
+    answer: "The current checkout analyzes one URL at a time. Agencies and multi-location teams can start with priority pages first; broader batch workflows are not part of the current $19 one-time report."
+  },
+  {
+    question: "What can an agency deliver to a client?",
+    answer: "Agencies receive a full working audit with evidence and implementation detail, plus a simplified client report preview and a client-ready PDF. A full audit PDF is also available for internal delivery."
+  },
+  {
+    question: "What is included in Business Presence Audit?",
+    answer: "When public GBP data is available, SearchTrust adds a supplemental, non-scoring review of GBP-to-page alignment, profile activity, and a recent review sample. Missing public data is shown as not verified rather than treated as a confirmed failure."
   }
 ];
 // import { CTABanner } from "@/components/home/CTABanner";
@@ -53,7 +59,7 @@ const homeJsonLd = [
     name: "SearchTrust",
     url: siteUrl,
     description:
-      "SearchTrust helps diagnose why Google may not trust local pages and local business entities.",
+      "SearchTrust helps diagnose local page and entity trust structure with evidence-backed 8-layer reports.",
   },
   {
     "@context": "https://schema.org",
@@ -101,8 +107,6 @@ export default function Home() {
       <Diagnosis />
       <AuditSection />
       <CommonWaysSection />
-      <ComparisonTable />
-      <ProductRoadmap />
       <FAQAccordion tag="FAQ" title="Frequently asked questions" items={homeFAQData} />
       {/* <CTABanner /> */}
     </>

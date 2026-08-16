@@ -4,19 +4,18 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const workflowStages = [
-  { stage: 'Pre-launch audit', desc: 'Before launch, check whether the page can earn trust.' },
-  { stage: 'Publish page', desc: 'Publish the local, city, or service-area page.' },
-  { stage: 'Monitor rankings', desc: 'Watch rankings, impressions, and Search Console signals.' },
-  { stage: 'Visibility stalls', desc: 'If visibility stalls, avoid guessing from surface metrics.' },
-  { stage: 'Run diagnosis', desc: 'Run SearchTrust to identify the structural trust gap.' },
-  { stage: 'Prioritize fixes', desc: 'Fix the highest-impact trust layer first.' },
-  { stage: 'Re-check', desc: 'Re-check the page and continue the improvement loop.' },
+  { stage: 'Select one priority page', desc: 'Choose a high-value, underperforming, or representative public URL.' },
+  { stage: 'Run the Agency Audit', desc: 'Assess the fixed L1-L8 model and available Business Presence data.' },
+  { stage: 'Approve the work scope', desc: 'Use confirmed findings, actions, and the Client PDF to align stakeholders.' },
+  { stage: 'Complete the active phase', desc: 'Implement the highlighted phase and confirm its completion requirements.' },
+  { stage: 'Observe after publishing', desc: 'Allow the page and search systems time to absorb the completed changes.' },
+  { stage: 'Re-audit the page', desc: 'Verify the new evidence and decide whether the next phase should begin.' },
 ];
 
 export function WorkflowIntegrations() {
   return (
     <section className="pt-20 bg-[#F8F9FB]">
-      <div className="container mx-auto max-w-[1200px] px-8">
+      <div className="container mx-auto max-w-7xl px-8">
         
         {/* 标题部分 */}
         <div className="text-center mb-16">
@@ -26,7 +25,7 @@ export function WorkflowIntegrations() {
             viewport={{ once: true }}
             className="text-[42px] md:text-[54px] font-bold text-[#1A212B] tracking-tight leading-tight"
           >
-            Where <span className="text-[#A5D020]">Search Trust</span> fits in your workflow
+            Where <span className="text-[#A5D020]">SearchTrust</span> fits in your workflow
           </motion.h2>
         </div>
 
@@ -37,7 +36,7 @@ export function WorkflowIntegrations() {
           transition={{ duration: 0.8 }}
           className="rounded-[32px] border border-[#EBECEF] bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.04)] md:p-10"
         >
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-7">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
             {workflowStages.map((step, index) => (
               <div key={step.stage} className="relative">
                 {index < workflowStages.length - 1 && (
@@ -71,7 +70,7 @@ export function WorkflowIntegrations() {
 
         {/* 底部提示 */}
         {/* <p className="mt-10 text-center text-[14px] text-gray-400 font-medium">
-          → Search Trust provides the diagnostic "bridge" when traditional growth plateaus.
+          → SearchTrust provides the diagnostic "bridge" when traditional growth plateaus.
         </p> */}
       </div>
     </section>

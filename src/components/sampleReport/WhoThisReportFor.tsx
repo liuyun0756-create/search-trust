@@ -8,7 +8,7 @@ const audiences = [
   {
     icon: Users,
     role: 'SEO Agencies',
-    desc: 'Use it to explain page weakness clearly to clients.',
+    desc: 'Use the Full Audit to scope work and the Client PDF to support proposal approval.',
   },
   {
     icon: Search,
@@ -18,12 +18,12 @@ const audiences = [
   {
     icon: DollarSign,
     role: 'Affiliate Marketers',
-    desc: 'Use it to catch generic, templated, or weakly grounded pages before scaling.',
+    desc: 'Use it to sample priority local pages for generic, templated, or weakly grounded signals.',
   },
   {
     icon: Building2,
     role: 'Multi-location Businesses',
-    desc: 'Use it to evaluate whether a local page can stand as a credible local asset.',
+    desc: 'Use it to evaluate one priority location page before applying a remediation pattern more broadly.',
   },
 ];
 

@@ -19,15 +19,15 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "SearchTrust | Find Why Google Doesn't Trust Your Local Pages",
+    default: "SearchTrust | Evidence-Backed Local Page Trust Audit",
     template: "%s",
   },
   description:
-    "SearchTrust analyzes local pages and business entities to explain why Google may not trust them, using a trust diagnosis model for local SEO and SEO agencies.",
+    "SearchTrust gives agencies an evidence-backed L1-L8 trust audit, prioritized implementation roadmap, and client-ready report for one local page.",
   keywords: [
     "local SEO",
     "trust diagnosis",
-    "Google trust",
+    "local page trust",
     "local page audit",
     "SEO tool",
     "search trust",
@@ -39,9 +39,9 @@ export const metadata: Metadata = {
     canonical: siteUrl,
   },
   openGraph: {
-    title: "SearchTrust | Find Why Google Doesn't Trust Your Local Pages",
+    title: "SearchTrust | Evidence-Backed Local Page Trust Audit",
     description:
-      "SearchTrust analyzes local pages and business entities to explain why Google may not trust them, using a trust diagnosis model for local SEO and SEO agencies.",
+      "SearchTrust gives agencies an evidence-backed L1-L8 trust audit, prioritized implementation roadmap, and client-ready report for one local page.",
     url: siteUrl,
     siteName: "SearchTrust",
     type: "website",
@@ -56,9 +56,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "SearchTrust | Find Why Google Doesn't Trust Your Local Pages",
+    title: "SearchTrust | Evidence-Backed Local Page Trust Audit",
     description:
-      "SearchTrust analyzes local pages and business entities to explain why Google may not trust them, using a trust diagnosis model for local SEO and SEO agencies.",
+      "SearchTrust gives agencies an evidence-backed L1-L8 trust audit, prioritized implementation roadmap, and client-ready report for one local page.",
     images: [`${siteUrl}${ogImage}`],
   },
 };

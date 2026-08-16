@@ -105,32 +105,42 @@ export function AuditPreview() {
 
   const layerCards = [
     {
-      title: 'L0-Relevance',
+      title: 'L0 Foundation',
       status: 'Good',
       desc: 'The page has clear topic direction and service positioning.',
     },
     {
-      title: 'L1-Entity Clarity',
+      title: 'L0-A Entity Presence',
+      status: 'Fair',
+      desc: 'The page still needs stronger business identity signals.',
+    },
+    {
+      title: 'L0-B Entity Consistency',
+      status: 'Fair',
+      desc: 'Checked identity signals should be aligned across page and related surfaces.',
+    },
+    {
+      title: 'L1 Specificity',
       status: 'Fair',
       desc: 'Page content is too generic, lacking local context language.',
     },
     {
-      title: 'L2-Proof Signals',
+      title: 'L2 Real-World Connection',
       status: 'Fair',
       desc: 'The page has weak connection to geographic space.',
     },
     {
-      title: 'L3-Local Fit',
+      title: 'L3 Accountability',
       status: 'Weak',
       desc: 'The page focuses more on meeting search demand than taking real-world responsibility.',
     },
     {
-      title: 'L4-Strutural Trust',
+      title: 'L4 Page Unique Value',
       status: 'Good',
       desc: 'The page has some independent value.',
     },
     {
-      title: 'L5-Standalone Value',
+      title: 'L5 Algorithm Fit',
       status: 'Good',
       desc: 'The page performs well under current search algorithms.',
     },
@@ -140,7 +150,7 @@ export function AuditPreview() {
     { id: 'summary', label: 'Executive Summary', icon: <ShieldCheck size={16} /> },
     { id: 'level', label: 'Page Level', icon: <Target size={16} /> },
     { id: 'issues', label: 'Key Issues', icon: <AlertTriangle size={16} /> },
-    { id: 'layers', label: 'Six-Layer Model', icon: <Layers size={16} /> },
+    { id: 'layers', label: '8-Layer Trust Model', icon: <Layers size={16} /> },
     { id: 'fixes', label: 'Optimization Path', icon: <Wrench size={16} /> },
   ];
 
@@ -232,7 +242,7 @@ export function AuditPreview() {
               Current Blocking Layer: Entity Consistency Layer (L0-B)
             </h4>
             <p className="max-w-3xl">
-              This is the earliest trust break point for this page. Google can understand what you offer, but cannot consistently confirm that all signals refer to the same business entity.
+              This is the earliest trust break point for this page. The page explains what you offer, but checked identity signals are not yet consistent enough to support strong entity trust.
             </p>
 
             <SectionTitle>As a result:</SectionTitle>
@@ -246,7 +256,7 @@ export function AuditPreview() {
 
             <SectionTitle>Why this layer cannot be skipped:</SectionTitle>
             <p>
-              Before evaluating content quality or local relevance, Google must first confirm: "Is this one stable, real-world business entity?"
+              Before later content improvements can carry full weight, the page needs a stable, real-world business identity.
             </p>
 
             <SectionTitle>If entity consistency is unstable:</SectionTitle>
@@ -254,7 +264,7 @@ export function AuditPreview() {
               items={[
                 'Content improvements will not accumulate trust',
                 'Local signals remain fragmented',
-                'GBP and page signals cannot fully connect',
+                'Page and available business profile signals cannot be evaluated as fully aligned',
               ]}
             />
             <p className="mt-2">This makes all downstream optimization less effective.</p>
@@ -271,14 +281,14 @@ export function AuditPreview() {
             <p>Your business identity is currently expressed inconsistently across pages and signals.</p>
 
             <SectionTitle>This weakens the connection between:</SectionTitle>
-            <BulletList items={['This page', 'Your homepage / contact page', 'Your GBP listing']} />
+            <BulletList items={['This page', 'Your homepage / contact page', 'Available business profile signals']} />
 
             <SectionTitle>Execution focus:</SectionTitle>
             <BulletList
               items={[
                 'Standardize business name (exact format)',
                 'Align phone number, address, and service area',
-                'Ensure consistency across: Homepage, Contact page, About page, Footer, and GBP profile',
+                'Ensure consistency across: Homepage, Contact page, About page, Footer, and checked business profile details',
               ]}
             />
 
@@ -431,8 +441,8 @@ export function AuditPreview() {
             <SectionTitle>This means:</SectionTitle>
             <BulletList
               items={[
-                'Google cannot reliably connect this page to a single business entity',
-                'Local signals remain fragmented across pages and GBP',
+                'Checked signals do not yet clearly consolidate around a single business entity',
+                'Local signals remain fragmented across the page and available business profile data',
                 'Ranking performance will remain unstable',
               ]}
             />
@@ -550,7 +560,7 @@ export function AuditPreview() {
                 Current Blocking Layer: Entity Consistency Layer (L0-B)
               </h4>
               <p className="max-w-2xl text-[15px] leading-relaxed text-[#374151]">
-                Google can understand what you offer, but cannot consistently confirm who you are. As a result, trust signals cannot accumulate properly.
+                The page explains what you offer, but checked identity signals are not yet consistent enough to support strong entity trust.
               </p>
             </div>
 
@@ -605,7 +615,7 @@ export function AuditPreview() {
           >
             <div className="p-7 md:p-10">
               <p className="mb-8 text-[20px] font-medium leading-relaxed text-[#1A212B] md:text-[24px]">
-                Below is the full six-layer trust diagnosis used to interpret the current strength of the page.
+                Below is the full 8-layer trust diagnosis used to interpret the current strength of the page.
               </p>
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">

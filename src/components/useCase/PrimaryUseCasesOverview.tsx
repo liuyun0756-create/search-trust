@@ -7,8 +7,6 @@ import {
   ArrowRight,
   BarChart3,
   Bot,
-  MapPinCheckInside,
-  ShieldAlert,
   SearchX,
   CheckCircle2,
   AlertTriangle,
@@ -17,41 +15,41 @@ import {
 
 const tabs = [
   {
-    id: 'pre-publish',
-    icon: FileCheck,
-    label: 'Audit local pages before publishing',
-    shortLabel: 'Audit local pages\nbefore publishing',
+    id: 'multi-location',
+    icon: BarChart3,
+    label: 'Prepare a client audit and proposal',
+    shortLabel: 'Client audit\nand proposal',
     description:
-      'You\'re about to publish a city page, service-area page, or location landing page — but you don\'t know whether it looks like a credible local destination or just another scalable template.',
+      'Turn one priority local page into a defensible scope of work: diagnose the problem internally, then explain the priority and recommended work in a client-ready format.',
     currentPractice: [
-      'Manually review copy',
-      'Check keywords and meta data',
-      'Check whether city name / FAQ / map are present',
-      'Guess by experience whether it is "too templated"',
+      'Describe the page as "not local enough"',
+      'Send a flat issue list with no implementation order',
+      'Mix technical evidence and client-facing explanation',
+      'Scope work from judgement without a reusable audit structure',
     ],
     whyNotEnoughIntro:
-      'These checks can only verify whether the page was completed, but cannot explain:',
+      'Clients and account teams still need to understand:',
     whyNotEnough: [
-      'Whether the page represents a real entity',
-      'Whether it has real-world anchors',
-      'Whether it deserves to exist independently',
+      'What is confirmed rather than assumed',
+      'Which trust layer should be addressed first',
+      'What work is being approved and what comes later',
     ],
     howHelps: [
-      'Analyze the page\'s dominant failure layer',
-      'Determine whether the page is only location-labeled',
-      'Find gaps in specificity, real-world anchors, and standalone value',
-      'Give low-cost fix recommendations before launch',
+      'Use the Full Audit for evidence, layer diagnosis, and implementation detail',
+      'Turn confirmed findings into proposal-ready actions',
+      'Preview exactly what the client will see',
+      'Export a simplified Client PDF or the Full Audit PDF',
     ],
-    outputs: ['Trust status', 'Dominant layer', 'Risk list', 'Fix priorities'],
+    outputs: ['Full Agency Audit', 'Client Report Preview', 'Client PDF', 'Full Audit PDF'],
     benefits: [
-      'Reduce low-trust pages before launch',
-      'Lower late-stage rework',
-      'Raise the publishing quality threshold',
+      'More defensible proposal scope',
+      'Clearer client approval conversations',
+      'Less manual report rewriting',
     ],
   },
   {
     id: 'client-reporting',
-    icon: BarChart3,
+    icon: SearchX,
     label: 'Diagnose indexed-but-stuck pages',
     shortLabel: 'Diagnose indexed-\nbut-stuck pages',
     description:
@@ -66,15 +64,15 @@ const tabs = [
     whyNotEnoughIntro:
       'These actions do not answer:',
     whyNotEnough: [
-      'Does Google see this page as a real local entry point?',
+      'Does the page show enough evidence to act as a real local entry point?',
       'Where has the page lost trust?',
       'Is the page structurally unstable?',
     ],
     howHelps: [
-      'Detect the trust fracture layer',
-      'Explain how Google may interpret the page',
-      'Distinguish "not enough content" from "the structure is not trusted"',
-      'Give the repair action that should happen first',
+      'Identify the earliest affected L1-L8 layer',
+      'Show the evidence behind confirmed findings',
+      'Distinguish content volume from trust-structure problems',
+      'Give the implementation phase that should happen first',
     ],
     outputs: [],
     benefits: [
@@ -84,130 +82,110 @@ const tabs = [
     ],
   },
   {
-    id: 'ai-review',
-    icon: Bot,
-    label: 'Review AI-generated city pages at scale',
-    shortLabel: 'Review AI-generated\ncity pages at scale',
+    id: 'pre-publish',
+    icon: FileCheck,
+    label: 'Audit local pages before publishing',
+    shortLabel: 'Pre-publish\npage audit',
     description:
-      'You can now generate dozens or hundreds of city pages quickly — but speed does not tell you which pages look believable and which look like doorway-style expansion.',
+      'Review a publicly accessible local service, city, service-area, or location page before it becomes the template for a wider rollout.',
     currentPractice: [
-      'Only check grammar and duplication',
-      'Manually sample-review pages',
-      'Judge whether the page "reads okay"',
-      'Check keyword coverage',
+      'Check copy, keywords, metadata, FAQs, and maps',
+      'Confirm that required sections are present',
+      'Judge by experience whether the page feels too generic',
+      'Publish first and repair trust gaps later',
     ],
     whyNotEnoughIntro:
-      'These practices cannot structurally judge:',
+      'Completion checks do not show:',
     whyNotEnough: [
-      'Whether the page is overly templated',
-      'Whether city-replacement traces are too strong',
-      'Whether real-world anchors are missing',
-      'Whether the page lacks independent value',
+      'Which trust signals are actually missing',
+      'Whether the page is locally specific and independently useful',
+      'What should be fixed before the page becomes a template',
     ],
     howHelps: [
-      'Find programmatic risk signals',
-      'Identify generic local page patterns',
-      'Locate the most common trust gaps',
-      'Build a basic trust QA layer for scaled content',
+      'Assess the complete fixed L1-L8 model',
+      'Trace findings back to the checked source evidence',
+      'Turn confirmed gaps into executable actions',
+      'Set a clearer publishing quality gate',
     ],
     outputs: [],
     benefits: [
-      'Reduce batch page risk',
-      'Raise the floor for template production',
-      'Create a trust-review standard for content factories',
-    ],
-  },
-  {
-    id: 'multi-location',
-    icon: MapPinCheckInside,
-    label: 'Improve client reporting for agencies',
-    shortLabel: 'Improve client reporting\nfor agencies',
-    description:
-      'You know a local page is underperforming because it feels weak, templated, or unconvincing — but it is hard to explain that in a client-friendly way.',
-    currentPractice: [
-      'Say "the content is not local enough"',
-      'Say "we need stronger E-E-A-T"',
-      'Say "page quality is average"',
-      'Give many vague recommendations',
-    ],
-    whyNotEnoughIntro:
-      'Clients still ask:',
-    whyNotEnough: [
-      'Where exactly is the gap?',
-      'Why can other pages rank?',
-      'Which part should be fixed first?',
-    ],
-    howHelps: [
-      'Explain the issue with layer-based diagnosis',
-      'Provide a more structured and visual report',
-      'Help explain why this page looks like a template page',
-      'Give repair actions with clearer priority',
-    ],
-    outputs: [],
-    benefits: [
-      'Improve client communication quality',
-      'Strengthen agency professionalism',
-      'Reduce vague explanations like "the content is not enough"',
+      'Reduce late-stage rework',
+      'Catch weak pages before rollout',
+      'Create a repeatable page approval standard',
     ],
   },
   {
     id: 'doorway-risk',
-    icon: ShieldAlert,
-    label: 'Validate multi-location page quality',
-    shortLabel: 'Validate multi-location\npage quality',
+    icon: ListChecks,
+    label: 'Manage staged remediation and re-audit',
+    shortLabel: 'Staged remediation\nand re-audit',
     description:
-      'You know a local page is underperforming because it feels weak, templated, or unconvincing — but it is hard to explain that in a client-friendly way.',
+      'Move from a long list of findings to an ordered work plan with clear completion gates, observation guidance, and a reason to re-audit.',
     currentPractice: [
-      'Content similarity is high',
-      'Only the place name changes',
-      'Page value is not independent',
-      'Local binding is weak',
+      'Fix whichever item is easiest',
+      'Change several layers at once',
+      'Measure success immediately after publishing',
+      'Lose track of what was completed and what remains',
     ],
     whyNotEnoughIntro:
-      'When multiple location pages exist at the same time, common problems include:',
+      'Without a staged sequence:',
     whyNotEnough: [
-      'Content similarity is high',
-      'Only the place name changes',
-      'Page value is not independent',
-      'Local binding is weak',
+      'Later improvements can be applied before earlier trust layers are stable',
+      'Teams cannot tell whether a phase is complete',
+      'The next audit has no clean implementation baseline',
     ],
     howHelps: [
-      'Determine whether different location pages are truly differentiated',
-      'Find pages that are only renamed as local pages',
-      'Help establish quality standards for location pages',
+      'Highlight the active phase in the four-stage roadmap',
+      'Show completion requirements before advancing',
+      'Explain the observation period after implementation',
+      'Support a cleaner re-audit decision',
     ],
     outputs: [],
     benefits: [
-      'Improve location page consistency',
-      'Reduce batch location page risk',
-      'Help brands unify local page standards',
+      'More disciplined implementation',
+      'Clearer handoff between teams',
+      'A repeatable remediation cycle',
     ],
   },
   {
-    id: 'stuck-pages',
-    icon: SearchX,
-    label: 'Reduce doorway and programmatic page risk',
-    shortLabel: 'Reduce doorway\nprogrammatic risk',
+    id: 'ai-review',
+    icon: Bot,
+    label: 'Sample priority AI or multi-location pages',
+    shortLabel: 'Priority-page\nsampling',
     description:
-      'After page scale expands, many problems are no longer about whether the content is good, but whether the whole system looks like a set of low-value expansion pages.',
-    currentPractice: [],
-    whyNotEnoughIntro: '',
-    whyNotEnough: [],
+      'Use one-page audits to test high-value, underperforming, or representative pages before applying a pattern across a larger local content set.',
+    currentPractice: [
+      'Rely on grammar, duplication, and keyword checks',
+      'Assume one template performs the same in every location',
+      'Review too many pages without a priority sample',
+      'Scale before confirming local specificity and standalone value',
+    ],
+    whyNotEnoughIntro:
+      'Surface checks cannot confirm:',
+    whyNotEnough: [
+      'Whether the sample page is only location-labeled',
+      'Whether it has real-world anchors and accountable detail',
+      'Whether it deserves to exist as a separate local asset',
+    ],
     howHelps: [
-      'Detect templated traces',
-      'Analyze whether standalone value is insufficient',
-      'Find city-replacement structures',
-      'Help teams establish pre-publish red-line standards',
+      'Audit one representative or priority URL at a time',
+      'Expose reusable-template and weak-grounding signals',
+      'Turn the sample findings into a stronger page standard',
+      'Use re-audits to verify the revised pattern',
     ],
     outputs: [],
-    benefits: [],
+    benefits: [
+      'A more efficient sampling strategy',
+      'Lower rollout risk',
+      'A clearer standard for future pages',
+    ],
   },
 ];
 
 export function PrimaryUseCasesOverview() {
   const [activeTab, setActiveTab] = useState(0);
   const current = tabs[activeTab];
-  const hasAudienceModule = current.id === 'ai-review' || current.id === 'stuck-pages';
+  const hasAudienceModule = current.id === 'ai-review';
   const hasExpandedUseCase =
     'whyNotEnough' in current &&
     'benefits' in current &&
@@ -222,14 +200,7 @@ export function PrimaryUseCasesOverview() {
         title: 'Best for',
         items: ['Affiliate marketers', 'SEO agencies', 'Scaled content teams', 'Lead-gen operators'],
       }
-    : current.id === 'stuck-pages'
-      ? {
-          title: 'Best for',
-          items: ['affiliate teams', 'mass-page operators', 'agencies doing scale local SEO', 'internal growth teams'],
-        }
-      : null;
-  const audienceOnLeft = current.id === 'stuck-pages';
-  const hasRightColumn = hasWhyNotEnough || current.outputs.length > 0 || audienceOnLeft;
+    : null;
   const localizedWhyModules: Record<string, { title: string; intro: string; items: string[] }> = {
     'pre-publish': {
       title: 'Why this is not enough',
@@ -240,7 +211,7 @@ export function PrimaryUseCasesOverview() {
       title: 'Why this is not enough',
       intro: 'These actions do not answer:',
       items: [
-        'Does Google see this page as a real local entry point?',
+        'Does the checked evidence support this page as a real local entry point?',
         'Where did the page lose trust?',
         'Is the structure itself unstable?',
       ],
@@ -251,7 +222,7 @@ export function PrimaryUseCasesOverview() {
   const whyModuleIntro = localizedWhyModule?.intro || ('whyNotEnoughIntro' in current ? current.whyNotEnoughIntro : '');
   const whyModuleItems = localizedWhyModule?.items || whyNotEnough;
   const audienceCard = audienceModule ? (
-    <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
+    <div className="h-full rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
       <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
         {audienceModule.title}
       </h4>
@@ -278,24 +249,35 @@ export function PrimaryUseCasesOverview() {
            Primary Use Cases Overview
           </h2>
           <p className="text-[16px] md:text-[18px] text-[#6B7280] leading-[1.2]">
-             Six ways teams use SearchTrust
+             Five focused ways teams use SearchTrust
           </p>
         </div>
 
         {/* Tab buttons */}
-        <div className="grid grid-cols-1 gap-3 mb-12 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-3 mb-12 sm:grid-cols-2 lg:grid-cols-5">
           {tabs.map((tab, index) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(index)}
-              className={`flex h-[64px] w-full items-center justify-center gap-2 rounded-xl px-3 py-3 text-center text-[11px] font-bold transition-all ${
+              className={`grid h-[72px] w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-3 rounded-xl px-4 py-3 text-left text-[11px] font-bold transition-all ${
                 activeTab === index
                   ? 'bg-[#1A1F2B] text-white shadow-lg'
                   : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-gray-200'
               }`}
             >
-              <tab.icon size={16} className="shrink-0" />
-              <span className="whitespace-pre-line leading-tight">{tab.shortLabel}</span>
+              <span
+                className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                  activeTab === index
+                    ? 'bg-white/10 text-[#B7DC43]'
+                    : 'bg-white text-[#697386]'
+                }`}
+                aria-hidden="true"
+              >
+                <tab.icon size={16} strokeWidth={1.9} />
+              </span>
+              <span className="flex min-h-8 items-center whitespace-pre-line leading-[1.25]">
+                {tab.shortLabel}
+              </span>
             </button>
           ))}
         </div>
@@ -308,7 +290,13 @@ export function PrimaryUseCasesOverview() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="bg-[#F9FAFB] rounded-[32px] p-8 md:p-12"
+            className="rounded-[32px] border border-[#E9EEE2] bg-white p-8 shadow-[0_20px_60px_rgba(26,31,43,0.05)] md:p-12"
+            style={{
+              backgroundImage: "url('/images/abstract-lines.jpg')",
+              backgroundPosition: 'center top',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'cover',
+            }}
           >
             {/* Title and description */}
             <div className="mb-10">
@@ -322,25 +310,39 @@ export function PrimaryUseCasesOverview() {
 
             {hasExpandedUseCase ? (
               <>
-                <div className={`grid grid-cols-1 gap-7 ${hasRightColumn ? 'lg:grid-cols-2' : ''}`}>
-                  <div className="space-y-7">
-                    {hasCurrentPractice && (
-                      <div className="rounded-[22px] border border-gray-100 bg-white p-6">
-                        <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
-                          Current common practice
-                        </h4>
-                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                          {current.currentPractice.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                <div className="grid grid-cols-1 gap-7 lg:grid-cols-2 lg:auto-rows-fr">
+                  {hasCurrentPractice && (
+                    <div className="h-full rounded-[22px] border border-gray-100 bg-white p-6">
+                      <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                        Current common practice
+                      </h4>
+                      <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                        {current.currentPractice.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                    {audienceOnLeft && audienceCard}
+                  {hasWhyNotEnough && (
+                    <div className="h-full rounded-[22px] border border-gray-100 bg-white p-6">
+                      <h4 className="mb-3 text-[18px] font-bold text-[#1A1F2B]">
+                        {whyModuleTitle}
+                      </h4>
+                      {whyModuleIntro && (
+                        <p className="mb-3 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                          {whyModuleIntro}
+                        </p>
+                      )}
+                      <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                        {whyModuleItems.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                    {!audienceOnLeft && (
-                    <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
+                  <div className="h-full rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
                       <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
                         How SearchTrust helps
                       </h4>
@@ -349,59 +351,22 @@ export function PrimaryUseCasesOverview() {
                           <li key={item}>{item}</li>
                         ))}
                       </ul>
+                  </div>
+
+                  {current.outputs.length > 0 && (
+                    <div className="h-full rounded-[22px] border border-gray-100 bg-white p-6">
+                      <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
+                        Output
+                      </h4>
+                      <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
+                        {current.outputs.map((output) => (
+                          <li key={output}>{output}</li>
+                        ))}
+                      </ul>
                     </div>
-                    )}
-                  </div>
-
-                  {hasRightColumn && (
-                  <div className="space-y-7">
-                    {audienceOnLeft && (
-                      <div className="rounded-[22px] border border-[#A5D020]/25 bg-white p-6">
-                        <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
-                          How SearchTrust helps
-                        </h4>
-                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                          {current.howHelps.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {hasWhyNotEnough && (
-                      <div className="rounded-[22px] border border-gray-100 bg-white p-6">
-                        <h4 className="mb-3 text-[18px] font-bold text-[#1A1F2B]">
-                          {whyModuleTitle}
-                        </h4>
-                        {whyModuleIntro && (
-                          <p className="mb-3 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                            {whyModuleIntro}
-                          </p>
-                        )}
-                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                          {whyModuleItems.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {current.outputs.length > 0 && (
-                      <div className="rounded-[22px] border border-gray-100 bg-white p-6">
-                        <h4 className="mb-4 text-[18px] font-bold text-[#1A1F2B]">
-                          Output
-                        </h4>
-                        <ul className="list-disc space-y-2 pl-5 text-[16px] font-medium leading-relaxed text-[#1A1F2B]">
-                          {current.outputs.map((output) => (
-                            <li key={output}>{output}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {!audienceOnLeft && audienceCard}
-                  </div>
                   )}
+
+                  {audienceCard}
                 </div>
 
                 {hasBenefits && (

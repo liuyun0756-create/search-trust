@@ -4,36 +4,26 @@ import { useRef, useState } from "react";
 import { X, CreditCard, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics-client";
-import { getAuditEventProperties } from "@/lib/analytics-properties";
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
-  formData?: { url: string; gbpUrl: string; pageType: string } | null;
 }
 
-export function PaymentModal({ isOpen, onClose, formData }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
 
   const handlePay = async () => {
     setLoading(true);
-    track(
-      "checkout clicked",
-      getAuditEventProperties({
-        url: formData?.url,
-        pageType: formData?.pageType,
-        gbpUrl: formData?.gbpUrl,
-      })
-    );
+    track("checkout clicked", { source: "credit_purchase" });
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formData }),
+        body: JSON.stringify({}),
       });
 
       if (!res.ok) throw new Error("Checkout failed");
@@ -76,7 +66,9 @@ export function PaymentModal({ isOpen, onClose, formData }: PaymentModalProps) {
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#A5D020]/10 blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none" />
 
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close checkout"
               className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-100 text-gray-400 hover:text-[#1A212B] hover:shadow-sm transition-all z-20"
             >
               <X size={18} strokeWidth={2.5} />
@@ -89,15 +81,15 @@ export function PaymentModal({ isOpen, onClose, formData }: PaymentModalProps) {
               </div>
 
               <h2 className="text-[28px] font-bold text-[#1A212B] leading-[1.15] tracking-tighter mb-2">
-                Buy 1 <span className="text-[#A5D020]">Trust</span> Audit
+                Buy 1 <span className="text-[#A5D020]">Report</span> Credit
               </h2>
               <p className="text-[14px] text-[#6B7280] font-medium leading-relaxed mb-8">
-                One audit credit for a comprehensive trust diagnosis of your page.
+                Add one credit to your account. You can use it later to run one Trust Audit.
               </p>
 
               <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
                 <div className="flex items-center justify-between">
-                  <span className="text-[14px] font-medium text-gray-500">Trust Audit Credit x1</span>
+                  <span className="text-[14px] font-medium text-gray-500">Report Credit x1</span>
                   <span className="text-[18px] font-bold text-[#1A212B]">$19</span>
                 </div>
               </div>

@@ -1,34 +1,36 @@
 "use client";
 
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Lock, Download,
   Loader2, AlertTriangle,
-  Share2, Copy, FileText, Link2, CalendarDays, BadgeInfo,
-  ShieldCheck, BarChart3, TriangleAlert, ChevronDown, X as XIcon
+  Copy, FileText, Globe2, Link2, CalendarDays, BadgeInfo, CheckCircle2,
+  ChevronDown, Eye, X as XIcon,
+  RotateCcw
 } from 'lucide-react';
+import { isReportPdfExportable, normalizeReportToV21 } from '@/lib/report-v21';
+import type { PdfVariant } from '@/lib/report-v21';
 import type { Report } from '@/types/database';
 import { useAuditModal } from '@/components/common/AuditModalProvider';
+import { ReportV21Content, V21_SECTION_IDS, V21_TABS, type V21TabId } from './v21/ReportV21Content';
+import { V21ClientReportPreview } from './v21/V21ClientReportPreview';
+import { PdfInput } from './PdfInput';
+import { BackButton } from '@/components/common/BackControl';
 
-type TabId = 'Executive Summary' | 'Page Level' | 'Key Issues' | 'Six-Layer Model' | 'Optimization Path';
+type TabId = V21TabId;
 
-const TABS: TabId[] = ['Executive Summary', 'Page Level', 'Key Issues', 'Six-Layer Model', 'Optimization Path'];
+const TABS: TabId[] = V21_TABS;
 
-const SECTION_IDS: Record<TabId, string> = {
-  'Executive Summary': 'section-executive-summary',
-  'Page Level': 'section-page-level',
-  'Key Issues': 'section-key-issues',
-  'Six-Layer Model': 'section-six-layer-model',
-  'Optimization Path': 'section-optimization-path',
-};
+const SECTION_IDS: Record<TabId, string> = V21_SECTION_IDS;
 
 interface ReportContentProps {
   report: Report;
   isPaid?: boolean;
   isLoading?: boolean;
   isHeaderLoading?: boolean;
+  titleLevel?: "h1" | "h2";
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -67,28 +69,129 @@ const HeaderSkeleton = () => (
   </section>
 );
 
-const FailedState = ({ onRetry }: { onRetry: () => void }) => (
+function safeStringList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => String(item).trim()).filter(Boolean)
+    : [];
+}
+
+function formatGeneratedAt(value: string | null | undefined): { date: string; time: string } {
+  if (!value) return { date: '', time: '' };
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { date: value, time: '' };
+  return {
+    date: new Intl.DateTimeFormat('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(date),
+    time: new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'UTC',
+      timeZoneName: 'short',
+    }).format(date),
+  };
+}
+
+const FailedState = ({
+  report,
+  onRetry,
+  onBack,
+}: {
+  report: Report;
+  onRetry: () => void;
+  onBack: () => void;
+}) => {
+  const errorCode = report.error_code || report.failure_reason || 'REPORT_GENERATION_FAILED';
+  const userMessage = report.user_message || report.error_message || (
+    errorCode === 'V21_OUTPUT_INVALID'
+      ? 'The analysis finished, but the structured v2.1 report output was incomplete. No report has been generated from unsupported data.'
+      : 'The backend stream closed before returning usable report data. No report has been generated from unsupported data.'
+  );
+  const validationErrors = safeStringList(report.validation_errors);
+  const warnings = safeStringList(report.warnings);
+
+  return (
   <div className="bg-white rounded-[24px] border border-red-100 shadow-sm p-10 md:p-12 mb-8">
-    <div className="max-w-2xl">
-      <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-5">
-        <AlertTriangle className="w-6 h-6" />
+    <div className="max-w-3xl">
+      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[24px] bg-red-50 text-red-500 ring-8 ring-red-50/40">
+        <AlertTriangle className="h-8 w-8" />
       </div>
-      <h2 className="text-[24px] font-bold tracking-tighter text-[#1A212B] mb-3">
-        Report generation stopped
-      </h2>
-      <p className="text-[14px] text-[#6B7280] font-medium leading-relaxed mb-6">
-        The backend stream closed before returning report data, so this report could not be completed. Your audit credit has not been deducted.
+      <p className="mb-3 text-[12px] font-black uppercase tracking-[0.16em] text-red-500">
+        Structured output incomplete
       </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="bg-[#1D2531] text-white px-6 py-3 rounded-xl font-bold text-[14px] hover:bg-black transition-all"
-      >
-        Run a New Audit
-      </button>
+      <h2 className="mb-3 text-[28px] font-black tracking-tighter text-[#1A212B]">
+        Report generation needs another try
+      </h2>
+      <p className="mb-7 max-w-2xl text-[15px] font-medium leading-7 text-[#5C6675]">
+        {userMessage}
+      </p>
+
+      <div className="mb-7 rounded-2xl border border-[#E8EEF5] bg-[#F8FAFC] p-5">
+        <p className="text-[14px] font-bold text-[#1A212B]">What happened?</p>
+        <p className="mt-2 text-[13px] font-medium leading-6 text-[#657083]">
+          SearchTrust v2.1 now requires a native structured report from the analysis workflow before showing an evidence-backed report. This prevents the UI from filling missing diagnostic fields with unsupported fallback content.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1D2531] px-6 py-3 text-[14px] font-bold text-white transition-all hover:bg-black"
+        >
+          <RotateCcw className="h-4 w-4" />
+          Retry analysis
+        </button>
+        <BackButton
+          onClick={onBack}
+        >
+          Back
+        </BackButton>
+      </div>
+
+      <details className="mt-8 rounded-2xl border border-gray-100 bg-white p-5">
+        <summary className="cursor-pointer text-[13px] font-black uppercase tracking-[0.12em] text-gray-400">
+          Analyst / debug details
+        </summary>
+        <div className="mt-4 space-y-4 text-[13px] font-medium leading-6 text-[#657083]">
+          <div>
+            <span className="font-black text-[#1A212B]">error_code:</span> {errorCode}
+          </div>
+          {report.task_id && (
+            <div>
+              <span className="font-black text-[#1A212B]">task_id:</span> {report.task_id}
+            </div>
+          )}
+          {validationErrors.length > 0 && (
+            <div>
+              <p className="mb-2 font-black text-[#1A212B]">validation summary</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {validationErrors.slice(0, 6).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {warnings.length > 0 && (
+            <div>
+              <p className="mb-2 font-black text-[#1A212B]">warnings</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {warnings.slice(0, 6).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </details>
     </div>
   </div>
-);
+  );
+};
 
 const UnlockOverlay = ({ title, description }: { title: string; description: string }) => {
   const router = useRouter();
@@ -131,6 +234,36 @@ function SectionSkeleton() {
         </div>
       ))}
     </div>
+  );
+}
+
+function PdfVariantOption({
+  selected,
+  title,
+  badge,
+  description,
+  onClick,
+}: {
+  selected: boolean;
+  title: string;
+  badge?: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onClick}
+      className={`w-full rounded-lg border px-4 py-4 text-left transition-colors ${selected ? 'border-[#93B917] bg-white shadow-sm' : 'border-gray-200 bg-white/70 hover:border-gray-300'}`}
+    >
+      <span className="flex items-center justify-between gap-3">
+        <span className="text-[15px] font-black text-[#1A212B]">{title}</span>
+        {badge && <span className="rounded-full bg-[#EAF5C9] px-2.5 py-1 text-[9px] font-black uppercase text-[#5D7217]">{badge}</span>}
+      </span>
+      <span className="mt-2 block text-[12px] font-medium leading-relaxed text-gray-500">{description}</span>
+    </button>
   );
 }
 
@@ -314,15 +447,16 @@ function Module3KeyProblems({ data }: { data: Record<string, any> }) {
 function Module4EightLayers({ data }: { data: Record<string, any> }) {
   const layers: any[] = data.layers || [];
   const visibleLayers = layers
-    .map((layer, index) => ({ ...layer, originalIndex: index }))
-    .filter((layer) => layer.originalIndex !== 1 && layer.originalIndex !== 2);
+    .map((layer, index) => ({ ...layer, originalIndex: index }));
   const layerTitles: Record<number, string> = {
-    0: 'L0-Relevance',
-    3: 'L1-Entity Clarity',
-    4: 'L2-Proof Signals',
-    5: 'L3-Local Fit',
-    6: 'L4-Strutural Trust',
-    7: 'L5-Standalone Value',
+    0: 'L1 Foundation',
+    1: 'L2 Entity Presence',
+    2: 'L3 Entity Consistency',
+    3: 'L4 Specificity',
+    4: 'L5 Real-World Connection',
+    5: 'L6 Accountability',
+    6: 'L7 Page Unique Value',
+    7: 'L8 Algorithm Fit',
   };
 
   const statusTagClass: Record<string, string> = {
@@ -336,7 +470,7 @@ function Module4EightLayers({ data }: { data: Record<string, any> }) {
   return (
     <section>
       <section className="text-[16px]  text-[#1A212B] mb-2 pb-2">
-        <span className="text-[16px] ">Below is the full six-layer trust diagnosis used to interpret the current strength of the page.</span>
+        <span className="text-[16px] ">Below is the full 8-layer trust diagnosis used to interpret the current strength of the page.</span>
       </section>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {visibleLayers.map((layer: any) => (
@@ -637,11 +771,12 @@ function Module5Optimization({ data }: { data: Record<string, any> }) {
 // ============================================================
 function renderModule(tab: TabId, data: Record<string, any>) {
   switch (tab) {
-    case 'Executive Summary': return <Module1Overview data={data} />;
+    case 'Overall Conclusion': return <Module1Overview data={data} />;
     case 'Page Level': return <Module2PageLevel data={data} />;
     case 'Key Issues': return <Module3KeyProblems data={data} />;
-    case 'Six-Layer Model': return <Module4EightLayers data={data} />;
-    case 'Optimization Path': return <Module5Optimization data={data} />;
+    case 'Trust Layer Breakdown': return <Module4EightLayers data={data} />;
+    case 'Implementation Roadmap': return <Module5Optimization data={data} />;
+    case 'Business Presence Audit': return <SectionSkeleton />;
   }
 }
 
@@ -703,17 +838,49 @@ export function ReportContent({
   isPaid = false,
   isLoading = false,
   isHeaderLoading = false,
+  titleLevel = "h1",
 }: ReportContentProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('Executive Summary');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<TabId>('Overall Conclusion');
   const [email, setEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'downloading'>('idle');
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfVariant, setPdfVariant] = useState<PdfVariant>('client');
+  const [clientPreviewOpen, setClientPreviewOpen] = useState(false);
+  const [agencyName, setAgencyName] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [footerNote, setFooterNote] = useState('');
+  const [agencyLogoData, setAgencyLogoData] = useState('');
+  const [agencyLogoName, setAgencyLogoName] = useState('');
+  const [agencyLogoSize, setAgencyLogoSize] = useState(0);
+  const [pdfBrandingError, setPdfBrandingError] = useState('');
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [copyToast, setCopyToast] = useState<{ message: string; success: boolean } | null>(null);
+  const copyToastTimer = useRef<number | null>(null);
   const isClickScrolling = useRef(false);
+  const clientPreviewScrollY = useRef(0);
+  const clientPreviewTriggerRef = useRef<HTMLButtonElement>(null);
+  const agencyLogoInputRef = useRef<HTMLInputElement>(null);
   const { openAuditForm } = useAuditModal();
   const isFailed = report.status === 'failed';
   const showFailed = isFailed && !isLoading;
-
+  const normalized = normalizeReportToV21(report);
+  const reportV21 = normalized.reportV21;
+  const normalizedIsRenderable = reportV21?.schema_version === "2.1" && normalized.source !== "fallback";
+  const canExportPdf = normalizedIsRenderable || isReportPdfExportable(report);
+  const canPreviewClientReport = normalizedIsRenderable && !showFailed;
+  useEffect(() => () => {
+    if (copyToastTimer.current) window.clearTimeout(copyToastTimer.current);
+  }, []);
+  useEffect(() => {
+    if (!clientPreviewOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [clientPreviewOpen]);
   // 滚动时自动高亮对应的 tab
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
@@ -737,12 +904,6 @@ export function ReportContent({
     return () => observers.forEach((o) => o.disconnect());
   }, []);
 
-  const isLocked = (tab: TabId) => {
-    return false
-    // if (isPaid) return false;
-    // return tab !== 'Executive Summary' && tab !== 'Page Level';
-  };
-
   const scrollToSection = (tab: TabId) => {
     setActiveTab(tab);
     isClickScrolling.current = true;
@@ -755,16 +916,10 @@ export function ReportContent({
     }, 800);
   };
 
-  const generatedAt = report.generated_at
-    || (report.created_at
-      ? new Date(report.created_at).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })
-      : '');
+  const generatedAt = formatGeneratedAt(report.generated_at || report.created_at);
   const displayReportId = report.external_report_id || report.report_id;
   const isSampleReport = displayReportId?.toLowerCase().includes('sample');
+  const ReportTitleTag = titleLevel;
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : report.page_url;
   const shareTitle = `SearchTrust ${isSampleReport ? 'Sample ' : ''}Report`;
@@ -787,18 +942,46 @@ export function ReportContent({
     setShareModalOpen(true);
   };
 
-  // 后端可能返回 JSON 字符串，也可能直接返回对象。
-  const parseScoreField = (raw: unknown) => {
-    if (!raw) return null;
-    if (typeof raw === 'object') return raw as { label?: string; value?: string; description?: string };
-    if (typeof raw !== 'string') return null;
-    try { return JSON.parse(raw); } catch { return null; }
+  const copyText = async (value: string, successMessage: string) => {
+    if (!value) return;
+    if (copyToastTimer.current) window.clearTimeout(copyToastTimer.current);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(value);
+      setCopyToast({ message: successMessage, success: true });
+    } catch {
+      setCopyToast({ message: 'Copy failed. Please try again.', success: false });
+    }
+    copyToastTimer.current = window.setTimeout(() => setCopyToast(null), 2000);
   };
 
-  const trustStatus = parseScoreField(report.trust_status);
-  const rankingPotential = parseScoreField(report.ranking_potential);
-  const riskLevel = parseScoreField(report.risk_level);
-  const isGbpStatusLoading = report.status === 'pending' && typeof report.gbp_connected !== 'boolean';
+  const handleRetryAnalysis = () => {
+    openAuditForm({
+      url: report.page_url,
+      pageType: report.page_type || 'Service Page',
+      gbpUrl: report.gbp_url || '',
+    });
+  };
+
+  const handleBackToDashboard = () => {
+    router.push('/reports');
+  };
+
+  const isGbpStatusLoading =
+    report.status === 'pending' &&
+    isLoading &&
+    typeof report.gbp_connected !== 'boolean';
+  const normalizedGbpStatus = reportV21.gbp_status?.status || 'not_checked';
+  const gbpSourceLabel = reportV21.gbp_status?.source === 'user_provided'
+    ? 'Provided by user'
+    : reportV21.gbp_status?.source === 'system_discovered'
+      ? 'System discovered'
+      : reportV21.gbp_status?.source === 'not_available'
+        ? 'No source available'
+        : 'Source not recorded';
+  const gbpStatusDetail = normalizedGbpStatus === 'ambiguous'
+    ? reportV21.gbp_status?.reason || 'Multiple candidates need confirmation'
+    : gbpSourceLabel;
   const gbpStatus = isGbpStatusLoading
     ? {
         value: (
@@ -811,64 +994,40 @@ export function ReportContent({
         iconTone: 'text-gray-400',
         iconBg: 'bg-gray-50',
       }
-    : report.gbp_connected === true
+    : normalizedGbpStatus === 'checked'
       ? {
           value: 'Connected',
           tone: 'text-emerald-500',
           iconTone: 'text-emerald-500',
           iconBg: 'bg-emerald-50',
         }
-      : report.gbp_connected === false
+      : normalizedGbpStatus === 'not_found'
         ? {
-            value: 'Disconnected',
+            value: 'Not found',
             tone: 'text-red-500',
             iconTone: 'text-red-500',
             iconBg: 'bg-red-50',
           }
+        : normalizedGbpStatus === 'ambiguous'
+          ? {
+              value: 'Needs confirmation',
+              tone: 'text-amber-600',
+              iconTone: 'text-amber-600',
+              iconBg: 'bg-amber-50',
+            }
+        : normalizedGbpStatus === 'error'
+          ? {
+              value: 'Error',
+              tone: 'text-red-500',
+              iconTone: 'text-red-500',
+              iconBg: 'bg-red-50',
+            }
         : {
             value: 'Not checked',
             tone: 'text-gray-500',
             iconTone: 'text-gray-500',
             iconBg: 'bg-gray-50',
           };
-
-  const scoreCards = [
-    {
-      label: trustStatus?.label || 'Trust Status',
-      val: trustStatus?.value || '—',
-      desc: trustStatus?.description || '',
-      color: STATUS_COLORS[trustStatus?.value || ''] || '#3B82F6',
-      icon: ShieldCheck,
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-500',
-    },
-    {
-      label: rankingPotential?.label || 'Ranking Potential',
-      val: rankingPotential?.value || '—',
-      desc: rankingPotential?.description || '',
-      color: STATUS_COLORS[rankingPotential?.value || ''] || '#A5D020',
-      icon: BarChart3,
-      iconBg: 'bg-indigo-50',
-      iconColor: 'text-indigo-500',
-    },
-    {
-      label: riskLevel?.label || 'Risk Level',
-      val: riskLevel?.value || '—',
-      desc: riskLevel?.description || '',
-      color: STATUS_COLORS[riskLevel?.value || ''] || '#EF4444',
-      icon: TriangleAlert,
-      iconBg: 'bg-red-50',
-      iconColor: 'text-red-500',
-    },
-  ];
-
-  const moduleMap: Record<TabId, Record<string, any> | null> = {
-    'Executive Summary': report.module_1_overview,
-    'Page Level': report.module_2_page_level,
-    'Key Issues': report.module_3_key_problems,
-    'Six-Layer Model': report.module_4_eight_layers,
-    'Optimization Path': report.module_5_optimization,
-  };
 
   const handleSendEmail = async () => {
     if (!email || emailStatus === 'sending') return;
@@ -890,12 +1049,33 @@ export function ReportContent({
 
   const handleDownloadPDF = async () => {
     if (pdfStatus === 'downloading') return;
+    if (!canExportPdf) {
+      alert('Report is still generating');
+      return;
+    }
+    setPdfBrandingError('');
     setPdfStatus('downloading');
     try {
-      const res = await fetch(`/api/reports/${report.id}/pdf`);
+      const res = await fetch(`/api/reports/${report.id}/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pdf_variant: pdfVariant,
+          branding: {
+            agency_name: agencyName,
+            client_name: clientName,
+            agency_logo_data: agencyLogoData,
+            footer_note: footerNote,
+          },
+        }),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'PDF export failed');
+        const serverError = typeof err?.error === 'string' ? err.error : '';
+        const message = !serverError || serverError === 'Internal server error'
+          ? 'PDF export failed due to a server error. Please try again.'
+          : serverError;
+        throw new Error(message);
       }
 
       const blob = await res.blob();
@@ -903,21 +1083,209 @@ export function ReportContent({
       const reportId = report.external_report_id || report.report_id;
       const a = document.createElement('a');
       a.href = url;
-      a.download = `SearchTrust-${reportId}.pdf`;
+      a.download = `SearchTrust-${reportId}-${pdfVariant === 'client' ? 'Client' : 'Full-Audit'}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      setPdfModalOpen(false);
     } catch (error) {
       console.error('PDF export error:', error);
-      alert(error instanceof Error ? error.message : 'PDF export failed');
+      setPdfBrandingError(error instanceof Error ? error.message : 'PDF export failed');
     } finally {
       setPdfStatus('idle');
     }
   };
 
+  const openPdfExport = (variant: PdfVariant = 'client') => {
+    setPdfVariant(variant);
+    setPdfBrandingError('');
+    setPdfModalOpen(true);
+  };
+
+  const openClientPreview = () => {
+    if (!canPreviewClientReport) return;
+    clientPreviewScrollY.current = window.scrollY;
+    setClientPreviewOpen(true);
+  };
+
+  const restoreAuditPosition = useCallback((focusTrigger: boolean) => {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: clientPreviewScrollY.current, behavior: 'auto' });
+      if (focusTrigger) clientPreviewTriggerRef.current?.focus();
+    });
+  }, []);
+
+  const closeClientPreview = useCallback(() => {
+    setClientPreviewOpen(false);
+    restoreAuditPosition(true);
+  }, [restoreAuditPosition]);
+
+  const customizeClientPdf = useCallback(() => {
+    setClientPreviewOpen(false);
+    restoreAuditPosition(false);
+    setPdfVariant('client');
+    setPdfBrandingError('');
+    setPdfModalOpen(true);
+  }, [restoreAuditPosition]);
+
+  const handleLogoUpload = (file: File | undefined) => {
+    setPdfBrandingError('');
+    if (!file) return;
+    setAgencyLogoData('');
+    setAgencyLogoName('');
+    setAgencyLogoSize(0);
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      setPdfBrandingError('Use a PNG or JPEG logo.');
+      if (agencyLogoInputRef.current) agencyLogoInputRef.current.value = '';
+      return;
+    }
+    if (file.size > 1_000_000) {
+      setPdfBrandingError('Use a logo smaller than 1 MB for this PDF export.');
+      if (agencyLogoInputRef.current) agencyLogoInputRef.current.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAgencyLogoData(typeof reader.result === 'string' ? reader.result : '');
+      setAgencyLogoName(file.name);
+      setAgencyLogoSize(file.size);
+    };
+    reader.onerror = () => {
+      if (agencyLogoInputRef.current) agencyLogoInputRef.current.value = '';
+      setPdfBrandingError('The logo could not be read. Please choose another file.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearAgencyLogo = () => {
+    setAgencyLogoData('');
+    setAgencyLogoName('');
+    setAgencyLogoSize(0);
+    setPdfBrandingError('');
+    if (agencyLogoInputRef.current) agencyLogoInputRef.current.value = '';
+  };
+
   return (
     <main className="flex-1 min-w-0">
+      {copyToast && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-6 right-6 z-[70] flex max-w-[min(360px,calc(100vw-3rem))] items-center gap-2.5 rounded-xl border bg-white px-4 py-3 text-[13px] font-bold shadow-[0_18px_50px_rgba(15,23,42,0.18)] ${copyToast.success ? 'border-emerald-100 text-emerald-700' : 'border-red-100 text-red-600'}`}
+        >
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>{copyToast.message}</span>
+        </motion.div>
+      )}
+      {clientPreviewOpen && (
+        <V21ClientReportPreview
+          normalized={normalized}
+          rawReport={report}
+          onClose={closeClientPreview}
+          onCustomizeDownload={customizeClientPdf}
+        />
+      )}
+      {pdfModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#111827]/45 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+          <div className="flex max-h-[96vh] w-full max-w-4xl flex-col overflow-hidden rounded-t-[20px] border border-gray-100 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] sm:max-h-[90vh] sm:rounded-[20px]">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-5 sm:px-7">
+              <div>
+                <h2 className="text-[22px] font-black text-[#1A212B]">Export PDF</h2>
+                <p className="mt-1 text-[13px] font-medium leading-relaxed text-gray-500">Choose the audience, then add optional agency branding for this download.</p>
+              </div>
+              <button type="button" onClick={() => setPdfModalOpen(false)} className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#1A212B]" aria-label="Close PDF export"><XIcon className="h-5 w-5" /></button>
+            </div>
+            <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="border-b border-gray-100 bg-[#F8FAF5] px-5 py-6 lg:border-b-0 lg:border-r lg:px-7">
+                <p className="text-[11px] font-black uppercase text-gray-400">Report version</p>
+                <div className="mt-3 space-y-3" role="radiogroup" aria-label="PDF version">
+                  <PdfVariantOption
+                    selected={pdfVariant === 'client'}
+                    title="Client PDF"
+                    badge="Recommended"
+                    description="Client-ready conclusions, priorities and Business Presence work scope without raw evidence or internal detail."
+                    onClick={() => setPdfVariant('client')}
+                  />
+                  <PdfVariantOption
+                    selected={pdfVariant === 'full'}
+                    title="Full Audit PDF"
+                    description="Complete analyst report with evidence, implementation detail, source coverage and recent-review records."
+                    onClick={() => setPdfVariant('full')}
+                  />
+                </div>
+                <p className="mt-4 px-1 text-[11px] font-medium leading-relaxed text-gray-400">
+                  {pdfVariant === 'client'
+                    ? 'Best for sending with a proposal or presenting findings to a client.'
+                    : 'Best for internal delivery, QA and implementation planning.'}
+                </p>
+              </div>
+              <div className="px-5 py-6 sm:px-7">
+                <p className="text-[11px] font-black uppercase text-gray-400">Optional branding</p>
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                  <PdfInput label="Agency or consultant name" value={agencyName} placeholder="e.g. Northstar SEO" onChange={setAgencyName} />
+                  <PdfInput label="Client name" value={clientName} placeholder="e.g. Acme Plumbing" onChange={setClientName} />
+                </div>
+                <div className="mt-4">
+                  <span className="block text-[12px] font-black uppercase text-gray-500">Agency logo</span>
+                  <span id="agency-logo-help" className="mb-2 mt-1 block text-[11px] font-medium leading-relaxed text-gray-400">
+                    PNG or JPEG · Recommended 512 × 512 px · Maximum 1 MB
+                  </span>
+                  <input
+                    ref={agencyLogoInputRef}
+                    id="agency-logo-upload"
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    tabIndex={-1}
+                    onChange={(event) => handleLogoUpload(event.target.files?.[0])}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => agencyLogoInputRef.current?.click()}
+                      aria-controls="agency-logo-upload"
+                      aria-describedby="agency-logo-help"
+                      className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[#DCE9BE] bg-[#F3F8E8] px-3.5 py-2.5 text-[12px] font-bold text-[#506314] transition-colors hover:border-[#BFD477] hover:bg-[#EAF3D5]"
+                    >
+                      {agencyLogoName ? 'Replace file' : 'Choose file'}
+                    </button>
+                    {!agencyLogoName && <span className="text-[12px] font-medium text-gray-400">No file selected</span>}
+                  </div>
+                  {agencyLogoName && (
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-[#DCE9BE] bg-[#FBFDF5] px-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-[12px] font-bold text-[#1A212B]">{agencyLogoName}</p>
+                        <p className="mt-0.5 text-[11px] font-medium text-gray-400">{Math.max(1, Math.ceil(agencyLogoSize / 1024))} KB selected</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearAgencyLogo}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-[11px] font-bold text-gray-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Remove ${agencyLogoName}`}
+                      >
+                        <XIcon className="h-3.5 w-3.5" />
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <label className="mt-4 block"><span className="mb-2 block text-[12px] font-black uppercase text-gray-500">Footer note</span><textarea value={footerNote} onChange={(event) => setFooterNote(event.target.value)} maxLength={240} rows={3} placeholder="Optional note for this client delivery" className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[14px] font-medium text-[#1A212B] outline-none focus:border-[#A5D020] focus:ring-4 focus:ring-[#A5D020]/10" /></label>
+                <p className="mt-3 text-[11px] font-medium leading-relaxed text-gray-400">Branding is used only for this download and is not saved to the report or database.</p>
+                {pdfBrandingError && <p className="mt-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[13px] font-bold text-red-600">{pdfBrandingError}</p>}
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-gray-100 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-7">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                <button type="button" onClick={() => setPdfModalOpen(false)} className="rounded-xl border border-gray-200 px-5 py-3 text-[14px] font-bold text-[#1A212B] hover:bg-gray-50">Cancel</button>
+                <button type="button" onClick={handleDownloadPDF} disabled={pdfStatus === 'downloading'} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#171B22] px-5 py-3 text-[14px] font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">{pdfStatus === 'downloading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{pdfStatus === 'downloading' ? 'Preparing...' : `Download ${pdfVariant === 'client' ? 'Client PDF' : 'Full Audit'}`}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {shareModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/45 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[24px] border border-gray-100 bg-white p-6 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
@@ -995,15 +1363,26 @@ export function ReportContent({
       ) : (
       <section className="mb-8 rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
         <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <h1 className="text-[30px] font-black leading-tight tracking-tight text-[#1A1F2B] md:text-[40px]">
+          <ReportTitleTag className="text-[30px] font-black leading-tight tracking-tight text-[#1A1F2B] md:text-[40px]">
             Trust Audit Report{isSampleReport ? ' (Sample)' : ''}
-          </h1>
+          </ReportTitleTag>
 
           {isPaid && (
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
-                onClick={handleDownloadPDF}
-                disabled={pdfStatus === 'downloading' || report.status === 'pending'}
+                ref={clientPreviewTriggerRef}
+                type="button"
+                onClick={openClientPreview}
+                disabled={!canPreviewClientReport}
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl border border-gray-200 bg-white px-5 py-3 text-[14px] font-bold text-[#1A212B] transition-all hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Eye className="h-4 w-4" />
+                Preview Client Report
+              </button>
+              <button
+                type="button"
+                onClick={() => openPdfExport('client')}
+                disabled={pdfStatus === 'downloading' || !canExportPdf}
                 className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#171B22] px-6 py-3 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_14px_28px_rgba(15,23,42,0.16)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {pdfStatus === 'downloading' ? (
@@ -1013,40 +1392,23 @@ export function ReportContent({
                 )}
                 {pdfStatus === 'downloading' ? 'Preparing...' : 'Export PDF'}
               </button>
-              <button
-                type="button"
-                onClick={handleShareReport}
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl border border-[#1A1F2B]/60 bg-white px-6 py-3 text-[14px] font-bold text-[#1A1F2B] transition-all hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-[#F7F9F2]"
-              >
-                <Share2 className="h-4 w-4" />
-                Share
-              </button>
             </div>
           )}
         </div>
 
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#A5D020] bg-[#FBFFF1] px-4 py-3 text-[14px] font-medium text-[#6B7280]">
-          <a
-            href={report.page_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="min-w-0 flex-1 truncate hover:text-[#1A1F2B]"
-            title={report.page_url}
-          >
-            {report.page_url}
-          </a>
-          <button
-            type="button"
-            onClick={() => navigator.clipboard?.writeText(report.page_url)}
-            className="shrink-0 rounded-lg p-1.5 text-[#657083] transition-colors hover:bg-white hover:text-[#1A1F2B]"
-            aria-label="Copy report URL"
-          >
-            <Copy className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="grid overflow-hidden rounded-2xl border border-gray-200 bg-white md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-5 py-1 lg:grid-flow-col lg:grid-cols-2 lg:grid-rows-3">
           {[
+            {
+              icon: Globe2,
+              label: 'Page URL',
+              value: report.page_url,
+              href: report.page_url,
+              copyValue: report.page_url,
+              copyMessage: 'Report URL copied.',
+              copyLabel: 'Copy report URL',
+              tone: 'text-[#1A1F2B]',
+              valueClassName: '[overflow-wrap:anywhere]',
+            },
             {
               icon: FileText,
               label: 'Page Type',
@@ -1057,6 +1419,7 @@ export function ReportContent({
               icon: Link2,
               label: 'GBP URL Status',
               value: gbpStatus.value,
+              detail: gbpStatusDetail,
               tone: gbpStatus.tone,
               iconTone: gbpStatus.iconTone,
               iconBg: gbpStatus.iconBg,
@@ -1064,28 +1427,72 @@ export function ReportContent({
             {
               icon: CalendarDays,
               label: 'Generated',
-              value: generatedAt || '—',
+              value: generatedAt.date || '—',
+              detail: generatedAt.time,
               tone: 'text-[#1A1F2B]',
             },
             {
               icon: BadgeInfo,
               label: 'Report ID',
-              value: displayReportId,
+              value: displayReportId || '—',
+              copyValue: displayReportId,
+              copyMessage: 'Report ID copied.',
+              copyLabel: 'Copy report ID',
               tone: 'text-[#1A1F2B]',
+              valueClassName: '[overflow-wrap:anywhere]',
             },
-          ].map((item, index) => (
+          ].map((item) => (
             <div
               key={item.label}
-              className={`flex items-center gap-4 px-5 py-5 ${
-                index > 0 ? 'border-t border-gray-200 md:border-l md:border-t-0' : ''
-              }`}
+              className="flex min-w-0 items-start gap-3 lg:items-center"
             >
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
-                <item.icon className="h-5 w-5" />
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${item.iconBg || 'bg-blue-50'} ${item.iconTone || item.tone}`}>
+                <item.icon className="h-[18px] w-[18px]" />
               </div>
-              <div className="min-w-0">
-                <p className="mb-1.5 text-[12px] font-bold text-[#8A96A8]">{item.label}</p>
-                <p className={`truncate text-[12px] font-bold ${item.tone}`}>{item.value}</p>
+              <div className="min-w-0 flex-1 lg:grid lg:grid-cols-[5.75rem_minmax(0,1fr)_1.75rem] lg:items-center lg:gap-3">
+                <p className="mb-1 text-[11px] font-black uppercase tracking-[0.1em] text-[#8A96A8] lg:mb-0">
+                  {item.label}
+                </p>
+                <div className="min-w-0">
+                  {'href' in item && item.href ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`block min-w-0 text-[13px] font-bold leading-relaxed transition-colors hover:text-[#6F8F12] ${item.tone} ${
+                        'valueClassName' in item ? item.valueClassName : ''
+                      }`}
+                      title={item.href}
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    <p
+                      className={`min-w-0 text-[13px] font-bold leading-relaxed ${item.tone} ${
+                        'valueClassName' in item ? item.valueClassName : ''
+                      }`}
+                      title={typeof item.value === 'string' ? item.value : undefined}
+                    >
+                      {item.value}
+                    </p>
+                  )}
+                  {'detail' in item && item.detail && (
+                    <p className="mt-0.5 text-[11px] font-medium leading-relaxed text-[#8A96A8]">{item.detail}</p>
+                  )}
+                </div>
+                {'copyValue' in item && item.copyValue ? (
+                  <button
+                    type="button"
+                    onClick={() => copyText(item.copyValue, item.copyMessage)}
+                    className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#1A1F2B] lg:mt-0"
+                    aria-label={item.copyLabel}
+                    title={item.copyLabel}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                ) : (
+                  <span className="hidden h-7 w-7 lg:block" aria-hidden="true" />
+                )}
               </div>
             </div>
           ))}
@@ -1093,56 +1500,28 @@ export function ReportContent({
       </section>
       )}
 
-      {showFailed && <FailedState onRetry={openAuditForm} />}
-
-      {/* Score Cards */}
-      {!showFailed && <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {scoreCards.map((card, i) => {
-          const Icon = card.icon;
-
-          return (
-            <div key={i} className="relative min-h-[235px] rounded-[22px] border border-gray-200 bg-white p-6 shadow-sm">
-              {isLoading ? <LoadingState /> : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex h-full flex-col">
-                  <div className="mb-5 flex items-center gap-3">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${card.iconBg} ${card.iconColor}`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <p className="text-[17px] font-bold leading-tight tracking-tight text-[#1A1F2B]">{card.label}</p>
-                      <BadgeInfo className="h-4 w-4 shrink-0 text-[#9AA6B8]" />
-                    </div>
-                  </div>
-
-                  <h4 className="mb-5 text-[32px] font-black leading-none tracking-tight" style={{ color: card.color }}>
-                    {card.val}
-                  </h4>
-
-                  {card.desc && (
-                    <p className="text-[15px] font-medium leading-7 text-[#465264]">
-                      {card.desc}
-                    </p>
-                  )}
-                </motion.div>
-              )}
-            </div>
-          );
-        })}
-      </div>}
+      {showFailed && (
+        <FailedState
+          report={report}
+          onRetry={handleRetryAnalysis}
+          onBack={handleBackToDashboard}
+        />
+      )}
 
       {/* Sticky Tab Bar */}
       {!showFailed && <div className="sticky top-[72px] z-20 bg-white rounded-[24px] border border-gray-100 shadow-sm mb-8">
-        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2 rounded-[24px] bg-[#F8F9FA] p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => scrollToSection(tab)}
-              className={`relative rounded-xl px-4 py-3.5 text-[14px] font-bold whitespace-nowrap transition-all ${
-                activeTab === tab
-                  ? 'bg-[#1A1F2B] text-white shadow-sm'
-                  : 'bg-white text-gray-400 hover:bg-white hover:text-[#1A1F2B]'
-              }`}
-            >
+      <button
+        key={tab}
+        type="button"
+        onClick={() => scrollToSection(tab)}
+        className={`relative min-h-[64px] rounded-lg px-3 py-3 text-[12px] font-bold leading-tight transition ${
+          activeTab === tab
+            ? 'bg-[#1A1F2B] text-white shadow-lg'
+            : 'bg-[#F3F4F6] text-gray-500 hover:bg-gray-200'
+        }`}
+      >
               {tab}
             </button>
           ))}
@@ -1150,17 +1529,14 @@ export function ReportContent({
       </div>}
 
       {/* All Sections */}
-      {!showFailed && <div className="space-y-8">
-        {TABS.map((tab) => (
-          <ModuleSection
-            key={tab}
-            tab={tab}
-            data={moduleMap[tab]}
-            isLocked={isLocked(tab)}
-            isLoading={isLoading}
-          />
-        ))}
-      </div>}
+      {!showFailed && (
+        <ReportV21Content
+          normalized={normalized}
+          rawReport={report}
+          isLoading={isLoading}
+          viewMode="analyst"
+        />
+      )}
     </main>
   );
 }
