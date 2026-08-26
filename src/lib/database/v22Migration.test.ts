@@ -1,0 +1,483 @@
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { PGlite } from "@electric-sql/pglite";
+import { readFile, readdir } from "node:fs/promises";
+import path from "node:path";
+
+type IdRow = { id: string };
+
+const migrationDirectory = path.resolve(process.cwd(), "supabase/migrations");
+const checksum = `sha256:${"a".repeat(64)}`;
+
+let db: PGlite;
+let userA: string;
+let userB: string;
+let caseA: string;
+let caseB: string;
+let connectionA: string;
+let bindingA: string;
+let siteSnapshotA: string;
+let gbpSnapshotA: string;
+let prospectReportA: string;
+let verifiedReportA: string;
+let legacyReport: string;
+
+async function insertId(sql: string, params: unknown[] = []): Promise<string> {
+  const result = await db.query<IdRow>(sql, params);
+  return result.rows[0].id;
+}
+
+async function expectSqlError(sql: string, params: unknown[] = [], message?: string) {
+  await expect(db.query(sql, params)).rejects.toThrow(message);
+}
+
+async function insertUser(suffix: string) {
+  return insertId(
+    `insert into public.users (clerk_user_id, email)
+     values ($1, $2) returning id`,
+    [`clerk_${suffix}`, `${suffix}@example.com`],
+  );
+}
+
+async function insertCase(userId: string, suffix: string) {
+  return insertId(
+    `insert into public.client_cases (
+       user_id, site_url, normalized_domain, business_name,
+       business_identity, operating_model, primary_service, target_market
+     ) values ($1, $2, $3, $4, '{}'::jsonb, 'storefront', 'SEO', '{}'::jsonb)
+     returning id`,
+    [userId, `https://${suffix}.example.com`, `${suffix}.example.com`, `Business ${suffix}`],
+  );
+}
+
+async function insertConnection(userId: string, suffix: string) {
+  return insertId(
+    `insert into public.google_connections (
+       user_id, google_subject, granted_scopes,
+       access_token_ciphertext, access_token_iv, access_token_auth_tag,
+       refresh_token_ciphertext, refresh_token_iv, refresh_token_auth_tag,
+       encryption_key_version, token_expires_at
+     ) values (
+       $1, $2, array['scope:a'],
+       decode('01', 'hex'), decode('02', 'hex'), decode('03', 'hex'),
+       decode('04', 'hex'), decode('05', 'hex'), decode('06', 'hex'),
+       'key-v1', now() + interval '1 hour'
+     ) returning id`,
+    [userId, `subject-${suffix}`],
+  );
+}
+
+describe.sequential("SearchTrust v2.2 Supabase migration", () => {
+  beforeAll(async () => {
+    db = new PGlite();
+    await db.exec("create role anon; create role authenticated; create role service_role bypassrls;");
+
+    for (const filename of (await readdir(migrationDirectory)).sort()) {
+      if (filename === "20260826000000_add_v2_2_case_data_model.sql") {
+        const legacyUser = await insertUser("legacy");
+        legacyReport = await insertId(
+          `insert into public.reports (
+             report_id, user_id, page_url, gbp_url, access_type, report_v2_1
+           ) values (
+             'legacy-v21', $1, 'https://legacy.example.com', '', 'free_trial', '{"legacy":true}'::jsonb
+           ) returning id`,
+          [legacyUser],
+        );
+      }
+      const migration = await readFile(path.join(migrationDirectory, filename), "utf8");
+      await db.exec(migration);
+    }
+  }, 30_000);
+
+  afterAll(async () => {
+    await db.close();
+  });
+
+  it("creates the five server-only v2.2 tables with RLS enabled", async () => {
+    const tables = await db.query<{ relname: string; relrowsecurity: boolean }>(
+      `select relname, relrowsecurity
+       from pg_class
+       where relnamespace = 'public'::regnamespace
+         and relname = any(array[
+           'client_cases', 'google_connections', 'case_source_bindings',
+           'data_snapshots', 'analysis_jobs'
+         ])
+       order by relname`,
+    );
+
+    expect(tables.rows).toHaveLength(5);
+    expect(tables.rows.every((row) => row.relrowsecurity)).toBe(true);
+
+    const browserGrants = await db.query<{ count: number }>(
+      `select count(*)::int as count
+       from information_schema.table_privileges
+       where table_schema = 'public'
+         and table_name = any(array[
+           'client_cases', 'google_connections', 'case_source_bindings',
+           'data_snapshots', 'analysis_jobs'
+         ])
+         and grantee in ('anon', 'authenticated')`,
+    );
+    expect(browserGrants.rows[0].count).toBe(0);
+  });
+
+  it("preserves existing v2.1 reports while adding nullable v2.2 fields", async () => {
+    const legacy = await db.query<{
+      report_v2_1: { legacy: boolean };
+      report_v2_2: null;
+      case_id: null;
+    }>(
+      `select report_v2_1, report_v2_2, case_id
+       from public.reports where id = $1`,
+      [legacyReport],
+    );
+    expect(legacy.rows[0]).toEqual({
+      report_v2_1: { legacy: true },
+      report_v2_2: null,
+      case_id: null,
+    });
+  });
+
+  it("accepts a valid case graph and rejects cross-user bindings", async () => {
+    userA = await insertUser("owner-a");
+    userB = await insertUser("owner-b");
+    caseA = await insertCase(userA, "alpha");
+    caseB = await insertCase(userB, "beta");
+    connectionA = await insertConnection(userA, "alpha");
+
+    bindingA = await insertId(
+      `insert into public.case_source_bindings (
+         case_id, connection_id, source_type, external_resource_id, external_resource_name,
+         identity_match_status, health_status, confirmed_by_user_id, confirmed_at
+       ) values ($1, $2, 'gbp', 'locations/alpha', 'Alpha', 'matched', 'healthy', $3, now())
+       returning id`,
+      [caseA, connectionA, userA],
+    );
+
+    await expectSqlError(
+      `insert into public.case_source_bindings (
+         case_id, connection_id, source_type, external_resource_id, external_resource_name,
+         identity_match_status, health_status
+       ) values ($1, $2, 'gbp', 'locations/wrong', 'Wrong', 'matched', 'healthy')`,
+      [caseB, connectionA],
+      "binding connection must belong to the case owner",
+    );
+
+    await expectSqlError(
+      `update public.client_cases set status = 'archived' where id = $1`,
+      [caseA],
+    );
+    await db.query(
+      `update public.client_cases set status = 'archived', archived_at = now() where id = $1`,
+      [caseA],
+    );
+    await db.query(
+      `update public.client_cases set status = 'active', archived_at = null where id = $1`,
+      [caseA],
+    );
+  });
+
+  it("enforces connection token groups and active uniqueness", async () => {
+    await expectSqlError(
+      `insert into public.google_connections (
+         user_id, google_subject, access_token_ciphertext
+       ) values ($1, 'partial-token', decode('01', 'hex'))`,
+      [userA],
+    );
+
+    await expectSqlError(
+      `insert into public.google_connections (
+         user_id, google_subject,
+         access_token_ciphertext, access_token_iv, access_token_auth_tag,
+         encryption_key_version
+       ) values (
+         $1, 'subject-alpha', decode('01', 'hex'), decode('02', 'hex'), decode('03', 'hex'), 'key-v1'
+       )`,
+      [userA],
+    );
+
+    await expectSqlError(
+      `insert into public.case_source_bindings (
+         case_id, connection_id, source_type, external_resource_id, external_resource_name,
+         identity_match_status, health_status
+       ) values ($1, $2, 'gbp', 'locations/duplicate', 'Duplicate', 'matched', 'healthy')`,
+      [caseA, connectionA],
+    );
+  });
+
+  it("enforces snapshot ownership, lineage, retention, and immutability", async () => {
+    siteSnapshotA = await insertId(
+      `insert into public.data_snapshots (
+         case_id, source_type, schema_version, sync_trigger, health_status,
+         normalized_payload, raw_payload, payload_checksum
+       ) values ($1, 'site', '1.0', 'report_generation', 'healthy', '{}'::jsonb, '{}'::jsonb, $2)
+       returning id`,
+      [caseA, checksum],
+    );
+
+    gbpSnapshotA = await insertId(
+      `insert into public.data_snapshots (
+         case_id, binding_id, source_type, schema_version, sync_trigger, health_status,
+         normalized_payload, raw_payload, payload_checksum, retention_policy, expires_at
+       ) values (
+         $1, $2, 'gbp', '1.0', 'user_sync', 'healthy', '{}'::jsonb, '{"private":"raw"}'::jsonb,
+         $3, 'gbp_content_30d', now() + interval '30 days'
+       ) returning id`,
+      [caseA, bindingA, checksum],
+    );
+
+    await expectSqlError(
+      `insert into public.data_snapshots (
+         case_id, binding_id, source_type, schema_version, sync_trigger, health_status,
+         normalized_payload, payload_checksum
+       ) values ($1, $2, 'gbp', '1.0', 'retry', 'healthy', '{}'::jsonb, $3)`,
+      [caseB, bindingA, checksum],
+      "snapshot binding must match snapshot case and source",
+    );
+
+    await expectSqlError(
+      `insert into public.data_snapshots (
+         case_id, source_type, schema_version, sync_trigger, health_status,
+         normalized_payload, payload_checksum, supersedes_snapshot_id
+       ) values ($1, 'site', '1.0', 'retry', 'healthy', '{}'::jsonb, $2, $3)`,
+      [caseB, checksum, siteSnapshotA],
+      "superseded snapshot must match snapshot case and source",
+    );
+
+    await expectSqlError(
+      `insert into public.data_snapshots (
+         case_id, binding_id, source_type, schema_version, sync_trigger, health_status,
+         normalized_payload, raw_payload, payload_checksum, retention_policy, expires_at
+       ) values (
+         $1, $2, 'gbp', '1.0', 'retry', 'healthy', '{}'::jsonb, '{}'::jsonb,
+         $3, 'gbp_content_30d', now() + interval '31 days'
+       )`,
+      [caseA, bindingA, checksum],
+    );
+
+    await expectSqlError(
+      `update public.data_snapshots set normalized_payload = '{"changed":true}'::jsonb where id = $1`,
+      [siteSnapshotA],
+      "data snapshots are immutable",
+    );
+
+    await db.query(
+      `update public.data_snapshots
+       set raw_payload = null, raw_content_deleted_at = now()
+       where id = $1`,
+      [gbpSnapshotA],
+    );
+    await expectSqlError(
+      `update public.data_snapshots set raw_payload = '{}'::jsonb where id = $1`,
+      [gbpSnapshotA],
+      "only one-way GBP raw content cleanup is allowed",
+    );
+  });
+
+  it("enforces report ownership, snapshots, version lineage, and immutability", async () => {
+    prospectReportA = await insertId(
+      `insert into public.reports (
+         report_id, user_id, page_url, gbp_url, access_type,
+         case_id, report_type, schema_version, version_number,
+         report_v2_2, snapshot_ids, coverage_state, version_diff, generation_config,
+         ruleset_version, copy_model_version
+       ) values (
+         'v22-prospect-a', $1, 'https://alpha.example.com', '', 'free_trial',
+         $2, 'prospect', '2.2', 1,
+         '{}'::jsonb, array[$3::uuid], '{}'::jsonb, '{}'::jsonb, '{}'::jsonb,
+         'rules-v1', 'copy-v1'
+       ) returning id`,
+      [userA, caseA, siteSnapshotA],
+    );
+
+    verifiedReportA = await insertId(
+      `insert into public.reports (
+         report_id, user_id, page_url, gbp_url, access_type,
+         case_id, report_type, schema_version, version_number, parent_report_id,
+         report_v2_2, snapshot_ids, coverage_state, version_diff, generation_config,
+         ruleset_version, copy_model_version
+       ) values (
+         'v22-verified-a', $1, 'https://alpha.example.com', '', 'paid_credit',
+         $2, 'verified_execution', '2.2', 2, $3,
+         '{}'::jsonb, array[$4::uuid], '{}'::jsonb, '{}'::jsonb, '{}'::jsonb,
+         'rules-v1', 'copy-v1'
+       ) returning id`,
+      [userA, caseA, prospectReportA, gbpSnapshotA],
+    );
+
+    await expectSqlError(
+      `insert into public.reports (
+         report_id, user_id, page_url, gbp_url, access_type,
+         case_id, report_type, schema_version, version_number,
+         report_v2_2, snapshot_ids, coverage_state, version_diff, generation_config,
+         ruleset_version, copy_model_version
+       ) values (
+         'v22-cross-user', $1, 'https://beta.example.com', '', 'free_trial',
+         $2, 'prospect', '2.2', 1,
+         '{}'::jsonb, array[$3::uuid], '{}'::jsonb, '{}'::jsonb, '{}'::jsonb,
+         'rules-v1', 'copy-v1'
+       )`,
+      [userB, caseA, siteSnapshotA],
+      "report case must belong to the report user",
+    );
+
+    await expectSqlError(
+      `insert into public.reports (
+         report_id, user_id, page_url, gbp_url, access_type,
+         case_id, report_type, schema_version, version_number,
+         report_v2_2, snapshot_ids, coverage_state, version_diff, generation_config,
+         ruleset_version, copy_model_version
+       ) values (
+         'v22-duplicate-snapshots', $1, 'https://alpha.example.com', '', 'free_trial',
+         $2, 'prospect', '2.2', 3,
+         '{}'::jsonb, array[$3::uuid, $3::uuid], '{}'::jsonb, '{}'::jsonb, '{}'::jsonb,
+         'rules-v1', 'copy-v1'
+       )`,
+      [userA, caseA, siteSnapshotA],
+      "snapshot_ids must not contain duplicates or nulls",
+    );
+
+    await expectSqlError(
+      `update public.reports set report_v2_2 = '{"changed":true}'::jsonb where id = $1`,
+      [prospectReportA],
+      "completed v2.2 report payloads are immutable",
+    );
+    await db.query(`update public.reports set status = 'paid_full' where id = $1`, [prospectReportA]);
+
+    const pendingReport = await insertId(
+      `insert into public.reports (
+         report_id, user_id, page_url, gbp_url, access_type,
+         case_id, report_type, schema_version, version_number
+       ) values (
+         'v22-pending-a', $1, 'https://alpha.example.com', '', 'free_trial',
+         $2, 'prospect', '2.2', 3
+       ) returning id`,
+      [userA, caseA],
+    );
+    await db.query(
+      `update public.reports set
+         report_v2_2 = '{}'::jsonb,
+         snapshot_ids = array[$2::uuid],
+         coverage_state = '{}'::jsonb,
+         version_diff = '{}'::jsonb,
+         generation_config = '{}'::jsonb,
+         ruleset_version = 'rules-v1',
+         copy_model_version = 'copy-v1'
+       where id = $1`,
+      [pendingReport, siteSnapshotA],
+    );
+    await expectSqlError(
+      `update public.reports set ruleset_version = 'rules-v2' where id = $1`,
+      [pendingReport],
+      "completed v2.2 report payloads are immutable",
+    );
+
+    await db.query(
+      `update public.client_cases set latest_report_id = $2 where id = $1`,
+      [caseA, verifiedReportA],
+    );
+    await expectSqlError(
+      `update public.client_cases set latest_report_id = $2 where id = $1`,
+      [caseB, verifiedReportA],
+      "latest_report_id must reference a report owned by the same case and user",
+    );
+
+    await expectSqlError(
+      `delete from public.reports where id = $1`,
+      [prospectReportA],
+    );
+  });
+
+  it("enforces job idempotency and performs the designed deletion cascades", async () => {
+    await insertId(
+      `insert into public.analysis_jobs (
+         case_id, report_id, job_type, status, current_stage, progress,
+         idempotency_key, completed_at
+       ) values ($1, $2, 'verified_report', 'succeeded', 'complete', 100, 'job-a', now())
+       returning id`,
+      [caseA, verifiedReportA],
+    );
+
+    await expectSqlError(
+      `insert into public.analysis_jobs (
+         case_id, report_id, job_type, current_stage, idempotency_key
+       ) values ($1, $2, 'verified_report', 'queued', 'job-cross')`,
+      [caseB, verifiedReportA],
+      "analysis job report must belong to the same case",
+    );
+    await expectSqlError(
+      `insert into public.analysis_jobs (
+         case_id, job_type, current_stage, idempotency_key
+       ) values ($1, 'source_sync', 'queued', 'job-a')`,
+      [caseA],
+    );
+
+    await expectSqlError(
+      `insert into public.analysis_jobs (
+         case_id, job_type, status, current_stage, progress, idempotency_key, completed_at
+       ) values ($1, 'source_sync', 'succeeded', 'complete', 99, 'bad-success', now())`,
+      [caseA],
+    );
+    await expectSqlError(
+      `insert into public.analysis_jobs (
+         case_id, job_type, status, current_stage, idempotency_key, completed_at
+       ) values ($1, 'source_sync', 'failed', 'complete', 'bad-failure', now())`,
+      [caseA],
+    );
+
+    await db.query(`delete from public.client_cases where id = $1`, [caseA]);
+    const remainingGraph = await db.query<{ count: number }>(
+      `select (
+         (select count(*) from public.reports where case_id = $1) +
+         (select count(*) from public.data_snapshots where case_id = $1) +
+         (select count(*) from public.case_source_bindings where case_id = $1) +
+         (select count(*) from public.analysis_jobs where case_id = $1)
+       )::int as count`,
+      [caseA],
+    );
+    expect(remainingGraph.rows[0].count).toBe(0);
+    const preservedConnection = await db.query<{ count: number }>(
+      `select count(*)::int as count from public.google_connections where id = $1`,
+      [connectionA],
+    );
+    expect(preservedConnection.rows[0].count).toBe(1);
+
+    const userC = await insertUser("owner-c");
+    const caseC = await insertCase(userC, "gamma");
+    const connectionC = await insertConnection(userC, "gamma");
+    await db.query(
+      `insert into public.case_source_bindings (
+         case_id, connection_id, source_type, external_resource_id, external_resource_name,
+         identity_match_status, health_status
+       ) values ($1, $2, 'gsc', 'sites/gamma', 'Gamma', 'matched', 'healthy')`,
+      [caseC, connectionC],
+    );
+
+    await db.query(`delete from public.users where id = $1`, [userC]);
+    const userGraph = await db.query<{ count: number }>(
+      `select (
+         (select count(*) from public.client_cases where user_id = $1) +
+         (select count(*) from public.google_connections where user_id = $1)
+       )::int as count`,
+      [userC],
+    );
+    expect(userGraph.rows[0].count).toBe(0);
+  });
+
+  it("requires terminal Google connections to clear all token material", async () => {
+    await expectSqlError(
+      `update public.google_connections set status = 'revoked', revoked_at = now() where id = $1`,
+      [connectionA],
+      "terminal Google connections must not retain token material",
+    );
+
+    await db.query(
+      `update public.google_connections set
+         status = 'revoked', revoked_at = now(),
+         access_token_ciphertext = null, access_token_iv = null, access_token_auth_tag = null,
+         refresh_token_ciphertext = null, refresh_token_iv = null, refresh_token_auth_tag = null,
+         encryption_key_version = null, token_expires_at = null
+       where id = $1`,
+      [connectionA],
+    );
+  });
+});

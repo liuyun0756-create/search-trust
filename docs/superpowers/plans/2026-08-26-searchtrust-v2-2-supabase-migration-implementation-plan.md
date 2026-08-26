@@ -1,6 +1,6 @@
 # SearchTrust v2.2 Supabase Migration 实施计划
 
-状态：实施中
+状态：已完成
 
 日期：2026-08-26
 
@@ -67,3 +67,16 @@
 6. 提交实现并把本计划状态更新为已完成。
 
 完成后进入 V22-011 Case API。
+
+## 7. 实施结果
+
+完成日期：2026-08-26
+
+- 已初始化不含远程 project ref、密钥和 seed 的本地 Supabase 配置。
+- 已新增一份原子、前向兼容 migration；空库按全部历史 migration 顺序执行成功。
+- 已实现五张 v2.2 表、reports 扩展、命名约束、索引、RLS、service role 权限和全部跨行触发器。
+- 已增加 Supabase pgTAP schema 契约，以及基于嵌入式 PostgreSQL 17 的正向/负向数据库集成测试。
+- 已证明 v2.1 历史报告在 migration 前后保持原正文且新增字段为空。
+- 已同步 TypeScript Row 类型，`report_v2_2` 直接引用生成合同类型。
+- `npm test`：20 项通过；`npm run typecheck`、`npm run contracts:check`、`npm run build` 均通过。
+- 当前机器未安装 Docker，因此 `supabase db reset / db lint / test db` 无法启动本地 Supabase stack；同一组 migration 已由嵌入式 PostgreSQL 实际执行，原生 pgTAP 文件已提交供 Docker 环境或 CI 复跑。
