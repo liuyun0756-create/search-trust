@@ -13,12 +13,19 @@
     "dev": "next dev --webpack -H localhost",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:contract": "vitest run src/lib/report-v22/contract.test.ts",
+    "contracts:generate": "json2ts --input src/lib/report-v22/contracts/report_v2_2.schema.json --output src/lib/report-v22/generated/types.ts --no-additionalProperties --unknownAny --unreachableDefinitions --maxItems 5",
+    "contracts:check": "npm run contracts:generate && git diff --exit-code -- src/lib/report-v22/contracts src/lib/report-v22/generated/types.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.4.0",
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/supabase-js": "^2.105.3",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "framer-motion": "^12.38.0",
     "html2pdf.js": "^0.14.0",
     "next": "^16.2.4",
@@ -38,9 +45,11 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4",
+    "json-schema-to-typescript": "^15.0.4",
     "lucide-react": "^1.11.0",
     "postcss": "^8.5.12",
     "tailwindcss": "^4.2.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
   }
 }
