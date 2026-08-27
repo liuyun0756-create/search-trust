@@ -1,6 +1,6 @@
 # SearchTrust v2.2 Case API 实施计划
 
-状态：实施中
+状态：已完成
 
 日期：2026-08-27
 
@@ -75,3 +75,16 @@
 本机无 Docker 时，继续使用 PGlite 执行真实 PostgreSQL migration 和行为测试；原生 Supabase pgTAP 保留给 Docker 环境或 CI。
 
 完成后进入 V22-012 持久任务。
+
+## 7. 实施结果
+
+完成日期：2026-08-27
+
+- 已新增 Case Location Key、数据库唯一索引、完整 identity 一致性约束和网站身份不可变触发器。
+- 已实现严格 AJV 请求合同、URL/Location 规范化和安全错误格式。
+- 已实现 user-scoped Supabase repository 与创建、列表、详情、更新、归档、幂等归档和恢复 service。
+- 已实现 `/api/v2/cases` 与 `/api/v2/cases/[id]` 五个 Route Handler。
+- 已覆盖未授权、跨用户、正常 CRUD、重复 active/archived Location、同域不同 Location、数据库 `23505` 竞态和历史 migration 兼容。
+- `npm test`：6 个文件、47 项通过；`npm run typecheck`、`npm run contracts:check`、`npm run build` 均通过。
+- 本机未安装 Docker，因此 Supabase 原生 reset/lint/pgTAP 仍留给 Docker 环境或 CI；PGlite PostgreSQL migration/行为测试 9 项通过。
+- 项目现有 ESLint flat config 在 ESLint 启动阶段触发循环结构错误；本阶段未修改全局 lint 配置，使用 TypeScript、Vitest 和 Next.js production build 完成代码验证。

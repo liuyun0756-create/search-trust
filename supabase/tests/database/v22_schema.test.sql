@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(26);
+select plan(31);
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');
@@ -13,6 +13,7 @@ select has_table('public', 'analysis_jobs', 'v2.2 analysis_jobs exists');
 select has_column('public', 'reports', 'case_id', 'reports has a Case owner');
 select has_column('public', 'reports', 'report_v2_2', 'reports has the v2.2 contract payload');
 select has_column('public', 'reports', 'snapshot_ids', 'reports records immutable input snapshots');
+select has_column('public', 'client_cases', 'location_key', 'Cases have a generated Location identity key');
 
 select has_pk('public', 'client_cases', 'client_cases has a primary key');
 select has_pk('public', 'google_connections', 'google_connections has a primary key');
@@ -65,6 +66,28 @@ select has_trigger(
 select has_trigger(
   'public', 'users', 'delete_user_v22_case_graphs',
   'user deletion removes Case graphs before connection cascades'
+);
+select has_trigger(
+  'public', 'client_cases', 'enforce_client_case_site_immutability',
+  'Case website identity has an immutability trigger'
+);
+
+select has_function(
+  'public', 'v22_case_location_key', array['jsonb'],
+  'Case Location identity function exists'
+);
+select has_index(
+  'public', 'client_cases', 'uq_client_cases_user_domain_location',
+  'Case user/domain/Location uniqueness is database-enforced'
+);
+select ok(
+  (
+    select attgenerated = 's'
+    from pg_attribute
+    where attrelid = 'public.client_cases'::regclass
+      and attname = 'location_key'
+  ),
+  'Case Location key is a stored generated column'
 );
 
 select ok(

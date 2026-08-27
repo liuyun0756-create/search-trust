@@ -26,6 +26,7 @@ export interface ClientCase {
   target_market: JsonObject;
   status: "active" | "archived";
   latest_report_id: string | null;
+  location_key: string | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;

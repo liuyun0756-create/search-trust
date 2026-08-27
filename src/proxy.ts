@@ -17,6 +17,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/report-status",
   "/api/report-meta",
   "/api/reports(.*)",
+  "/api/v2/cases(.*)",
   "/api/checkout(.*)",
   "/api/user/credits",
 ]);

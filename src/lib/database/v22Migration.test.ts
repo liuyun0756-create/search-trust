@@ -2,6 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import type { CaseLocation } from "../cases/contracts";
+import { caseLocationKey } from "../cases/normalize";
 
 type IdRow = { id: string };
 
@@ -63,6 +65,32 @@ async function insertConnection(userId: string, suffix: string) {
        'key-v1', now() + interval '1 hour'
      ) returning id`,
     [userId, `subject-${suffix}`],
+  );
+}
+
+async function insertCompleteCase(
+  userId: string,
+  domain: string,
+  suffix: string,
+  primaryLocation: CaseLocation,
+) {
+  const siteUrl = `https://${domain}/`;
+  const businessName = `Business ${suffix}`;
+  const businessIdentity = {
+    business_name: businessName,
+    site_url: siteUrl,
+    normalized_domain: domain,
+    operating_model: "storefront",
+    primary_location: primaryLocation,
+    public_gbp_url: null,
+  };
+  return insertId(
+    `insert into public.client_cases (
+       user_id, site_url, normalized_domain, business_name,
+       business_identity, operating_model, primary_service, target_market
+     ) values ($1, $2, $3, $4, $5::jsonb, 'storefront', 'SEO', $6::jsonb)
+     returning id`,
+    [userId, siteUrl, domain, businessName, JSON.stringify(businessIdentity), JSON.stringify(primaryLocation)],
   );
 }
 
@@ -135,6 +163,91 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       report_v2_2: null,
       case_id: null,
     });
+  });
+
+  it("enforces the Case API Location key, uniqueness, identity consistency, and site immutability", async () => {
+    const owner = await insertUser("case-api-owner");
+    const otherOwner = await insertUser("case-api-other");
+    const austin: CaseLocation = {
+      display_name: "Austin, TX",
+      country_code: "US",
+      region: "Texas",
+      city: "Austin",
+      postal_code: "78701",
+      latitude: 30.2672,
+      longitude: -97.7431,
+    };
+    const dallas: CaseLocation = {
+      display_name: "Dallas, TX",
+      country_code: "US",
+      region: "Texas",
+      city: "Dallas",
+      postal_code: null,
+      latitude: 32.7767,
+      longitude: -96.797,
+    };
+
+    const first = await insertCompleteCase(owner, "locations.example.com", "Austin", austin);
+    const generated = await db.query<{ location_key: string }>(
+      `select location_key from public.client_cases where id = $1`,
+      [first],
+    );
+    expect(generated.rows[0].location_key).toBe(caseLocationKey(austin));
+
+    await expectSqlError(
+      `insert into public.client_cases (
+         user_id, site_url, normalized_domain, business_name,
+         business_identity, operating_model, primary_service, target_market
+       ) select user_id, site_url, normalized_domain, business_name,
+         business_identity, operating_model, primary_service, target_market
+       from public.client_cases where id = $1`,
+      [first],
+    );
+
+    await db.query(
+      `update public.client_cases set status = 'archived', archived_at = now() where id = $1`,
+      [first],
+    );
+    await expectSqlError(
+      `insert into public.client_cases (
+         user_id, site_url, normalized_domain, business_name,
+         business_identity, operating_model, primary_service, target_market
+       ) select user_id, site_url, normalized_domain, business_name,
+         business_identity, operating_model, primary_service, target_market
+       from public.client_cases where id = $1`,
+      [first],
+    );
+
+    await expect(insertCompleteCase(owner, "locations.example.com", "Dallas", dallas)).resolves.toBeTruthy();
+    await expect(insertCompleteCase(otherOwner, "locations.example.com", "Austin other", austin))
+      .resolves.toBeTruthy();
+
+    await expectSqlError(
+      `update public.client_cases
+       set site_url = 'https://changed.example.com/', normalized_domain = 'changed.example.com'
+       where id = $1`,
+      [first],
+      "case site_url and normalized_domain are immutable",
+    );
+
+    const inconsistentIdentity = {
+      business_name: "Wrong nested name",
+      site_url: "https://identity.example.com/",
+      normalized_domain: "identity.example.com",
+      operating_model: "storefront",
+      primary_location: austin,
+      public_gbp_url: null,
+    };
+    await expectSqlError(
+      `insert into public.client_cases (
+         user_id, site_url, normalized_domain, business_name,
+         business_identity, operating_model, primary_service, target_market
+       ) values (
+         $1, 'https://identity.example.com/', 'identity.example.com', 'Correct top-level name',
+         $2::jsonb, 'storefront', 'SEO', $3::jsonb
+       )`,
+      [owner, JSON.stringify(inconsistentIdentity), JSON.stringify(austin)],
+    );
   });
 
   it("accepts a valid case graph and rejects cross-user bindings", async () => {
