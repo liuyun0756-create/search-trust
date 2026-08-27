@@ -500,6 +500,67 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     );
   });
 
+  it("applies job callback revisions atomically and never regresses a terminal state", async () => {
+    const jobId = await insertId(
+      `insert into public.analysis_jobs (
+         case_id, job_type, current_stage, idempotency_key
+       ) values ($1, 'prospect_report', 'queued', 'revision-job')
+       returning id`,
+      [caseA],
+    );
+
+    const running = await db.query<{
+      found: boolean; applied: boolean; terminal_effects_applied: boolean; state_revision: bigint;
+    }>(
+      `select * from public.apply_analysis_job_event(
+         $1, $2, 2, 'running', 'collecting_site', 10::smallint, 1,
+         null, 'Running', '{}'::jsonb, now(), null
+       )`,
+      [jobId, caseA],
+    );
+    expect(running.rows[0]).toMatchObject({ found: true, applied: true, terminal_effects_applied: false });
+
+    const stale = await db.query<{ applied: boolean; state_revision: bigint }>(
+      `select applied, state_revision from public.apply_analysis_job_event(
+         $1, $2, 1, 'queued', 'queued', 0::smallint, 0,
+         null, 'Queued', '{}'::jsonb, null, null
+       )`,
+      [jobId, caseA],
+    );
+    expect(stale.rows[0].applied).toBe(false);
+    expect(Number(stale.rows[0].state_revision)).toBe(2);
+
+    const succeeded = await db.query<{ applied: boolean; terminal_effects_applied: boolean }>(
+      `select applied, terminal_effects_applied from public.apply_analysis_job_event(
+         $1, $2, 3, 'succeeded', 'completed', 100::smallint, 1,
+         null, 'Complete', '{"provider_calls":2}'::jsonb, now(), now()
+       )`,
+      [jobId, caseA],
+    );
+    expect(succeeded.rows[0]).toEqual({ applied: true, terminal_effects_applied: true });
+
+    const downgrade = await db.query<{ applied: boolean; state_revision: bigint }>(
+      `select applied, state_revision from public.apply_analysis_job_event(
+         $1, $2, 4, 'running', 'evaluating', 80::smallint, 2,
+         null, 'Running again', '{}'::jsonb, now(), null
+       )`,
+      [jobId, caseA],
+    );
+    expect(downgrade.rows[0].applied).toBe(false);
+    expect(Number(downgrade.rows[0].state_revision)).toBe(3);
+
+    const persisted = await db.query<{
+      status: string; state_revision: bigint; terminal_effects_revision: bigint;
+    }>(
+      `select status, state_revision, terminal_effects_revision
+       from public.analysis_jobs where id = $1`,
+      [jobId],
+    );
+    expect(persisted.rows[0].status).toBe("succeeded");
+    expect(Number(persisted.rows[0].state_revision)).toBe(3);
+    expect(Number(persisted.rows[0].terminal_effects_revision)).toBe(3);
+  });
+
   it("enforces job idempotency and performs the designed deletion cascades", async () => {
     await insertId(
       `insert into public.analysis_jobs (

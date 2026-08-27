@@ -116,6 +116,8 @@ export interface AnalysisJob {
   started_at: string | null;
   heartbeat_at: string | null;
   completed_at: string | null;
+  state_revision: number;
+  terminal_effects_revision: number;
   created_at: string;
   updated_at: string;
 }

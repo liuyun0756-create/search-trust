@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(31);
+select plan(34);
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');
@@ -14,6 +14,11 @@ select has_column('public', 'reports', 'case_id', 'reports has a Case owner');
 select has_column('public', 'reports', 'report_v2_2', 'reports has the v2.2 contract payload');
 select has_column('public', 'reports', 'snapshot_ids', 'reports records immutable input snapshots');
 select has_column('public', 'client_cases', 'location_key', 'Cases have a generated Location identity key');
+select has_column('public', 'analysis_jobs', 'state_revision', 'analysis jobs track backend state revisions');
+select has_column(
+  'public', 'analysis_jobs', 'terminal_effects_revision',
+  'analysis jobs track the terminal revision claimed for side effects'
+);
 
 select has_pk('public', 'client_cases', 'client_cases has a primary key');
 select has_pk('public', 'google_connections', 'google_connections has a primary key');
@@ -75,6 +80,14 @@ select has_trigger(
 select has_function(
   'public', 'v22_case_location_key', array['jsonb'],
   'Case Location identity function exists'
+);
+select has_function(
+  'public', 'apply_analysis_job_event',
+  array[
+    'uuid', 'uuid', 'bigint', 'text', 'text', 'smallint', 'integer',
+    'text', 'text', 'jsonb', 'timestamp with time zone', 'timestamp with time zone'
+  ],
+  'analysis job callback function exists'
 );
 select has_index(
   'public', 'client_cases', 'uq_client_cases_user_domain_location',
