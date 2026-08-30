@@ -16,7 +16,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:contract": "vitest run src/lib/report-v22/contract.test.ts",
+    "test:contract": "vitest run src/lib/report-v22",
     "test:database": "vitest run src/lib/database/v22Migration.test.ts",
     "contracts:generate": "json2ts --input src/lib/report-v22/contracts/report_v2_2.schema.json --output src/lib/report-v22/generated/types.ts --no-additionalProperties --unknownAny --unreachableDefinitions --maxItems 5",
     "contracts:check": "npm run contracts:generate && git diff --exit-code -- src/lib/report-v22/contracts src/lib/report-v22/generated/types.ts"

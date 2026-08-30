@@ -3,6 +3,7 @@ import addFormats from "ajv-formats";
 
 import reportSchema from "./contracts/report_v2_2.schema.json";
 import type { SearchTrustReportV2_2 } from "./generated/types";
+import { casefold, competitorWebsiteKey, isBlankQuery, sameTargetMarket, stripString } from "./normalization";
 
 export type ReportV22ValidationErrorCode =
   | "REPORT_CONTRACT_INVALID"
@@ -61,6 +62,34 @@ function sameJson(left: unknown, right: unknown): boolean {
 
 function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationError[] {
   const errors: ReportV22ValidationError[] = [];
+  const queries = report.case_context.queries.map(stripString);
+  if (queries.some(isBlankQuery) || duplicates(queries.map(casefold)).length) {
+    errors.push(semanticError("/case_context/queries", "Queries must be nonblank and unique after case normalization."));
+  }
+
+  const checkCoverageDates = (
+    source: { coverage_start?: string | null; coverage_end?: string | null },
+    path: string,
+  ) => {
+    if (source.coverage_start && source.coverage_end && source.coverage_start > source.coverage_end) {
+      errors.push(semanticError(`${path}/coverage_start`, "Coverage start must not be after coverage end."));
+    }
+  };
+  report.evidence_index.forEach((evidence, index) => checkCoverageDates(evidence, `/evidence_index/${index}`));
+  for (const source of ["gsc", "gbp", "ga4"] as const) {
+    checkCoverageDates(report.first_party_performance[source], `/first_party_performance/${source}`);
+  }
+
+  const inventory = report.site_inventory_summary;
+  if (inventory.structurally_checked_count > inventory.discovered_url_count) {
+    errors.push(semanticError("/site_inventory_summary/structurally_checked_count", "Structurally checked count cannot exceed discovered count."));
+  }
+  if (inventory.deep_analyzed_count > inventory.structurally_checked_count) {
+    errors.push(semanticError("/site_inventory_summary/deep_analyzed_count", "Deep analyzed count cannot exceed structurally checked count."));
+  }
+  if (inventory.deep_analyzed_count !== (inventory.selected_pages ?? []).filter((page) => page.deep_analyzed).length) {
+    errors.push(semanticError("/site_inventory_summary/deep_analyzed_count", "Deep analyzed count must match selected page entries."));
+  }
   const evidenceIds = report.evidence_index.map((evidence) => evidence.evidence_id);
   const findingIds = report.findings.map((finding) => finding.finding_id);
   const actionIds = report.top_actions.map((action) => action.action_id);
@@ -123,6 +152,9 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
     }
   }
 
+  if (!sameJson(report.roadmap_30_60_90.phases.map((phase) => phase.period), ["days_1_30", "days_31_60", "days_61_90"])) {
+    errors.push(semanticError("/roadmap_30_60_90/phases", "Roadmap phases must be ordered 30, 60, then 90 days."));
+  }
   const roadmapActionIds = report.roadmap_30_60_90.phases.flatMap((phase) => phase.action_ids);
   if (!sameJson([...new Set(roadmapActionIds)].sort(), [...actionSet].sort())) {
     errors.push(semanticError("/roadmap_30_60_90", "Roadmap must reference every top action and no unknown actions."));
@@ -193,16 +225,19 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
     errors.push(semanticError("/data_coverage/full_evidence_coverage", "Full evidence coverage requires healthy, matched GSC, GBP, and GA4 sources."));
   }
 
-  if (!sameJson(report.market_snapshot.queries, report.case_context.queries)) {
+  if (!sameJson(report.market_snapshot.queries.map(stripString), queries)) {
     errors.push(semanticError("/market_snapshot/queries", "Market queries must match the case context."));
   }
-  if (!sameJson(report.market_snapshot.target_market, report.case_context.target_market)) {
+  if (!sameTargetMarket(report.market_snapshot.target_market, report.case_context.target_market)) {
     errors.push(semanticError("/market_snapshot/target_market", "Market target must match the case context."));
   }
 
   const competitorIds = report.competitor_analysis.competitors.map((competitor) => competitor.competitor_id);
-  const competitorDomains = report.competitor_analysis.competitors.map((competitor) => competitor.website_url.toLowerCase());
-  if (duplicates(competitorIds).length || duplicates(competitorDomains).length) {
+  const competitorWebsites = report.competitor_analysis.competitors.map((competitor) => competitorWebsiteKey(competitor.website_url));
+  if (competitorWebsites.some((website) => website === null)) {
+    errors.push(semanticError("/competitor_analysis/competitors", "Competitor websites must be valid HTTP or HTTPS URLs."));
+  }
+  if (duplicates(competitorIds).length || duplicates(competitorWebsites.filter((website): website is string => website !== null)).length) {
     errors.push(semanticError("/competitor_analysis/competitors", "Competitors must have unique IDs and websites."));
   }
 
