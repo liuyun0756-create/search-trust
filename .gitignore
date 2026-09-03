@@ -31,5 +31,8 @@ next-env.d.ts
 # local image backup (created during image optimization)
 /.image-backup/
 
+# local visual brainstorming sessions
+/.superpowers/
+
 # Supabase CLI local project-link cache
 /supabase/.temp/
