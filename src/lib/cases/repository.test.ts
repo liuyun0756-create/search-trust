@@ -88,6 +88,7 @@ describe("Supabase Case repository owner scoping", () => {
     const repository = new SupabaseCaseRepository(fake as unknown as SupabaseClient);
     const userId = record.user_id;
     const createInput: CreateCaseRecord = {
+      id: record.id,
       user_id: userId,
       site_url: record.site_url,
       normalized_domain: record.normalized_domain,
@@ -100,6 +101,7 @@ describe("Supabase Case repository owner scoping", () => {
 
     fake.enqueue({ data: record, error: null });
     await repository.create(createInput);
+    expect(fake.builders[0].calls).toContainEqual(["insert", createInput]);
     expect(fake.builders[0].calls).toContainEqual(["insert", createInput]);
 
     fake.enqueue({ data: record, error: null });

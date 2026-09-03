@@ -113,6 +113,7 @@ export function createCaseService(repository: CaseRepository): CaseService {
 
         try {
           const created = await repository.create({
+            ...(input.draft_case_id ? { id: input.draft_case_id } : {}),
             user_id: userId,
             site_url: input.site_url,
             normalized_domain: input.normalized_domain,

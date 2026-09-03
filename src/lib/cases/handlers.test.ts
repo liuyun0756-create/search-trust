@@ -10,6 +10,7 @@ const userId = "00000000-0000-4000-8000-000000000001";
 const caseId = "00000000-0000-4000-8000-000000000101";
 
 const createPayload = {
+  draft_case_id: caseId,
   site_url: "https://www.example.com/",
   business_name: "Example Dental",
   operating_model: "storefront",
@@ -106,6 +107,7 @@ describe("Case Route Handlers", () => {
     expect(created.status).toBe(201);
     expect(await created.json()).toEqual(resource);
     expect(create).toHaveBeenCalledWith(userId, expect.objectContaining({
+      draft_case_id: caseId,
       business_name: "Example Dental",
       normalized_domain: "example.com",
     }));

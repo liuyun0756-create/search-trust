@@ -9,6 +9,7 @@ export type CaseRecord = Omit<ClientCase, "business_identity" | "target_market">
 };
 
 export interface CreateCaseRecord {
+  id?: string;
   user_id: string;
   site_url: string;
   normalized_domain: string;

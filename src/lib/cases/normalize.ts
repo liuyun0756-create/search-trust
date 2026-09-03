@@ -15,6 +15,7 @@ import {
 import { CaseApiError } from "./errors";
 
 export interface NormalizedCreateCaseInput {
+  draft_case_id: string | null;
   site_url: string;
   normalized_domain: string;
   business_name: string;
@@ -52,6 +53,15 @@ function normalizedRequiredText(value: string, path: string): string {
 function normalizedNullableText(value: string | null | undefined): string | null {
   if (value == null) return null;
   return normalizeWhitespace(value) || null;
+}
+
+function normalizeDraftCaseId(value: string | undefined): string | null {
+  if (value === undefined) return null;
+  const normalized = value.toLowerCase();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(normalized)) {
+    throw CaseApiError.invalid([{ path: "/draft_case_id", message: "must be a UUID v4" }]);
+  }
+  return normalized;
 }
 
 function normalizeLocation(input: CaseLocationInput, path: string): CaseLocation {
@@ -216,6 +226,7 @@ export function parseCreateCaseInput(value: unknown): NormalizedCreateCaseInput 
   });
 
   return {
+    draft_case_id: normalizeDraftCaseId(request.draft_case_id),
     site_url: siteUrl,
     normalized_domain: normalizedDomain,
     business_name: businessName,

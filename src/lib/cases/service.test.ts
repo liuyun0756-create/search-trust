@@ -67,7 +67,7 @@ class InMemoryCaseRepository implements CaseRepository {
     }
     const record: CaseRecord = {
       ...input,
-      id: this.nextId(),
+      id: input.id ?? this.nextId(),
       status: "active",
       latest_report_id: null,
       location_key: locationKey,
@@ -168,6 +168,20 @@ async function expectApiError(operation: Promise<unknown>, code: string) {
 }
 
 describe("Case service", () => {
+  it("persists the authenticated Case with the anonymous draft ID", async () => {
+    const service = createCaseService(new InMemoryCaseRepository());
+    const draftCaseId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const input = parseCreateCaseInput({
+      ...createRequest("Austin", 30.2672, -97.7431),
+      draft_case_id: draftCaseId,
+    });
+
+    const created = await service.create(userA, input);
+
+    expect(created.id).toBe(draftCaseId);
+    expect(created).not.toHaveProperty("draft_case_id");
+  });
+
   it("runs the complete create, read, update, archive, idempotent archive, and restore lifecycle", async () => {
     const service = createCaseService(new InMemoryCaseRepository());
     const created = await service.create(userA, parseCreateCaseInput(createRequest("Austin", 30.2672, -97.7431)));

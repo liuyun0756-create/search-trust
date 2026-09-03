@@ -19,6 +19,7 @@ export interface CaseLocationInput {
 }
 
 export interface CreateCaseRequest {
+  draft_case_id?: string;
   site_url: string;
   business_name: string;
   operating_model: CaseOperatingModel;
@@ -94,6 +95,10 @@ const createCaseSchema = {
     "target_market",
   ],
   properties: {
+    draft_case_id: {
+      type: "string",
+      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+    },
     site_url: { type: "string", minLength: 1, maxLength: 2083 },
     business_name: { type: "string", minLength: 1, maxLength: 240 },
     operating_model: { enum: ["storefront", "service_area", "hybrid"] },

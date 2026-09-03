@@ -76,6 +76,27 @@ describe("Case request normalization", () => {
       primary_location: input.primary_location,
       public_gbp_url: "https://maps.google.com/?cid=123",
     });
+    expect(input.draft_case_id).toBeNull();
+  });
+
+  it("accepts and normalizes a v4 anonymous draft Case ID", () => {
+    const input = parseCreateCaseInput({
+      ...validCreateRequest,
+      draft_case_id: "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
+    });
+
+    expect(input.draft_case_id).toBe("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+  });
+
+  it.each([
+    "not-a-uuid",
+    "00000000-0000-1000-8000-000000000001",
+    "00000000-0000-4000-7000-000000000001",
+  ])("rejects invalid draft Case ID %s", (draftCaseId) => {
+    expectCaseError(() => parseCreateCaseInput({
+      ...validCreateRequest,
+      draft_case_id: draftCaseId,
+    }));
   });
 
   it("creates a stable place key when coordinates are absent", () => {
