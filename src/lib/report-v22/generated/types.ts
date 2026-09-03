@@ -33,10 +33,13 @@ export type Opportunity = string;
 export type RequiredClientAssets = string[];
 export type ComparisonSummary = string;
 /**
- * @minItems 3
+ * @minItems 1
  * @maxItems 3
  */
-export type Competitors = [CompetitorSummary, CompetitorSummary, CompetitorSummary];
+export type Competitors =
+  | [CompetitorSummary]
+  | [CompetitorSummary, CompetitorSummary]
+  | [CompetitorSummary, CompetitorSummary, CompetitorSummary];
 export type AnalyzedPageCount = number;
 export type BestPosition = number;
 export type BusinessName = string;
