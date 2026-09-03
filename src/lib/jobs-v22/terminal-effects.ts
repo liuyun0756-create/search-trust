@@ -1,10 +1,10 @@
 import type { JobCallbackEvent } from "./callback-contract";
 
 /**
- * V22-012 intentionally has no payment/report side effects. V22-041 will
- * extend the database transaction that claims a terminal revision.
+ * Case entitlement consumption/refunds are applied inside the same database
+ * transaction that claims a terminal revision. Non-database terminal effects
+ * can be added here without weakening that atomic boundary.
  */
 export async function runV22TerminalEffects(_event: JobCallbackEvent): Promise<void> {
   return undefined;
 }
-

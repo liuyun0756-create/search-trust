@@ -1,6 +1,12 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import {
+  CASE_PROSPECT_PURCHASE,
+  parseDodoPayment,
+  fulfillVerifiedCasePayment,
+  SupabaseCasePaymentRepository,
+} from "@/lib/payments-v22";
 import { Webhook } from "svix";
 
 function normalizeWebhookSecret(secret: string) {
@@ -62,39 +68,23 @@ async function upsertPaidOrder({
 }
 
 export async function POST(request: Request) {
-  console.log("[DodoWebhook] POST received");
-
   const body = await request.text();
-  console.log("[DodoWebhook] Body length:", body.length);
-  console.log("[DodoWebhook] Body preview:", body.substring(0, 300));
-
   const headerPayload = await headers();
-
-  // Log all headers for debugging
-  const allHeaders: Record<string, string> = {};
-  headerPayload.forEach((value, key) => {
-    allHeaders[key] = value;
-  });
-  console.log("[DodoWebhook] All headers:", JSON.stringify(allHeaders, null, 2));
 
   const webhookId = headerPayload.get("webhook-id");
   const signature = headerPayload.get("webhook-signature");
   const timestamp = headerPayload.get("webhook-timestamp");
 
-  console.log("[DodoWebhook] Signature found:", signature ? signature.substring(0, 30) + "..." : "MISSING");
-
   const WEBHOOK_SECRET = process.env.DODO_WEBHOOK_SECRET
     ? normalizeWebhookSecret(process.env.DODO_WEBHOOK_SECRET)
     : "";
-  console.log("[DodoWebhook] SECRET configured:", !!WEBHOOK_SECRET);
-
   if (!WEBHOOK_SECRET) {
     console.error("[DodoWebhook] Missing DODO_WEBHOOK_SECRET");
     return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
   }
 
   if (!signature || !webhookId || !timestamp) {
-    console.error("[DodoWebhook] Missing Svix headers:", { webhookId: !!webhookId, signature: !!signature, timestamp: !!timestamp });
+    console.error("[DodoWebhook] Missing signature headers");
     return NextResponse.json({ error: "Missing signature headers" }, { status: 400 });
   }
 
@@ -111,24 +101,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  console.log("[DodoWebhook] Signature verified OK");
-
   const eventType = event.type || event.event_type;
-  console.log("[DodoWebhook] Event type:", eventType);
+  const paymentData = event.data?.object ?? event.data;
 
   if (eventType === "payment.succeeded") {
-    console.log("[DodoWebhook] Payment data:", JSON.stringify(event.data, null, 2));
+    if (paymentData?.metadata?.purchase_kind === CASE_PROSPECT_PURCHASE) {
+      const payment = parseDodoPayment(paymentData);
+      if (!payment) return NextResponse.json({ error: "Invalid payment payload" }, { status: 400 });
+      try {
+        const supabase = createServerClient();
+        const result = await fulfillVerifiedCasePayment({
+          payment,
+          repository: new SupabaseCasePaymentRepository(supabase),
+        });
+        return NextResponse.json({
+          received: true,
+          already_processed: result.idempotent,
+        });
+      } catch (error) {
+        console.error("[DodoWebhook] Case payment fulfillment failed", {
+          error_type: error instanceof Error ? error.name : "UnknownError",
+        });
+        return NextResponse.json({ error: "Case payment fulfillment failed" }, { status: 500 });
+      }
+    }
 
-    const clerkUserId = event.data?.metadata?.clerk_user_id;
-    const paymentId = event.data?.payment_id || event.data?.id;
+    const clerkUserId = paymentData?.metadata?.clerk_user_id;
+    const paymentId = paymentData?.payment_id || paymentData?.id;
 
     if (!paymentId) {
-      console.error("[DodoWebhook] No payment_id in payment data", event.data);
+      console.error("[DodoWebhook] No payment_id in payment data");
       return NextResponse.json({ error: "Missing payment_id" }, { status: 400 });
     }
 
     if (!clerkUserId) {
-      console.error("[DodoWebhook] No clerk_user_id in payment metadata", event.data);
+      console.error("[DodoWebhook] No clerk_user_id in payment metadata");
       return NextResponse.json({ error: "Missing clerk_user_id" }, { status: 400 });
     }
 
@@ -157,7 +164,7 @@ export async function POST(request: Request) {
       key: orderKey,
       paymentId,
       userId: user.id,
-      payment: event.data,
+      payment: paymentData,
     });
 
     if (orderResult.error) {
@@ -182,11 +189,50 @@ export async function POST(request: Request) {
   }
 
   if (eventType === "payment.failed") {
-    console.log("[DodoWebhook] Payment failed:", event.data?.payment_id || event.data?.id);
+    if (paymentData?.metadata?.purchase_kind === CASE_PROSPECT_PURCHASE) {
+      const localOrderId = paymentData?.metadata?.order_id;
+      if (typeof localOrderId === "string") {
+        try {
+          await new SupabaseCasePaymentRepository(createServerClient()).markOrderFailed(localOrderId);
+        } catch (error) {
+          console.error("[DodoWebhook] Failed to close Case checkout", {
+            error_type: error instanceof Error ? error.name : "UnknownError",
+          });
+          return NextResponse.json({ error: "Case checkout could not be updated" }, { status: 500 });
+        }
+      }
+    }
+    console.log("[DodoWebhook] Payment failed");
   }
 
   if (eventType === "payment.refunded") {
-    const clerkUserId = event.data?.metadata?.clerk_user_id;
+    if (paymentData?.metadata?.purchase_kind === CASE_PROSPECT_PURCHASE) {
+      const payment = parseDodoPayment({ ...paymentData, status: "succeeded" });
+      const metadata = paymentData?.metadata;
+      if (
+        !payment ||
+        typeof metadata?.order_id !== "string" ||
+        typeof metadata?.clerk_user_id !== "string" ||
+        typeof metadata?.case_id !== "string"
+      ) return NextResponse.json({ error: "Invalid refund payload" }, { status: 400 });
+      try {
+        const repository = new SupabaseCasePaymentRepository(createServerClient());
+        const result = await repository.refund({
+          localOrderId: metadata.order_id,
+          paymentId: payment.payment_id,
+          clerkUserId: metadata.clerk_user_id,
+          caseId: metadata.case_id,
+        });
+        return NextResponse.json({ received: true, already_processed: result.idempotent });
+      } catch (error) {
+        console.error("[DodoWebhook] Case payment refund failed", {
+          error_type: error instanceof Error ? error.name : "UnknownError",
+        });
+        return NextResponse.json({ error: "Case payment refund failed" }, { status: 500 });
+      }
+    }
+
+    const clerkUserId = paymentData?.metadata?.clerk_user_id;
 
     if (clerkUserId) {
       const supabase = createServerClient();
@@ -206,12 +252,14 @@ export async function POST(request: Request) {
           .eq("id", user.id);
       }
 
-      const paymentId = event.data?.payment_id || event.data?.id;
-      const { key } = await findExistingOrder(supabase, paymentId);
-      await supabase.from("orders").update({ status: "refunded" }).eq(key, paymentId);
+      const paymentId = paymentData?.payment_id || paymentData?.id;
+      if (paymentId) {
+        const { key } = await findExistingOrder(supabase, paymentId);
+        await supabase.from("orders").update({ status: "refunded" }).eq(key, paymentId);
+      }
     }
 
-    console.log(`[DodoWebhook] Payment refunded: -1 credit for ${clerkUserId}`);
+    console.log("[DodoWebhook] Payment refunded");
   }
 
   return NextResponse.json({ received: true });

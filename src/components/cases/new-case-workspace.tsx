@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { ArrowLeft, CheckCircle2, LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
+import { LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -23,6 +23,7 @@ import {
 } from "@/lib/preflight-v22";
 
 import { BusinessMatchStep } from "./business-match-step";
+import { CasePaymentHandoff, type PaymentHandoffStatus } from "./case-payment-handoff";
 import { CompetitorConfirmationStep } from "./competitor-confirmation-step";
 import { CoverageStep } from "./coverage-step";
 import { GoalWebsiteStep } from "./goal-website-step";
@@ -52,6 +53,11 @@ export function NewCaseWorkspace() {
   const [draft, setDraft] = useState<NewCaseDraft>(() => createNewCaseDraft());
   const [hydrated, setHydrated] = useState(false);
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
+  const [paymentHandoff, setPaymentHandoff] = useState<{
+    status: PaymentHandoffStatus;
+    caseId: string | null;
+    message: string;
+  }>({ status: "saving_case", caseId: null, message: "Saving the verified Case before checkout…" });
   const savingCase = useRef(false);
   const skipNextSave = useRef(false);
   const { isLoaded, isSignedIn } = useUser();
@@ -96,10 +102,11 @@ export function NewCaseWorkspace() {
     }
   }, [draft.discovery_status]);
 
-  const saveExistingCase = useCallback(async () => {
-    if (savingCase.current || !draft.business_confirmation) return;
+  const saveCase = useCallback(async (): Promise<string | null> => {
+    if (savingCase.current || !draft.business_confirmation) return null;
     savingCase.current = true;
-    setHandoffMessage("Saving the verified client Case…");
+    if (draft.goal === "work_existing_client") setHandoffMessage("Saving the verified client Case…");
+    else setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving the verified Case before checkout…" });
     try {
       const scope = draft.business_confirmation;
       const response = await authenticatedFetch("/api/v2/cases", {
@@ -118,26 +125,105 @@ export function NewCaseWorkspace() {
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
+        if (payload?.error?.code === "CASE_ALREADY_EXISTS" && payload?.error?.case_id === draft.draft_case_id) {
+          if (draft.goal === "work_existing_client") {
+            clearDraft(sessionStorage);
+            setHandoffMessage("Client Case is already saved. Connection preparation will continue from this verified scope.");
+          } else {
+            setPaymentHandoff({
+              status: "ready",
+              caseId: draft.draft_case_id,
+              message: "Your verified Case is saved. Payment status is being checked before another checkout can be opened.",
+            });
+          }
+          return draft.draft_case_id;
+        }
         const message = payload?.error?.code === "CASE_ALREADY_EXISTS"
           ? "This client already has a Case. Open the existing Case instead of creating a duplicate."
           : payload?.error?.message || "The Case could not be saved yet.";
-        setHandoffMessage(message);
-        return;
+        if (draft.goal === "work_existing_client") setHandoffMessage(message);
+        else setPaymentHandoff({ status: "error", caseId: payload?.error?.case_id ?? null, message });
+        return null;
       }
-      clearDraft(sessionStorage);
-      setHandoffMessage("Client Case saved. Connection preparation will continue from this verified scope.");
+      if (draft.goal === "work_existing_client") {
+        clearDraft(sessionStorage);
+        setHandoffMessage("Client Case saved. Connection preparation will continue from this verified scope.");
+      } else {
+        setPaymentHandoff({
+          status: "ready",
+          caseId: payload.id,
+          message: "Your verified business and competitor scope is now attached to this Case. Continue when you are ready to pay.",
+        });
+      }
+      return payload.id as string;
     } catch {
-      setHandoffMessage("The Case could not be saved yet. Your session draft is still safe.");
+      const message = "The Case could not be saved yet. Your session draft is still safe.";
+      if (draft.goal === "work_existing_client") setHandoffMessage(message);
+      else setPaymentHandoff({ status: "error", caseId: null, message });
+      return null;
     } finally {
       savingCase.current = false;
     }
-  }, [authenticatedFetch, draft.business_confirmation, draft.draft_case_id]);
+  }, [authenticatedFetch, draft.business_confirmation, draft.draft_case_id, draft.goal]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || draft.stage !== "auth_handoff") return;
-    if (draft.goal === "work_existing_client") void saveExistingCase();
-    else setHandoffMessage("Your verified setup is ready for the $19 report checkout in the next version step.");
-  }, [draft.goal, draft.stage, isLoaded, isSignedIn, saveExistingCase]);
+    if (draft.goal === "work_existing_client") void saveCase();
+    else if (!paymentHandoff.caseId && paymentHandoff.status === "saving_case") void saveCase();
+  }, [draft.goal, draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId, paymentHandoff.status, saveCase]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || draft.stage !== "auth_handoff" || draft.goal !== "win_new_client" || !paymentHandoff.caseId) return;
+    const params = new URLSearchParams(window.location.search);
+    const paymentReturn = params.get("payment");
+    const returnedCaseId = params.get("case_id");
+    const matchesReturn = returnedCaseId === paymentHandoff.caseId;
+
+    if (paymentReturn === "cancelled" && matchesReturn) {
+      setPaymentHandoff((current) => ({ ...current, status: "ready", message: "Checkout was cancelled. Your Case is still saved and nothing was charged." }));
+      window.history.replaceState(null, "", "/cases/new");
+      return;
+    }
+    if (paymentReturn && (!matchesReturn || paymentReturn !== "return")) return;
+
+    const controller = new AbortController();
+    void (async () => {
+      if (paymentReturn === "return") {
+        setPaymentHandoff((current) => ({ ...current, status: "confirming_payment", message: "Confirming payment and securing this Case entitlement…" }));
+      }
+      try {
+        const statusResponse = await authenticatedFetch(`/api/v2/cases/${paymentHandoff.caseId}/checkout`, { signal: controller.signal });
+        const statusPayload = await statusResponse.json().catch(() => null);
+        if (statusResponse.ok && statusPayload?.unlocked) {
+          setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "Payment is confirmed. This entitlement can be used only for the first prospect report on this Case." }));
+          window.history.replaceState(null, "", "/cases/new");
+          return;
+        }
+
+        if (paymentReturn !== "return") return;
+
+        const paymentId = params.get("payment_id");
+        if (!paymentId) {
+          setPaymentHandoff((current) => ({ ...current, status: "error", message: "Payment confirmation is still arriving. Refresh this page in a moment; you will not be charged twice." }));
+          return;
+        }
+        const confirmResponse = await authenticatedFetch(`/api/v2/cases/${paymentHandoff.caseId}/checkout/confirm`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ payment_id: paymentId }),
+          signal: controller.signal,
+        });
+        const confirmPayload = await confirmResponse.json().catch(() => null);
+        if (!confirmResponse.ok) throw new Error(confirmPayload?.error?.message || "Payment confirmation failed.");
+        setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "Payment is confirmed. This entitlement can be used only for the first prospect report on this Case." }));
+        window.history.replaceState(null, "", "/cases/new");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setPaymentHandoff((current) => ({ ...current, status: "error", message: error instanceof Error ? error.message : "Payment confirmation could not be completed yet." }));
+      }
+    })();
+    return () => controller.abort();
+  }, [authenticatedFetch, draft.goal, draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId]);
 
   async function startPreflight(input: { goal: NewCaseDraft["goal"]; site_url: string; gbp_url: string | null }) {
     let siteUrl: string;
@@ -212,11 +298,31 @@ export function NewCaseWorkspace() {
     if (!isSignedIn) openLogin();
   }
 
+  async function startCaseCheckout() {
+    if (!paymentHandoff.caseId) {
+      setPaymentHandoff((current) => ({ ...current, status: "saving_case", message: "Saving the verified Case before checkout…" }));
+      await saveCase();
+      return;
+    }
+    setPaymentHandoff((current) => ({ ...current, status: "creating_checkout", message: "Preparing a secure checkout for this Case…" }));
+    try {
+      const response = await authenticatedFetch(`/api/v2/cases/${paymentHandoff.caseId}/checkout`, { method: "POST" });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || typeof payload?.checkout_url !== "string") {
+        throw new Error(payload?.error?.message || "Secure checkout could not be opened.");
+      }
+      window.location.assign(payload.checkout_url);
+    } catch (error) {
+      setPaymentHandoff((current) => ({ ...current, status: "error", message: error instanceof Error ? error.message : "Secure checkout could not be opened." }));
+    }
+  }
+
   function reset() {
     clearDraft(sessionStorage);
     skipNextSave.current = true;
     setDraft(createNewCaseDraft());
     setHandoffMessage(null);
+    setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving the verified Case before checkout…" });
   }
 
   if (!hydrated) return <div className="min-h-screen bg-[#171d17]" />;
@@ -243,13 +349,22 @@ export function NewCaseWorkspace() {
             {draft.stage === "competitor_confirmation" && draft.discovery_status?.result && <CompetitorConfirmationStep status={draft.discovery_status} selectedIds={draft.selected_competitor_ids} onSelectionChange={(competitor_ids) => setDraft((current) => reduceWorkspaceState(current, { type: "SELECT_COMPETITORS", competitor_ids }))} onConfirm={() => setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_COMPETITORS" }))} onRerun={(urls) => draft.business_confirmation && void startDiscovery(draft.business_confirmation, urls)} onEditScope={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} />}
             {draft.stage === "coverage" && <CoverageStep draft={draft} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
             {draft.stage === "auth_handoff" && (
-              <section className="rounded-2xl border border-[#cbd8a5] bg-white p-8 text-center shadow-[0_18px_55px_rgba(31,39,27,0.07)]">
-                <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#edf7d5] text-[#607d08]"><CheckCircle2 size={24} /></span>
-                <h1 className="mt-5 text-2xl font-bold tracking-tight text-[#1d271d]">Your verified setup is preserved.</h1>
-                <p aria-live="polite" className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#667266]">{handoffMessage ?? (isSignedIn ? "Preparing the next step…" : "Sign in to continue from this exact business and competitor scope.")}</p>
-                {!isSignedIn && <button type="button" onClick={openLogin} className="mt-6 rounded-xl bg-[#1a211a] px-6 py-3 text-sm font-bold text-white">Sign in & continue</button>}
-                <button type="button" onClick={() => setDraft((current) => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }))} className="mx-auto mt-5 flex items-center gap-2 text-xs font-bold text-[#697569] underline underline-offset-4"><ArrowLeft size={13} />Return to coverage</button>
-              </section>
+              draft.goal === "win_new_client" && isSignedIn ? (
+                <CasePaymentHandoff
+                  status={paymentHandoff.status}
+                  message={paymentHandoff.message}
+                  caseId={paymentHandoff.caseId}
+                  onCheckout={() => void startCaseCheckout()}
+                  onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }))}
+                />
+              ) : (
+                <section className="rounded-2xl border border-[#cbd8a5] bg-white p-8 text-center shadow-[0_18px_55px_rgba(31,39,27,0.07)]">
+                  <h1 className="text-2xl font-bold tracking-tight text-[#1d271d]">Your verified setup is preserved.</h1>
+                  <p aria-live="polite" className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#667266]">{handoffMessage ?? (isSignedIn ? "Preparing the next step…" : "Sign in to continue from this exact business and competitor scope.")}</p>
+                  {!isSignedIn && <button type="button" onClick={openLogin} className="mt-6 rounded-xl bg-[#1a211a] px-6 py-3 text-sm font-bold text-white">Sign in & continue</button>}
+                  <button type="button" onClick={() => setDraft((current) => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }))} className="mx-auto mt-5 flex items-center gap-2 text-xs font-bold text-[#697569] underline underline-offset-4">Return to coverage</button>
+                </section>
+              )
             )}
             <p className="mt-8 flex items-center justify-center gap-2 text-center text-[11px] leading-5 text-[#849084]"><RotateCcw size={12} />Refreshing this page resumes active discovery from its real task status.</p>
           </div>

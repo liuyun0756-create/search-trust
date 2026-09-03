@@ -120,19 +120,19 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await db.close();
   });
 
-  it("creates the five server-only v2.2 tables with RLS enabled", async () => {
+  it("creates the six server-only v2.2 tables with RLS enabled", async () => {
     const tables = await db.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity
        from pg_class
        where relnamespace = 'public'::regnamespace
          and relname = any(array[
            'client_cases', 'google_connections', 'case_source_bindings',
-           'data_snapshots', 'analysis_jobs'
+           'data_snapshots', 'analysis_jobs', 'case_report_entitlements'
          ])
        order by relname`,
     );
 
-    expect(tables.rows).toHaveLength(5);
+    expect(tables.rows).toHaveLength(6);
     expect(tables.rows.every((row) => row.relrowsecurity)).toBe(true);
 
     const browserGrants = await db.query<{ count: number }>(
@@ -141,7 +141,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
        where table_schema = 'public'
          and table_name = any(array[
            'client_cases', 'google_connections', 'case_source_bindings',
-           'data_snapshots', 'analysis_jobs'
+           'data_snapshots', 'analysis_jobs', 'case_report_entitlements'
          ])
          and grantee in ('anon', 'authenticated')`,
     );
@@ -559,6 +559,102 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     expect(persisted.rows[0].status).toBe("succeeded");
     expect(Number(persisted.rows[0].state_revision)).toBe(3);
     expect(Number(persisted.rows[0].terminal_effects_revision)).toBe(3);
+  });
+
+  it("fulfills one Case entitlement idempotently and returns it after a technical failure", async () => {
+    const owner = await insertUser("payment-owner");
+    const paidCase = await insertCase(owner, "paid-case");
+    const localOrderId = await insertId(
+      `insert into public.orders (
+         user_id, case_id, purchase_kind, amount, currency, credits_purchased, status
+       ) values ($1, $2, 'case_prospect_report', 1900, 'USD', 0, 'pending')
+       returning id`,
+      [owner, paidCase],
+    );
+
+    const first = await db.query<{ fulfilled: boolean; idempotent: boolean; entitlement_status: string }>(
+      `select * from public.fulfill_v22_case_payment($1, 'pay_case_1', 'clerk_payment-owner', $2, 1900, 'USD')`,
+      [localOrderId, paidCase],
+    );
+    expect(first.rows[0]).toEqual({ fulfilled: true, idempotent: false, entitlement_status: "available" });
+
+    const duplicate = await db.query<{ fulfilled: boolean; idempotent: boolean }>(
+      `select fulfilled, idempotent from public.fulfill_v22_case_payment($1, 'pay_case_1', 'clerk_payment-owner', $2, 1900, 'USD')`,
+      [localOrderId, paidCase],
+    );
+    expect(duplicate.rows[0]).toEqual({ fulfilled: true, idempotent: true });
+    const entitlementCount = await db.query<{ count: number }>(
+      `select count(*)::int as count from public.case_report_entitlements where case_id = $1`,
+      [paidCase],
+    );
+    expect(entitlementCount.rows[0].count).toBe(1);
+
+    const failedReport = await insertId(
+      `insert into public.reports (
+         report_id, user_id, page_url, gbp_url, access_type,
+         case_id, report_type, schema_version, version_number
+       ) values ('paid-failed-report', $1, 'https://paid-case.example.com', '', 'paid_credit', $2, 'prospect', '2.2', 1)
+       returning id`,
+      [owner, paidCase],
+    );
+    const failedJob = await insertId(
+      `insert into public.analysis_jobs (
+         case_id, report_id, job_type, current_stage, idempotency_key
+       ) values ($1, $2, 'prospect_report', 'queued', 'paid-failed-job') returning id`,
+      [paidCase, failedReport],
+    );
+    const reserved = await db.query<{ reserved: boolean; idempotent: boolean }>(
+      `select * from public.reserve_v22_case_report_entitlement($1, $2, $3)`,
+      [owner, paidCase, failedJob],
+    );
+    expect(reserved.rows[0]).toEqual({ reserved: true, idempotent: false });
+
+    await db.query(
+      `select * from public.apply_analysis_job_event(
+         $1, $2, 1, 'failed', 'failed', 40::smallint, 1,
+         'PROVIDER_TIMEOUT', 'Please retry.', '{}'::jsonb, now(), now()
+       )`,
+      [failedJob, paidCase],
+    );
+    const returned = await db.query<{ status: string; reserved_job_id: string | null }>(
+      `select status, reserved_job_id from public.case_report_entitlements where case_id = $1`,
+      [paidCase],
+    );
+    expect(returned.rows[0]).toEqual({ status: "available", reserved_job_id: null });
+
+    const completedReport = await insertId(
+      `insert into public.reports (
+         report_id, user_id, page_url, gbp_url, access_type,
+         case_id, report_type, schema_version, version_number
+       ) values ('paid-completed-report', $1, 'https://paid-case.example.com', '', 'paid_credit', $2, 'prospect', '2.2', 2)
+       returning id`,
+      [owner, paidCase],
+    );
+    const completedJob = await insertId(
+      `insert into public.analysis_jobs (
+         case_id, report_id, job_type, current_stage, idempotency_key
+       ) values ($1, $2, 'prospect_report', 'queued', 'paid-completed-job') returning id`,
+      [paidCase, completedReport],
+    );
+    await db.query(`select * from public.reserve_v22_case_report_entitlement($1, $2, $3)`, [owner, paidCase, completedJob]);
+    await db.query(
+      `select * from public.apply_analysis_job_event(
+         $1, $2, 1, 'succeeded', 'completed', 100::smallint, 1,
+         null, 'Complete', '{}'::jsonb, now(), now()
+       )`,
+      [completedJob, paidCase],
+    );
+    const consumed = await db.query<{ status: string; consumed_report_id: string }>(
+      `select status, consumed_report_id from public.case_report_entitlements where case_id = $1`,
+      [paidCase],
+    );
+    expect(consumed.rows[0]).toEqual({ status: "consumed", consumed_report_id: completedReport });
+
+    await expectSqlError(
+      `select * from public.fulfill_v22_case_payment($1, 'pay_case_1', 'clerk_payment-owner', $2, 1900, 'USD')`,
+      [localOrderId, caseB],
+      "case payment case does not belong to user",
+    );
   });
 
   it("enforces job idempotency and performs the designed deletion cascades", async () => {

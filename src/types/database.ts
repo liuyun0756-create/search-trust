@@ -175,12 +175,32 @@ export interface Report {
 export interface Order {
   id: string;
   user_id: string;
-  order_id: string;
+  payment_id?: string | null;
+  order_id: string | null;
+  case_id?: string | null;
+  purchase_kind?: "legacy_credit" | "case_prospect_report";
+  checkout_session_id?: string | null;
+  checkout_url?: string | null;
   amount: number;
   credits_purchased: number;
   status: "pending" | "paid" | "failed" | "refunded";
   created_at: string;
   paid_at: string | null;
+}
+
+export interface CaseReportEntitlement {
+  id: string;
+  user_id: string;
+  case_id: string;
+  order_id: string;
+  report_type: "prospect";
+  status: "available" | "reserved" | "consumed" | "payment_refunded";
+  reserved_job_id: string | null;
+  consumed_report_id: string | null;
+  reserved_at: string | null;
+  consumed_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export type GenerateReportRequest = {
