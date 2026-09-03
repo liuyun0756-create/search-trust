@@ -1,0 +1,260 @@
+"use client";
+
+import { useUser } from "@clerk/nextjs";
+import { ArrowLeft, CheckCircle2, LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useAuditModal } from "@/components/common/AuditModalProvider";
+import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
+import {
+  clearDraft,
+  createNewCaseDraft,
+  getCompetitorDiscovery,
+  loadDraft,
+  PreflightApiError,
+  reduceWorkspaceState,
+  retryCompetitorDiscovery,
+  runPreflight,
+  saveDraft,
+  submitCompetitorDiscovery,
+  type BusinessConfirmation,
+  type NewCaseDraft,
+} from "@/lib/preflight-v22";
+
+import { BusinessMatchStep } from "./business-match-step";
+import { CompetitorConfirmationStep } from "./competitor-confirmation-step";
+import { CoverageStep } from "./coverage-step";
+import { GoalWebsiteStep } from "./goal-website-step";
+import { NewCaseStepper } from "./new-case-stepper";
+import { PreflightStatus } from "./preflight-status";
+
+function normalizeWebInput(value: string) {
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
+  const url = new URL(withProtocol);
+  if (!/^https?:$/.test(url.protocol) || !url.hostname) throw new Error("INVALID_URL");
+  return url.toString();
+}
+
+function discoveryQueries(confirmation: BusinessConfirmation) {
+  const service = confirmation.primary_service.trim();
+  const market = confirmation.target_market.city?.trim() || confirmation.target_market.display_name.trim();
+  return [`${service} ${market}`, `best ${service} ${market}`, `${service} near me`];
+}
+
+function apiError(error: unknown) {
+  return error instanceof PreflightApiError
+    ? { code: error.code, message: error.message }
+    : { code: "UNEXPECTED_ERROR", message: "Something interrupted the request. Your draft is still safe." };
+}
+
+export function NewCaseWorkspace() {
+  const [draft, setDraft] = useState<NewCaseDraft>(() => createNewCaseDraft());
+  const [hydrated, setHydrated] = useState(false);
+  const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
+  const savingCase = useRef(false);
+  const skipNextSave = useRef(false);
+  const { isLoaded, isSignedIn } = useUser();
+  const { openLogin } = useAuditModal();
+  const authenticatedFetch = useAuthenticatedFetch();
+
+  useEffect(() => {
+    setDraft(loadDraft(sessionStorage));
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+    saveDraft(sessionStorage, draft);
+  }, [draft, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || draft.stage !== "competitor_discovery_running" || !draft.discovery_job_id) return;
+    const controller = new AbortController();
+    const delay = draft.discovery_status ? (document.hidden ? 5_000 : 1_500) : 0;
+    const timer = window.setTimeout(async () => {
+      try {
+        const status = await getCompetitorDiscovery(draft.discovery_job_id!, controller.signal);
+        setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_UPDATED", status }));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        const safe = apiError(error);
+        setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
+      }
+    }, delay);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [draft.discovery_job_id, draft.discovery_status, draft.stage, hydrated]);
+
+  useEffect(() => {
+    const expiry = draft.discovery_status?.result?.expires_at;
+    if (expiry && Date.parse(expiry) <= Date.now()) {
+      setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_EXPIRED" }));
+    }
+  }, [draft.discovery_status]);
+
+  const saveExistingCase = useCallback(async () => {
+    if (savingCase.current || !draft.business_confirmation) return;
+    savingCase.current = true;
+    setHandoffMessage("Saving the verified client Case…");
+    try {
+      const scope = draft.business_confirmation;
+      const response = await authenticatedFetch("/api/v2/cases", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          draft_case_id: draft.draft_case_id,
+          site_url: scope.business_identity.site_url,
+          business_name: scope.business_identity.business_name,
+          operating_model: scope.business_identity.operating_model,
+          primary_service: scope.primary_service,
+          primary_location: scope.business_identity.primary_location,
+          target_market: scope.target_market,
+          public_gbp_url: scope.business_identity.public_gbp_url ?? null,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message = payload?.error?.code === "CASE_ALREADY_EXISTS"
+          ? "This client already has a Case. Open the existing Case instead of creating a duplicate."
+          : payload?.error?.message || "The Case could not be saved yet.";
+        setHandoffMessage(message);
+        return;
+      }
+      clearDraft(sessionStorage);
+      setHandoffMessage("Client Case saved. Connection preparation will continue from this verified scope.");
+    } catch {
+      setHandoffMessage("The Case could not be saved yet. Your session draft is still safe.");
+    } finally {
+      savingCase.current = false;
+    }
+  }, [authenticatedFetch, draft.business_confirmation, draft.draft_case_id]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || draft.stage !== "auth_handoff") return;
+    if (draft.goal === "work_existing_client") void saveExistingCase();
+    else setHandoffMessage("Your verified setup is ready for the $19 report checkout in the next version step.");
+  }, [draft.goal, draft.stage, isLoaded, isSignedIn, saveExistingCase]);
+
+  async function startPreflight(input: { goal: NewCaseDraft["goal"]; site_url: string; gbp_url: string | null }) {
+    let siteUrl: string;
+    let gbpUrl: string | null;
+    try {
+      siteUrl = normalizeWebInput(input.site_url);
+      gbpUrl = input.gbp_url ? normalizeWebInput(input.gbp_url) : null;
+    } catch {
+      setDraft((current) => reduceWorkspaceState(reduceWorkspaceState(current, { type: "CHANGE_SOURCE", ...input }), { type: "PREFLIGHT_FAILED", code: "INVALID_URL", message: "Enter a valid public website address." }));
+      return;
+    }
+    setDraft((current) => reduceWorkspaceState(reduceWorkspaceState(current, { type: "CHANGE_SOURCE", goal: input.goal, site_url: siteUrl, gbp_url: gbpUrl }), { type: "START_PREFLIGHT" }));
+    try {
+      const response = await runPreflight({ site_url: siteUrl, gbp_url: gbpUrl });
+      setDraft((current) => reduceWorkspaceState(current, { type: "PREFLIGHT_SUCCEEDED", response }));
+    } catch (error) {
+      const safe = apiError(error);
+      setDraft((current) => reduceWorkspaceState(current, { type: "PREFLIGHT_FAILED", ...safe }));
+    }
+  }
+
+  async function startDiscovery(confirmation: BusinessConfirmation, supplements: string[] = []) {
+    const normalizedSupplements: string[] = [];
+    try {
+      for (const value of supplements) normalizedSupplements.push(normalizeWebInput(value));
+    } catch {
+      setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", code: "INVALID_COMPETITOR_URL", message: "Enter valid public competitor website addresses." }));
+      return;
+    }
+    const jobId = crypto.randomUUID();
+    const idempotencyKey = `discover:${draft.draft_case_id}:${jobId}`;
+    setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", job_id: jobId, idempotency_key: idempotencyKey, supplemental_website_urls: normalizedSupplements }));
+    try {
+      await submitCompetitorDiscovery({
+        case_id: draft.draft_case_id,
+        business_identity: confirmation.business_identity,
+        primary_service: confirmation.primary_service,
+        target_market: confirmation.target_market,
+        queries: discoveryQueries(confirmation),
+        search_language: "en",
+        search_device: "mobile",
+        supplemental_website_urls: normalizedSupplements,
+      }, jobId, idempotencyKey);
+    } catch (error) {
+      const safe = apiError(error);
+      setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
+    }
+  }
+
+  function confirmBusiness(confirmation: BusinessConfirmation) {
+    setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_BUSINESS", confirmation }));
+    void startDiscovery(confirmation);
+  }
+
+  async function retryDiscovery() {
+    if (!draft.discovery_job_id || !draft.business_confirmation) return;
+    if (draft.discovery_status?.error?.retryable) {
+      try {
+        await retryCompetitorDiscovery(draft.discovery_job_id);
+        setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", job_id: draft.discovery_job_id!, idempotency_key: draft.discovery_idempotency_key ?? `retry:${draft.discovery_job_id}` }));
+      } catch (error) {
+        const safe = apiError(error);
+        setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
+      }
+      return;
+    }
+    await startDiscovery(draft.business_confirmation, draft.supplemental_website_urls);
+  }
+
+  function continueAfterCoverage() {
+    setDraft((current) => reduceWorkspaceState(current, { type: "BEGIN_AUTH_HANDOFF" }));
+    if (!isSignedIn) openLogin();
+  }
+
+  function reset() {
+    clearDraft(sessionStorage);
+    skipNextSave.current = true;
+    setDraft(createNewCaseDraft());
+    setHandoffMessage(null);
+  }
+
+  if (!hydrated) return <div className="min-h-screen bg-[#171d17]" />;
+
+  return (
+    <div className="min-h-screen bg-[#171d17] text-[#1c241c]">
+      <header className="border-b border-white/10 bg-[#171d17]">
+        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-5 sm:px-8">
+          <Link href="/" className="flex items-center gap-3 text-white outline-none focus-visible:ring-4 focus-visible:ring-[#A5D020]/30"><img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="text-sm font-bold tracking-tight">SearchTrust</span><span className="rounded-full border border-white/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/50">v2.2</span></Link>
+          <div className="flex items-center gap-4"><span className="hidden items-center gap-1.5 text-xs font-semibold text-white/50 sm:flex"><ShieldCheck size={14} className="text-[#A5D020]" />Public-data preflight</span><button type="button" onClick={reset} className="text-xs font-bold text-white/55 outline-none hover:text-white focus-visible:ring-4 focus-visible:ring-[#A5D020]/30">Clear draft</button></div>
+        </div>
+      </header>
+
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[1440px] lg:grid-cols-[290px_1fr]">
+        <aside className="border-white/10 bg-[#171d17] lg:border-r lg:px-7 lg:py-10"><NewCaseStepper stage={draft.stage} /><div className="hidden px-4 lg:mt-12 lg:block"><p className="flex items-center gap-2 text-xs font-semibold text-white/45"><LockKeyhole size={13} />Saved only in this session</p><p className="mt-2 break-all text-[10px] leading-4 text-white/25">Draft {draft.draft_case_id}</p></div></aside>
+        <main className="bg-[#f1f3ed] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-20">
+          <div className="mx-auto max-w-[920px]">
+            {draft.stage === "goal_website" && <GoalWebsiteStep key={draft.draft_case_id} initialGoal={draft.goal} initialSiteUrl={draft.site_url} initialGbpUrl={draft.gbp_url} onSubmit={startPreflight} />}
+            {draft.stage === "preflight_running" && <PreflightStatus kind="loading" title="Checking the public evidence surface" message="We’re resolving the business website, public profile, service, market, and available analysis modules." />}
+            {draft.stage === "preflight_failed" && <PreflightStatus kind="error" title="Preflight needs attention" message={draft.preflight_error?.message ?? "The public data check could not be completed."} onRetry={() => void startPreflight({ goal: draft.goal, site_url: draft.site_url, gbp_url: draft.gbp_url })} />}
+            {draft.stage === "business_confirmation" && draft.preflight && <BusinessMatchStep key={draft.preflight.preflight_id} preflight={draft.preflight} onConfirm={confirmBusiness} onEditSource={() => setDraft((current) => reduceWorkspaceState(current, { type: "CHANGE_SOURCE", goal: current.goal, site_url: current.site_url, gbp_url: current.gbp_url }))} />}
+            {draft.stage === "competitor_discovery_running" && <PreflightStatus kind="loading" title="Finding qualified local competitors" message={draft.discovery_status?.message ?? "The durable discovery task is checking market results and validating candidate websites."} progress={draft.discovery_status?.progress} />}
+            {draft.stage === "competitor_discovery_failed" && <PreflightStatus kind="error" title="Competitor discovery needs attention" message={draft.discovery_error?.message ?? "The competitor search could not be completed."} onRetry={draft.discovery_error?.retryable === false ? undefined : () => void retryDiscovery()} />}
+            {draft.stage === "competitor_confirmation" && draft.discovery_status?.result && <CompetitorConfirmationStep status={draft.discovery_status} selectedIds={draft.selected_competitor_ids} onSelectionChange={(competitor_ids) => setDraft((current) => reduceWorkspaceState(current, { type: "SELECT_COMPETITORS", competitor_ids }))} onConfirm={() => setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_COMPETITORS" }))} onRerun={(urls) => draft.business_confirmation && void startDiscovery(draft.business_confirmation, urls)} onEditScope={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} />}
+            {draft.stage === "coverage" && <CoverageStep draft={draft} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
+            {draft.stage === "auth_handoff" && (
+              <section className="rounded-2xl border border-[#cbd8a5] bg-white p-8 text-center shadow-[0_18px_55px_rgba(31,39,27,0.07)]">
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#edf7d5] text-[#607d08]"><CheckCircle2 size={24} /></span>
+                <h1 className="mt-5 text-2xl font-bold tracking-tight text-[#1d271d]">Your verified setup is preserved.</h1>
+                <p aria-live="polite" className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#667266]">{handoffMessage ?? (isSignedIn ? "Preparing the next step…" : "Sign in to continue from this exact business and competitor scope.")}</p>
+                {!isSignedIn && <button type="button" onClick={openLogin} className="mt-6 rounded-xl bg-[#1a211a] px-6 py-3 text-sm font-bold text-white">Sign in & continue</button>}
+                <button type="button" onClick={() => setDraft((current) => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }))} className="mx-auto mt-5 flex items-center gap-2 text-xs font-bold text-[#697569] underline underline-offset-4"><ArrowLeft size={13} />Return to coverage</button>
+              </section>
+            )}
+            <p className="mt-8 flex items-center justify-center gap-2 text-center text-[11px] leading-5 text-[#849084]"><RotateCcw size={12} />Refreshing this page resumes active discovery from its real task status.</p>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}

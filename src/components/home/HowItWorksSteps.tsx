@@ -6,7 +6,7 @@ const steps = [
   {
     icon: FileText,
     title: "Submit your page",
-    desc: "Enter the page URL, page type, and optionally a GBP link.",
+    desc: "Choose your client goal and enter the business website. A GBP link is optional.",
   },
   {
     icon: Clock,

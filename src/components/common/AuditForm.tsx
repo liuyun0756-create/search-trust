@@ -1,179 +1,46 @@
 "use client";
 
-import React, { useRef, useState } from 'react';
-import { ChevronDown, Loader2 } from 'lucide-react';
-import { useAuditModal } from '@/components/common/AuditModalProvider';
-import {
-  AuditLocationModeTabs,
-  type AuditLocationMode,
-} from '@/components/common/AuditLocationModeTabs';
-import { PAGE_TYPES } from '@/lib/constants';
+import { ArrowRight, BriefcaseBusiness, Globe2, Handshake } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 
-interface AuditFormProps {
-  floating?: boolean;
-}
+import { createNewCaseDraft, saveDraft, type WorkGoal } from "@/lib/preflight-v22";
 
-export function AuditForm({ floating = false }: AuditFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [locationMode, setLocationMode] = useState<AuditLocationMode>('single');
-  const submissionRef = useRef(false);
-  const [formData, setFormData] = useState({
-    url: '',
-    gbpUrl: '',
-    locationContext: '',
-    pageType: 'Service Page',
-  });
+export function AuditForm({ floating = false }: { floating?: boolean }) {
+  const router = useRouter();
+  const [goal, setGoal] = useState<WorkGoal>("win_new_client");
+  const [siteUrl, setSiteUrl] = useState("");
 
-  const { submitAuditForm } = useAuditModal();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.url.trim() || !formData.pageType.trim() || submissionRef.current) return;
-
-    submissionRef.current = true;
-    setLoading(true);
-
-    try {
-      await submitAuditForm({
-        url: formData.url.trim(),
-        pageType: formData.pageType,
-        gbpUrl: formData.gbpUrl.trim(),
-        locationContext: locationMode === 'multi' ? formData.locationContext.trim() : '',
-      });
-    } catch (err) {
-      console.error("Submit error:", err);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      submissionRef.current = false;
-      setLoading(false);
-    }
-  };
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!siteUrl.trim()) return;
+    saveDraft(sessionStorage, createNewCaseDraft(new Date(), crypto.randomUUID(), { goal, site_url: siteUrl.trim() }));
+    router.push("/cases/new");
+  }
 
   const wrapperClass = floating
-    ? "absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 z-20 w-full max-w-6xl overflow-hidden rounded-2xl border border-[#D9E7AE] bg-white p-10 shadow-[0_24px_64px_rgba(15,23,42,0.14)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[#A5D020]"
-    : "relative z-20 -mt-37 mx-auto max-w-6xl overflow-hidden rounded-2xl border border-[#D9E7AE] bg-white p-10 shadow-[0_24px_64px_rgba(15,23,42,0.14)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[#A5D020]";
-
-  const handleLocationModeChange = (mode: AuditLocationMode) => {
-    setLocationMode(mode);
-    if (mode === 'single') {
-      setFormData((current) => ({ ...current, locationContext: '' }));
-    }
-  };
-
-  const pageUrlField = (
-    <div className="flex flex-col gap-3">
-      <label htmlFor="audit-page-url" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
-        URL
-        <span className="ml-1 text-[#EF4444]">*</span>
-      </label>
-      <input
-        id="audit-page-url"
-        required
-        type="url"
-        placeholder="Enter the page URL to audit"
-        value={formData.url}
-        onChange={(e) => setFormData({...formData, url: e.target.value})}
-        className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
-      />
-    </div>
-  );
-
-  const gbpUrlField = (
-    <div className="flex flex-col gap-3">
-      <label htmlFor="audit-gbp-url" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
-        GBP URL
-      </label>
-      <input
-        id="audit-gbp-url"
-        type="url"
-        placeholder="Enter the GBP URL"
-        value={formData.gbpUrl}
-        onChange={(e) => setFormData({...formData, gbpUrl: e.target.value})}
-        className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
-      />
-    </div>
-  );
-
-  const pageTypeField = (
-    <div className="flex flex-col gap-3">
-      <label htmlFor="audit-page-type" className="text-[14px] font-bold text-[#1A1F2B] tracking-tight">
-        Page Type
-        <span className="ml-1 text-[#EF4444]">*</span>
-      </label>
-      <div className="relative">
-        <select
-          id="audit-page-type"
-          required
-          aria-label="Page Type"
-          value={formData.pageType}
-          onChange={(e) => setFormData({...formData, pageType: e.target.value})}
-          className="w-full cursor-pointer appearance-none rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
-        >
-          {PAGE_TYPES.map((type) => (
-            <option key={type} value={type}>{type}</option>
-          ))}
-        </select>
-        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" size={18} />
-      </div>
-    </div>
-  );
-
-  const locationField = (
-    <div
-      aria-hidden={locationMode === 'single'}
-      className={`flex flex-col gap-3 transition-opacity duration-150 md:col-start-1 md:row-start-2 ${
-        locationMode === 'multi'
-          ? 'visible opacity-100'
-          : 'invisible pointer-events-none opacity-0'
-      }`}
-    >
-      <label htmlFor="audit-location-context" className="text-[14px] font-bold tracking-tight text-[#1A1F2B]">
-        Target city or region
-      </label>
-      <input
-        id="audit-location-context"
-        type="text"
-        placeholder="City, state — e.g. Manhattan, NY"
-        value={formData.locationContext}
-        onChange={(e) => setFormData({...formData, locationContext: e.target.value})}
-        disabled={locationMode === 'single'}
-        aria-describedby="audit-location-context-help"
-        className="w-full rounded-lg border border-[#CDD3DD] bg-[#FCFCFD] px-5 py-3.5 text-[14px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-[#929BAD] hover:border-[#AEB7C5] focus:border-[#8FB713] focus:bg-white focus:ring-2 focus:ring-[#A5D020]/25"
-      />
-      <p id="audit-location-context-help" className="text-[11px] font-medium leading-4 text-[#7C8799]">
-        Use the city and state for the target branch.
-      </p>
-    </div>
-  );
+    ? "absolute bottom-0 left-1/2 z-20 w-[calc(100%-2rem)] max-w-6xl -translate-x-1/2 translate-y-1/2 overflow-hidden rounded-2xl border border-[#D9E7AE] bg-white p-6 shadow-[0_24px_64px_rgba(15,23,42,0.14)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[#A5D020] sm:p-8"
+    : "relative z-20 mx-auto max-w-6xl overflow-hidden rounded-2xl border border-[#D9E7AE] bg-white p-6 shadow-[0_24px_64px_rgba(15,23,42,0.14)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[#A5D020] sm:p-8";
 
   return (
-    <form onSubmit={handleSubmit} className={wrapperClass}>
-      <div className="mb-8 flex justify-center">
-        <AuditLocationModeTabs value={locationMode} onChange={handleLocationModeChange} />
+    <form onSubmit={submit} className={wrapperClass}>
+      <div className="grid gap-5 lg:grid-cols-[1fr_1fr_1.4fr_auto] lg:items-end">
+        <GoalOption value="win_new_client" selected={goal === "win_new_client"} onSelect={setGoal} icon={Handshake} label="Win a new client" />
+        <GoalOption value="work_existing_client" selected={goal === "work_existing_client"} onSelect={setGoal} icon={BriefcaseBusiness} label="Existing client" />
+        <label className="block"><span className="mb-2 block text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#657083]">Client website</span><div className="relative"><Globe2 className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7e8898]" size={18} /><input required inputMode="url" autoComplete="url" value={siteUrl} onChange={(event) => setSiteUrl(event.target.value)} placeholder="example.com" className="h-12 w-full rounded-xl border border-[#CDD3DD] bg-[#FCFCFD] pl-11 pr-4 text-sm outline-none focus:border-[#8FB713] focus:ring-4 focus:ring-[#A5D020]/20" /></div></label>
+        <button type="submit" disabled={!siteUrl.trim()} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#1A1F2B] px-6 text-sm font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)] outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/35 disabled:cursor-not-allowed disabled:opacity-50">Start free preflight <ArrowRight size={16} /></button>
       </div>
-
-      {/* Keep one grid in both modes so existing fields never reflow when the
-          optional multi-location field becomes visible. The hidden grid cell
-          also keeps this centered floating panel at a constant height. */}
-      <div className="grid grid-cols-1 gap-x-8 gap-y-7 md:grid-cols-3">
-        {pageUrlField}
-        {gbpUrlField}
-        {pageTypeField}
-        {locationField}
-        <div className="flex h-full items-center justify-center md:col-start-2 md:row-start-2">
-          <button
-            type="submit"
-            disabled={loading || !formData.url.trim() || !formData.pageType.trim()}
-            className="flex min-w-[190px] items-center justify-center rounded-lg bg-[#1A1F2B] px-9 py-3.5 font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] transition-all hover:bg-black hover:shadow-[0_14px_30px_rgba(15,23,42,0.24)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
-          >
-            {loading ? (
-              <Loader2 className="animate-spin" size={20} />
-            ) : (
-              <span className="text-[15px] tracking-tight">Run a Trust Audit</span>
-            )}
-          </button>
-        </div>
-      </div>
+      <p className="mt-4 text-center text-[11px] font-semibold text-[#7c8798]">Public data only · No login · No payment · No Google access</p>
     </form>
+  );
+}
+
+function GoalOption({ value, selected, onSelect, icon: Icon, label }: { value: WorkGoal; selected: boolean; onSelect(value: WorkGoal): void; icon: typeof Handshake; label: string }) {
+  return (
+    <label className={`flex h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 transition focus-within:ring-4 focus-within:ring-[#A5D020]/20 ${selected ? "border-[#91b91b] bg-[#f5fadf]" : "border-[#d6dce3] bg-[#fcfcfd]"}`}>
+      <input className="sr-only" type="radio" name="preflight-goal" checked={selected} onChange={() => onSelect(value)} />
+      <Icon size={17} className={selected ? "text-[#668509]" : "text-[#7b8594]"} />
+      <span className="text-sm font-bold text-[#27303e]">{label}</span>
+    </label>
   );
 }

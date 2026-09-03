@@ -28,7 +28,7 @@ export function HeaderUserActions({ mobile = false, onNavigate }: HeaderUserActi
           </Link>
         )}
         <RunAuditButton className="w-full rounded-full bg-[#1D2531] py-4 text-[16px] font-bold text-white">
-          Run a Trust Audit
+          Start free preflight
         </RunAuditButton>
       </>
     );
@@ -47,7 +47,7 @@ export function HeaderUserActions({ mobile = false, onNavigate }: HeaderUserActi
         </Link>
       )}
       <RunAuditButton className="rounded-full bg-[#1D2531] px-6 py-2.5 text-[14px] font-bold text-white transition-all hover:bg-black">
-        Run a Trust Audit
+        Start free preflight
       </RunAuditButton>
     </div>
   );

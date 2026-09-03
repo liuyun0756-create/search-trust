@@ -1,6 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+
 export function CTABanner() {
+  const pathname = usePathname();
+  if (pathname === "/cases/new") return null;
   return (
     <footer className="relative overflow-hidden bg-[#F7F9F2] pt-20 pb-12">
       <div className="absolute inset-0 z-0 opacity-[0.08]">

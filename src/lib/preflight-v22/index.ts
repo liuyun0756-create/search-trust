@@ -1,5 +1,6 @@
 export * from "./client";
 export * from "./contracts";
+export * from "./coverage";
 export * from "./draft";
 export * from "./errors";
 export * from "./state-machine";

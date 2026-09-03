@@ -72,7 +72,7 @@ export function HeroSection() {
 
             <div className="mt-10 flex flex-wrap gap-4">
               <RunAuditButton className="px-8 py-3 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
-                Run a Trust Audit
+                Start free preflight
               </RunAuditButton>
               <Link href="/sample-case" target="_blank" className="px-8 py-3 bg-white text-[#1A1F2B] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:bg-gray-50 active:scale-95">
                 View Sample Report

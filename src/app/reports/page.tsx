@@ -147,7 +147,7 @@ function EmptyState() {
           Run your first Trust Audit to identify weak trust signals, review the evidence, and see what to fix first.
         </p>
         <RunAuditButton className="bg-[#1D2531] text-white px-10 py-4 rounded-full font-bold text-[15px] hover:bg-black transition-all shadow-lg">
-          Run a Trust Audit
+          Start free preflight
         </RunAuditButton>
       </motion.div>
     </div>

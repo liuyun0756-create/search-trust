@@ -26,6 +26,7 @@ export function Header() {
     pathname === "/terms" ||
     pathname === "/privacy" ||
     pathname === "/refund-policy"
+    || pathname === "/cases/new"
   ) return null;
 
   const activeTab = navLinks.find(l => l.href === pathname)?.id ?? "home";

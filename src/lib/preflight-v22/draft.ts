@@ -26,7 +26,7 @@ const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const topLevelKeys = new Set([
   "schema_version", "created_at", "updated_at", "expires_at", "stage", "goal", "draft_case_id", "site_url", "gbp_url",
   "preflight", "preflight_error", "business_confirmation", "discovery_job_id", "discovery_idempotency_key", "discovery_status",
-  "supplemental_website_urls", "selected_competitor_ids",
+  "discovery_error", "supplemental_website_urls", "selected_competitor_ids",
 ]);
 
 function object(value: unknown): value is Record<string, unknown> {
@@ -75,6 +75,9 @@ export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | nul
   if (typeof value.site_url !== "string" || !(typeof value.gbp_url === "string" || value.gbp_url === null)) return null;
   if (value.preflight !== null && !parsePreflightResponse(value.preflight).ok) return null;
   if (value.discovery_status !== null && !parseDiscoveryStatusResponse(value.discovery_status).ok) return null;
+  if (!(value.discovery_error === null || (object(value.discovery_error)
+    && Object.keys(value.discovery_error).every((key) => ["code", "message", "retryable"].includes(key))
+    && typeof value.discovery_error.code === "string" && typeof value.discovery_error.message === "string" && typeof value.discovery_error.retryable === "boolean"))) return null;
   if (value.business_confirmation !== null && !validBusinessConfirmation(value.business_confirmation)) return null;
   if (!(value.discovery_job_id === null || (typeof value.discovery_job_id === "string" && uuidV4.test(value.discovery_job_id)))) return null;
   if (!(value.discovery_idempotency_key === null || (typeof value.discovery_idempotency_key === "string" && /^[A-Za-z0-9._:-]{8,200}$/.test(value.discovery_idempotency_key)))) return null;

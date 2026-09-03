@@ -31,7 +31,7 @@ export function FooterPreCTA() {
 
           <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
             <RunAuditButton className="rounded-xl bg-[#1A1F2B] px-8 py-4 text-[16px] font-bold tracking-normal text-white shadow-[0_12px_26px_rgba(26,31,43,0.18)] transition-colors hover:bg-black">
-              Run a Trust Audit
+              Start free preflight
             </RunAuditButton>
             <Link
               href="/sample-report"

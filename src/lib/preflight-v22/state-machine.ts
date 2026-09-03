@@ -42,6 +42,7 @@ export interface NewCaseDraft {
   discovery_job_id: string | null;
   discovery_idempotency_key: string | null;
   discovery_status: CompetitorDiscoveryStatusResponse | null;
+  discovery_error: { code: string; message: string; retryable: boolean } | null;
   supplemental_website_urls: string[];
   selected_competitor_ids: string[];
 }
@@ -54,9 +55,13 @@ export type WorkspaceEvent =
   | { type: "CONFIRM_BUSINESS"; confirmation: BusinessConfirmation }
   | { type: "START_DISCOVERY"; job_id: string; idempotency_key: string; supplemental_website_urls?: string[] }
   | { type: "DISCOVERY_UPDATED"; status: CompetitorDiscoveryStatusResponse }
+  | { type: "DISCOVERY_REQUEST_FAILED"; code: string; message: string; retryable?: boolean }
   | { type: "SELECT_COMPETITORS"; competitor_ids: string[] }
   | { type: "CONFIRM_COMPETITORS" }
   | { type: "DISCOVERY_EXPIRED" }
+  | { type: "EDIT_BUSINESS" }
+  | { type: "EDIT_COMPETITORS" }
+  | { type: "RETURN_TO_COVERAGE" }
   | { type: "BEGIN_AUTH_HANDOFF" }
   | { type: "CLEAR" };
 
@@ -83,6 +88,7 @@ export function createNewCaseDraft(
     discovery_job_id: null,
     discovery_idempotency_key: null,
     discovery_status: null,
+    discovery_error: null,
     supplemental_website_urls: [],
     selected_competitor_ids: [],
   };
@@ -97,6 +103,7 @@ function clearDiscovery() {
     discovery_job_id: null,
     discovery_idempotency_key: null,
     discovery_status: null,
+    discovery_error: null,
     supplemental_website_urls: [],
     selected_competitor_ids: [],
   } satisfies Partial<NewCaseDraft>;
@@ -143,12 +150,18 @@ export function reduceWorkspaceState(
         discovery_job_id: event.job_id,
         discovery_idempotency_key: event.idempotency_key,
         discovery_status: null,
+        discovery_error: null,
         supplemental_website_urls: event.supplemental_website_urls ?? [],
         selected_competitor_ids: [],
       }, now);
     case "DISCOVERY_UPDATED": {
       if (event.status.discovery_job_id !== state.discovery_job_id) return state;
-      if (event.status.status === "failed") return touch(state, { stage: "competitor_discovery_failed", discovery_status: event.status, selected_competitor_ids: [] }, now);
+      if (event.status.status === "failed") return touch(state, {
+        stage: "competitor_discovery_failed",
+        discovery_status: event.status,
+        discovery_error: event.status.error ? { code: event.status.error.error_code, message: event.status.error.user_message, retryable: event.status.error.retryable } : null,
+        selected_competitor_ids: [],
+      }, now);
       if (event.status.status !== "succeeded") return touch(state, { stage: "competitor_discovery_running", discovery_status: event.status }, now);
       const candidates = event.status.result?.candidates ?? [];
       return touch(state, {
@@ -157,6 +170,8 @@ export function reduceWorkspaceState(
         selected_competitor_ids: candidates.slice(0, 3).map((candidate) => candidate.competitor_id),
       }, now);
     }
+    case "DISCOVERY_REQUEST_FAILED":
+      return touch(state, { stage: "competitor_discovery_failed", discovery_error: { code: event.code, message: event.message, retryable: event.retryable ?? true }, selected_competitor_ids: [] }, now);
     case "SELECT_COMPETITORS": {
       const result = state.discovery_status?.result;
       if (!result || event.competitor_ids.length > 3) return state;
@@ -168,6 +183,12 @@ export function reduceWorkspaceState(
       return canConfirmCompetitors(state) ? touch(state, { stage: "coverage" }, now) : state;
     case "DISCOVERY_EXPIRED":
       return touch(state, { stage: "business_confirmation", ...clearDiscovery() }, now);
+    case "EDIT_BUSINESS":
+      return touch(state, { stage: "business_confirmation" }, now);
+    case "EDIT_COMPETITORS":
+      return state.discovery_status?.result ? touch(state, { stage: "competitor_confirmation" }, now) : state;
+    case "RETURN_TO_COVERAGE":
+      return canConfirmCompetitors(state) ? touch(state, { stage: "coverage" }, now) : state;
     case "BEGIN_AUTH_HANDOFF":
       return state.stage === "coverage" ? touch(state, { stage: "auth_handoff" }, now) : state;
     case "CLEAR":

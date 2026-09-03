@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { track } from "@/lib/analytics-client";
+import { useRouter } from "next/navigation";
 
 interface RunAuditButtonProps {
   className?: string;
@@ -14,13 +14,13 @@ export function RunAuditButton({
   children,
   trackingSource = "unknown",
 }: RunAuditButtonProps) {
-  const { openAuditForm } = useAuditModal();
+  const router = useRouter();
 
   return (
     <button
       onClick={() => {
-        track("audit cta clicked", { source: trackingSource });
-        openAuditForm();
+        track("preflight cta clicked", { source: trackingSource });
+        router.push("/cases/new");
       }}
       className={className}
     >

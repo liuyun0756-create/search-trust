@@ -18,7 +18,7 @@ export function ReportCTA() {
             matters most, and what to fix first.
           </p>
           <RunAuditButton className="inline-flex items-center gap-2 px-8 py-4 bg-white text-[#0B0C0E] font-bold rounded-xl hover:bg-gray-200 transition-colors text-[15px]">
-            Run a Trust Audit
+            Start free preflight
             <ArrowRight size={18} />
           </RunAuditButton>
         </div>

@@ -18,7 +18,7 @@ export function UseCasesCTA() {
             and what to fix first.
           </p>
           <RunAuditButton className="inline-flex items-center gap-2 px-8 py-4 bg-[#A5D020] text-[#0B0C0E] font-bold rounded-2xl hover:bg-[#b8e62d] transition-all transform hover:-translate-y-1 shadow-lg shadow-[#A5D020]/20 text-[15px]">
-            Run a Trust Audit
+            Start free preflight
             <ArrowRight size={18} />
           </RunAuditButton>
         </div>

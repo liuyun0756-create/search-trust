@@ -389,10 +389,10 @@ export function PrimaryUseCasesOverview() {
 
                 <div className="mt-10 flex flex-wrap justify-end gap-4">
                   <a
-                    href="/pricing"
+                    href="/cases/new"
                     className="inline-flex min-w-[220px] items-center justify-center rounded-xl bg-[#1A1F2B] px-8 py-4 text-[15px] font-bold text-white transition-colors hover:bg-black"
                   >
-                    Run a Trust Audit
+                    Start free preflight
                   </a>
                   <a
                     href="/sample-case"

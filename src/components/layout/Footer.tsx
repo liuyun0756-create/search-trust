@@ -9,7 +9,7 @@ const footerLinks = {
   ],
   "Get Started": [
     { href: "#", label: "Sign In" },
-    { href: "#", label: "Run a Trust Audit" },
+    { href: "/cases/new", label: "Start free preflight" },
   ],
   Legal: [
     { href: "/privacy", label: "Privacy" },

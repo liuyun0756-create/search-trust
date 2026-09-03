@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -10,11 +9,6 @@ import { FooterPreCTA } from "@/components/layout/FooterPreCTA";
 import { AnalyticsIdentify } from "@/components/common/AnalyticsIdentify";
 import { siteUrl, ogImage } from "@/lib/seo";
 
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -70,7 +64,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className="antialiased">
         <ClerkProvider>
           <AnalyticsIdentify />
           <AuditModalProvider>
