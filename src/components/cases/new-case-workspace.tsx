@@ -385,17 +385,22 @@ export function NewCaseWorkspace() {
 
   async function retryDiscovery() {
     if (!draft.discovery_job_id || !draft.business_confirmation) return;
-    if (draft.discovery_status?.error?.retryable) {
-      try {
+    try {
+      const latest = await getCompetitorDiscovery(draft.discovery_job_id);
+      if (latest.status !== "failed") {
+        setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_UPDATED", status: latest }));
+        return;
+      }
+      if (latest.error?.retryable) {
         await retryCompetitorDiscovery(draft.discovery_job_id);
         setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", job_id: draft.discovery_job_id!, idempotency_key: draft.discovery_idempotency_key ?? `retry:${draft.discovery_job_id}` }));
-      } catch (error) {
-        const safe = apiError(error);
-        setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
+        return;
       }
-      return;
+      setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_UPDATED", status: latest }));
+    } catch (error) {
+      const safe = apiError(error);
+      setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
     }
-    await startDiscovery(draft.business_confirmation, draft.supplemental_website_urls);
   }
 
   function continueAfterCoverage() {
