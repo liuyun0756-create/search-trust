@@ -52,7 +52,8 @@ export async function getCurrentUser() {
   if (insertError) {
     console.error("Current user resolution failed", {
       stage: "supabase_insert",
-      code: insertError.code,
+      code: insertError.code || "SUPABASE_INSERT_FAILED",
+      message: insertError.message.slice(0, 200),
     });
   }
 
