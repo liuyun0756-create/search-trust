@@ -82,37 +82,10 @@ export class DodoClient {
         input.cancelUrl,
         ...Object.values(input.metadata),
       ]);
-      let productListStatus: number | undefined;
-      let productCandidates: Array<Record<string, unknown>> | undefined;
-      if (response.status === 422) {
-        const productsEndpoint = new URL("/products?page_size=100&recurring=false", this.baseUrl);
-        const productsResponse = await this.request(productsEndpoint, {
-          method: "GET",
-          headers: { authorization: `Bearer ${this.apiKey}` },
-          cache: "no-store",
-        }).catch(() => null);
-        productListStatus = productsResponse?.status;
-        const productsPayload = productsResponse?.ok
-          ? await productsResponse.json().catch(() => null) as { items?: unknown } | null
-          : null;
-        const products = Array.isArray(productsPayload?.items) ? productsPayload.items : [];
-        productCandidates = products.slice(0, 20).map((item) => {
-          if (!item || typeof item !== "object") return { product_id: "unknown" };
-          const product = item as Record<string, unknown>;
-          return {
-            product_id: typeof product.product_id === "string" ? product.product_id : "unknown",
-            name: typeof product.name === "string" ? product.name.slice(0, 100) : undefined,
-            currency: typeof product.currency === "string" ? product.currency : undefined,
-            price: typeof product.price === "number" ? product.price : undefined,
-          };
-        });
-      }
       console.error("Dodo checkout request rejected", {
         provider_host: endpoint.hostname,
         provider_status: response.status,
         provider_error: providerError,
-        product_list_status: productListStatus,
-        product_candidates: productCandidates,
       });
       throw CasePaymentError.unavailable();
     }
