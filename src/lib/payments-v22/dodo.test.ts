@@ -65,6 +65,8 @@ describe("Dodo v2.2 client", () => {
         location: ["body", "product_cart", 0, "product_id"],
         message: "Product is not available",
       }],
+      product_list_status: 422,
+      product_candidates: [],
     });
     expect(JSON.stringify(log.mock.calls)).not.toContain("prod_private_value");
     log.mockRestore();

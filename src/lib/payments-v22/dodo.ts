@@ -82,11 +82,8 @@ export class DodoClient {
         input.cancelUrl,
         ...Object.values(input.metadata),
       ]);
-      console.error("Dodo checkout request rejected", {
-        provider_host: endpoint.hostname,
-        provider_status: response.status,
-        provider_error: providerError,
-      });
+      let productListStatus: number | undefined;
+      let productCandidates: Array<Record<string, unknown>> | undefined;
       if (response.status === 422) {
         const productsEndpoint = new URL("/products?page_size=100&recurring=false", this.baseUrl);
         const productsResponse = await this.request(productsEndpoint, {
@@ -94,11 +91,12 @@ export class DodoClient {
           headers: { authorization: `Bearer ${this.apiKey}` },
           cache: "no-store",
         }).catch(() => null);
+        productListStatus = productsResponse?.status;
         const productsPayload = productsResponse?.ok
           ? await productsResponse.json().catch(() => null) as { items?: unknown } | null
           : null;
         const products = Array.isArray(productsPayload?.items) ? productsPayload.items : [];
-        console.error("Dodo one-time product candidates", products.slice(0, 20).map((item) => {
+        productCandidates = products.slice(0, 20).map((item) => {
           if (!item || typeof item !== "object") return { product_id: "unknown" };
           const product = item as Record<string, unknown>;
           return {
@@ -107,8 +105,15 @@ export class DodoClient {
             currency: typeof product.currency === "string" ? product.currency : undefined,
             price: typeof product.price === "number" ? product.price : undefined,
           };
-        }));
+        });
       }
+      console.error("Dodo checkout request rejected", {
+        provider_host: endpoint.hostname,
+        provider_status: response.status,
+        provider_error: providerError,
+        product_list_status: productListStatus,
+        product_candidates: productCandidates,
+      });
       throw CasePaymentError.unavailable();
     }
     const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
