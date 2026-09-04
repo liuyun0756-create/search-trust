@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
+import type { TaskStatusResponse } from "@/lib/analysis-v22";
 import {
   clearDraft,
   createNewCaseDraft,
@@ -59,10 +60,13 @@ export function NewCaseWorkspace() {
     message: string;
   }>({ status: "saving_case", caseId: null, message: "Saving the verified Case before checkout…" });
   const savingCase = useRef(false);
+  const submittingAnalysis = useRef(false);
   const skipNextSave = useRef(false);
   const { isLoaded, isSignedIn } = useUser();
   const { openLogin } = useAuditModal();
   const authenticatedFetch = useAuthenticatedFetch();
+  const [analysisStatus, setAnalysisStatus] = useState<TaskStatusResponse | null>(null);
+  const [analysisPollTick, setAnalysisPollTick] = useState(0);
 
   useEffect(() => {
     setDraft(loadDraft(sessionStorage));
@@ -225,6 +229,107 @@ export function NewCaseWorkspace() {
     return () => controller.abort();
   }, [authenticatedFetch, draft.goal, draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId]);
 
+  const submitAnalysis = useCallback(async () => {
+    const discovery = draft.discovery_status?.result;
+    const confirmation = draft.business_confirmation;
+    const jobId = draft.analysis_job_id;
+    const idempotencyKey = draft.analysis_idempotency_key;
+    if (submittingAnalysis.current || !paymentHandoff.caseId || !discovery || !confirmation || !jobId || !idempotencyKey) return;
+    const selected = new Set(draft.selected_competitor_ids);
+    const competitors = discovery.candidates
+      .filter((candidate) => selected.has(candidate.competitor_id))
+      .map((candidate) => ({
+        competitor_id: candidate.competitor_id,
+        business_name: candidate.business_name,
+        website_url: candidate.website_url,
+        public_gbp_url: candidate.public_gbp_url,
+        confirmation_source: "user" as const,
+      }));
+    submittingAnalysis.current = true;
+    setPaymentHandoff((current) => ({ ...current, status: "starting_analysis", message: "Securing the report task and its exact confirmed competitor scope…" }));
+    try {
+      const response = await authenticatedFetch("/api/v2/analyze", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-searchtrust-job-id": jobId,
+          "x-searchtrust-discovery-id": discovery.discovery_id,
+          "idempotency-key": idempotencyKey,
+        },
+        body: JSON.stringify({
+          case_id: paymentHandoff.caseId,
+          report_type: "prospect",
+          business_identity: confirmation.business_identity,
+          primary_service: confirmation.primary_service,
+          target_market: confirmation.target_market,
+          queries: discoveryQueries(confirmation),
+          competitors,
+          first_party_snapshots: [],
+          parent_report: null,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.error?.message || "The report task could not be started yet.");
+      setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: "The task is queued. We’ll open the report automatically when its evidence has been validated." }));
+    } catch (error) {
+      setPaymentHandoff((current) => ({ ...current, status: "analysis_failed", message: error instanceof Error ? error.message : "The report task could not be started yet." }));
+    } finally {
+      submittingAnalysis.current = false;
+    }
+  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.selected_competitor_ids, paymentHandoff.caseId]);
+
+  useEffect(() => {
+    if (paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client") return;
+    if (!draft.analysis_job_id) {
+      const jobId = crypto.randomUUID();
+      setDraft((current) => reduceWorkspaceState(current, { type: "START_ANALYSIS", job_id: jobId, idempotency_key: `analyze:${current.draft_case_id}:${jobId}` }));
+      return;
+    }
+    void submitAnalysis();
+  }, [draft.analysis_job_id, draft.goal, paymentHandoff.status, submitAnalysis]);
+
+  useEffect(() => {
+    const jobId = draft.analysis_job_id;
+    const caseId = paymentHandoff.caseId;
+    if (!jobId || !caseId || !["starting_analysis", "analyzing"].includes(paymentHandoff.status)) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      let shouldContinue = true;
+      try {
+        const response = await authenticatedFetch(`/api/v2/tasks/${jobId}`, { signal: controller.signal });
+        const payload = await response.json().catch(() => null) as TaskStatusResponse | null;
+        if (!response.ok || !payload) throw new Error("Reconnecting to the report task…");
+        setAnalysisStatus(payload);
+        if (payload.status === "succeeded" && payload.database_report_id) {
+          clearDraft(sessionStorage);
+          window.location.assign(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(payload.database_report_id)}`);
+          shouldContinue = false;
+          return;
+        }
+        if (payload.status === "failed") {
+          setPaymentHandoff((current) => ({ ...current, status: "analysis_failed", message: payload.error?.user_message ?? "The analysis stopped safely. You can retry without another payment." }));
+          shouldContinue = false;
+          return;
+        }
+        setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: `${payload.message} ${payload.progress}% complete.` }));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: error instanceof Error ? error.message : "Reconnecting to the report task…" }));
+      } finally {
+        if (shouldContinue && !controller.signal.aborted) setAnalysisPollTick((value) => value + 1);
+      }
+    }, document.hidden ? 5_000 : 1_500);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [analysisPollTick, authenticatedFetch, draft.analysis_job_id, paymentHandoff.caseId, paymentHandoff.status]);
+
+  function retryAnalysis() {
+    if (analysisStatus?.status === "failed") {
+      setAnalysisStatus(null);
+      setDraft((current) => reduceWorkspaceState(current, { type: "RESET_ANALYSIS" }));
+    }
+    setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "Your entitlement is ready. Restarting the report task…" }));
+  }
+
   async function startPreflight(input: { goal: NewCaseDraft["goal"]; site_url: string; gbp_url: string | null }) {
     let siteUrl: string;
     let gbpUrl: string | null;
@@ -321,6 +426,8 @@ export function NewCaseWorkspace() {
     clearDraft(sessionStorage);
     skipNextSave.current = true;
     setDraft(createNewCaseDraft());
+    setAnalysisStatus(null);
+    setAnalysisPollTick(0);
     setHandoffMessage(null);
     setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving the verified Case before checkout…" });
   }
@@ -355,6 +462,7 @@ export function NewCaseWorkspace() {
                   message={paymentHandoff.message}
                   caseId={paymentHandoff.caseId}
                   onCheckout={() => void startCaseCheckout()}
+                  onRetryAnalysis={retryAnalysis}
                   onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }))}
                 />
               ) : (

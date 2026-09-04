@@ -6,6 +6,9 @@ export type PaymentHandoffStatus =
   | "creating_checkout"
   | "confirming_payment"
   | "unlocked"
+  | "starting_analysis"
+  | "analyzing"
+  | "analysis_failed"
   | "error";
 
 interface CasePaymentHandoffProps {
@@ -13,6 +16,7 @@ interface CasePaymentHandoffProps {
   message: string;
   caseId: string | null;
   onCheckout(): void;
+  onRetryAnalysis?(): void;
   onBack(): void;
 }
 
@@ -21,10 +25,12 @@ export function CasePaymentHandoff({
   message,
   caseId,
   onCheckout,
+  onRetryAnalysis = () => undefined,
   onBack,
 }: CasePaymentHandoffProps) {
-  const busy = status === "saving_case" || status === "creating_checkout" || status === "confirming_payment";
-  const unlocked = status === "unlocked";
+  const busy = status === "saving_case" || status === "creating_checkout" || status === "confirming_payment" || status === "starting_analysis" || status === "analyzing";
+  const unlocked = ["unlocked", "starting_analysis", "analyzing", "analysis_failed"].includes(status);
+  const analyzing = status === "starting_analysis" || status === "analyzing";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-[#d9dfd3] bg-white shadow-[0_18px_55px_rgba(31,39,27,0.07)]">
@@ -34,10 +40,10 @@ export function CasePaymentHandoff({
             {busy ? <LoaderCircle className="animate-spin" size={23} /> : unlocked ? <CheckCircle2 size={24} /> : <LockKeyhole size={22} />}
           </span>
           <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-[#718218]">
-            {unlocked ? "Payment confirmed" : "Case-level checkout"}
+            {analyzing ? "Building report" : status === "analysis_failed" ? "Analysis needs attention" : unlocked ? "Payment confirmed" : "Case-level checkout"}
           </p>
           <h1 className="mt-2 max-w-xl text-3xl font-bold tracking-[-0.035em] text-[#172017]">
-            {unlocked ? "This Case is unlocked for its first report." : "Keep this purchase attached to the right client."}
+            {analyzing ? "Your evidence-backed report is being built." : status === "analysis_failed" ? "Your payment is safe and the task can resume." : unlocked ? "This Case is unlocked for its first report." : "Keep this purchase attached to the right client."}
           </h1>
           <p aria-live="polite" className="mt-4 max-w-xl text-sm leading-6 text-[#667266]">{message}</p>
           {caseId && <p className="mt-4 break-all font-mono text-[10px] text-[#909990]">Case {caseId}</p>}
@@ -64,10 +70,15 @@ export function CasePaymentHandoff({
               {status === "creating_checkout" ? "Opening checkout…" : "Continue to secure checkout"}
             </button>
           )}
-          {unlocked && (
+          {unlocked && status !== "analysis_failed" && (
             <div className="mt-5 rounded-xl bg-[#eaf4cf] px-4 py-3 text-center text-xs font-bold text-[#56720c]">
-              1 prospect report available
+              {analyzing ? "Collecting and validating evidence…" : "1 prospect report available"}
             </div>
+          )}
+          {status === "analysis_failed" && (
+            <button type="button" onClick={onRetryAnalysis} className="mt-5 min-h-12 w-full rounded-xl bg-[#1a211a] px-5 text-sm font-bold text-white outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/45">
+              Retry analysis
+            </button>
           )}
         </div>
       </div>
@@ -78,4 +89,3 @@ export function CasePaymentHandoff({
     </section>
   );
 }
-

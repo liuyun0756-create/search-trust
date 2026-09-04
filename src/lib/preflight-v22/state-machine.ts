@@ -45,6 +45,8 @@ export interface NewCaseDraft {
   discovery_error: { code: string; message: string; retryable: boolean } | null;
   supplemental_website_urls: string[];
   selected_competitor_ids: string[];
+  analysis_job_id: string | null;
+  analysis_idempotency_key: string | null;
 }
 
 export type WorkspaceEvent =
@@ -63,6 +65,8 @@ export type WorkspaceEvent =
   | { type: "EDIT_COMPETITORS" }
   | { type: "RETURN_TO_COVERAGE" }
   | { type: "BEGIN_AUTH_HANDOFF" }
+  | { type: "START_ANALYSIS"; job_id: string; idempotency_key: string }
+  | { type: "RESET_ANALYSIS" }
   | { type: "CLEAR" };
 
 function iso(now: Date) { return now.toISOString(); }
@@ -91,6 +95,8 @@ export function createNewCaseDraft(
     discovery_error: null,
     supplemental_website_urls: [],
     selected_competitor_ids: [],
+    analysis_job_id: null,
+    analysis_idempotency_key: null,
   };
 }
 
@@ -106,6 +112,8 @@ function clearDiscovery() {
     discovery_error: null,
     supplemental_website_urls: [],
     selected_competitor_ids: [],
+    analysis_job_id: null,
+    analysis_idempotency_key: null,
   } satisfies Partial<NewCaseDraft>;
 }
 
@@ -191,6 +199,12 @@ export function reduceWorkspaceState(
       return canConfirmCompetitors(state) ? touch(state, { stage: "coverage" }, now) : state;
     case "BEGIN_AUTH_HANDOFF":
       return state.stage === "coverage" ? touch(state, { stage: "auth_handoff" }, now) : state;
+    case "START_ANALYSIS":
+      return state.stage === "auth_handoff" && !state.analysis_job_id
+        ? touch(state, { analysis_job_id: event.job_id, analysis_idempotency_key: event.idempotency_key }, now)
+        : state;
+    case "RESET_ANALYSIS":
+      return touch(state, { analysis_job_id: null, analysis_idempotency_key: null }, now);
     case "CLEAR":
       return createNewCaseDraft(now);
   }

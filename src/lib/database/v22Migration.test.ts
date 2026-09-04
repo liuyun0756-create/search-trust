@@ -788,4 +788,115 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       [connectionA],
     );
   });
+
+  it("atomically reserves a paid job and persists its exact snapshot graph before success", async () => {
+    const owner = await insertUser("result-owner");
+    const caseId = await insertCase(owner, "result");
+    const orderId = await insertId(
+      `insert into public.orders (
+         user_id, case_id, purchase_kind, payment_id, amount, currency,
+         credits_purchased, status, paid_at
+       ) values ($1, $2, 'case_prospect_report', 'pay_result_1', 1900, 'USD', 0, 'paid', now())
+       returning id`,
+      [owner, caseId],
+    );
+    await db.query(
+      `insert into public.case_report_entitlements (user_id, case_id, order_id)
+       values ($1, $2, $3)`,
+      [owner, caseId, orderId],
+    );
+    const jobId = "77777777-7777-4777-8777-777777777777";
+    const siteId = "88888888-8888-4888-8888-888888888888";
+    const serpId = "99999999-9999-4999-8999-999999999999";
+    const competitorId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const now = "2026-09-04T08:00:00Z";
+
+    const started = await db.query<{ job_id: string; created: boolean; idempotent: boolean }>(
+      `select * from public.start_v22_prospect_analysis($1, $2, $3, 'analyze:result:1')`,
+      [owner, caseId, jobId],
+    );
+    expect(started.rows[0]).toEqual({ job_id: jobId, created: true, idempotent: false });
+    const replay = await db.query<{ job_id: string; created: boolean; idempotent: boolean }>(
+      `select * from public.start_v22_prospect_analysis($1, $2, $3, 'analyze:result:1')`,
+      [owner, caseId, jobId],
+    );
+    expect(replay.rows[0]).toEqual({ job_id: jobId, created: false, idempotent: true });
+
+    const sitePayload = { schema_version: "site_inventory_snapshot_v1", completed_at: now, limitations: [] };
+    const serpPayload = { schema_version: "serp_market_snapshot_v1", completed_at: now, limitations: [] };
+    const competitorPayload = {
+      schema_version: "competitor_collection_snapshot_v1",
+      job_id: jobId,
+      market_snapshot_id: serpId,
+      market_snapshot_checksum: checksum,
+      completed_at: now,
+      limitations: [],
+    };
+    const reportPayload = {
+      identity: {
+        case_id: caseId,
+        business: { site_url: "https://result.example.com", public_gbp_url: null },
+      },
+      report_version: {
+        report_id: jobId,
+        report_type: "prospect",
+        schema_version: "2.2.0",
+        version_number: 1,
+        parent_report_id: null,
+        generated_at: now,
+        ruleset_version: "rules-v1",
+        copy_model_version: "copy-v1",
+      },
+      data_coverage: { sources: [] },
+      evidence_index: [{ snapshot_id: siteId }],
+      version_diff: { kind: "initial", parent_report_id: null, entries: [] },
+    };
+    const persistArgs = [
+      jobId, caseId,
+      siteId, JSON.stringify(sitePayload), checksum,
+      serpId, JSON.stringify(serpPayload), checksum, "2026-09-04T09:00:00Z",
+      competitorId, JSON.stringify(competitorPayload), checksum,
+      JSON.stringify(reportPayload),
+    ];
+    const persisted = await db.query<{ report_id: string; idempotent: boolean }>(
+      `select * from public.persist_v22_prospect_result(
+         $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9,
+         $10, $11::jsonb, $12, $13::jsonb
+       )`,
+      persistArgs,
+    );
+    expect(persisted.rows[0]).toEqual({ report_id: jobId, idempotent: false });
+    const persistedAgain = await db.query<{ report_id: string; idempotent: boolean }>(
+      `select * from public.persist_v22_prospect_result(
+         $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9,
+         $10, $11::jsonb, $12, $13::jsonb
+       )`,
+      persistArgs,
+    );
+    expect(persistedAgain.rows[0]).toEqual({ report_id: jobId, idempotent: true });
+
+    await db.query(
+      `select * from public.apply_analysis_job_event(
+         $1, $2, 1, 'succeeded', 'completed', 100::smallint, 1,
+         null, 'Complete', '{}'::jsonb, now(), now()
+       )`,
+      [jobId, caseId],
+    );
+    const graph = await db.query<{
+      snapshots: number; report_id: string; latest_report_id: string; entitlement_status: string;
+    }>(
+      `select
+         (select count(*)::int from public.data_snapshots where case_id = $1) as snapshots,
+         (select report_id from public.analysis_jobs where id = $2) as report_id,
+         (select latest_report_id from public.client_cases where id = $1) as latest_report_id,
+         (select status from public.case_report_entitlements where case_id = $1) as entitlement_status`,
+      [caseId, jobId],
+    );
+    expect(graph.rows[0]).toEqual({
+      snapshots: 3,
+      report_id: jobId,
+      latest_report_id: jobId,
+      entitlement_status: "consumed",
+    });
+  });
 });
