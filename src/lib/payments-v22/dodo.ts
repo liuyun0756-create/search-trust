@@ -87,6 +87,28 @@ export class DodoClient {
         provider_status: response.status,
         provider_error: providerError,
       });
+      if (response.status === 422) {
+        const productsEndpoint = new URL("/products?page_size=100&recurring=false", this.baseUrl);
+        const productsResponse = await this.request(productsEndpoint, {
+          method: "GET",
+          headers: { authorization: `Bearer ${this.apiKey}` },
+          cache: "no-store",
+        }).catch(() => null);
+        const productsPayload = productsResponse?.ok
+          ? await productsResponse.json().catch(() => null) as { items?: unknown } | null
+          : null;
+        const products = Array.isArray(productsPayload?.items) ? productsPayload.items : [];
+        console.error("Dodo one-time product candidates", products.slice(0, 20).map((item) => {
+          if (!item || typeof item !== "object") return { product_id: "unknown" };
+          const product = item as Record<string, unknown>;
+          return {
+            product_id: typeof product.product_id === "string" ? product.product_id : "unknown",
+            name: typeof product.name === "string" ? product.name.slice(0, 100) : undefined,
+            currency: typeof product.currency === "string" ? product.currency : undefined,
+            price: typeof product.price === "number" ? product.price : undefined,
+          };
+        }));
+      }
       throw CasePaymentError.unavailable();
     }
     const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
