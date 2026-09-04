@@ -49,6 +49,21 @@ export async function getCurrentUser() {
     .select("id, audit_credits")
     .single();
 
+  if (insertError?.code === "23505") {
+    const { data: concurrentUser } = await supabase
+      .from("users")
+      .select("id, audit_credits")
+      .eq("clerk_user_id", clerkUserId)
+      .maybeSingle();
+    if (concurrentUser) {
+      return {
+        userId: concurrentUser.id,
+        clerkUserId,
+        auditCredits: concurrentUser.audit_credits,
+      };
+    }
+  }
+
   if (insertError) {
     let supabaseHost = "invalid-url";
     try {
