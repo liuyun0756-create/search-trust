@@ -30,6 +30,23 @@ function safeCheckoutUrl(value: unknown): string | null {
   }
 }
 
+function safeProviderError(value: unknown) {
+  if (!value || typeof value !== "object") return undefined;
+  const detail = (value as { detail?: unknown }).detail;
+  if (!Array.isArray(detail)) return undefined;
+  return detail.slice(0, 3).map((item) => {
+    if (!item || typeof item !== "object") return { type: "unknown" };
+    const error = item as { type?: unknown; loc?: unknown; msg?: unknown };
+    return {
+      type: typeof error.type === "string" ? error.type : "unknown",
+      location: Array.isArray(error.loc)
+        ? error.loc.filter((part): part is string | number => typeof part === "string" || typeof part === "number")
+        : [],
+      message: typeof error.msg === "string" ? error.msg.slice(0, 160) : undefined,
+    };
+  });
+}
+
 export class DodoClient {
   constructor(
     private readonly baseUrl: string,
@@ -53,9 +70,11 @@ export class DodoClient {
       }),
     });
     if (!response.ok) {
+      const providerError = safeProviderError(await response.json().catch(() => null));
       console.error("Dodo checkout request rejected", {
         provider_host: endpoint.hostname,
         provider_status: response.status,
+        provider_error: providerError,
       });
       throw CasePaymentError.unavailable();
     }

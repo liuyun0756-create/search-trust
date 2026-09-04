@@ -43,4 +43,30 @@ describe("Dodo v2.2 client", () => {
     const client = new DodoClient("https://test.dodopayments.com", "secret", request as typeof fetch);
     await expect(client.createCheckout(input)).rejects.toMatchObject({ code: "CHECKOUT_UNAVAILABLE" });
   });
+
+  it("logs only safe validation details when Dodo rejects checkout", async () => {
+    const request = vi.fn(async () => new Response(JSON.stringify({
+      detail: [{
+        type: "value_error",
+        loc: ["body", "product_cart", 0, "product_id"],
+        msg: "Product is not available",
+        input: "prod_private_value",
+      }],
+    }), { status: 422 }));
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const client = new DodoClient("https://live.dodopayments.com", "secret", request as typeof fetch);
+
+    await expect(client.createCheckout(input)).rejects.toMatchObject({ code: "CHECKOUT_UNAVAILABLE" });
+    expect(log).toHaveBeenCalledWith("Dodo checkout request rejected", {
+      provider_host: "live.dodopayments.com",
+      provider_status: 422,
+      provider_error: [{
+        type: "value_error",
+        location: ["body", "product_cart", 0, "product_id"],
+        message: "Product is not available",
+      }],
+    });
+    expect(JSON.stringify(log.mock.calls)).not.toContain("prod_private_value");
+    log.mockRestore();
+  });
 });
