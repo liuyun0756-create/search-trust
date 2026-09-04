@@ -18,6 +18,7 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isCaseReport = /^\/cases\/[^/]+\/reports\/[^/]+$/.test(pathname);
 
   if (
     pathname === "/sample-case" ||
@@ -27,6 +28,7 @@ export function Header() {
     pathname === "/privacy" ||
     pathname === "/refund-policy"
     || pathname === "/cases/new"
+    || isCaseReport
   ) return null;
 
   const activeTab = navLinks.find(l => l.href === pathname)?.id ?? "home";
