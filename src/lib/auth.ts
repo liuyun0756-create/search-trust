@@ -50,10 +50,15 @@ export async function getCurrentUser() {
     .single();
 
   if (insertError) {
+    let supabaseHost = "invalid-url";
+    try {
+      supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "").hostname;
+    } catch {}
     console.error("Current user resolution failed", {
       stage: "supabase_insert",
       code: insertError.code || "SUPABASE_INSERT_FAILED",
       message: insertError.message.slice(0, 200),
+      supabase_host: supabaseHost,
     });
   }
 
