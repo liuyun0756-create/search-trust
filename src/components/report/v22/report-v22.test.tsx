@@ -7,6 +7,7 @@ import { buildReportV22ViewModel } from "../../../lib/report-v22/view-model";
 
 import { AdvisorReportView } from "./advisor-report-view";
 import { ClientReportView } from "./client-report-view";
+import { SharedClientReportShell } from "./shared-client-report-shell";
 
 const fixture = prospectFixture as unknown as SearchTrustReportV2_2;
 
@@ -35,5 +36,18 @@ describe("v2.2 report views", () => {
     expect(html).toContain("Coverage and source health");
     expect(html).toContain("sources");
     expect(html).toContain(fixture.findings[0].rule_id);
+  });
+
+  it("renders a public client shell without advisor controls or diagnostics", () => {
+    const html = renderToStaticMarkup(
+      <SharedClientReportShell
+        report={buildReportV22ViewModel(fixture, "client")}
+        pdfUrl="/api/share/safe-token/pdf"
+      />,
+    );
+    expect(html).toContain("Secure client report");
+    expect(html).toContain("Download PDF");
+    expect(html).not.toContain("Advisor");
+    expect(html).not.toContain(fixture.findings[0].rule_id);
   });
 });

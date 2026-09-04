@@ -5,6 +5,7 @@ import { ArrowLeft, BriefcaseBusiness, Eye, FileText, Sparkles } from "lucide-re
 import { AdvisorReportView } from "./advisor-report-view";
 import { ClientReportView } from "./client-report-view";
 import { ReportContextPills, formatReportDate } from "./report-v22-shared";
+import { ReportV22Actions } from "./report-v22-actions";
 
 const advisorNav = [
   ["Decision", "#decision"],
@@ -48,6 +49,7 @@ export function ReportV22Shell({
             <Link href="/reports" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-white/55 transition-colors hover:text-white">
               <ArrowLeft className="h-4 w-4" aria-hidden="true" /> All reports
             </Link>
+            <div className="flex flex-wrap items-center justify-end gap-3">
             <div className="flex rounded-full border border-white/12 bg-black/15 p-1" aria-label="Report view">
               <Link
                 href={`${basePath}?view=advisor`}
@@ -63,6 +65,8 @@ export function ReportV22Shell({
               >
                 <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Client
               </Link>
+            </div>
+            <ReportV22Actions caseId={caseId} reportId={reportId} mode={report.mode} />
             </div>
           </div>
 

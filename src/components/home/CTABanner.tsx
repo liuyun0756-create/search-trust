@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 
 export function CTABanner() {
   const pathname = usePathname();
-  if (pathname === "/cases/new" || /^\/cases\/[^/]+\/reports\/[^/]+$/.test(pathname)) return null;
+  if (pathname === "/cases/new" || pathname.startsWith("/share/") || /^\/cases\/[^/]+\/reports\/[^/]+$/.test(pathname)) return null;
   return (
     <footer className="relative overflow-hidden bg-[#F7F9F2] pt-20 pb-12">
       <div className="absolute inset-0 z-0 opacity-[0.08]">

@@ -120,19 +120,20 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await db.close();
   });
 
-  it("creates the six server-only v2.2 tables with RLS enabled", async () => {
+  it("creates the seven server-only v2.2 tables with RLS enabled", async () => {
     const tables = await db.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity
        from pg_class
        where relnamespace = 'public'::regnamespace
          and relname = any(array[
            'client_cases', 'google_connections', 'case_source_bindings',
-           'data_snapshots', 'analysis_jobs', 'case_report_entitlements'
+           'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
+           'report_shares'
          ])
        order by relname`,
     );
 
-    expect(tables.rows).toHaveLength(6);
+    expect(tables.rows).toHaveLength(7);
     expect(tables.rows.every((row) => row.relrowsecurity)).toBe(true);
 
     const browserGrants = await db.query<{ count: number }>(
@@ -141,7 +142,8 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
        where table_schema = 'public'
          and table_name = any(array[
            'client_cases', 'google_connections', 'case_source_bindings',
-           'data_snapshots', 'analysis_jobs', 'case_report_entitlements'
+           'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
+           'report_shares'
          ])
          and grantee in ('anon', 'authenticated')`,
     );
@@ -497,6 +499,42 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await expectSqlError(
       `delete from public.reports where id = $1`,
       [prospectReportA],
+    );
+  });
+
+  it("rotates one unguessable client share and enforces its user, Case, and report boundary", async () => {
+    const firstHash = "a".repeat(64);
+    const secondHash = "b".repeat(64);
+    const first = await db.query<{ rotate_v22_report_share: string }>(
+      `select public.rotate_v22_report_share($1, $2, $3, $4, now() + interval '30 days')`,
+      [userA, caseA, prospectReportA, firstHash],
+    );
+    expect(first.rows[0].rotate_v22_report_share).toBeTruthy();
+
+    const second = await db.query<{ rotate_v22_report_share: string }>(
+      `select public.rotate_v22_report_share($1, $2, $3, $4, now() + interval '30 days')`,
+      [userA, caseA, prospectReportA, secondHash],
+    );
+    expect(second.rows[0].rotate_v22_report_share).not.toBe(first.rows[0].rotate_v22_report_share);
+
+    const shares = await db.query<{ token_hash: string; revoked_at: string | null; view_mode: string }>(
+      `select token_hash, revoked_at, view_mode
+       from public.report_shares where report_id = $1 order by created_at`,
+      [prospectReportA],
+    );
+    expect(shares.rows).toHaveLength(2);
+    expect(shares.rows[0].revoked_at).not.toBeNull();
+    expect(shares.rows[1]).toMatchObject({ token_hash: secondHash, revoked_at: null, view_mode: "client" });
+
+    await expectSqlError(
+      `select public.rotate_v22_report_share($1, $2, $3, $4, now() + interval '30 days')`,
+      [userB, caseA, prospectReportA, "c".repeat(64)],
+      "report share target does not belong to user and case",
+    );
+    await expectSqlError(
+      `select public.rotate_v22_report_share($1, $2, $3, 'predictable', now() + interval '30 days')`,
+      [userA, caseA, prospectReportA],
+      "invalid report share parameters",
     );
   });
 

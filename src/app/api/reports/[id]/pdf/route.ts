@@ -4,10 +4,13 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { createServerClient } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { ReportPDFDocument } from "@/components/report/pdf/ReportPDFDocument";
+import { ReportV22PDFDocument } from "@/components/report/pdf/ReportV22PDFDocument";
 import { SAMPLE_REPORT_V21 } from "@/components/report/sampleReportV21";
 import { getReportPdfExportabilitySignals, isReportPdfExportable } from "@/lib/report-v21";
 import { findUserReportByIdentifier } from "@/lib/server/reportLookup";
 import type { EffectiveBranding, PdfVariant } from "@/lib/report-v21";
+import { parsePdfBranding } from "@/lib/report-pdf/branding";
+import { buildReportV22ViewModel, validateReportV22 } from "@/lib/report-v22";
 import type { Report } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -43,7 +46,16 @@ function valueType(value: unknown): string {
 }
 
 async function renderReportPdf(report: Report, branding: EffectiveBranding | undefined, variant: PdfVariant) {
-  const document = React.createElement(ReportPDFDocument, { report, branding, variant }) as React.ReactElement<any>;
+  const validation = report.report_v2_2 ? validateReportV22(report.report_v2_2) : null;
+  if (validation && !validation.ok) throw new Error("Stored v2.2 report is invalid.");
+  const document = validation?.ok
+    ? React.createElement(ReportV22PDFDocument, {
+        report: variant === "client"
+          ? buildReportV22ViewModel(validation.report, "client")
+          : buildReportV22ViewModel(validation.report, "advisor"),
+        branding,
+      }) as React.ReactElement<any>
+    : React.createElement(ReportPDFDocument, { report, branding, variant }) as React.ReactElement<any>;
   const buffer = await renderToBuffer(document);
   const reportId = report.external_report_id || report.report_id;
   const suffix = variant === "client" ? "Client" : "Full-Audit";
@@ -62,27 +74,6 @@ function parseVariant(value: unknown, defaultValue: PdfVariant = "full"): PdfVar
   if (value == null || value === "") return defaultValue;
   if (value === "client" || value === "full") return value;
   throw new Error('pdf_variant must be "client" or "full".');
-}
-
-function parseBranding(value: unknown): EffectiveBranding | undefined {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
-  const raw = value as Record<string, unknown>;
-  const text = (key: string, maxLength: number) => {
-    const value = raw[key];
-    return typeof value === "string" && value.trim() ? value.trim().slice(0, maxLength) : null;
-  };
-  const logoData = text("agency_logo_data", 1_500_000);
-  if (logoData && !/^data:image\/(png|jpeg);base64,/i.test(logoData)) {
-    throw new Error("Logo must be a PNG or JPEG image upload.");
-  }
-  const branding: EffectiveBranding = {
-    enabled: true,
-    agencyName: text("agency_name", 120),
-    agencyLogoData: logoData,
-    clientName: text("client_name", 120),
-    footerNote: text("footer_note", 240),
-  };
-  return branding.agencyName || branding.agencyLogoData || branding.clientName || branding.footerNote ? branding : undefined;
 }
 
 export async function GET(
@@ -178,7 +169,7 @@ export async function GET(
       });
     }
 
-    if ((report.status === "pending" || report.status === "failed") && !exportable) {
+    if ((report.status === "pending" || report.status === "failed") && !exportable && !report.report_v2_2) {
       return NextResponse.json({ error: "Report is still generating" }, { status: 409 });
     }
 
@@ -199,7 +190,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const branding = parseBranding(body?.branding);
+    const branding = parsePdfBranding(body?.branding);
     const variant = parseVariant(body?.pdf_variant);
 
     if (id === SAMPLE_REPORT_V21.id || id === SAMPLE_REPORT_V21.report_id) {
@@ -214,7 +205,7 @@ export async function POST(
     if (error || !data) return NextResponse.json({ error: "Report not found" }, { status: 404 });
 
     const report = data as Report;
-    if ((report.status === "pending" || report.status === "failed") && !isReportPdfExportable(report)) {
+    if ((report.status === "pending" || report.status === "failed") && !isReportPdfExportable(report) && !report.report_v2_2) {
       return NextResponse.json({ error: "Report is still generating" }, { status: 409 });
     }
     return renderReportPdf(report, branding, variant);

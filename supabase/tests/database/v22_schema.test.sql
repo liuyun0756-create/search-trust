@@ -2,13 +2,14 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(34);
+select plan(38);
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');
 select has_table('public', 'case_source_bindings', 'v2.2 case_source_bindings exists');
 select has_table('public', 'data_snapshots', 'v2.2 data_snapshots exists');
 select has_table('public', 'analysis_jobs', 'v2.2 analysis_jobs exists');
+select has_table('public', 'report_shares', 'v2.2 report_shares exists');
 
 select has_column('public', 'reports', 'case_id', 'reports has a Case owner');
 select has_column('public', 'reports', 'report_v2_2', 'reports has the v2.2 contract payload');
@@ -46,6 +47,10 @@ select ok(
   (select relrowsecurity from pg_class where oid = 'public.analysis_jobs'::regclass),
   'analysis_jobs has RLS enabled'
 );
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.report_shares'::regclass),
+  'report_shares has RLS enabled'
+);
 
 select ok(
   has_table_privilege('service_role', 'public.client_cases', 'SELECT'),
@@ -58,6 +63,10 @@ select ok(
 select ok(
   not has_table_privilege('authenticated', 'public.client_cases', 'SELECT'),
   'authenticated cannot read client_cases'
+);
+select ok(
+  not has_table_privilege('anon', 'public.report_shares', 'SELECT'),
+  'anon cannot read report_shares directly'
 );
 
 select has_trigger(
@@ -88,6 +97,11 @@ select has_function(
     'text', 'text', 'jsonb', 'timestamp with time zone', 'timestamp with time zone'
   ],
   'analysis job callback function exists'
+);
+select has_function(
+  'public', 'rotate_v22_report_share',
+  array['uuid', 'uuid', 'uuid', 'text', 'timestamp with time zone'],
+  'atomic report share rotation function exists'
 );
 select has_index(
   'public', 'client_cases', 'uq_client_cases_user_domain_location',

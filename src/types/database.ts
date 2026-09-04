@@ -203,6 +203,19 @@ export interface CaseReportEntitlement {
   updated_at: string;
 }
 
+export interface ReportShare {
+  id: string;
+  user_id: string;
+  case_id: string;
+  report_id: string;
+  token_hash: string;
+  view_mode: "client";
+  expires_at: string;
+  revoked_at: string | null;
+  last_accessed_at: string | null;
+  created_at: string;
+}
+
 export type GenerateReportRequest = {
   url: string;
   page_type: string;
