@@ -38,7 +38,8 @@ export class DodoClient {
   ) {}
 
   async createCheckout(input: CreateCheckoutInput): Promise<CheckoutSession> {
-    const response = await this.request(`${this.baseUrl}/checkouts`, {
+    const endpoint = new URL("/checkouts", this.baseUrl);
+    const response = await this.request(endpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -51,7 +52,13 @@ export class DodoClient {
         metadata: input.metadata,
       }),
     });
-    if (!response.ok) throw CasePaymentError.unavailable();
+    if (!response.ok) {
+      console.error("Dodo checkout request rejected", {
+        provider_host: endpoint.hostname,
+        provider_status: response.status,
+      });
+      throw CasePaymentError.unavailable();
+    }
     const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
     const checkoutUrl = safeCheckoutUrl(payload?.checkout_url);
     if (!payload || typeof payload.session_id !== "string" || !payload.session_id || !checkoutUrl) {
@@ -72,4 +79,3 @@ export class DodoClient {
     return payment;
   }
 }
-
