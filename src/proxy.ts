@@ -22,7 +22,9 @@ const isPublicRoute = createRouteMatcher([
   "/api/report-status",
   "/api/report-meta",
   "/api/reports(.*)",
-  "/api/v2/cases(.*)",
+  // Case, checkout, report-share, and analysis routes are intentionally not
+  // public: Clerk must validate and attach the current user session before
+  // their handlers call auth().
   "/api/v2/preflight",
   "/api/v2/competitors(.*)",
   "/api/checkout(.*)",
