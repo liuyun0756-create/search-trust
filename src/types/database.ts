@@ -63,6 +63,7 @@ export interface GoogleOAuthSession {
   id: string;
   user_id: string;
   case_id: string | null;
+  connection_id: string | null;
   state_digest: string;
   pkce_verifier_ciphertext: string;
   pkce_verifier_iv: string;

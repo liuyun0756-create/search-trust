@@ -130,6 +130,7 @@ describe("Supabase Google connection repository", () => {
       id: "33333333-3333-4333-8333-333333333333",
       userId,
       caseId: null,
+      connectionId: null,
       stateDigest: Buffer.alloc(32, 7).toString("base64"),
       pkceVerifier: {
         keyVersion: "v1", ciphertext: Buffer.from("encrypted").toString("base64"),

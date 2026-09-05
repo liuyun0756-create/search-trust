@@ -46,6 +46,7 @@ create table public.google_oauth_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
   case_id uuid references public.client_cases(id) on delete cascade,
+  connection_id uuid references public.google_connections(id) on delete cascade,
   state_digest bytea not null,
   pkce_verifier_ciphertext bytea not null,
   pkce_verifier_iv bytea not null,
@@ -136,26 +137,36 @@ set search_path = public
 as $$
 declare
   case_owner uuid;
+  connection_owner uuid;
 begin
-  if new.case_id is null then
-    return new;
+  if new.connection_id is not null then
+    select user_id into connection_owner
+    from public.google_connections
+    where id = new.connection_id;
+    if not found or connection_owner is distinct from new.user_id then
+      raise exception using
+        errcode = '23514',
+        message = 'OAuth session connection must belong to its user';
+    end if;
   end if;
 
-  select user_id into case_owner
-  from public.client_cases
-  where id = new.case_id;
+  if new.case_id is not null then
+    select user_id into case_owner
+    from public.client_cases
+    where id = new.case_id;
 
-  if not found or case_owner is distinct from new.user_id then
-    raise exception using
-      errcode = '23514',
-      message = 'OAuth session Case must belong to its user';
+    if not found or case_owner is distinct from new.user_id then
+      raise exception using
+        errcode = '23514',
+        message = 'OAuth session Case must belong to its user';
+    end if;
   end if;
   return new;
 end;
 $$;
 
 create trigger validate_google_oauth_session_ownership
-before insert or update of user_id, case_id on public.google_oauth_sessions
+before insert or update of user_id, case_id, connection_id on public.google_oauth_sessions
 for each row execute function public.validate_google_oauth_session_ownership();
 
 create or replace function public.validate_google_connection_event_ownership()

@@ -46,6 +46,7 @@ export interface GoogleConnectionServiceDependencies {
 export interface StartAuthorizationInput {
   userId: string;
   caseId?: string | null;
+  connectionId?: string | null;
   sources: unknown;
   returnPath?: string | null;
   requestId: string;
@@ -212,6 +213,12 @@ export function createGoogleConnectionService(dependencies: GoogleConnectionServ
       if (input.caseId && !await dependencies.repository.caseOwnedByUser(input.userId, input.caseId)) {
         throw new GoogleConnectionError("GOOGLE_CONNECTION_FORBIDDEN", { status: 404 });
       }
+      const targetConnection = input.connectionId
+        ? await dependencies.repository.findConnectionById(input.userId, input.connectionId)
+        : null;
+      if (input.connectionId && !targetConnection) {
+        throw new GoogleConnectionError("GOOGLE_CONNECTION_FORBIDDEN", { status: 404 });
+      }
       const createdAt = now();
       const sessionId = createId();
       const state = makeState();
@@ -222,6 +229,7 @@ export function createGoogleConnectionService(dependencies: GoogleConnectionServ
         id: sessionId,
         userId: input.userId,
         caseId: input.caseId ?? null,
+        connectionId: targetConnection?.id ?? null,
         stateDigest: stateDigest.toString("base64"),
         pkceVerifier: dependencies.vault.encrypt(pkce.verifier, sessionContext({ id: sessionId, userId: input.userId })),
         requestedSources: sources,
@@ -248,7 +256,7 @@ export function createGoogleConnectionService(dependencies: GoogleConnectionServ
           scopes,
           state,
           codeChallenge: pkce.challenge,
-          loginHint: input.loginHint,
+          loginHint: targetConnection?.accountEmail ?? input.loginHint,
         }),
         cookieBinding: createOAuthCookieBinding(dependencies.cookieSecret, sessionId, stateDigest),
         expiresAt: session.expiresAt,
@@ -307,6 +315,12 @@ export function createGoogleConnectionService(dependencies: GoogleConnectionServ
         const verifier = dependencies.vault.decrypt(consumed.pkceVerifier, sessionContext(consumed));
         const tokenSet = await dependencies.provider.exchangeCode(input.code, verifier);
         const identity = await dependencies.provider.getIdentity(tokenSet.accessToken);
+        if (consumed.connectionId) {
+          const target = await dependencies.repository.findConnectionById(input.userId, consumed.connectionId);
+          if (!target || target.googleSubject !== identity.subject) {
+            throw new GoogleConnectionError("GOOGLE_CONNECTION_FORBIDDEN", { status: 409 });
+          }
+        }
         const existing = await dependencies.repository.findConnectionBySubject(input.userId, identity.subject);
         const connection = await saveTokenSet(
           consumed,

@@ -33,6 +33,7 @@ export interface GoogleOAuthSessionRecord {
   id: string;
   userId: string;
   caseId: string | null;
+  connectionId: string | null;
   stateDigest: string;
   pkceVerifier: EncryptedSecret;
   requestedSources: GoogleSource[];

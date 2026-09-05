@@ -126,6 +126,7 @@ function oauthSessionFromRow(row: Row): GoogleOAuthSessionRecord {
     id: String(row.id),
     userId: String(row.user_id),
     caseId: typeof row.case_id === "string" ? row.case_id : null,
+    connectionId: typeof row.connection_id === "string" ? row.connection_id : null,
     stateDigest: fromBytea(row.state_digest),
     pkceVerifier: verifier,
     requestedSources: (Array.isArray(row.requested_sources) ? row.requested_sources : []) as GoogleOAuthSessionRecord["requestedSources"],
@@ -147,7 +148,7 @@ const CONNECTION_COLUMNS = [
 ].join(",");
 
 const SESSION_COLUMNS = [
-  "id", "user_id", "case_id", "state_digest", "pkce_verifier_ciphertext", "pkce_verifier_iv",
+  "id", "user_id", "case_id", "connection_id", "state_digest", "pkce_verifier_ciphertext", "pkce_verifier_iv",
   "pkce_verifier_auth_tag", "encryption_key_version", "requested_sources", "requested_scopes",
   "return_path", "expires_at", "consumed_at", "outcome_code", "created_at",
 ].join(",");
@@ -167,6 +168,7 @@ export class SupabaseGoogleConnectionRepository implements GoogleConnectionRepos
       id: session.id,
       user_id: session.userId,
       case_id: session.caseId,
+      connection_id: session.connectionId,
       state_digest: toBytea(session.stateDigest),
       ...encryptedColumns("pkce_verifier", session.pkceVerifier),
       encryption_key_version: session.pkceVerifier.keyVersion,
