@@ -130,6 +130,26 @@ create index idx_google_connection_events_connection_created
   on public.google_connection_events (connection_id, created_at desc)
   where connection_id is not null;
 
+create table public.google_token_broker_requests (
+  request_id text primary key,
+  nonce_digest bytea not null unique,
+  connection_id uuid not null references public.google_connections(id) on delete cascade,
+  source_type text not null check (source_type in ('gsc', 'ga4', 'gbp')),
+  requested_at timestamptz not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  constraint google_token_broker_request_id_check check (
+    btrim(request_id) <> '' and octet_length(request_id) <= 200
+  ),
+  constraint google_token_broker_nonce_check check (octet_length(nonce_digest) = 32),
+  constraint google_token_broker_expiry_check check (
+    expires_at > requested_at and expires_at <= requested_at + interval '5 minutes'
+  )
+);
+
+create index idx_google_token_broker_requests_expiry
+  on public.google_token_broker_requests (expires_at);
+
 create or replace function public.validate_google_oauth_session_ownership()
 returns trigger
 language plpgsql
@@ -247,19 +267,43 @@ begin
 end;
 $$;
 
+create or replace function public.cleanup_expired_google_token_broker_requests(
+  p_now timestamptz default now()
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  deleted_count integer;
+begin
+  delete from public.google_token_broker_requests
+  where expires_at < p_now - interval '24 hours';
+  get diagnostics deleted_count = row_count;
+  return deleted_count;
+end;
+$$;
+
 alter table public.google_oauth_sessions enable row level security;
 alter table public.google_connection_events enable row level security;
+alter table public.google_token_broker_requests enable row level security;
 
 grant select, insert, update, delete on table public.google_oauth_sessions to service_role;
 grant select, insert, update, delete on table public.google_connection_events to service_role;
+grant select, insert, update, delete on table public.google_token_broker_requests to service_role;
 
 revoke all on table public.google_oauth_sessions from anon, authenticated;
 revoke all on table public.google_connection_events from anon, authenticated;
+revoke all on table public.google_token_broker_requests from anon, authenticated;
 revoke all on function public.cleanup_expired_google_oauth_sessions(timestamptz) from public, anon, authenticated;
 grant execute on function public.cleanup_expired_google_oauth_sessions(timestamptz) to service_role;
+revoke all on function public.cleanup_expired_google_token_broker_requests(timestamptz) from public, anon, authenticated;
+grant execute on function public.cleanup_expired_google_token_broker_requests(timestamptz) to service_role;
 
 comment on table public.google_oauth_sessions is 'Server-only one-time OAuth state and encrypted PKCE verifier records.';
 comment on table public.google_connection_events is 'Non-secret audit events for Google connection lifecycle changes.';
+comment on table public.google_token_broker_requests is 'Replay-prevention claims for signed internal token broker requests.';
 comment on column public.google_connections.refresh_lease_id is 'Short-lived compare-and-set lease holder for token refresh.';
 
 commit;

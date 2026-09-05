@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(50);
+select plan(55);
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');
@@ -12,6 +12,7 @@ select has_table('public', 'analysis_jobs', 'v2.2 analysis_jobs exists');
 select has_table('public', 'report_shares', 'v2.2 report_shares exists');
 select has_table('public', 'google_oauth_sessions', 'v2.2 Google OAuth sessions exist');
 select has_table('public', 'google_connection_events', 'v2.2 Google connection events exist');
+select has_table('public', 'google_token_broker_requests', 'v2.2 Google broker replay claims exist');
 
 select has_column('public', 'reports', 'case_id', 'reports has a Case owner');
 select has_column('public', 'reports', 'report_v2_2', 'reports has the v2.2 contract payload');
@@ -35,6 +36,7 @@ select has_pk('public', 'data_snapshots', 'data_snapshots has a primary key');
 select has_pk('public', 'analysis_jobs', 'analysis_jobs has a primary key');
 select has_pk('public', 'google_oauth_sessions', 'google_oauth_sessions has a primary key');
 select has_pk('public', 'google_connection_events', 'google_connection_events has a primary key');
+select has_pk('public', 'google_token_broker_requests', 'google_token_broker_requests has a primary key');
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.client_cases'::regclass),
@@ -68,6 +70,10 @@ select ok(
   (select relrowsecurity from pg_class where oid = 'public.google_connection_events'::regclass),
   'google_connection_events has RLS enabled'
 );
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.google_token_broker_requests'::regclass),
+  'google_token_broker_requests has RLS enabled'
+);
 
 select ok(
   has_table_privilege('service_role', 'public.client_cases', 'SELECT'),
@@ -92,6 +98,10 @@ select ok(
 select ok(
   not has_table_privilege('authenticated', 'public.google_connection_events', 'SELECT'),
   'authenticated cannot read Google connection events'
+);
+select ok(
+  not has_table_privilege('anon', 'public.google_token_broker_requests', 'SELECT'),
+  'anon cannot read Google broker replay claims'
 );
 
 select has_trigger(
@@ -135,6 +145,10 @@ select has_function(
 select has_function(
   'public', 'cleanup_expired_google_oauth_sessions', array['timestamp with time zone'],
   'expired Google OAuth session cleanup exists'
+);
+select has_function(
+  'public', 'cleanup_expired_google_token_broker_requests', array['timestamp with time zone'],
+  'expired Google broker replay claim cleanup exists'
 );
 select has_index(
   'public', 'client_cases', 'uq_client_cases_user_domain_location',

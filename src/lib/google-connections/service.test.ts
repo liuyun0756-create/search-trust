@@ -153,6 +153,7 @@ class MemoryRepository implements GoogleConnectionRepository {
   async appendEvent(event: GoogleConnectionEventInput) {
     this.events.push(clone(event));
   }
+  async claimBrokerRequest() { return true; }
 }
 
 class FakeProvider implements GoogleOAuthProvider {

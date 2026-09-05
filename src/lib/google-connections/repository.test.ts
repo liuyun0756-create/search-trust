@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { GoogleConnectionRecord, GoogleOAuthSessionRecord } from "./contracts";
 import { SupabaseGoogleConnectionRepository } from "./repository";
 
-type FakeResult = { data: unknown; error: null };
+type FakeResult = { data: unknown; error: null | { code: string } };
 
 class FakeQueryBuilder {
   readonly calls: Array<[string, ...unknown[]]> = [];
@@ -31,6 +31,7 @@ class FakeSupabase {
   readonly tables: string[] = [];
   private readonly results: FakeResult[] = [];
   enqueue(data: unknown) { this.results.push({ data, error: null }); }
+  enqueueError(code: string) { this.results.push({ data: null, error: { code } }); }
   from(table: string) {
     this.tables.push(table);
     const builder = new FakeQueryBuilder(this.results.shift() ?? { data: null, error: null });
@@ -175,5 +176,27 @@ describe("Supabase Google connection repository", () => {
     const result: GoogleConnectionRecord | null = await repository.findConnectionByIdInternal(connectionId);
     expect(result?.id).toBe(connectionId);
     expect(fake.builders[0].calls.some((call) => call[1] === "user_id")).toBe(false);
+  });
+
+  it("persists only nonce digests and treats unique violations as broker replays", async () => {
+    const fake = new FakeSupabase();
+    const repository = new SupabaseGoogleConnectionRepository(fake as unknown as SupabaseClient);
+    const nonceDigest = Buffer.alloc(32, 6).toString("base64");
+    const input = {
+      requestId: "broker-request-1",
+      nonceDigest,
+      connectionId,
+      source: "ga4" as const,
+      requestedAt: now,
+      expiresAt: "2026-09-05T12:05:00.000Z",
+    };
+    fake.enqueue(null);
+    await expect(repository.claimBrokerRequest(input)).resolves.toBe(true);
+    const payload = fake.builders[0].calls.find((call) => call[0] === "insert")?.[1] as Record<string, unknown>;
+    expect(payload.nonce_digest).toBe(`\\x${Buffer.alloc(32, 6).toString("hex")}`);
+    expect(JSON.stringify(payload)).not.toContain(nonceDigest);
+
+    fake.enqueueError("23505");
+    await expect(repository.claimBrokerRequest(input)).resolves.toBe(false);
   });
 });

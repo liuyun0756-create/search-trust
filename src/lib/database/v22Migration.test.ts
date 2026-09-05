@@ -120,7 +120,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await db.close();
   });
 
-  it("creates the nine server-only v2.2 tables with RLS enabled", async () => {
+  it("creates the ten server-only v2.2 tables with RLS enabled", async () => {
     const tables = await db.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity
        from pg_class
@@ -128,12 +128,13 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
          and relname = any(array[
            'client_cases', 'google_connections', 'case_source_bindings',
            'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
-           'report_shares', 'google_oauth_sessions', 'google_connection_events'
+           'report_shares', 'google_oauth_sessions', 'google_connection_events',
+           'google_token_broker_requests'
          ])
        order by relname`,
     );
 
-    expect(tables.rows).toHaveLength(9);
+    expect(tables.rows).toHaveLength(10);
     expect(tables.rows.every((row) => row.relrowsecurity)).toBe(true);
 
     const browserGrants = await db.query<{ count: number }>(
@@ -143,7 +144,8 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
          and table_name = any(array[
            'client_cases', 'google_connections', 'case_source_bindings',
            'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
-           'report_shares', 'google_oauth_sessions', 'google_connection_events'
+           'report_shares', 'google_oauth_sessions', 'google_connection_events',
+           'google_token_broker_requests'
          ])
          and grantee in ('anon', 'authenticated')`,
     );
@@ -390,10 +392,27 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       [userA, connectionA, caseA],
     );
 
+    await db.query(
+      `insert into public.google_token_broker_requests (
+         request_id, nonce_digest, connection_id, source_type, requested_at, expires_at
+       ) values ('broker-request-1', decode(repeat('aa', 32), 'hex'), $1, 'gsc', now(), now() + interval '1 minute')`,
+      [connectionA],
+    );
+    await expectSqlError(
+      `insert into public.google_token_broker_requests (
+         request_id, nonce_digest, connection_id, source_type, requested_at, expires_at
+       ) values ('broker-request-2', decode(repeat('aa', 32), 'hex'), $1, 'gsc', now(), now() + interval '1 minute')`,
+      [connectionA],
+    );
+
     const cleaned = await db.query<{ cleanup_expired_google_oauth_sessions: number }>(
       `select public.cleanup_expired_google_oauth_sessions(now() + interval '2 days')`,
     );
     expect(cleaned.rows[0].cleanup_expired_google_oauth_sessions).toBe(1);
+    const brokerCleaned = await db.query<{ cleanup_expired_google_token_broker_requests: number }>(
+      `select public.cleanup_expired_google_token_broker_requests(now() + interval '2 days')`,
+    );
+    expect(brokerCleaned.rows[0].cleanup_expired_google_token_broker_requests).toBe(1);
   });
 
   it("enforces snapshot ownership, lineage, retention, and immutability", async () => {

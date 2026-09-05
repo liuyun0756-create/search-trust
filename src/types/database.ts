@@ -100,6 +100,16 @@ export interface GoogleConnectionEvent {
   created_at: string;
 }
 
+export interface GoogleTokenBrokerRequest {
+  request_id: string;
+  nonce_digest: string;
+  connection_id: string;
+  source_type: "gsc" | "ga4" | "gbp";
+  requested_at: string;
+  expires_at: string;
+  created_at: string;
+}
+
 export interface CaseSourceBinding {
   id: string;
   case_id: string;

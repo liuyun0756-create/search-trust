@@ -9,6 +9,7 @@ import type {
 } from "./contracts";
 import { GoogleConnectionError } from "./errors";
 import type { EncryptedSecret } from "./token-vault";
+import type { GoogleSource } from "./scopes";
 
 type Row = Record<string, unknown>;
 
@@ -39,6 +40,14 @@ export interface GoogleConnectionRepository {
     occurredAt: string;
   }): Promise<GoogleConnectionRecord | null>;
   appendEvent(event: GoogleConnectionEventInput): Promise<void>;
+  claimBrokerRequest(input: {
+    requestId: string;
+    nonceDigest: string;
+    connectionId: string;
+    source: GoogleSource;
+    requestedAt: string;
+    expiresAt: string;
+  }): Promise<boolean>;
 }
 
 export class GoogleConnectionPersistenceError extends GoogleConnectionError {
@@ -348,5 +357,26 @@ export class SupabaseGoogleConnectionRepository implements GoogleConnectionRepos
       request_id: event.requestId,
     });
     if (error) return fail();
+  }
+
+  async claimBrokerRequest(input: {
+    requestId: string;
+    nonceDigest: string;
+    connectionId: string;
+    source: GoogleSource;
+    requestedAt: string;
+    expiresAt: string;
+  }): Promise<boolean> {
+    const { error } = await this.supabase.from("google_token_broker_requests").insert({
+      request_id: input.requestId,
+      nonce_digest: toBytea(input.nonceDigest),
+      connection_id: input.connectionId,
+      source_type: input.source,
+      requested_at: input.requestedAt,
+      expires_at: input.expiresAt,
+    });
+    if (!error) return true;
+    if (error.code === "23505") return false;
+    return fail();
   }
 }

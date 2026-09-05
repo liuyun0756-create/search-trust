@@ -23,3 +23,12 @@ export function createServerGoogleConnectionService() {
     cookieSecret: config.cookieSecret,
   });
 }
+
+export function getServerGoogleBrokerSecret(): string {
+  const config = loadGoogleConnectionConfig();
+  return config.enabled ? config.brokerSecret : "";
+}
+
+export function createServerGoogleConnectionRepository() {
+  return new SupabaseGoogleConnectionRepository(createServerClient());
+}
