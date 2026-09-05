@@ -53,6 +53,7 @@ describe("Google resource discovery", () => {
     const result = await provider.verify("fake", { source: "gbp", parent: "accounts/1", resourceId: "locations/3" });
     expect(result.address).toBe("1 Main Street, Boston, US");
     expect(result.service_areas).toEqual(["Boston"]);
+    expect(result.location_address).toEqual({ country_code: "US", city: "Boston", postal_code: null });
     expect(String(fetcher.mock.calls[2]?.[0])).toContain("pageToken=more");
   });
   it("distinguishes a valid empty list from a provider error", async () => {
@@ -73,5 +74,14 @@ describe("Google resource discovery", () => {
   it("normalizes transport errors without returning secrets", async () => {
     const provider = new GoogleResourceHttpProvider(vi.fn(async () => { throw new Error("Bearer fake-secret timeout"); }));
     await expect(provider.list("fake", { source: "gsc" })).rejects.toMatchObject({ message: "Google resources could not be loaded. Please try again." });
+  });
+  it("keeps missing web-stream evidence instead of silently filtering it out", async () => {
+    const { provider } = fixture([
+      { name: "properties/2", account: "accounts/1" },
+      { dataStreams: [{ type: "WEB_DATA_STREAM", webStreamData: { defaultUri: "https://example.com/" } },
+        { type: "WEB_DATA_STREAM", webStreamData: { defaultUri: "" } }, { type: "WEB_DATA_STREAM" }] },
+    ]);
+    expect(await provider.verify("fake", { source: "ga4", parent: "accounts/1", resourceId: "properties/2" }))
+      .toMatchObject({ website_urls: ["https://example.com/"], website_evidence_incomplete: true });
   });
 });

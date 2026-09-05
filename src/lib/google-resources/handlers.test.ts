@@ -32,9 +32,18 @@ describe("private Google resource handlers", () => {
     const f = setup();
     const result = await f.handlers.POST(new NextRequest("https://example.test/api", { method: "POST", body: JSON.stringify({
       source: "gsc", connection_id: id, resource_id: "sc-domain:example.com", parent: null,
-      confirm_selection: true, expected_binding_id: null, name: "forged", identity_match_status: "matched",
+      confirm_selection: true, expected_binding_id: null, name: "forged", identity_match_status: "matched", identity_review_token: "a".repeat(64),
     }) }), context);
     expect(result.status).toBe(200);
-    expect(f.service.bind.mock.calls[0]).toEqual([id, id, { source: "gsc", connection_id: id, resource_id: "sc-domain:example.com", parent: null, expected_binding_id: null }, expect.any(String)]);
+    expect(f.service.bind.mock.calls[0]).toEqual([id, id, { source: "gsc", connection_id: id, resource_id: "sc-domain:example.com", parent: null, expected_binding_id: null,
+      identity_confirmed: false, identity_review_token: "a".repeat(64) }, expect.any(String)]);
+  });
+  it.each(["true", 1, {}, []])("rejects non-boolean explicit confirmation %j", async identity_confirmed => {
+    const f = setup();
+    const result = await f.handlers.POST(new NextRequest("https://example.test/api", { method: "POST", body: JSON.stringify({
+      source: "gsc", connection_id: id, resource_id: "sc-domain:example.com", parent: null,
+      confirm_selection: true, expected_binding_id: null, identity_confirmed, identity_review_token: "a".repeat(64),
+    }) }), context);
+    expect(result.status).toBe(400); expect(f.service.bind).not.toHaveBeenCalled();
   });
 });

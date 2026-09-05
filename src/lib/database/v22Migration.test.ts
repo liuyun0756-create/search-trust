@@ -184,6 +184,56 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     expect(grants.rows[0].allowed).toBe(false);
   });
 
+  it("atomically confirms resource identity, rejects invalid/stale assessments, and invalidates Case edits", async () => {
+    const owner = await insertUser("identity-owner");
+    const outsider = await insertUser("identity-outsider");
+    const caseId = await insertCase(owner, "identity-case");
+    const conn = await insertConnection(owner, "identity-connection");
+    await db.query(`update public.google_connections set granted_scopes=array['openid','email','profile','https://www.googleapis.com/auth/webmasters.readonly'] where id=$1`, [conn]);
+    const revision = (await db.query<{ revision: string }>(`select updated_at::text as revision from public.client_cases where id=$1`, [caseId])).rows[0].revision;
+    const assessment = { version: "v22-052.1", status: "matched", confidence: "high", reasons: ["DOMAIN_EXACT"] };
+    const sql = `select * from public.select_v22_matched_google_resource($1,$2,$3,'gsc','sc-domain:example.com','Example',null,$4,$5,$6::jsonb,$7)`;
+    const select = (expected: string | null, payload: object = assessment, method: string | null = "automatic", stamp: string | null = revision, user = owner) =>
+      db.query<{ id: string; identity_match_status: string; identity_match_evidence: Record<string, unknown>; confirmed_by_user_id: string | null; confirmed_at: string | null; health_status: string }>(
+        sql, [user, caseId, conn, expected, stamp, JSON.stringify(payload), method]);
+    await expect(select(null, assessment, "automatic", revision, outsider)).rejects.toThrow("RESOURCE_FORBIDDEN");
+    await expect(select(null, assessment, "automatic", null)).rejects.toThrow("IDENTITY_CHANGED");
+    await expect(select(null, assessment, "automatic", "2000-01-01T00:00:00Z")).rejects.toThrow("IDENTITY_CHANGED");
+    for (const invalid of [
+      { ...assessment, status: "mismatch" }, { ...assessment, confidence: "low" }, {},
+      { ...assessment, reasons: "forged" }, { ...assessment, version: "unknown" },
+    ]) await expect(select(null, invalid)).rejects.toThrow("INVALID_IDENTITY");
+    await expect(select(null, assessment, null)).rejects.toThrow("INVALID_IDENTITY_CONFIRMATION");
+    const first = (await select(null)).rows[0];
+    expect(first).toMatchObject({ identity_match_status: "matched", confirmed_by_user_id: owner, health_status: "not_checked",
+      identity_match_evidence: { version: "v22-052.1", confidence: "high", confirmation_method: "automatic", reasons: ["DOMAIN_EXACT"] } });
+    expect(first.confirmed_at).not.toBeNull();
+    await expect(select(null)).rejects.toThrow("BINDING_CHANGED");
+    // A rejected replacement must neither retire the old selection nor create a new row.
+    await expect(select(first.id, { ...assessment, status: "needs_confirmation", confidence: "medium" })).rejects.toThrow("INVALID_IDENTITY_CONFIRMATION");
+    expect((await db.query(`select id from public.case_source_bindings where case_id=$1 and is_active`, [caseId])).rows).toEqual([{ id: first.id }]);
+    const second = (await select(first.id, { ...assessment, status: "needs_confirmation", confidence: "medium" }, "user_confirmed")).rows[0];
+    expect(second).toMatchObject({ identity_match_status: "matched", confirmed_by_user_id: owner,
+      identity_match_evidence: { assessment_status: "needs_confirmation", confidence: "medium", confirmation_method: "user_confirmed" } });
+    expect(second.id).not.toBe(first.id);
+    await db.query(`update public.client_cases set primary_service='Plumbing' where id=$1`, [caseId]);
+    expect((await db.query<{ status: string }>(`select identity_match_status as status from public.case_source_bindings where id=$1`, [second.id])).rows[0].status).toBe("matched");
+    await db.query(`update public.client_cases set business_name='Changed Name' where id=$1`, [caseId]);
+    const invalidated = (await db.query<{ identity_match_evidence: unknown }>(`select identity_match_status,confirmed_by_user_id,confirmed_at,is_active,identity_match_evidence from public.case_source_bindings where id=$1`, [second.id])).rows[0];
+    expect(invalidated).toMatchObject({ identity_match_status: "needs_confirmation", confirmed_by_user_id: null, confirmed_at: null, is_active: true,
+      identity_match_evidence: { invalidation_reason: "case_identity_changed", previous_confirmation: { user_id: owner } } });
+    await db.query(`update public.client_cases set business_name='Changed Again' where id=$1`, [caseId]);
+    expect((await db.query(`select identity_match_evidence from public.case_source_bindings where id=$1`, [second.id])).rows[0])
+      .toEqual({ identity_match_evidence: invalidated.identity_match_evidence });
+    // Historic binding and its confirmation remain intact.
+    expect((await db.query(`select confirmed_by_user_id from public.case_source_bindings where id=$1`, [first.id])).rows[0]).toEqual({ confirmed_by_user_id: owner });
+    await expect(select(second.id)).rejects.toThrow("IDENTITY_CHANGED");
+    for (const role of ["anon", "authenticated"]) {
+      const grants = await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.select_v22_matched_google_resource(uuid,uuid,uuid,text,text,text,text,uuid,timestamptz,jsonb,text)','EXECUTE') as allowed`, [role]);
+      expect(grants.rows[0].allowed).toBe(false);
+    }
+  });
+
   it("preserves existing v2.1 reports while adding nullable v2.2 fields", async () => {
     const legacy = await db.query<{
       report_v2_1: { legacy: boolean };

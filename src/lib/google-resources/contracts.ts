@@ -1,4 +1,5 @@
 import type { GoogleSource } from "../google-connections/scopes";
+import type { IdentityAssessment } from "./identity";
 
 export interface GoogleResource {
   id: string;
@@ -12,11 +13,16 @@ export interface GoogleResource {
   service_areas: string[];
   permission: string | null;
   selectable: boolean;
+  website_evidence_incomplete?: boolean;
+  location_address?: { country_code: string | null; city: string | null; postal_code: string | null };
+  identity_assessment?: IdentityAssessment;
+  identity_review_token?: string;
 }
 
 export interface ResourcePage {
   resources: GoogleResource[];
   next_page_token: string | null;
+  case_identity?: { business_name: string; site_url: string; operating_model: string; location: string | null };
 }
 
 export interface ResourceQuery {
@@ -31,10 +37,13 @@ export interface ResourceSelection {
   resource_id: string;
   parent: string | null;
   expected_binding_id: string | null;
+  identity_confirmed?: boolean;
+  identity_review_token?: string;
 }
 
 export type ResourceErrorCode = "INVALID_REQUEST" | "FORBIDDEN" | "RESOURCE_UNAVAILABLE" |
-  "GOOGLE_UNAVAILABLE" | "DISCOVERY_LIMIT" | "BINDING_CHANGED" | "PERSISTENCE_FAILED";
+  "GOOGLE_UNAVAILABLE" | "DISCOVERY_LIMIT" | "BINDING_CHANGED" | "PERSISTENCE_FAILED" |
+  "IDENTITY_MISMATCH" | "IDENTITY_CONFIRMATION_REQUIRED" | "IDENTITY_CHANGED";
 
 const messages: Record<ResourceErrorCode, string> = {
   INVALID_REQUEST: "Please select a valid Google resource.",
@@ -44,6 +53,9 @@ const messages: Record<ResourceErrorCode, string> = {
   DISCOVERY_LIMIT: "This account has too many resources to verify in one request. Please try a more specific account.",
   BINDING_CHANGED: "The Case connection changed. Refresh before making another selection.",
   PERSISTENCE_FAILED: "The resource selection could not be saved. Please try again.",
+  IDENTITY_MISMATCH: "This resource conflicts with the Case identity. Choose another resource or correct the Case details.",
+  IDENTITY_CONFIRMATION_REQUIRED: "Review the matching evidence and explicitly confirm this resource belongs to the Case.",
+  IDENTITY_CHANGED: "The Case or resource details changed. Review this resource again before saving.",
 };
 
 export class ResourceError extends Error {

@@ -99,6 +99,7 @@ export class GoogleResourceHttpProvider implements ResourceProvider {
         const url = website(location.websiteUri);
         return { ...base(id, text(location.title) || id, source, "location", parent),
           website_urls: url ? [url] : [],
+          location_address: { country_code: text(address.regionCode), city: text(address.locality), postal_code: text(address.postalCode) },
           address: [...(Array.isArray(address.addressLines) ? address.addressLines : []), address.locality, address.administrativeArea, address.postalCode, address.regionCode]
             .map(text).filter(Boolean).join(", ") || null,
           service_areas: rows(places.placeInfos).map(place => text(place.placeName)).filter((v): v is string => !!v),
@@ -118,18 +119,20 @@ export class GoogleResourceHttpProvider implements ResourceProvider {
       const property = await this.get(`${GA}${id}`, token);
       if (property.name !== id || property.account !== parent || property.deleteTime) throw new ResourceError("RESOURCE_UNAVAILABLE", 403);
       const urls: string[] = [];
+      let incomplete = false;
       let pageToken = "";
       const seen = new Set<string>();
       for (let page = 0; page < MAX_PAGES; page++) {
         const streams = await this.get(`${GA}${id}/dataStreams`, token, { pageSize: "200", pageToken });
         for (const stream of rows(streams.dataStreams)) {
-          if (stream.type === "WEB_DATA_STREAM" && stream.webStreamData) {
-            const url = website(row(stream.webStreamData).defaultUri);
+          if (stream.type === "WEB_DATA_STREAM") {
+            const url = stream.webStreamData ? website(row(stream.webStreamData).defaultUri) : null;
             if (url) urls.push(url);
+            else incomplete = true;
           }
         }
         pageToken = text(streams.nextPageToken) || "";
-        if (!pageToken) return { ...base(id, text(property.displayName) || id, "ga4", "property", parent), website_urls: [...new Set(urls)] };
+        if (!pageToken) return { ...base(id, text(property.displayName) || id, "ga4", "property", parent), website_urls: [...new Set(urls)], website_evidence_incomplete: incomplete || urls.length === 0 };
         if (seen.has(pageToken)) break;
         seen.add(pageToken);
       }

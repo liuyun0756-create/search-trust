@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import type { GoogleConnectionSummary } from "@/lib/google-connections/contracts";
 import type { GoogleSource } from "@/lib/google-connections/scopes";
 import type { GoogleResource, ResourcePage } from "@/lib/google-resources/contracts";
+import { GoogleIdentityReview } from "./google-identity-review";
 
-type Binding = { id: string; source_type: GoogleSource; external_resource_name: string; external_resource_id: string; connection_id: string | null };
+type Binding = { id: string; source_type: GoogleSource; external_resource_name: string; external_resource_id: string; connection_id: string | null;
+  identity_match_status: string; confirmation_method: string | null; confirmed_at: string | null };
 const LABELS: Record<GoogleSource, string> = { gsc: "Search Console", ga4: "Google Analytics", gbp: "Business Profile" };
 const button = "rounded-xl bg-[#1c251b] px-5 py-3 text-white disabled:opacity-40 disabled:cursor-not-allowed";
 const secondary = "rounded-xl border border-[#dce1d5] px-4 py-2 disabled:opacity-40";
@@ -27,23 +29,30 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl }: { case
   const [parent, setParent] = useState<string | null>(null);
   const [page, setPage] = useState<ResourcePage | null>(null);
   const [selected, setSelected] = useState<GoogleResource | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [reviewCase, setReviewCase] = useState<ResourcePage["case_identity"]>();
+  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const refresh = useCallback(async () => {
-    const [accounts, state] = await Promise.all([
+  const load = useCallback(() => Promise.all([
       api<{ connections: GoogleConnectionSummary[] }>("/api/v2/google/connections"), api<{ bindings: Binding[] }>(endpoint),
-    ]);
+    ]), [endpoint]);
+  const refresh = useCallback(async () => {
+    const [accounts, state] = await load();
     setConnections(accounts.connections);
     setBindings(state.bindings);
-  }, [endpoint]);
+  }, [load]);
   useEffect(() => {
-    setBusy(true);
-    refresh().catch(e => setError(e.message)).finally(() => setBusy(false));
-  }, [refresh]);
+    let active = true;
+    load().then(([accounts, state]) => {
+      if (!active) return;
+      setConnections(accounts.connections); setBindings(state.bindings);
+    }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setBusy(false); });
+    return () => { active = false; };
+  }, [load]);
   const current = connections.find(c => c.id === connection);
   const usable = !!current && ["active", "error"].includes(current.status) && current.covered_sources.includes(source);
-  function reset() { setPage(null); setSelected(null); setParent(null); setError(""); setNotice(""); }
+  function reset() { setPage(null); setSelected(null); setReviewCase(undefined); setIdentityConfirmed(false); setParent(null); setError(""); setNotice(""); }
   async function action(work: () => Promise<void>) {
     setBusy(true); setError(""); setNotice("");
     try { await work(); } catch (e) { setError(e instanceof Error ? e.message : "Please try again."); }
@@ -55,16 +64,17 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl }: { case
       if (nextParent) q.set("parent", nextParent);
       if (pageToken) q.set("page_token", pageToken);
       const result = await api<ResourcePage>(`${endpoint}?${q}`);
-      setParent(nextParent); setSelected(null); setPage(result);
+      setParent(nextParent); setSelected(null); setIdentityConfirmed(false); setPage(result);
     });
   }
   async function preview(resource: GoogleResource) {
     await action(async () => {
-      setSelected(null);
+      setSelected(null); setIdentityConfirmed(false); setReviewCase(undefined);
       const q = new URLSearchParams({ connection_id: connection, source, resource_id: resource.id });
       if (resource.parent) q.set("parent", resource.parent);
       const result = await api<ResourcePage>(`${endpoint}?${q}`);
       setSelected(result.resources[0] ?? null);
+      setReviewCase(result.case_identity);
     });
   }
   async function authorize(newAccount: boolean) {
@@ -89,7 +99,13 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl }: { case
         {bindings.length === 0 && <p className="mt-3">No Google resources selected yet.</p>}
         {bindings.map(binding => <div key={binding.id} className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#e5e8df] pt-4">
           <div><p className="font-medium">{LABELS[binding.source_type]} · {binding.external_resource_name}</p>
-            <p className="break-all text-sm">{binding.external_resource_id}</p><p className="text-sm text-[#687362]">Identity and data health still need verification.</p></div>
+            <p className="break-all text-sm">{binding.external_resource_id}</p>
+            <p className="text-sm text-[#687362]">{binding.identity_match_status === "matched"
+              ? binding.confirmation_method === "automatic" ? "Identity confirmed from high-confidence evidence."
+                : binding.confirmation_method === "user_confirmed" ? "Identity explicitly confirmed by you." : "Identity confirmed."
+              : binding.identity_match_status === "mismatch" ? "Identity mismatch. Choose another resource." : "Identity needs review. Select this resource again to confirm."}</p>
+            {binding.confirmed_at && binding.identity_match_status === "matched" && <p className="text-sm">Confirmed: {new Date(binding.confirmed_at).toLocaleString()}</p>}
+            <p className="text-sm text-[#687362]">Identity confirmation does not verify data health or start data synchronization.</p></div>
           <button disabled={busy} className={secondary} onClick={() => action(async () => {
             await api(endpoint, { method: "DELETE", body: JSON.stringify({ binding_id: binding.id }) });
             await refresh(); setSelected(null); setNotice("Resource disconnected from this Case.");
@@ -123,21 +139,14 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl }: { case
           <button disabled={busy} className={`${secondary} mt-3`} onClick={() => resource.selectable ? preview(resource) : discover(resource.id)}>{resource.selectable ? "Review selection" : "View locations"}</button>
         </article>)}
         {page?.next_page_token && <button disabled={busy} className={secondary} onClick={() => discover(parent, page.next_page_token)}>Next page</button>}
-        {selected && <div className="space-y-3 rounded-xl bg-[#f3f4ed] p-5" aria-label="Review selected resource">
-          <h3 className="text-lg font-semibold">Confirm {selected.name}</h3>
-          <p className="break-all">{selected.id}</p>
-          {selected.website_urls.map(url => <p key={url} className="break-all">Website: {url}</p>)}
-          {selected.website_urls.length === 0 && <p>No website URL is available for this resource.</p>}
-          {selected.address && <p>Address: {selected.address}</p>}
-          {selected.service_areas.length > 0 && <p>Service area: {selected.service_areas.join(", ")}</p>}
-          <p>Check these details against {businessName}. Saving records your selection; identity and data health remain unverified.</p>
-          {bindings.some(b => b.source_type === source) && <p>This replaces the current {LABELS[source]} selection for this Case.</p>}
-          <button disabled={busy} className={button} onClick={() => action(async () => {
+        {selected && <GoogleIdentityReview resource={selected} caseIdentity={reviewCase} busy={busy} confirmed={identityConfirmed}
+          replaces={bindings.some(b => b.source_type === source) ? LABELS[source] : undefined} onConfirm={setIdentityConfirmed}
+          onReview={() => preview(selected)} onSave={() => action(async () => {
             await api(endpoint, { method: "POST", body: JSON.stringify({ connection_id: connection, source, resource_id: selected.id,
-              parent: selected.parent, confirm_selection: true, expected_binding_id: bindings.find(b => b.source_type === source)?.id ?? null }) });
-            await refresh(); setSelected(null); setNotice("Resource selection saved. Identity and health checks are still pending.");
-          })}>Save this resource</button>
-        </div>}
+              parent: selected.parent, confirm_selection: true, identity_confirmed: identityConfirmed, identity_review_token: selected.identity_review_token,
+              expected_binding_id: bindings.find(b => b.source_type === source)?.id ?? null }) });
+            await refresh(); setSelected(null); setIdentityConfirmed(false); setNotice("Resource saved with identity confirmation. Data health checks are still pending.");
+          })} />}
       </section>
     </div>
   </main>;

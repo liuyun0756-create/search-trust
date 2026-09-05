@@ -48,10 +48,14 @@ export function createResourceHandlers(deps: {
       const input = await body(request);
       if (input.confirm_selection !== true || !("expected_binding_id" in input)) throw new ResourceError("INVALID_REQUEST");
       if (input.parent !== null && typeof input.parent !== "string") throw new ResourceError("INVALID_REQUEST");
+      if (input.identity_confirmed !== undefined && typeof input.identity_confirmed !== "boolean") throw new ResourceError("INVALID_REQUEST");
+      if (typeof input.identity_review_token !== "string" || !/^[a-f0-9]{64}$/.test(input.identity_review_token)) throw new ResourceError("INVALID_REQUEST");
       return service.bind(userId, caseId, {
         connection_id: parseUuid(input.connection_id), source: parseSource(input.source), resource_id: resourceId(input.resource_id),
         parent: input.parent as string | null,
         expected_binding_id: input.expected_binding_id === null ? null : parseUuid(input.expected_binding_id),
+        identity_confirmed: input.identity_confirmed === true,
+        identity_review_token: input.identity_review_token,
       }, requestId);
     }),
     DELETE: (request: NextRequest, context: Context) => run(request, context, async (service, userId, caseId) => {

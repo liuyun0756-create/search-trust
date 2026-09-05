@@ -16,5 +16,5 @@ export default async function ConnectionsPage({ params }: { params: Promise<{ ca
   if (error || !data || data.status !== "active") notFound();
   // Validate server configuration before presenting an authorization action.
   try { createServerGoogleConnectionService(); } catch { notFound(); }
-  return <GoogleResourceSelector caseId={caseId} businessName={data.business_name} siteUrl={data.site_url} />;
+  return <GoogleResourceSelector key={caseId} caseId={caseId} businessName={data.business_name} siteUrl={data.site_url} />;
 }

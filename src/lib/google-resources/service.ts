@@ -1,20 +1,30 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto";
 import type { CaseSourceBinding } from "@/types/database";
 import type { GoogleConnectionService } from "../google-connections/service";
 import type { GoogleConnectionRepository } from "../google-connections/repository";
 import { ResourceError, type GoogleResource, type ResourceQuery, type ResourceSelection } from "./contracts";
 import type { ResourceProvider } from "./provider";
+import { assessIdentity, caseIdentityClues, type CaseIdentity, type IdentityAssessment } from "./identity";
+
+export interface IdentityDecision { assessment: IdentityAssessment; method: "automatic" | "user_confirmed"; caseUpdatedAt: string }
+
+export function identityReviewToken(identity: CaseIdentity, resource: GoogleResource): string {
+  return createHash("sha256").update(JSON.stringify({ identity, resource, assessment: assessIdentity(identity, resource) })).digest("hex");
+}
 
 export interface ResourceRepository {
   caseOwned(userId: string, caseId: string): Promise<boolean>;
+  caseIdentity(userId: string, caseId: string): Promise<CaseIdentity | null>;
   listBindings(caseId: string): Promise<CaseSourceBinding[]>;
-  bind(userId: string, caseId: string, input: ResourceSelection, resource: GoogleResource): Promise<CaseSourceBinding>;
+  bind(userId: string, caseId: string, input: ResourceSelection, resource: GoogleResource, decision: IdentityDecision): Promise<CaseSourceBinding>;
   disconnect(userId: string, caseId: string, bindingId: string): Promise<void>;
 }
 
 function dbError(error: { code?: string } | null) {
   if (!error) return;
   if (error.code === "40001") throw new ResourceError("BINDING_CHANGED", 409);
+  if (error.code === "P0052") throw new ResourceError("IDENTITY_CHANGED", 409);
   if (error.code === "42501") throw new ResourceError("FORBIDDEN", 403);
   throw new ResourceError("PERSISTENCE_FAILED", 503);
 }
@@ -31,11 +41,21 @@ export class SupabaseResourceRepository implements ResourceRepository {
     dbError(error);
     return data ?? [];
   }
-  async bind(userId: string, caseId: string, input: ResourceSelection, resource: GoogleResource): Promise<CaseSourceBinding> {
-    const { data, error } = await this.db.rpc("select_v22_google_resource", {
+  async caseIdentity(userId: string, caseId: string): Promise<CaseIdentity | null> {
+    const { data, error } = await this.db.from("client_cases")
+      .select("site_url,business_name,business_identity,operating_model,target_market,updated_at")
+      .eq("id", caseId).eq("user_id", userId).eq("status", "active").maybeSingle();
+    dbError(error);
+    return data;
+  }
+  async bind(userId: string, caseId: string, input: ResourceSelection, resource: GoogleResource, decision: IdentityDecision): Promise<CaseSourceBinding> {
+    const { data, error } = await this.db.rpc("select_v22_matched_google_resource", {
       p_user_id: userId, p_case_id: caseId, p_connection_id: input.connection_id, p_source: input.source,
       p_resource_id: resource.id, p_resource_name: resource.name, p_parent: resource.parent,
       p_expected_binding_id: input.expected_binding_id,
+      p_case_updated_at: decision.caseUpdatedAt,
+      p_assessment: decision.assessment,
+      p_confirmation_method: decision.method,
     }).single();
     dbError(error);
     if (!data) throw new ResourceError("PERSISTENCE_FAILED", 503);
@@ -57,6 +77,11 @@ export function createResourceService(deps: {
     if (!await deps.repository.caseOwned(userId, caseId)) throw new ResourceError("FORBIDDEN", 403);
     if (connectionId && !await deps.connections.findConnectionById(userId, connectionId)) throw new ResourceError("FORBIDDEN", 403);
   }
+  async function identity(userId: string, caseId: string) {
+    const value = await deps.repository.caseIdentity(userId, caseId);
+    if (!value) throw new ResourceError("FORBIDDEN", 403);
+    return value;
+  }
   return {
     async bindings(userId: string, caseId: string) {
       await owned(userId, caseId);
@@ -64,12 +89,19 @@ export function createResourceService(deps: {
       // Explicit public projection; never spread database rows into browser responses.
       return bindings.map(b => ({ id: b.id, connection_id: b.connection_id, source_type: b.source_type,
         external_resource_id: b.external_resource_id, external_resource_name: b.external_resource_name,
-        identity_match_status: b.identity_match_status, health_status: b.health_status, confirmed_at: b.confirmed_at }));
+        identity_match_status: b.identity_match_status, health_status: b.health_status, confirmed_at: b.confirmed_at,
+        confirmation_method: ["automatic", "user_confirmed"].includes(String(b.identity_match_evidence?.confirmation_method))
+          ? b.identity_match_evidence.confirmation_method : null }));
     },
     async discover(userId: string, caseId: string, connectionId: string, query: ResourceQuery, requestId: string, resourceId?: string) {
       await owned(userId, caseId, connectionId);
       const token = await deps.tokens.getAccessToken(connectionId, query.source, requestId);
-      if (resourceId) return { resources: [await deps.provider.verify(token.accessToken, { ...query, resourceId })], next_page_token: null };
+      if (resourceId) {
+        const resource = await deps.provider.verify(token.accessToken, { ...query, resourceId });
+        const current = await identity(userId, caseId);
+        return { resources: [{ ...resource, identity_assessment: assessIdentity(current, resource), identity_review_token: identityReviewToken(current, resource) }],
+          next_page_token: null, case_identity: caseIdentityClues(current) };
+      }
       return deps.provider.list(token.accessToken, query);
     },
     async bind(userId: string, caseId: string, input: ResourceSelection, requestId: string) {
@@ -79,7 +111,14 @@ export function createResourceService(deps: {
       if (!resource.selectable || resource.id !== input.resource_id || resource.source !== input.source || resource.parent !== input.parent) {
         throw new ResourceError("RESOURCE_UNAVAILABLE", 403);
       }
-      const binding = await deps.repository.bind(userId, caseId, input, resource);
+      const current = await identity(userId, caseId);
+      const assessment = assessIdentity(current, resource);
+      if (assessment.status === "mismatch") throw new ResourceError("IDENTITY_MISMATCH", 409);
+      if (assessment.status === "needs_confirmation" && input.identity_confirmed !== true) throw new ResourceError("IDENTITY_CONFIRMATION_REQUIRED", 409);
+      if (input.identity_review_token !== identityReviewToken(current, resource)) throw new ResourceError("IDENTITY_CHANGED", 409);
+      const binding = await deps.repository.bind(userId, caseId, input, resource, {
+        assessment, method: assessment.status === "matched" ? "automatic" : "user_confirmed", caseUpdatedAt: current.updated_at,
+      });
       return { binding_id: binding.id };
     },
     async disconnect(userId: string, caseId: string, bindingId: string) {
