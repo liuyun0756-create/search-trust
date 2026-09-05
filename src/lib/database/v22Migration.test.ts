@@ -120,7 +120,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await db.close();
   });
 
-  it("creates the seven server-only v2.2 tables with RLS enabled", async () => {
+  it("creates the nine server-only v2.2 tables with RLS enabled", async () => {
     const tables = await db.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity
        from pg_class
@@ -128,12 +128,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
          and relname = any(array[
            'client_cases', 'google_connections', 'case_source_bindings',
            'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
-           'report_shares'
+           'report_shares', 'google_oauth_sessions', 'google_connection_events'
          ])
        order by relname`,
     );
 
-    expect(tables.rows).toHaveLength(7);
+    expect(tables.rows).toHaveLength(9);
     expect(tables.rows.every((row) => row.relrowsecurity)).toBe(true);
 
     const browserGrants = await db.query<{ count: number }>(
@@ -143,7 +143,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
          and table_name = any(array[
            'client_cases', 'google_connections', 'case_source_bindings',
            'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
-           'report_shares'
+           'report_shares', 'google_oauth_sessions', 'google_connection_events'
          ])
          and grantee in ('anon', 'authenticated')`,
     );
@@ -311,12 +311,89 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     );
 
     await expectSqlError(
+      `insert into public.google_connections (
+         user_id, google_subject,
+         access_token_ciphertext, access_token_iv, access_token_auth_tag,
+         encryption_key_version
+       ) values (
+         $1, 'access-only', decode('01', 'hex'), decode('02', 'hex'), decode('03', 'hex'), 'key-v1'
+       )`,
+      [userA],
+    );
+
+    await expectSqlError(
+      `update public.google_connections
+       set refresh_lease_id = gen_random_uuid(), refresh_lease_expires_at = null
+       where id = $1`,
+      [connectionA],
+    );
+
+    await expectSqlError(
       `insert into public.case_source_bindings (
          case_id, connection_id, source_type, external_resource_id, external_resource_name,
          identity_match_status, health_status
        ) values ($1, $2, 'gbp', 'locations/duplicate', 'Duplicate', 'matched', 'healthy')`,
       [caseA, connectionA],
     );
+  });
+
+  it("enforces one-time Google OAuth sessions, Case ownership, and safe audit events", async () => {
+    const sessionId = await insertId(
+      `insert into public.google_oauth_sessions (
+         user_id, case_id, state_digest,
+         pkce_verifier_ciphertext, pkce_verifier_iv, pkce_verifier_auth_tag,
+         encryption_key_version, requested_sources, requested_scopes,
+         return_path, expires_at
+       ) values (
+         $1, $2, decode(repeat('ab', 32), 'hex'),
+         decode('01', 'hex'), decode(repeat('02', 12), 'hex'), decode(repeat('03', 16), 'hex'),
+         'key-v1', array['gsc'], array['scope:a'], '/cases/example', now() + interval '10 minutes'
+       ) returning id`,
+      [userA, caseA],
+    );
+    expect(sessionId).toBeTruthy();
+
+    await expectSqlError(
+      `insert into public.google_oauth_sessions (
+         user_id, case_id, state_digest,
+         pkce_verifier_ciphertext, pkce_verifier_iv, pkce_verifier_auth_tag,
+         encryption_key_version, requested_sources, requested_scopes,
+         return_path, expires_at
+       ) values (
+         $1, $2, decode(repeat('cd', 32), 'hex'),
+         decode('01', 'hex'), decode(repeat('02', 12), 'hex'), decode(repeat('03', 16), 'hex'),
+         'key-v1', array['gsc'], array['scope:a'], '/cases/example', now() + interval '10 minutes'
+       )`,
+      [userA, caseB],
+      "OAuth session Case must belong to its user",
+    );
+
+    await expectSqlError(
+      `insert into public.google_oauth_sessions (
+         user_id, state_digest,
+         pkce_verifier_ciphertext, pkce_verifier_iv, pkce_verifier_auth_tag,
+         encryption_key_version, requested_sources, requested_scopes,
+         return_path, expires_at
+       ) values (
+         $1, decode(repeat('ef', 32), 'hex'),
+         decode('01', 'hex'), decode(repeat('02', 12), 'hex'), decode(repeat('03', 16), 'hex'),
+         'key-v1', array['gsc'], array['scope:a'], '//attacker.example', now() + interval '10 minutes'
+       )`,
+      [userA],
+    );
+
+    await db.query(
+      `insert into public.google_connection_events (
+         user_id, connection_id, case_id, event_type,
+         requested_sources, covered_sources, result_code, request_id
+       ) values ($1, $2, $3, 'authorization_succeeded', array['gsc'], array['gsc'], 'OK', 'req-1')`,
+      [userA, connectionA, caseA],
+    );
+
+    const cleaned = await db.query<{ cleanup_expired_google_oauth_sessions: number }>(
+      `select public.cleanup_expired_google_oauth_sessions(now() + interval '2 days')`,
+    );
+    expect(cleaned.rows[0].cleanup_expired_google_oauth_sessions).toBe(1);
   });
 
   it("enforces snapshot ownership, lineage, retention, and immutability", async () => {
@@ -771,11 +848,17 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     expect(userGraph.rows[0].count).toBe(0);
   });
 
-  it("requires terminal Google connections to clear all token material", async () => {
+  it("requires reauthorization and terminal Google connections to clear all token material", async () => {
+    await expectSqlError(
+      `update public.google_connections set status = 'reauth_required' where id = $1`,
+      [connectionA],
+      "inactive Google connections must not retain token material",
+    );
+
     await expectSqlError(
       `update public.google_connections set status = 'revoked', revoked_at = now() where id = $1`,
       [connectionA],
-      "terminal Google connections must not retain token material",
+      "inactive Google connections must not retain token material",
     );
 
     await db.query(

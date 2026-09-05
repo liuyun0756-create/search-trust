@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(38);
+select plan(50);
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');
@@ -10,6 +10,8 @@ select has_table('public', 'case_source_bindings', 'v2.2 case_source_bindings ex
 select has_table('public', 'data_snapshots', 'v2.2 data_snapshots exists');
 select has_table('public', 'analysis_jobs', 'v2.2 analysis_jobs exists');
 select has_table('public', 'report_shares', 'v2.2 report_shares exists');
+select has_table('public', 'google_oauth_sessions', 'v2.2 Google OAuth sessions exist');
+select has_table('public', 'google_connection_events', 'v2.2 Google connection events exist');
 
 select has_column('public', 'reports', 'case_id', 'reports has a Case owner');
 select has_column('public', 'reports', 'report_v2_2', 'reports has the v2.2 contract payload');
@@ -20,12 +22,19 @@ select has_column(
   'public', 'analysis_jobs', 'terminal_effects_revision',
   'analysis jobs track the terminal revision claimed for side effects'
 );
+select has_column('public', 'google_connections', 'refresh_lease_id', 'Google connections have refresh leases');
+select has_column(
+  'public', 'google_connections', 'refresh_lease_expires_at',
+  'Google refresh leases have explicit expiry'
+);
 
 select has_pk('public', 'client_cases', 'client_cases has a primary key');
 select has_pk('public', 'google_connections', 'google_connections has a primary key');
 select has_pk('public', 'case_source_bindings', 'case_source_bindings has a primary key');
 select has_pk('public', 'data_snapshots', 'data_snapshots has a primary key');
 select has_pk('public', 'analysis_jobs', 'analysis_jobs has a primary key');
+select has_pk('public', 'google_oauth_sessions', 'google_oauth_sessions has a primary key');
+select has_pk('public', 'google_connection_events', 'google_connection_events has a primary key');
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.client_cases'::regclass),
@@ -51,6 +60,14 @@ select ok(
   (select relrowsecurity from pg_class where oid = 'public.report_shares'::regclass),
   'report_shares has RLS enabled'
 );
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.google_oauth_sessions'::regclass),
+  'google_oauth_sessions has RLS enabled'
+);
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.google_connection_events'::regclass),
+  'google_connection_events has RLS enabled'
+);
 
 select ok(
   has_table_privilege('service_role', 'public.client_cases', 'SELECT'),
@@ -67,6 +84,14 @@ select ok(
 select ok(
   not has_table_privilege('anon', 'public.report_shares', 'SELECT'),
   'anon cannot read report_shares directly'
+);
+select ok(
+  not has_table_privilege('anon', 'public.google_oauth_sessions', 'SELECT'),
+  'anon cannot read Google OAuth sessions'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.google_connection_events', 'SELECT'),
+  'authenticated cannot read Google connection events'
 );
 
 select has_trigger(
@@ -85,6 +110,10 @@ select has_trigger(
   'public', 'client_cases', 'enforce_client_case_site_immutability',
   'Case website identity has an immutability trigger'
 );
+select has_trigger(
+  'public', 'google_oauth_sessions', 'validate_google_oauth_session_ownership',
+  'Google OAuth sessions enforce Case ownership'
+);
 
 select has_function(
   'public', 'v22_case_location_key', array['jsonb'],
@@ -102,6 +131,10 @@ select has_function(
   'public', 'rotate_v22_report_share',
   array['uuid', 'uuid', 'uuid', 'text', 'timestamp with time zone'],
   'atomic report share rotation function exists'
+);
+select has_function(
+  'public', 'cleanup_expired_google_oauth_sessions', array['timestamp with time zone'],
+  'expired Google OAuth session cleanup exists'
 );
 select has_index(
   'public', 'client_cases', 'uq_client_cases_user_domain_location',

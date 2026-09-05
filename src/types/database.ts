@@ -47,7 +47,9 @@ export interface GoogleConnection {
   refresh_token_auth_tag: string | null;
   encryption_key_version: string | null;
   token_expires_at: string | null;
-  status: "active" | "error" | "revoked" | "deleted";
+  refresh_lease_id: string | null;
+  refresh_lease_expires_at: string | null;
+  status: "active" | "error" | "reauth_required" | "revoked" | "deleted";
   last_error_code: string | null;
   last_error_message: string | null;
   connected_at: string;
@@ -55,6 +57,46 @@ export interface GoogleConnection {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface GoogleOAuthSession {
+  id: string;
+  user_id: string;
+  case_id: string | null;
+  state_digest: string;
+  pkce_verifier_ciphertext: string;
+  pkce_verifier_iv: string;
+  pkce_verifier_auth_tag: string;
+  encryption_key_version: string;
+  requested_sources: Array<"gsc" | "ga4" | "gbp">;
+  requested_scopes: string[];
+  return_path: string;
+  expires_at: string;
+  consumed_at: string | null;
+  outcome_code: string | null;
+  created_at: string;
+}
+
+export interface GoogleConnectionEvent {
+  id: string;
+  user_id: string;
+  connection_id: string | null;
+  case_id: string | null;
+  event_type:
+    | "authorization_started"
+    | "authorization_succeeded"
+    | "authorization_denied"
+    | "authorization_failed"
+    | "scope_extended"
+    | "refresh_succeeded"
+    | "refresh_failed"
+    | "revoked"
+    | "deleted";
+  requested_sources: Array<"gsc" | "ga4" | "gbp">;
+  covered_sources: Array<"gsc" | "ga4" | "gbp">;
+  result_code: string;
+  request_id: string;
+  created_at: string;
 }
 
 export interface CaseSourceBinding {
