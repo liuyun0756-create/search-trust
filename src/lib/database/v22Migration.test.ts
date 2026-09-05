@@ -152,6 +152,38 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     expect(browserGrants.rows[0].count).toBe(0);
   });
 
+  it("atomically replaces owned Google resources, rejects stale/cross-user writes and deactivates revoked bindings", async () => {
+    const owner = await insertUser("resource-owner");
+    const outsider = await insertUser("resource-outsider");
+    const caseId = await insertCase(owner, "resource-case");
+    const conn = await insertConnection(owner, "resource-connection");
+    const otherConn = await insertConnection(outsider, "resource-other");
+    const sql = `select * from public.select_v22_google_resource($1,$2,$3,'gsc',$4,$5,null,$6)`;
+    const select = (connectionId: string, resource: string, expected: string | null, user = owner) =>
+      db.query<{ id: string; identity_match_status: string; health_status: string; confirmed_by_user_id: string }>(sql, [user, caseId, connectionId, resource, resource, expected]);
+    await expect(select(conn, "sc-domain:example.com", null)).rejects.toThrow("RESOURCE_FORBIDDEN");
+    await db.query(`update public.google_connections set granted_scopes = array['openid','email','profile','https://www.googleapis.com/auth/webmasters.readonly'] where id = $1`, [conn]);
+    await expect(select(otherConn, "sc-domain:example.com", null)).rejects.toThrow("RESOURCE_FORBIDDEN");
+    await expect(select(conn, "sc-domain:example.com", null, outsider)).rejects.toThrow("RESOURCE_FORBIDDEN");
+    const first = (await select(conn, "sc-domain:example.com", null)).rows[0];
+    expect(first).toMatchObject({ identity_match_status: "needs_confirmation", health_status: "not_checked", confirmed_by_user_id: owner });
+    await expect(select(conn, "https://example.com/", null)).rejects.toThrow("BINDING_CHANGED");
+    const second = (await select(conn, "https://example.com/", first.id)).rows[0];
+    expect(second.id).not.toBe(first.id);
+    expect((await db.query<{ count: number }>(`select count(*)::int as count from public.case_source_bindings where case_id=$1`, [caseId])).rows[0].count).toBe(2);
+    expect((await db.query<{ id: string }>(`select id from public.case_source_bindings where case_id=$1 and is_active`, [caseId])).rows).toEqual([{ id: second.id }]);
+    // An old tab's disconnect cannot deactivate the replacement.
+    await db.query(`select public.disconnect_v22_google_resource($1,$2,$3)`, [owner, caseId, first.id]);
+    expect((await db.query<{ id: string }>(`select id from public.case_source_bindings where case_id=$1 and is_active`, [caseId])).rows).toHaveLength(1);
+    await expect(db.query(`select public.disconnect_v22_google_resource($1,$2,$3)`, [outsider, caseId, second.id])).rejects.toThrow("RESOURCE_FORBIDDEN");
+    await db.query(`update public.google_connections set status='revoked',revoked_at=now(),access_token_ciphertext=null,access_token_iv=null,
+      access_token_auth_tag=null,refresh_token_ciphertext=null,refresh_token_iv=null,refresh_token_auth_tag=null,encryption_key_version=null,token_expires_at=null where id=$1`, [conn]);
+    expect((await db.query(`select id from public.case_source_bindings where case_id=$1 and is_active`, [caseId])).rows).toHaveLength(0);
+    await expect(select(conn, "https://example.com/", null)).rejects.toThrow("RESOURCE_FORBIDDEN");
+    const grants = await db.query<{ allowed: boolean }>(`select has_function_privilege('authenticated','public.select_v22_google_resource(uuid,uuid,uuid,text,text,text,text,uuid)','EXECUTE') as allowed`);
+    expect(grants.rows[0].allowed).toBe(false);
+  });
+
   it("preserves existing v2.1 reports while adding nullable v2.2 fields", async () => {
     const legacy = await db.query<{
       report_v2_1: { legacy: boolean };

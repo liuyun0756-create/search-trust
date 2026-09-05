@@ -67,6 +67,9 @@ export function ReportV22Shell({
               </Link>
             </div>
             <ReportV22Actions caseId={caseId} reportId={reportId} mode={report.mode} />
+            {report.mode === "advisor" && process.env.GOOGLE_CONNECTIONS_ENABLED === "true" && (
+              <Link href={`/cases/${encodeURIComponent(caseId)}/connections`} className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold">Choose Google resources</Link>
+            )}
             </div>
           </div>
 

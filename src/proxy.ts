@@ -18,6 +18,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhook/(.*)",
   // Server-to-server worker callbacks use timestamped HMAC authentication.
   "/api/internal/v2/job-events",
+  // The token broker authenticates Railway requests with HMAC, not a browser session.
+  "/api/internal/v2/google/connections/(.*)/access-token",
   "/api/generate-report",
   "/api/report-status",
   "/api/report-meta",
