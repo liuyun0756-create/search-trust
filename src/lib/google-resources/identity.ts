@@ -27,7 +27,6 @@ export const IDENTITY_REASONS = {
   ADDRESS_REVIEW: "Address details are incomplete or differ. Check the correct branch.",
   SERVICE_AREA_MATCH: "A listed service-area name matches the Case location; actual coverage still needs confirmation.",
   SERVICE_AREA_REVIEW: "Service-area coverage is missing or cannot be established from the listed names.",
-  BRANCH_EXACT: "The branch-specific website, business name, country, city and postal code all match.",
   BRANCH_REVIEW: "The available evidence cannot automatically distinguish this branch from other locations.",
 } as const;
 export type IdentityReason = keyof typeof IDENTITY_REASONS;
@@ -121,8 +120,8 @@ export function assessIdentity(identity: CaseIdentity, resource: GoogleResource)
     const areaMatch = resource.service_areas.some(area => equalText(area, location.city) || equalText(area, location.display_name));
     reasons.push(areaMatch ? "SERVICE_AREA_MATCH" : "SERVICE_AREA_REVIEW");
   }
-  if (identity.operating_model === "storefront" && exactWebsite && exactName && exactAddress && path(target) !== "/") {
-    return result("matched", "high", ...reasons, "BRANCH_EXACT");
-  }
+  // Current Case identity has no street address or validated branch identifier.
+  // A non-root URL (including /about) is not evidence of a unique branch.
+  // Website/name/locality matches are useful clues, but cannot auto-confirm GBP.
   return result("needs_confirmation", exactWebsite && exactName ? "medium" : "low", ...reasons, "BRANCH_REVIEW");
 }

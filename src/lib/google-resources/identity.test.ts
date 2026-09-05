@@ -60,9 +60,10 @@ describe("conservative Google identity matching", () => {
   it("requires branch review for brand homepage even with matching name and postcode", () => {
     expect(assessIdentity(identity, gbp)).toMatchObject({ status: "needs_confirmation", confidence: "medium", reasons: expect.arrayContaining(["BRANCH_REVIEW"]) });
   });
-  it("only auto-confirms GBP when branch URL, name, and location all agree", () => {
+  it("does not assume a non-root URL is a unique branch identifier", () => {
     const branch = { ...identity, site_url: "https://example.com/locations/boston" };
-    expect(assessIdentity(branch, { ...gbp, website_urls: [branch.site_url], name: " EXAMPLE  Plumbing " })).toMatchObject({ status: "matched", confidence: "high", reasons: expect.arrayContaining(["BRANCH_EXACT"]) });
+    expect(assessIdentity(branch, { ...gbp, website_urls: [branch.site_url], name: " EXAMPLE  Plumbing " })).toMatchObject({ status: "needs_confirmation", confidence: "medium", reasons: expect.arrayContaining(["NAME_EXACT", "BRANCH_REVIEW"]) });
+    expect(assessIdentity({ ...identity, site_url: "https://example.com/about" }, { ...gbp, website_urls: ["https://example.com/about"] }).status).toBe("needs_confirmation");
   });
   it.each([{ website_urls: [] }, { name: "Another Brand" }, { location_address: { country_code: "US", city: "Boston", postal_code: null } }])("requires review when GBP has missing or different clues %j", change => {
     const branch = { ...identity, site_url: "https://example.com/locations/boston" };
