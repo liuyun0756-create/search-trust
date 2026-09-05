@@ -61,7 +61,7 @@ export interface GoogleOAuthProvider {
   }): string;
   exchangeCode(code: string, codeVerifier: string): Promise<GoogleTokenSet>;
   getIdentity(accessToken: string): Promise<GoogleIdentity>;
-  refresh(refreshToken: string): Promise<GoogleTokenSet>;
+  refresh(refreshToken: string, currentScopes?: readonly string[]): Promise<GoogleTokenSet>;
   revoke(token: string): Promise<void>;
 }
 
@@ -89,7 +89,7 @@ function providerFailure(body: Record<string, unknown>): GoogleProviderFailure {
   return new GoogleProviderFailure("provider_error");
 }
 
-function normalizeTokenSet(body: Record<string, unknown>): GoogleTokenSet {
+function normalizeTokenSet(body: Record<string, unknown>, fallbackScopes?: readonly string[]): GoogleTokenSet {
   const accessToken = body.access_token;
   const refreshToken = body.refresh_token;
   const expiresIn = body.expires_in;
@@ -99,7 +99,7 @@ function normalizeTokenSet(body: Record<string, unknown>): GoogleTokenSet {
     typeof accessToken !== "string" || !accessToken ||
     (refreshToken !== undefined && typeof refreshToken !== "string") ||
     typeof expiresIn !== "number" || !Number.isInteger(expiresIn) || expiresIn <= 0 || expiresIn > 86_400 ||
-    typeof scope !== "string" || !scope.trim() ||
+    !((typeof scope === "string" && scope.trim()) || (fallbackScopes && fallbackScopes.length > 0)) ||
     typeof tokenType !== "string" || tokenType.toLowerCase() !== "bearer"
   ) {
     throw unavailable();
@@ -108,7 +108,7 @@ function normalizeTokenSet(body: Record<string, unknown>): GoogleTokenSet {
     accessToken,
     refreshToken: typeof refreshToken === "string" && refreshToken ? refreshToken : null,
     expiresInSeconds: expiresIn,
-    grantedScopes: normalizeGrantedScopes(scope),
+    grantedScopes: normalizeGrantedScopes(typeof scope === "string" && scope.trim() ? scope : fallbackScopes ?? []),
     tokenType: "Bearer",
   };
 }
@@ -152,13 +152,13 @@ export class GoogleOAuthHttpProvider implements GoogleOAuthProvider {
     }));
   }
 
-  async refresh(refreshToken: string): Promise<GoogleTokenSet> {
+  async refresh(refreshToken: string, currentScopes?: readonly string[]): Promise<GoogleTokenSet> {
     return this.tokenRequest(new URLSearchParams({
       client_id: this.config.clientId,
       client_secret: this.config.clientSecret,
       refresh_token: refreshToken,
       grant_type: "refresh_token",
-    }));
+    }), currentScopes);
   }
 
   async getIdentity(accessToken: string): Promise<GoogleIdentity> {
@@ -202,7 +202,7 @@ export class GoogleOAuthHttpProvider implements GoogleOAuthProvider {
     }
   }
 
-  private async tokenRequest(body: URLSearchParams): Promise<GoogleTokenSet> {
+  private async tokenRequest(body: URLSearchParams, fallbackScopes?: readonly string[]): Promise<GoogleTokenSet> {
     try {
       const response = await this.fetcher(TOKEN_ENDPOINT, {
         method: "POST",
@@ -213,7 +213,7 @@ export class GoogleOAuthHttpProvider implements GoogleOAuthProvider {
       });
       const payload = await limitedJson(response);
       if (!response.ok) throw providerFailure(payload);
-      return normalizeTokenSet(payload);
+      return normalizeTokenSet(payload, fallbackScopes);
     } catch (error) {
       if (error instanceof GoogleConnectionError) throw error;
       throw unavailable();

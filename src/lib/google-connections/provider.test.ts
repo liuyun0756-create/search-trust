@@ -92,6 +92,17 @@ describe("Google OAuth HTTP provider", () => {
     });
   });
 
+  it("retains previously verified scopes when a refresh response omits scope", async () => {
+    const fetcher = vi.fn(async () => jsonResponse({
+      access_token: "new-access",
+      expires_in: 1800,
+      token_type: "Bearer",
+    }));
+    const provider = new GoogleOAuthHttpProvider(config, fetcher);
+    await expect(provider.refresh("fake-refresh", ["openid", "scope:a"]))
+      .resolves.toMatchObject({ grantedScopes: ["openid", "scope:a"] });
+  });
+
   it("maps invalid_grant separately and never includes raw provider content", async () => {
     const fetcher = vi.fn(async () => jsonResponse({
       error: "invalid_grant",
