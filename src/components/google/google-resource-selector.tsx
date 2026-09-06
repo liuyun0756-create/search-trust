@@ -5,6 +5,7 @@ import type { GoogleConnectionSummary } from "@/lib/google-connections/contracts
 import type { GoogleSource } from "@/lib/google-connections/scopes";
 import type { GoogleResource, ResourcePage } from "@/lib/google-resources/contracts";
 import { GoogleIdentityReview } from "./google-identity-review";
+import { GscSyncControl } from "./gsc-sync-control";
 
 type Binding = { id: string; source_type: GoogleSource; external_resource_name: string; external_resource_id: string; connection_id: string | null;
   identity_match_status: string; confirmation_method: string | null; confirmed_at: string | null };
@@ -20,7 +21,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export function GoogleResourceSelector({ caseId, businessName, siteUrl }: { caseId: string; businessName: string; siteUrl: string }) {
+export function GoogleResourceSelector({ caseId, businessName, siteUrl, gscSyncEnabled = false }: { caseId: string; businessName: string; siteUrl: string; gscSyncEnabled?: boolean }) {
   const endpoint = `/api/v2/cases/${caseId}/google-resources`;
   const [connections, setConnections] = useState<GoogleConnectionSummary[]>([]);
   const [bindings, setBindings] = useState<Binding[]>([]);
@@ -105,7 +106,8 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl }: { case
                 : binding.confirmation_method === "user_confirmed" ? "Identity explicitly confirmed by you." : "Identity confirmed."
               : binding.identity_match_status === "mismatch" ? "Identity mismatch. Choose another resource." : "Identity needs review. Select this resource again to confirm."}</p>
             {binding.confirmed_at && binding.identity_match_status === "matched" && <p className="text-sm">Confirmed: {new Date(binding.confirmed_at).toLocaleString()}</p>}
-            <p className="text-sm text-[#687362]">Identity confirmation does not verify data health or start data synchronization.</p></div>
+            <p className="text-sm text-[#687362]">Identity confirmation does not verify data health or start data synchronization.</p>
+            {gscSyncEnabled && binding.source_type === "gsc" && <GscSyncControl key={binding.id} caseId={caseId} bindingId={binding.id} identityMatched={binding.identity_match_status === "matched"} />}</div>
           <button disabled={busy} className={secondary} onClick={() => action(async () => {
             await api(endpoint, { method: "DELETE", body: JSON.stringify({ binding_id: binding.id }) });
             await refresh(); setSelected(null); setNotice("Resource disconnected from this Case.");

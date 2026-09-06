@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import type { CaseLocation } from "../cases/contracts";
 import { caseLocationKey } from "../cases/normalize";
 
@@ -231,6 +232,78 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     for (const role of ["anon", "authenticated"]) {
       const grants = await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.select_v22_matched_google_resource(uuid,uuid,uuid,text,text,text,text,uuid,timestamptz,jsonb,text)','EXECUTE') as allowed`, [role]);
       expect(grants.rows[0].allowed).toBe(false);
+    }
+  });
+
+  it("fences durable GSC sync, retries safely and commits immutable snapshots only for the current identity", async () => {
+    const owner = await insertUser("gsc-sync-owner");
+    const outsider = await insertUser("gsc-sync-outsider");
+    const caseId = await insertCase(owner, "gsc-sync-case");
+    const conn = await insertConnection(owner, "gsc-sync-connection");
+    await db.query(`update public.google_connections set granted_scopes=array['openid','email','profile','https://www.googleapis.com/auth/webmasters.readonly'] where id=$1`, [conn]);
+    const binding = (await db.query<{ id: string }>(`select * from public.select_v22_google_resource($1,$2,$3,'gsc','sc-domain:gsc-sync-case.example.com','GSC',null,null)`, [owner, caseId, conn])).rows[0].id;
+    type SyncJob = { id: string; status: string; coverage_end: string; lease_id: string; attempt_count: number; snapshot_id: string | null; error_code: string | null };
+    const request = async (key = randomUUID(), user = owner) => (await db.query<SyncJob>(`select * from public.request_v22_gsc_sync($1,$2,$3,$4)`, [user, caseId, binding, key])).rows[0];
+    const claim = async (id: string) => (await db.query<{ job: SyncJob | null }>(`select public.claim_v22_gsc_sync($1) as job`, [id])).rows[0].job;
+    const load = async (id: string) => (await db.query<SyncJob>(`select * from public.google_sync_jobs where id=$1`, [id])).rows[0];
+    const finish = async (job: SyncJob, override: object = {}) => {
+      const offset = (days: number) => new Date(new Date(`${job.coverage_end}T00:00:00Z`).getTime() - days * 86400000).toISOString().slice(0, 10);
+      const payload = { schema_version: "gsc_sync_v1", resource_id: "sc-domain:gsc-sync-case.example.com",
+        current: { start_date: offset(89), end_date: offset(0) }, previous: { start_date: offset(179), end_date: offset(90) }, ...override };
+      return (await db.query<{ id: string | null }>(`select public.finish_v22_gsc_sync($1,$2,$3::jsonb,$4,'healthy','["GSC_TOP_ROWS_ONLY"]'::jsonb) as id`,
+        [job.id, job.lease_id, JSON.stringify(payload), checksum])).rows[0].id;
+    };
+    await expect(request()).rejects.toThrow("SYNC_BINDING_CHANGED");
+    await db.query(`update public.case_source_bindings set identity_match_status='matched' where id=$1`, [binding]);
+    await expect(request(randomUUID(), outsider)).rejects.toThrow("SYNC_FORBIDDEN");
+    const key = randomUUID();
+    const first = await request(key);
+    expect((await request(key)).id).toBe(first.id);
+    await expect(request()).rejects.toThrow("SYNC_ALREADY_RUNNING");
+    expect(first.status).toBe("queued");
+    const run = (await claim(first.id))!;
+    expect(run.attempt_count).toBe(1); expect(run.lease_id).toBeTruthy();
+    expect(await claim(first.id)).toBeNull();
+    await expect(finish(run, { resource_id: "sc-domain:other.example" })).rejects.toThrow("INVALID_SYNC_RESULT");
+    expect(await finish(run)).toBe(first.id);
+    expect(await finish(run)).toBe(first.id);
+    expect((await request(key)).id).toBe(first.id);
+    const stored = (await db.query<{ raw_payload: unknown; normalized_payload: unknown; expires_at: string; fetched_at: string; binding_id: string }>(`select * from public.data_snapshots where id=$1`, [first.id])).rows[0];
+    expect(stored.raw_payload).toBeNull(); expect(stored.binding_id).toBe(binding);
+    expect(new Date(stored.expires_at).getTime() - new Date(stored.fetched_at).getTime()).toBe(7 * 86400000);
+    await expect(db.query(`update public.data_snapshots set normalized_payload='{}' where id=$1`, [first.id])).rejects.toThrow("immutable");
+    const second = await request();
+    const oldLease = (await claim(second.id))!;
+    await db.query(`update public.google_sync_jobs set lease_expires_at=now()-interval '1 second' where id=$1`, [second.id]);
+    const recovered = (await claim(second.id))!;
+    expect(recovered.attempt_count).toBe(2); expect(recovered.lease_id).not.toBe(oldLease.lease_id);
+    await expect(finish(oldLease)).rejects.toThrow("SYNC_LEASE_LOST");
+    await db.query(`select public.fail_v22_gsc_sync($1,$2,'SYNC_GOOGLE_UNAVAILABLE',true)`, [second.id, oldLease.lease_id]);
+    expect((await load(second.id)).status).toBe("running");
+    await db.query(`select public.fail_v22_gsc_sync($1,$2,'SYNC_GOOGLE_UNAVAILABLE',true)`, [second.id, recovered.lease_id]);
+    expect((await load(second.id)).status).toBe("queued");
+    expect(await claim(second.id)).toBeNull(); // retry backoff
+    await db.query(`update public.google_sync_jobs set available_at=now()-interval '1 second' where id=$1`, [second.id]);
+    const thirdTry = (await claim(second.id))!;
+    expect(thirdTry.attempt_count).toBe(3);
+    await db.query(`select public.fail_v22_gsc_sync($1,$2,'SYNC_GOOGLE_UNAVAILABLE',true)`, [second.id, thirdTry.lease_id]);
+    expect(await load(second.id)).toMatchObject({ status: "failed", error_code: "SYNC_RETRY_EXHAUSTED" });
+    expect((await db.query(`select id from public.data_snapshots where binding_id=$1`, [binding])).rows).toEqual([{ id: first.id }]);
+    const third = await request();
+    const changingCase = (await claim(third.id))!;
+    await db.query(`update public.client_cases set business_name='Changed business' where id=$1`, [caseId]);
+    expect(await finish(changingCase)).toBeNull();
+    expect(await load(third.id)).toMatchObject({ status: "failed", error_code: "SYNC_BINDING_CHANGED" });
+    await db.query(`update public.case_source_bindings set identity_match_status='matched',confirmed_at=now(),confirmed_by_user_id=$2 where id=$1`, [binding, owner]);
+    const fourth = await request();
+    const replaced = (await claim(fourth.id))!;
+    await db.query(`select public.select_v22_google_resource($1,$2,$3,'gsc','https://gsc-sync-case.example.com/','Other GSC',null,$4)`, [owner, caseId, conn, binding]);
+    expect(await finish(replaced)).toBeNull();
+    expect((await db.query(`select normalized_payload from public.data_snapshots where id=$1`, [first.id])).rows[0]).toEqual({ normalized_payload: stored.normalized_payload });
+    for (const role of ["anon", "authenticated"]) {
+      expect((await db.query<{ allowed: boolean }>(`select has_table_privilege($1,'public.google_sync_jobs','SELECT') as allowed`, [role])).rows[0].allowed).toBe(false);
+      expect((await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.request_v22_gsc_sync(uuid,uuid,uuid,uuid)','EXECUTE') as allowed`, [role])).rows[0].allowed).toBe(false);
+      expect((await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.finish_v22_gsc_sync(uuid,uuid,jsonb,text,text,jsonb)','EXECUTE') as allowed`, [role])).rows[0].allowed).toBe(false);
     }
   });
 
