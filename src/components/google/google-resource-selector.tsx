@@ -37,6 +37,7 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl, gscSyncE
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const selectableSources = gbpSyncEnabled ? (["gsc", "ga4", "gbp"] as const) : (["gsc", "ga4"] as const);
   const load = useCallback(() => Promise.all([
       api<{ connections: GoogleConnectionSummary[] }>("/api/v2/google/connections"), api<{ bindings: Binding[] }>(endpoint),
     ]), [endpoint]);
@@ -96,7 +97,12 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl, gscSyncE
       <a className="underline" href="/reports">← Reports</a>
       <header><p className="mb-2 text-sm uppercase tracking-widest">Google resources</p><h1 className="text-3xl font-semibold">Choose data for {businessName}</h1>
         <p className="mt-3 break-all text-[#687362]">Case website: {siteUrl}</p>
-        <p className="mt-2">Choose the correct resource for each source. Each may use a different Google account.</p></header>
+        <p className="mt-2">Choose the correct Search Console and Analytics resources. Each may use a different Google account.</p></header>
+      {!gbpSyncEnabled && <section aria-label="Public Business Profile coverage" className="rounded-2xl border border-[#cad8a1] bg-[#f5fadf] p-5">
+        <h2 className="font-semibold">Public Business Profile evidence is already included</h2>
+        <p className="mt-2 text-sm leading-6 text-[#56634f]">SearchTrust checks the confirmed public Google Maps profile through SerpAPI. No Business Profile owner account or OAuth connection is required.</p>
+        <p className="mt-1 text-sm leading-6 text-[#687362]">Public profile details, reviews and activity support Verified Core. Official Business Profile Performance remains optional and Full Evidence stays unavailable until it is connected.</p>
+      </section>}
       <section aria-label="Current selections" className="rounded-2xl border border-[#dce1d5] bg-white p-6">
         <h2 className="text-xl font-semibold">Current selections</h2>
         {bindings.length === 0 && <p className="mt-3">No Google resources selected yet.</p>}
@@ -121,7 +127,7 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl, gscSyncE
       <section className="space-y-5 rounded-2xl border border-[#dce1d5] bg-white p-6" aria-label="Resource selection">
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="space-y-2">Data source<select disabled={busy} className="block w-full rounded-lg border p-3" value={source} onChange={e => { reset(); setSource(e.target.value as GoogleSource); }}>
-            {Object.entries(LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            {selectableSources.map(key => <option key={key} value={key}>{LABELS[key]}</option>)}
           </select></label>
           <label className="space-y-2">Google account<select disabled={busy} className="block w-full rounded-lg border p-3" value={connection} onChange={e => { reset(); setConnection(e.target.value); }}>
             <option value="">Choose an account</option>{connections.filter(c => !["revoked", "deleted"].includes(c.status)).map(c => <option key={c.id} value={c.id}>{c.account_email || c.account_display_name || "Google account"}</option>)}

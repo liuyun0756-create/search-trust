@@ -179,6 +179,10 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
     report.first_party_performance.gbp,
     report.first_party_performance.ga4,
   ];
+  const verifiedCoreSources = [
+    report.first_party_performance.gsc,
+    report.first_party_performance.ga4,
+  ];
   const parentReportId = report.report_version.parent_report_id ?? null;
   if (report.report_version.report_type === "prospect") {
     if (parentReportId !== null || report.version_diff.kind !== "initial" || report.version_diff.parent_report_id != null) {
@@ -200,8 +204,12 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
     if (!(report.version_diff.entries ?? []).length) {
       errors.push(semanticError("/version_diff/entries", "Verified reports require version changes."));
     }
-    if (firstPartySources.some((source) => source.connection_state === "not_connected" || source.snapshot_id == null)) {
-      errors.push(semanticError("/first_party_performance", "Verified reports require GSC, GBP, and GA4 snapshots."));
+    if (verifiedCoreSources.some((source) => source.connection_state === "not_connected" || source.snapshot_id == null)) {
+      errors.push(semanticError("/first_party_performance", "Verified reports require GSC and GA4 snapshots."));
+    }
+    const gbp = report.first_party_performance.gbp;
+    if ((gbp.connection_state === "not_connected") !== (gbp.snapshot_id == null)) {
+      errors.push(semanticError("/first_party_performance", "Verified GBP connection state and snapshot must be consistent."));
     }
     for (const [index, entry] of (report.version_diff.entries ?? []).entries()) {
       if (entry.change_type === "new" && entry.previous_finding != null) {
@@ -219,7 +227,8 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
   if (
     report.data_coverage.full_evidence_coverage &&
     firstPartySources.some(
-      (source) => source.health_status !== "healthy" || source.identity_match_status !== "matched",
+      (source) => source.connection_state === "not_connected" || source.snapshot_id == null ||
+        source.health_status !== "healthy" || source.identity_match_status !== "matched",
     )
   ) {
     errors.push(semanticError("/data_coverage/full_evidence_coverage", "Full evidence coverage requires healthy, matched GSC, GBP, and GA4 sources."));

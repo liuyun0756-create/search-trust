@@ -118,6 +118,18 @@ describe("report_v2_2 shared fixtures", () => {
     setAtPath(fixture, ["first_party_performance", "gbp", "health_status"], "unhealthy");
     expectInvalid(fixture, "REPORT_REFERENCE_INVALID", "Full evidence coverage requires healthy");
   });
+
+  it("allows verified core coverage without official GBP Performance", () => {
+    const fixture = clone(verifiedFixture);
+    const prospect = clone(prospectFixture) as {
+      data_coverage: { sources: unknown[] };
+      first_party_performance: { gbp: unknown };
+    };
+    setAtPath(fixture, ["data_coverage", "full_evidence_coverage"], false);
+    setAtPath(fixture, ["data_coverage", "sources", 4], prospect.data_coverage.sources[3]);
+    setAtPath(fixture, ["first_party_performance", "gbp"], prospect.first_party_performance.gbp);
+    expect(validateReportV22(fixture).ok).toBe(true);
+  });
 });
 
 describe("v2.2 contract manifest", () => {
