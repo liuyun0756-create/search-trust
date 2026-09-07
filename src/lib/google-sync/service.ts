@@ -40,7 +40,8 @@ export function createSyncService(db: SupabaseClient, now = () => new Date()) {
     async status(userId: string, caseId: string, bindingId: string) {
       const binding = await owned(userId, caseId, bindingId);
       const [jobs, snapshots] = await Promise.all([
-        db.from("google_sync_jobs").select(JOB_FIELDS).eq("user_id", userId).eq("case_id", caseId).eq("binding_id", bindingId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        db.from("google_sync_jobs").select(JOB_FIELDS).eq("user_id", userId).eq("case_id", caseId).eq("binding_id", bindingId)
+          .eq("source_type", "gsc").order("created_at", { ascending: false }).limit(1).maybeSingle(),
         db.from("data_snapshots").select("id,health_status,health_reasons,fetched_at,expires_at,coverage_start,coverage_end")
           .eq("case_id", caseId).eq("binding_id", bindingId).eq("source_type", "gsc").order("fetched_at", { ascending: false }).limit(1).maybeSingle(),
       ]);

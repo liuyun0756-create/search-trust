@@ -307,6 +307,51 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     }
   });
 
+  it("isolates GA4 jobs, freezes host scope and commits only valid current-property snapshots", async () => {
+    const owner = await insertUser("ga4-sync-owner");
+    const outsider = await insertUser("ga4-sync-outsider");
+    const caseId = await insertCase(owner, "ga4-sync-case");
+    const conn = await insertConnection(owner, "ga4-sync-connection");
+    await db.query(`update public.google_connections set granted_scopes=array['openid','email','profile','https://www.googleapis.com/auth/analytics.readonly'] where id=$1`, [conn]);
+    const binding = (await db.query<{ id: string }>(`select * from public.select_v22_google_resource($1,$2,$3,'ga4','properties/12345','GA4 Property','accounts/9',null)`, [owner, caseId, conn])).rows[0].id;
+    await db.query(`update public.case_source_bindings set identity_match_status='matched' where id=$1`, [binding]);
+    type SyncJob = { id: string; status: string; source_type: string; coverage_end: string; lease_id: string; attempt_count: number; snapshot_id: string | null; error_code: string | null; filter_hosts: string[] };
+    const request = async (key = randomUUID(), hosts = ["ga4-sync-case.example.com", "www.ga4-sync-case.example.com"], user = owner) =>
+      (await db.query<SyncJob>(`select * from public.request_v22_ga4_sync($1,$2,$3,$4,$5)`, [user, caseId, binding, key, hosts])).rows[0];
+    const claim = async (id: string) => (await db.query<{ job: SyncJob | null }>(`select public.claim_v22_ga4_sync($1) as job`, [id])).rows[0].job;
+    const finish = async (job: SyncJob, override: object = {}) => {
+      const offset = (days: number) => new Date(new Date(`${job.coverage_end}T00:00:00Z`).getTime() - days * 86400000).toISOString().slice(0, 10);
+      const payload = { schema_version: "ga4_sync_v1", resource_id: "properties/12345", host_filter: job.filter_hosts,
+        current: { start_date: offset(89), end_date: offset(0) }, previous: { start_date: offset(179), end_date: offset(90) }, ...override };
+      return (await db.query<{ id: string | null }>(`select public.finish_v22_ga4_sync($1,$2,$3::jsonb,$4,'healthy','["GA4_HOST_FILTERED"]'::jsonb) as id`,
+        [job.id, job.lease_id, JSON.stringify(payload), checksum])).rows[0].id;
+    };
+    await expect(request(randomUUID(), ["other.example.com"])).rejects.toThrow("INVALID_HOST_FILTER");
+    await expect(request(randomUUID(), ["ga4-sync-case.example.com"], outsider)).rejects.toThrow("SYNC_FORBIDDEN");
+    const key = randomUUID();
+    const queued = await request(key);
+    expect(queued).toMatchObject({ source_type: "ga4", filter_hosts: ["ga4-sync-case.example.com", "www.ga4-sync-case.example.com"] });
+    expect((await request(key)).id).toBe(queued.id);
+    expect((await db.query<{ job: SyncJob | null }>(`select public.claim_v22_gsc_sync($1) as job`, [queued.id])).rows[0].job).toBeNull();
+    expect((await db.query<{ status: string }>(`select status from public.google_sync_jobs where id=$1`, [queued.id])).rows[0].status).toBe("queued");
+    const running = (await claim(queued.id))!;
+    await expect(finish(running, { host_filter: ["other.example.com"] })).rejects.toThrow("INVALID_SYNC_RESULT");
+    expect(await finish(running)).toBe(queued.id);
+    const stored = (await db.query<{ source_type: string; raw_payload: unknown; provider_request_context: { host_filter: string[] } }>(`select source_type,raw_payload,provider_request_context from public.data_snapshots where id=$1`, [queued.id])).rows[0];
+    expect(stored).toMatchObject({ source_type: "ga4", raw_payload: null, provider_request_context: { host_filter: queued.filter_hosts } });
+    const second = await request();
+    const oldIdentity = (await claim(second.id))!;
+    await db.query(`update public.client_cases set business_name='Changed GA4 business' where id=$1`, [caseId]);
+    expect(await finish(oldIdentity)).toBeNull();
+    expect((await db.query<{ status: string; error_code: string }>(`select status,error_code from public.google_sync_jobs where id=$1`, [second.id])).rows[0])
+      .toEqual({ status: "failed", error_code: "SYNC_BINDING_CHANGED" });
+    expect((await db.query<{ count: number }>(`select count(*)::int as count from public.data_snapshots where binding_id=$1 and source_type='ga4'`, [binding])).rows[0].count).toBe(1);
+    for (const role of ["anon", "authenticated"]) {
+      expect((await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.request_v22_ga4_sync(uuid,uuid,uuid,uuid,text[])','EXECUTE') as allowed`, [role])).rows[0].allowed).toBe(false);
+      expect((await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.finish_v22_ga4_sync(uuid,uuid,jsonb,text,text,jsonb)','EXECUTE') as allowed`, [role])).rows[0].allowed).toBe(false);
+    }
+  });
+
   it("preserves existing v2.1 reports while adding nullable v2.2 fields", async () => {
     const legacy = await db.query<{
       report_v2_1: { legacy: boolean };

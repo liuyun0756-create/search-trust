@@ -36,7 +36,8 @@
     "react-dom": "^19.2.5",
     "recharts": "^3.8.1",
     "resend": "^6.12.3",
-    "svix": "^1.93.0"
+    "svix": "^1.93.0",
+    "tldts": "^7.4.11"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.7",
