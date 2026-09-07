@@ -10,7 +10,7 @@ const reasons: Record<string, string> = {
   GSC_ACTIVITY_GAP_REVIEW: "A long gap in search activity needs review; this does not prove tracking is broken.",
   GSC_COMPARISON_UNAVAILABLE: "The previous comparison period has no data.", GSC_DETAIL_TRUNCATED: "Only top detail rows were saved.",
 };
-export function GscSyncControl({ caseId, bindingId, identityMatched }: { caseId: string; bindingId: string; identityMatched: boolean }) {
+export function GscSyncControl({ caseId, bindingId, identityMatched, onStateChanged }: { caseId: string; bindingId: string; identityMatched: boolean; onStateChanged?: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -45,6 +45,7 @@ export function GscSyncControl({ caseId, bindingId, identityMatched }: { caseId:
       requestKey.current = null;
       setState(previous => ({ snapshot: previous?.snapshot ?? null, job: { status: data.status, attempt_count: 0, error_code: null } }));
       setRevision(value => value + 1);
+      onStateChanged?.();
     } catch (e) { setError(e instanceof Error ? e.message : "Sync could not be requested."); }
     finally { setBusy(false); }
   }

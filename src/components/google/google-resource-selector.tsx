@@ -23,7 +23,25 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export function GoogleResourceSelector({ caseId, businessName, siteUrl, gscSyncEnabled = false, ga4SyncEnabled = false, gbpSyncEnabled = false }: { caseId: string; businessName: string; siteUrl: string; gscSyncEnabled?: boolean; ga4SyncEnabled?: boolean; gbpSyncEnabled?: boolean }) {
+export function GoogleResourceSelector({
+  caseId,
+  businessName,
+  siteUrl,
+  gscSyncEnabled = false,
+  ga4SyncEnabled = false,
+  gbpSyncEnabled = false,
+  embedded = false,
+  onStateChanged,
+}: {
+  caseId: string;
+  businessName: string;
+  siteUrl: string;
+  gscSyncEnabled?: boolean;
+  ga4SyncEnabled?: boolean;
+  gbpSyncEnabled?: boolean;
+  embedded?: boolean;
+  onStateChanged?: () => void;
+}) {
   const endpoint = `/api/v2/cases/${caseId}/google-resources`;
   const [connections, setConnections] = useState<GoogleConnectionSummary[]>([]);
   const [bindings, setBindings] = useState<Binding[]>([]);
@@ -92,13 +110,12 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl, gscSyncE
       window.location.assign(url.toString());
     });
   }
-  return <main className="min-h-screen bg-[#f3f4ed] px-5 py-12 text-[#1c251b]">
-    <div className="mx-auto max-w-4xl space-y-7">
-      <a className="underline" href="/reports">← Reports</a>
-      <header><p className="mb-2 text-sm uppercase tracking-widest">Google resources</p><h1 className="text-3xl font-semibold">Choose data for {businessName}</h1>
+  const content = <>
+      {!embedded && <a className="underline" href="/reports">← Reports</a>}
+      {!embedded && <header><p className="mb-2 text-sm uppercase tracking-widest">Google resources</p><h1 className="text-3xl font-semibold">Choose data for {businessName}</h1>
         <p className="mt-3 break-all text-[#687362]">Case website: {siteUrl}</p>
-        <p className="mt-2">Choose the correct Search Console and Analytics resources. Each may use a different Google account.</p></header>
-      {!gbpSyncEnabled && <section aria-label="Public Business Profile coverage" className="rounded-2xl border border-[#cad8a1] bg-[#f5fadf] p-5">
+        <p className="mt-2">Choose the correct Search Console and Analytics resources. Each may use a different Google account.</p></header>}
+      {!embedded && !gbpSyncEnabled && <section aria-label="Public Business Profile coverage" className="rounded-2xl border border-[#cad8a1] bg-[#f5fadf] p-5">
         <h2 className="font-semibold">Public Business Profile evidence is already included</h2>
         <p className="mt-2 text-sm leading-6 text-[#56634f]">SearchTrust checks the confirmed public Google Maps profile through SerpAPI. No Business Profile owner account or OAuth connection is required.</p>
         <p className="mt-1 text-sm leading-6 text-[#687362]">Public profile details, reviews and activity support Verified Core. Official Business Profile Performance remains optional and Full Evidence stays unavailable until it is connected.</p>
@@ -115,12 +132,12 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl, gscSyncE
               : binding.identity_match_status === "mismatch" ? "Identity mismatch. Choose another resource." : "Identity needs review. Select this resource again to confirm."}</p>
             {binding.confirmed_at && binding.identity_match_status === "matched" && <p className="text-sm">Confirmed: {new Date(binding.confirmed_at).toLocaleString()}</p>}
             <p className="text-sm text-[#687362]">Identity confirmation does not verify data health or start data synchronization.</p>
-            {gscSyncEnabled && binding.source_type === "gsc" && <GscSyncControl key={binding.id} caseId={caseId} bindingId={binding.id} identityMatched={binding.identity_match_status === "matched"} />}
-            {ga4SyncEnabled && binding.source_type === "ga4" && <Ga4SyncControl key={binding.id} caseId={caseId} bindingId={binding.id} identityMatched={binding.identity_match_status === "matched"} />}
-            {gbpSyncEnabled && binding.source_type === "gbp" && <GbpSyncControl key={binding.id} caseId={caseId} bindingId={binding.id} identityMatched={binding.identity_match_status === "matched"} />}</div>
+            {gscSyncEnabled && binding.source_type === "gsc" && <GscSyncControl key={binding.id} caseId={caseId} bindingId={binding.id} identityMatched={binding.identity_match_status === "matched"} onStateChanged={onStateChanged} />}
+            {ga4SyncEnabled && binding.source_type === "ga4" && <Ga4SyncControl key={binding.id} caseId={caseId} bindingId={binding.id} identityMatched={binding.identity_match_status === "matched"} onStateChanged={onStateChanged} />}
+            {gbpSyncEnabled && binding.source_type === "gbp" && <GbpSyncControl key={binding.id} caseId={caseId} bindingId={binding.id} identityMatched={binding.identity_match_status === "matched"} onStateChanged={onStateChanged} />}</div>
           <button disabled={busy} className={secondary} onClick={() => action(async () => {
             await api(endpoint, { method: "DELETE", body: JSON.stringify({ binding_id: binding.id }) });
-            await refresh(); setSelected(null); setNotice("Resource disconnected from this Case.");
+            await refresh(); setSelected(null); setNotice("Resource disconnected from this Case."); onStateChanged?.();
           })}>Disconnect resource</button>
         </div>)}
       </section>
@@ -157,9 +174,12 @@ export function GoogleResourceSelector({ caseId, businessName, siteUrl, gscSyncE
             await api(endpoint, { method: "POST", body: JSON.stringify({ connection_id: connection, source, resource_id: selected.id,
               parent: selected.parent, confirm_selection: true, identity_confirmed: identityConfirmed, identity_review_token: selected.identity_review_token,
               expected_binding_id: bindings.find(b => b.source_type === source)?.id ?? null }) });
-            await refresh(); setSelected(null); setIdentityConfirmed(false); setNotice("Resource saved with identity confirmation. Data health checks are still pending.");
+            await refresh(); setSelected(null); setIdentityConfirmed(false); setNotice("Resource saved with identity confirmation. Data health checks are still pending."); onStateChanged?.();
           })} />}
       </section>
-    </div>
+  </>;
+  if (embedded) return <div className="space-y-7 text-[#1c251b]">{content}</div>;
+  return <main className="min-h-screen bg-[#f3f4ed] px-5 py-12 text-[#1c251b]">
+    <div className="mx-auto max-w-4xl space-y-7">{content}</div>
   </main>;
 }

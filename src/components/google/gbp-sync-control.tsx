@@ -23,7 +23,7 @@ const reasons: Record<string, string> = {
   GBP_CONTENT_EXPIRED: "The stored Business Profile content has reached its 30-day retention limit.",
 };
 
-export function GbpSyncControl({ caseId, bindingId, identityMatched }: { caseId: string; bindingId: string; identityMatched: boolean }) {
+export function GbpSyncControl({ caseId, bindingId, identityMatched, onStateChanged }: { caseId: string; bindingId: string; identityMatched: boolean; onStateChanged?: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -61,6 +61,7 @@ export function GbpSyncControl({ caseId, bindingId, identityMatched }: { caseId:
       requestKey.current = null;
       setState(previous => ({ snapshot: previous?.snapshot ?? null, job: { status: data.status, attempt_count: 0, error_code: null } }));
       setRevision(value => value + 1);
+      onStateChanged?.();
     } catch (value) {
       setError(value instanceof Error ? value.message : "Business Profile sync could not be requested.");
     } finally { setBusy(false); }

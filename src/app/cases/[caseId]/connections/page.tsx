@@ -1,10 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase";
-import { GoogleResourceSelector } from "@/components/google/google-resource-selector";
+import { ConnectionCenter } from "@/components/google/connection-center";
 import { createServerGoogleConnectionService } from "@/lib/google-connections";
 
-export const metadata = { title: "Choose Google resources | SearchTrust", robots: { index: false, follow: false } };
+export const metadata = { title: "Connection Center | SearchTrust", robots: { index: false, follow: false } };
 
 export default async function ConnectionsPage({ params }: { params: Promise<{ caseId: string }> }) {
   if (process.env.GOOGLE_CONNECTIONS_ENABLED !== "true") notFound();
@@ -16,7 +16,7 @@ export default async function ConnectionsPage({ params }: { params: Promise<{ ca
   if (error || !data || data.status !== "active") notFound();
   // Validate server configuration before presenting an authorization action.
   try { createServerGoogleConnectionService(); } catch { notFound(); }
-  return <GoogleResourceSelector key={caseId} caseId={caseId} businessName={data.business_name} siteUrl={data.site_url}
+  return <ConnectionCenter key={caseId} caseId={caseId} businessName={data.business_name} siteUrl={data.site_url}
     gscSyncEnabled={process.env.GOOGLE_GSC_SYNC_ENABLED === "true"}
     ga4SyncEnabled={process.env.GOOGLE_GA4_SYNC_ENABLED === "true"}
     gbpSyncEnabled={process.env.GOOGLE_GBP_SYNC_ENABLED === "true"} />;
