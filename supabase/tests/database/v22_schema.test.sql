@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(55);
+select plan(58);
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');
@@ -149,6 +149,19 @@ select has_function(
 select has_function(
   'public', 'cleanup_expired_google_token_broker_requests', array['timestamp with time zone'],
   'expired Google broker replay claim cleanup exists'
+);
+select has_function(
+  'public', 'request_v22_gbp_sync', array['uuid', 'uuid', 'uuid', 'uuid'],
+  'GBP user-requested synchronization exists'
+);
+select has_function(
+  'public', 'finish_v22_gbp_sync',
+  array['uuid', 'uuid', 'jsonb', 'jsonb', 'text', 'text', 'jsonb'],
+  'GBP synchronization atomically persists manifest and temporary Content'
+);
+select has_function(
+  'public', 'cleanup_v22_expired_gbp_content', array['timestamp with time zone', 'integer'],
+  'expired GBP Content cleanup exists'
 );
 select has_index(
   'public', 'client_cases', 'uq_client_cases_user_domain_location',

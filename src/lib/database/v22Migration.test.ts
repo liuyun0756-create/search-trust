@@ -352,6 +352,73 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     }
   });
 
+  it("fences GBP jobs, stores content for at most 30 days and cleans it without stale downgrades", async () => {
+    const owner = await insertUser("gbp-sync-owner");
+    const outsider = await insertUser("gbp-sync-outsider");
+    const caseId = await insertCase(owner, "gbp-sync-case");
+    const conn = await insertConnection(owner, "gbp-sync-connection");
+    await db.query(`update public.google_connections set granted_scopes=array['openid','email','profile','https://www.googleapis.com/auth/business.manage'] where id=$1`, [conn]);
+    const binding = (await db.query<{ id: string }>(`select * from public.select_v22_google_resource($1,$2,$3,'gbp','locations/12345','Example GBP','accounts/9',null)`, [owner, caseId, conn])).rows[0].id;
+    await db.query(`update public.case_source_bindings set identity_match_status='matched' where id=$1`, [binding]);
+    type SyncJob = { id: string; status: string; source_type: string; coverage_end: string; lease_id: string; attempt_count: number; snapshot_id: string | null; error_code: string | null; filter_hosts: null };
+    const request = async (key = randomUUID(), user = owner) =>
+      (await db.query<SyncJob>(`select * from public.request_v22_gbp_sync($1,$2,$3,$4)`, [user, caseId, binding, key])).rows[0];
+    const claim = async (id: string) => (await db.query<{ job: SyncJob | null }>(`select public.claim_v22_gbp_sync($1) as job`, [id])).rows[0].job;
+    const finish = async (job: SyncJob, override: object = {}) => {
+      const offset = (days: number) => new Date(new Date(`${job.coverage_end}T00:00:00Z`).getTime() - days * 86400000).toISOString().slice(0, 10);
+      const manifest = {
+        schema_version: "gbp_sync_v1", resource_id: "locations/12345",
+        current: { start_date: offset(89), end_date: offset(0), has_impressions: true },
+        previous: { start_date: offset(179), end_date: offset(90), has_impressions: true },
+        keywords: { start_month: offset(179).slice(0, 7), end_month: offset(0).slice(0, 7), pages: 1,
+          available: true, threshold_applied: false, truncated: false },
+        profile_checks: { voice_of_merchant: true, open: true, title: true, website: true, phone: true,
+          primary_category: true, regular_hours: true, address_or_service_area: true },
+        limitations: [], ...override,
+      };
+      const content = { business_information: { name: "locations/12345", title: "Example Business" },
+        performance: { multiDailyMetricTimeSeries: [] }, keyword_pages: [{ searchKeywordsCounts: [] }] };
+      return (await db.query<{ id: string | null }>(`select public.finish_v22_gbp_sync($1,$2,$3::jsonb,$4::jsonb,$5,'healthy','[]'::jsonb) as id`,
+        [job.id, job.lease_id, JSON.stringify(manifest), JSON.stringify(content), checksum])).rows[0].id;
+    };
+
+    await expect(request(randomUUID(), outsider)).rejects.toThrow("SYNC_FORBIDDEN");
+    const key = randomUUID();
+    const queued = await request(key);
+    expect(queued).toMatchObject({ source_type: "gbp", filter_hosts: null });
+    expect((await request(key)).id).toBe(queued.id);
+    expect((await db.query<{ job: SyncJob | null }>(`select public.claim_v22_gsc_sync($1) as job`, [queued.id])).rows[0].job).toBeNull();
+    expect((await db.query<{ job: SyncJob | null }>(`select public.claim_v22_ga4_sync($1) as job`, [queued.id])).rows[0].job).toBeNull();
+    const running = (await claim(queued.id))!;
+    await expect(finish(running, { resource_id: "locations/999" })).rejects.toThrow("INVALID_SYNC_RESULT");
+    expect(await finish(running)).toBe(queued.id);
+    const stored = (await db.query<{ source_type: string; raw_payload: unknown; normalized_payload: unknown; retention_policy: string;
+      expires_at: string; fetched_at: string }>(`select source_type,raw_payload,normalized_payload,retention_policy,expires_at,fetched_at from public.data_snapshots where id=$1`, [queued.id])).rows[0];
+    expect(stored).toMatchObject({ source_type: "gbp", retention_policy: "gbp_content_30d" });
+    expect(stored.raw_payload).not.toBeNull();
+    expect(JSON.stringify(stored.normalized_payload)).not.toContain("Example Business");
+    expect(new Date(stored.expires_at).getTime() - new Date(stored.fetched_at).getTime()).toBeLessThanOrEqual(30 * 86400000);
+    await expect(db.query(`update public.data_snapshots set raw_payload=null,raw_content_deleted_at=now() where id=$1`, [queued.id])).rejects.toThrow("only one-way expired GBP raw content cleanup");
+
+    const cleaned = (await db.query<{ count: number }>(`select public.cleanup_v22_expired_gbp_content(now()+interval '31 days',100)::int as count`)).rows[0].count;
+    expect(cleaned).toBe(1);
+    expect((await db.query<{ raw_payload: unknown; raw_content_deleted_at: string | null }>(`select raw_payload,raw_content_deleted_at from public.data_snapshots where id=$1`, [queued.id])).rows[0])
+      .toMatchObject({ raw_payload: null });
+    expect((await db.query<{ health_status: string }>(`select health_status from public.case_source_bindings where id=$1`, [binding])).rows[0].health_status).toBe("expired");
+
+    const fresh = await request();
+    expect(await finish((await claim(fresh.id))!)).toBe(fresh.id);
+    expect((await db.query<{ health_status: string }>(`select health_status from public.case_source_bindings where id=$1`, [binding])).rows[0].health_status).toBe("healthy");
+    expect((await db.query<{ count: number }>(`select public.cleanup_v22_expired_gbp_content(now(),100)::int as count`)).rows[0].count).toBe(0);
+    expect((await db.query<{ health_status: string }>(`select health_status from public.case_source_bindings where id=$1`, [binding])).rows[0].health_status).toBe("healthy");
+
+    for (const role of ["anon", "authenticated"]) {
+      expect((await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.request_v22_gbp_sync(uuid,uuid,uuid,uuid)','EXECUTE') as allowed`, [role])).rows[0].allowed).toBe(false);
+      expect((await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.finish_v22_gbp_sync(uuid,uuid,jsonb,jsonb,text,text,jsonb)','EXECUTE') as allowed`, [role])).rows[0].allowed).toBe(false);
+      expect((await db.query<{ allowed: boolean }>(`select has_function_privilege($1,'public.cleanup_v22_expired_gbp_content(timestamptz,integer)','EXECUTE') as allowed`, [role])).rows[0].allowed).toBe(false);
+    }
+  });
+
   it("preserves existing v2.1 reports while adding nullable v2.2 fields", async () => {
     const legacy = await db.query<{
       report_v2_1: { legacy: boolean };
@@ -673,14 +740,14 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
 
     await db.query(
       `update public.data_snapshots
-       set raw_payload = null, raw_content_deleted_at = now()
+       set raw_payload = null, raw_content_deleted_at = now() + interval '31 days'
        where id = $1`,
       [gbpSnapshotA],
     );
     await expectSqlError(
       `update public.data_snapshots set raw_payload = '{}'::jsonb where id = $1`,
       [gbpSnapshotA],
-      "only one-way GBP raw content cleanup is allowed",
+      "only one-way expired GBP raw content cleanup is allowed",
     );
   });
 

@@ -18,5 +18,6 @@ export default async function ConnectionsPage({ params }: { params: Promise<{ ca
   try { createServerGoogleConnectionService(); } catch { notFound(); }
   return <GoogleResourceSelector key={caseId} caseId={caseId} businessName={data.business_name} siteUrl={data.site_url}
     gscSyncEnabled={process.env.GOOGLE_GSC_SYNC_ENABLED === "true"}
-    ga4SyncEnabled={process.env.GOOGLE_GA4_SYNC_ENABLED === "true"} />;
+    ga4SyncEnabled={process.env.GOOGLE_GA4_SYNC_ENABLED === "true"}
+    gbpSyncEnabled={process.env.GOOGLE_GBP_SYNC_ENABLED === "true"} />;
 }
