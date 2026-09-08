@@ -419,6 +419,124 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     }
   });
 
+  it("resolves only current Case-bound first-party Findings inputs for service_role", async () => {
+    const owner = await insertUser("first-party-findings-owner");
+    const caseId = await insertCase(owner, "first-party-findings-case");
+    const connection = await insertConnection(owner, "first-party-findings-connection");
+    const binding = async (source: string, resource: string) => insertId(
+      `insert into public.case_source_bindings (
+         case_id, connection_id, source_type, external_resource_id, external_resource_name,
+         identity_match_status, health_status, confirmed_by_user_id, confirmed_at
+       ) values ($1,$2,$3,$4,$4,'matched','healthy',$5,now()) returning id`,
+      [caseId, connection, source, resource, owner],
+    );
+    const gscBinding = await binding("gsc", "sc-domain:first-party-findings-case.example.com");
+    const ga4Binding = await binding("ga4", "properties/12345");
+    const gbpBinding = await binding("gbp", "locations/12345");
+    const snapshot = async (
+      source: string, schema: string, resource: string, bindingId: string,
+      gbp = false, fetchedOffset = "-1 second",
+    ) => insertId(
+      `insert into public.data_snapshots (
+         case_id,binding_id,source_type,schema_version,coverage_start,coverage_end,
+         expires_at,fetched_at,sync_trigger,health_status,health_reasons,normalized_payload,raw_payload,
+         payload_checksum,provider_request_context,retention_policy
+       ) values (
+         $1,$2,$3,$4,current_date-179,current_date-3,now()+$11::interval+$5::interval,now()+$11::interval,
+         'user_sync','healthy','[]'::jsonb,$6::jsonb,$7::jsonb,$8,
+         jsonb_build_object('external_resource_id',$9::text),$10
+       ) returning id`,
+      [caseId, bindingId, source, schema, gbp ? "30 days" : "7 days",
+        JSON.stringify({ schema_version: schema, resource_id: resource }),
+        gbp ? JSON.stringify({ private: "temporary-content" }) : null,
+        checksum, resource, gbp ? "gbp_content_30d" : "standard", fetchedOffset],
+    );
+    const gsc = await snapshot("gsc", "gsc_sync_v1", "sc-domain:first-party-findings-case.example.com", gscBinding);
+    const ga4 = await snapshot("ga4", "ga4_sync_v1", "properties/12345", ga4Binding);
+    const gbp = await snapshot("gbp", "gbp_sync_v1", "locations/12345", gbpBinding, true);
+    const site = await insertId(
+      `insert into public.data_snapshots (case_id,source_type,schema_version,sync_trigger,health_status,
+         normalized_payload,payload_checksum) values ($1,'site','site_inventory_snapshot_v1','report_generation',
+         'healthy','{}'::jsonb,$2) returning id`, [caseId, checksum],
+    );
+    const parent = await insertId(
+      `insert into public.reports (
+         report_id,user_id,page_url,gbp_url,status,access_type,case_id,report_type,schema_version,
+         version_number,report_v2_2,snapshot_ids,coverage_state,version_diff,generation_config,
+         ruleset_version,copy_model_version
+       ) values ($1,$2,'https://first-party-findings-case.example.com','','paid_full','unlocked',$3,
+         'prospect','2.2.0',1,'{}'::jsonb,array[$4::uuid],'{}'::jsonb,'{}'::jsonb,'{}'::jsonb,
+         'rules-v1','copy-v1') returning id`,
+      [`first-party-parent-${randomUUID()}`, owner, caseId, site],
+    );
+    await db.query(`update public.client_cases set latest_report_id=$2 where id=$1`, [caseId, parent]);
+    const resolve = (gbpId: string | null = null) => db.query<{ payload: {
+      case_id: string; parent_report_id: string; snapshots: Array<Record<string, unknown>>;
+    } }>(
+      `select public.resolve_v22_first_party_findings_input($1,$2,$3,$4,$5,now()) as payload`,
+      [caseId, parent, gsc, ga4, gbpId],
+    );
+    const core = (await resolve()).rows[0].payload;
+    expect(core.case_id).toBe(caseId);
+    expect(core.parent_report_id).toBe(parent);
+    expect(core.snapshots.map((item) => item.source_type)).toEqual(["gsc", "ga4"]);
+    expect(core.snapshots.every((item) => item.raw_payload === null)).toBe(true);
+    const full = (await resolve(gbp)).rows[0].payload;
+    expect(full.snapshots.map((item) => item.source_type)).toEqual(["gsc", "ga4", "gbp"]);
+    expect(full.snapshots[2].raw_payload).toEqual({ private: "temporary-content" });
+    await expectSqlError(
+      `select public.resolve_v22_first_party_findings_input($1,$2,$3,$4,null,now())`,
+      [caseId, parent, ga4, gsc], "FIRST_PARTY_BINDING_INVALID",
+    );
+    await expectSqlError(
+      `select public.resolve_v22_first_party_findings_input($1,$2,$3,$4,null,now()+interval '8 days')`,
+      [caseId, parent, gsc, ga4], "FIRST_PARTY_SNAPSHOT_EXPIRED",
+    );
+    for (const role of ["anon", "authenticated"]) {
+      expect((await db.query<{ allowed: boolean }>(
+        `select has_function_privilege($1,'public.resolve_v22_first_party_findings_input(uuid,uuid,uuid,uuid,uuid,timestamptz)','EXECUTE') as allowed`,
+        [role],
+      )).rows[0].allowed).toBe(false);
+    }
+    expect((await db.query<{ allowed: boolean }>(
+      `select has_function_privilege('service_role','public.resolve_v22_first_party_findings_input(uuid,uuid,uuid,uuid,uuid,timestamptz)','EXECUTE') as allowed`,
+    )).rows[0].allowed).toBe(true);
+
+    const newerGsc = await snapshot(
+      "gsc", "gsc_sync_v1", "sc-domain:first-party-findings-case.example.com", gscBinding, false, "0 seconds",
+    );
+    await expectSqlError(
+      `select public.resolve_v22_first_party_findings_input($1,$2,$3,$4,null,now())`,
+      [caseId, parent, gsc, ga4], "FIRST_PARTY_BINDING_INVALID",
+    );
+    expect((await db.query<{ payload: { snapshots: Array<Record<string, unknown>> } }>(
+      `select public.resolve_v22_first_party_findings_input($1,$2,$3,$4,null,now()) as payload`,
+      [caseId, parent, newerGsc, ga4],
+    )).rows[0].payload.snapshots).toHaveLength(2);
+
+    await db.query(
+      `update public.case_source_bindings set identity_match_status='needs_confirmation' where id=$1`,
+      [gscBinding],
+    );
+    await expectSqlError(
+      `select public.resolve_v22_first_party_findings_input($1,$2,$3,$4,null,now())`,
+      [caseId, parent, newerGsc, ga4], "FIRST_PARTY_BINDING_INVALID",
+    );
+    await db.query(
+      `update public.case_source_bindings set identity_match_status='matched' where id=$1`,
+      [gscBinding],
+    );
+
+    await db.query(
+      `update public.client_cases set status='archived',archived_at=now() where id=$1`,
+      [caseId],
+    );
+    await expectSqlError(
+      `select public.resolve_v22_first_party_findings_input($1,$2,$3,$4,null,now())`,
+      [caseId, parent, newerGsc, ga4], "FIRST_PARTY_CASE_INVALID",
+    );
+  });
+
   it("preserves existing v2.1 reports while adding nullable v2.2 fields", async () => {
     const legacy = await db.query<{
       report_v2_1: { legacy: boolean };
