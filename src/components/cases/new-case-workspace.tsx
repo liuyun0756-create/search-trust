@@ -62,11 +62,12 @@ export function NewCaseWorkspace() {
   const savingCase = useRef(false);
   const submittingAnalysis = useRef(false);
   const skipNextSave = useRef(false);
+  const latestLookupCase = useRef<string | null>(null);
   const { isLoaded, isSignedIn } = useUser();
   const { openLogin } = useAuditModal();
   const authenticatedFetch = useAuthenticatedFetch();
   const [analysisStatus, setAnalysisStatus] = useState<TaskStatusResponse | null>(null);
-  const [analysisPollTick, setAnalysisPollTick] = useState(0);
+  const [latestAnalysisChecked, setLatestAnalysisChecked] = useState(false);
 
   useEffect(() => {
     setDraft(loadDraft(sessionStorage));
@@ -255,6 +256,9 @@ export function NewCaseWorkspace() {
           "x-searchtrust-job-id": jobId,
           "x-searchtrust-discovery-id": discovery.discovery_id,
           "idempotency-key": idempotencyKey,
+          ...(draft.previous_analysis_job_id
+            ? { "x-searchtrust-previous-job-id": draft.previous_analysis_job_id }
+            : {}),
         },
         body: JSON.stringify({
           case_id: paymentHandoff.caseId,
@@ -272,62 +276,146 @@ export function NewCaseWorkspace() {
       if (!response.ok) throw new Error(payload?.error?.message || "The report task could not be started yet.");
       setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: "The task is queued. We’ll open the report automatically when its evidence has been validated." }));
     } catch (error) {
-      setPaymentHandoff((current) => ({ ...current, status: "analysis_failed", message: error instanceof Error ? error.message : "The report task could not be started yet." }));
+      setPaymentHandoff((current) => ({
+        ...current,
+        status: "starting_analysis",
+        message: error instanceof Error ? `${error.message} Retrying the same reserved task…` : "Reconnecting to the same reserved report task…",
+      }));
+      window.setTimeout(() => {
+        setPaymentHandoff((current) => current.status === "starting_analysis"
+          ? { ...current, status: "unlocked", message: "Retrying the same reserved report task…" }
+          : current);
+      }, 10_000);
     } finally {
       submittingAnalysis.current = false;
     }
-  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.selected_competitor_ids, paymentHandoff.caseId]);
+  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.selected_competitor_ids, paymentHandoff.caseId]);
 
   useEffect(() => {
-    if (paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client") return;
+    const caseId = paymentHandoff.caseId;
+    if (!caseId || draft.goal !== "win_new_client" || draft.analysis_job_id) {
+      if (draft.analysis_job_id) setLatestAnalysisChecked(true);
+      return;
+    }
+    if (latestLookupCase.current === caseId) {
+      setLatestAnalysisChecked(true);
+      return;
+    }
+    latestLookupCase.current = caseId;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await authenticatedFetch(`/api/v2/cases/${encodeURIComponent(caseId)}/tasks/latest`, {
+          signal: controller.signal,
+        });
+        if (response.status === 204) return;
+        const latest = await response.json().catch(() => null) as { id?: string } | null;
+        if (response.ok && latest?.id) {
+          setDraft((current) => reduceWorkspaceState(current, {
+            type: "START_ANALYSIS",
+            job_id: latest.id!,
+            idempotency_key: `resume:${latest.id}`,
+          }));
+          setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: "Reconnected to the latest server-owned report task…" }));
+        }
+      } finally {
+        if (!controller.signal.aborted) setLatestAnalysisChecked(true);
+      }
+    })();
+    return () => controller.abort();
+  }, [authenticatedFetch, draft.analysis_job_id, draft.goal, paymentHandoff.caseId]);
+
+  useEffect(() => {
+    if (paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client" || !latestAnalysisChecked) return;
     if (!draft.analysis_job_id) {
       const jobId = crypto.randomUUID();
       setDraft((current) => reduceWorkspaceState(current, { type: "START_ANALYSIS", job_id: jobId, idempotency_key: `analyze:${current.draft_case_id}:${jobId}` }));
       return;
     }
     void submitAnalysis();
-  }, [draft.analysis_job_id, draft.goal, paymentHandoff.status, submitAnalysis]);
+  }, [draft.analysis_job_id, draft.goal, latestAnalysisChecked, paymentHandoff.status, submitAnalysis]);
 
   useEffect(() => {
     const jobId = draft.analysis_job_id;
     const caseId = paymentHandoff.caseId;
     if (!jobId || !caseId || !["starting_analysis", "analyzing"].includes(paymentHandoff.status)) return;
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      let shouldContinue = true;
+    let stopped = false;
+    let pollTimer: number | undefined;
+    let lastRevision = analysisStatus?.revision ?? 0;
+    let events: EventSource | null = null;
+
+    const applyStatus = (payload: TaskStatusResponse) => {
+      if (payload.revision < lastRevision) return false;
+      lastRevision = payload.revision;
+      setAnalysisStatus(payload);
+      if (payload.status === "succeeded" && payload.database_report_id) {
+        clearDraft(sessionStorage);
+        window.location.assign(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(payload.database_report_id)}`);
+        stopped = true;
+        return false;
+      }
+      if (payload.status === "failed") {
+        setPaymentHandoff((current) => ({
+          ...current,
+          status: "analysis_failed",
+          message: `${payload.error?.user_message ?? "The analysis stopped safely."} One credit has been returned. Generating again will use one credit.`,
+        }));
+        stopped = true;
+        return false;
+      }
+      setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: `${payload.message} ${payload.progress}% complete.` }));
+      return true;
+    };
+
+    const poll = async () => {
+      if (stopped || controller.signal.aborted) return;
       try {
         const response = await authenticatedFetch(`/api/v2/tasks/${jobId}`, { signal: controller.signal });
         const payload = await response.json().catch(() => null) as TaskStatusResponse | null;
         if (!response.ok || !payload) throw new Error("Reconnecting to the report task…");
-        setAnalysisStatus(payload);
-        if (payload.status === "succeeded" && payload.database_report_id) {
-          clearDraft(sessionStorage);
-          window.location.assign(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(payload.database_report_id)}`);
-          shouldContinue = false;
-          return;
-        }
-        if (payload.status === "failed") {
-          setPaymentHandoff((current) => ({ ...current, status: "analysis_failed", message: payload.error?.user_message ?? "The analysis stopped safely. You can retry without another payment." }));
-          shouldContinue = false;
-          return;
-        }
-        setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: `${payload.message} ${payload.progress}% complete.` }));
+        applyStatus(payload);
       } catch (error) {
         if (controller.signal.aborted) return;
-        setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: error instanceof Error ? error.message : "Reconnecting to the report task…" }));
+        setPaymentHandoff((current) => ({
+          ...current,
+          status: current.status === "starting_analysis" ? "starting_analysis" : "analyzing",
+          message: error instanceof Error ? error.message : "Reconnecting to the report task…",
+        }));
       } finally {
-        if (shouldContinue && !controller.signal.aborted) setAnalysisPollTick((value) => value + 1);
+        if (!stopped && !controller.signal.aborted) pollTimer = window.setTimeout(poll, 10_000);
       }
-    }, document.hidden ? 5_000 : 1_500);
-    return () => { controller.abort(); window.clearTimeout(timer); };
-  }, [analysisPollTick, authenticatedFetch, draft.analysis_job_id, paymentHandoff.caseId, paymentHandoff.status]);
+    };
+
+    events = new EventSource(`/api/v2/tasks/${encodeURIComponent(jobId)}/stream`);
+    events.addEventListener("state", (event) => {
+      try {
+        const payload = JSON.parse((event as MessageEvent<string>).data) as TaskStatusResponse;
+        if (!applyStatus(payload)) events?.close();
+        if (payload.status === "succeeded") void poll();
+      } catch {
+        events?.close();
+      }
+    });
+    events.onerror = () => {
+      events?.close();
+      void poll();
+    };
+    void poll();
+    return () => {
+      stopped = true;
+      events?.close();
+      controller.abort();
+      if (pollTimer !== undefined) window.clearTimeout(pollTimer);
+    };
+  }, [authenticatedFetch, draft.analysis_job_id, paymentHandoff.caseId, paymentHandoff.status]);
 
   function retryAnalysis() {
     if (analysisStatus?.status === "failed") {
       setAnalysisStatus(null);
       setDraft((current) => reduceWorkspaceState(current, { type: "RESET_ANALYSIS" }));
     }
-    setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "Your entitlement is ready. Restarting the report task…" }));
+    setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "Starting a new report attempt with one returned account credit…" }));
   }
 
   async function startPreflight(input: { goal: NewCaseDraft["goal"]; site_url: string; gbp_url: string | null }) {
@@ -432,7 +520,8 @@ export function NewCaseWorkspace() {
     skipNextSave.current = true;
     setDraft(createNewCaseDraft());
     setAnalysisStatus(null);
-    setAnalysisPollTick(0);
+    setLatestAnalysisChecked(false);
+    latestLookupCase.current = null;
     setHandoffMessage(null);
     setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving the verified Case before checkout…" });
   }

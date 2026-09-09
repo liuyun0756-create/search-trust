@@ -77,7 +77,7 @@ export function CasePaymentHandoff({
           )}
           {status === "analysis_failed" && (
             <button type="button" onClick={onRetryAnalysis} className="mt-5 min-h-12 w-full rounded-xl bg-[#1a211a] px-5 text-sm font-bold text-white outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/45">
-              Retry analysis
+              Generate again · uses 1 credit
             </button>
           )}
         </div>

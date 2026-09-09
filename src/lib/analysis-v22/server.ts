@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase";
-import { createAnalysisStatusHandler, createAnalysisSubmitHandler } from "./handlers";
+import { createAnalysisStatusHandler, createAnalysisStreamHandler, createAnalysisSubmitHandler, createLatestAnalysisHandler } from "./handlers";
 import { SupabaseAnalysisRepository } from "./repository";
 
 function config() {
@@ -24,3 +24,5 @@ const dependencies = {
 
 export const submitAnalysis = createAnalysisSubmitHandler(dependencies);
 export const getAnalysisStatus = createAnalysisStatusHandler(dependencies);
+export const getLatestAnalysis = createLatestAnalysisHandler(dependencies);
+export const streamAnalysis = createAnalysisStreamHandler(dependencies);

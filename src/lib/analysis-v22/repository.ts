@@ -7,8 +7,9 @@ export interface OwnedAnalysisJob {
 }
 
 export interface AnalysisRepository {
-  start(userId: string, caseId: string, jobId: string, idempotencyKey: string): Promise<void>;
+  start(userId: string, caseId: string, jobId: string, idempotencyKey: string, previousJobId?: string | null): Promise<void>;
   getOwned(userId: string, jobId: string): Promise<OwnedAnalysisJob | null>;
+  getLatestOwnedForCase?(userId: string, caseId: string): Promise<OwnedAnalysisJob | null>;
 }
 
 export class AnalysisPersistenceError extends Error {
@@ -21,12 +22,13 @@ export class AnalysisPersistenceError extends Error {
 export class SupabaseAnalysisRepository implements AnalysisRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async start(userId: string, caseId: string, jobId: string, idempotencyKey: string): Promise<void> {
+  async start(userId: string, caseId: string, jobId: string, idempotencyKey: string, previousJobId: string | null = null): Promise<void> {
     const { data, error } = await this.supabase.rpc("start_v22_prospect_analysis", {
       p_user_id: userId,
       p_case_id: caseId,
       p_job_id: jobId,
       p_idempotency_key: idempotencyKey,
+      p_previous_job_id: previousJobId,
     }).single();
     if (error || !data) throw new AnalysisPersistenceError();
   }
@@ -47,5 +49,26 @@ export class SupabaseAnalysisRepository implements AnalysisRepository {
       .maybeSingle();
     if (caseError) throw new AnalysisPersistenceError();
     return ownedCase ? { id: job.id as string, caseId: job.case_id as string, reportId: job.report_id as string | null } : null;
+  }
+
+  async getLatestOwnedForCase(userId: string, caseId: string): Promise<OwnedAnalysisJob | null> {
+    const { data: ownedCase, error: caseError } = await this.supabase
+      .from("client_cases")
+      .select("id")
+      .eq("id", caseId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (caseError) throw new AnalysisPersistenceError();
+    if (!ownedCase) return null;
+    const { data: job, error: jobError } = await this.supabase
+      .from("analysis_jobs")
+      .select("id,case_id,report_id")
+      .eq("case_id", caseId)
+      .eq("job_type", "prospect_report")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (jobError) throw new AnalysisPersistenceError();
+    return job ? { id: job.id as string, caseId: job.case_id as string, reportId: job.report_id as string | null } : null;
   }
 }

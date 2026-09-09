@@ -27,7 +27,7 @@ const topLevelKeys = new Set([
   "schema_version", "created_at", "updated_at", "expires_at", "stage", "goal", "draft_case_id", "site_url", "gbp_url",
   "preflight", "preflight_error", "business_confirmation", "discovery_job_id", "discovery_idempotency_key", "discovery_status",
   "discovery_error", "supplemental_website_urls", "selected_competitor_ids",
-  "analysis_job_id", "analysis_idempotency_key",
+  "analysis_job_id", "analysis_idempotency_key", "previous_analysis_job_id",
 ]);
 
 function object(value: unknown): value is Record<string, unknown> {
@@ -84,6 +84,7 @@ export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | nul
   if (!(value.discovery_idempotency_key === null || (typeof value.discovery_idempotency_key === "string" && /^[A-Za-z0-9._:-]{8,200}$/.test(value.discovery_idempotency_key)))) return null;
   if (!(value.analysis_job_id === undefined || value.analysis_job_id === null || (typeof value.analysis_job_id === "string" && uuidV4.test(value.analysis_job_id)))) return null;
   if (!(value.analysis_idempotency_key === undefined || value.analysis_idempotency_key === null || (typeof value.analysis_idempotency_key === "string" && /^[A-Za-z0-9._:-]{8,200}$/.test(value.analysis_idempotency_key)))) return null;
+  if (!(value.previous_analysis_job_id === undefined || value.previous_analysis_job_id === null || (typeof value.previous_analysis_job_id === "string" && uuidV4.test(value.previous_analysis_job_id)))) return null;
   if (!Array.isArray(value.supplemental_website_urls) || value.supplemental_website_urls.length > 3 || !value.supplemental_website_urls.every((item) => typeof item === "string" && item.length <= 2083)) return null;
   if (!Array.isArray(value.selected_competitor_ids) || value.selected_competitor_ids.length > 3 || !value.selected_competitor_ids.every((item) => typeof item === "string") || new Set(value.selected_competitor_ids).size !== value.selected_competitor_ids.length) return null;
   if (!(value.preflight_error === null || (object(value.preflight_error) && typeof value.preflight_error.code === "string" && typeof value.preflight_error.message === "string"))) return null;
@@ -91,6 +92,7 @@ export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | nul
     ...value,
     analysis_job_id: value.analysis_job_id ?? null,
     analysis_idempotency_key: value.analysis_idempotency_key ?? null,
+    previous_analysis_job_id: value.previous_analysis_job_id ?? null,
   } as unknown as NewCaseDraft;
 }
 

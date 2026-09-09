@@ -54,7 +54,9 @@ export function createAnalysisSubmitHandler(deps: Dependencies) {
     const jobId = request.headers.get("x-searchtrust-job-id") ?? "";
     const discoveryId = request.headers.get("x-searchtrust-discovery-id") ?? "";
     const idempotencyKey = request.headers.get("idempotency-key") ?? "";
-    if (!UUID_PATTERN.test(jobId) || !UUID_PATTERN.test(discoveryId) || !IDEMPOTENCY_PATTERN.test(idempotencyKey)) {
+    const previousJobId = request.headers.get("x-searchtrust-previous-job-id");
+    if (!UUID_PATTERN.test(jobId) || !UUID_PATTERN.test(discoveryId) || !IDEMPOTENCY_PATTERN.test(idempotencyKey)
+      || (previousJobId !== null && !UUID_PATTERN.test(previousJobId))) {
       return jsonError("INVALID_REQUEST", "The analysis identifiers are invalid.", 400);
     }
     let body: unknown;
@@ -68,7 +70,7 @@ export function createAnalysisSubmitHandler(deps: Dependencies) {
     const parsed = parseAnalyzeRequest(body);
     if (!parsed.ok) return jsonError("INVALID_REQUEST", "The analysis request is invalid.", 400);
     try {
-      await deps.createRepository().start(user.userId, parsed.value.case_id, jobId, idempotencyKey);
+      await deps.createRepository().start(user.userId, parsed.value.case_id, jobId, idempotencyKey, previousJobId);
     } catch {
       return jsonError("ANALYSIS_ENTITLEMENT_UNAVAILABLE", "This Case does not have an available prospect report entitlement.", 409);
     }
@@ -81,6 +83,61 @@ export function createAnalysisSubmitHandler(deps: Dependencies) {
     const validated = parseTaskCreateResponse(result.response!.payload);
     if (!validated.ok || validated.value.job_id !== jobId) return jsonError("V22_UPSTREAM_CONTRACT_INVALID", "The analysis service returned an invalid response.", 502);
     return NextResponse.json(validated.value, { status: 202 });
+  };
+}
+
+export function createLatestAnalysisHandler(deps: Dependencies) {
+  return async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+    const user = await deps.getCurrentUser();
+    if (!user) return jsonError("UNAUTHORIZED", "Sign in to view this analysis.", 401);
+    const { id: caseId } = await context.params;
+    if (!UUID_PATTERN.test(caseId)) return jsonError("INVALID_REQUEST", "The Case ID is invalid.", 400);
+    const repository = deps.createRepository();
+    if (!repository.getLatestOwnedForCase) return jsonError("ANALYSIS_LOOKUP_FAILED", "The analysis task could not be checked yet.", 500);
+    let job;
+    try { job = await repository.getLatestOwnedForCase(user.userId, caseId); } catch {
+      return jsonError("ANALYSIS_LOOKUP_FAILED", "The analysis task could not be checked yet.", 500);
+    }
+    if (!job) return new NextResponse(null, { status: 204 });
+    return NextResponse.json(job);
+  };
+}
+
+export function createAnalysisStreamHandler(deps: Dependencies) {
+  return async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+    const user = await deps.getCurrentUser();
+    if (!user) return jsonError("UNAUTHORIZED", "Sign in to view this analysis.", 401);
+    const { id } = await context.params;
+    if (!UUID_PATTERN.test(id)) return jsonError("INVALID_REQUEST", "The analysis task ID is invalid.", 400);
+    const repository = deps.createRepository();
+    const owned = await repository.getOwned(user.userId, id).catch(() => null);
+    if (!owned) return jsonError("ANALYSIS_NOT_FOUND", "The analysis task was not found.", 404);
+    const config = deps.getConfig();
+    if (!config) return jsonError("V22_ANALYSIS_NOT_CONFIGURED", "The v2.2 analysis service is not configured.", 503);
+    const headers: Record<string, string> = {
+      authorization: `Bearer ${config.token}`,
+      accept: "text/event-stream",
+    };
+    const lastEventId = request.headers.get("last-event-id");
+    if (lastEventId) headers["last-event-id"] = lastEventId;
+    try {
+      const response = await deps.fetcher(`${config.baseUrl}/api/v2/tasks/${id}/stream`, {
+        headers,
+        cache: "no-store",
+        signal: request.signal,
+      });
+      if (!response.ok || !response.body) return jsonError("V22_ANALYSIS_UNAVAILABLE", "Reconnecting to the report task.", 503);
+      return new Response(response.body, {
+        status: 200,
+        headers: {
+          "content-type": "text/event-stream",
+          "cache-control": "no-cache, no-transform",
+          connection: "keep-alive",
+        },
+      });
+    } catch {
+      return jsonError("V22_ANALYSIS_UNAVAILABLE", "Reconnecting to the report task.", 503);
+    }
   };
 }
 

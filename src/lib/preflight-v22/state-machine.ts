@@ -47,6 +47,7 @@ export interface NewCaseDraft {
   selected_competitor_ids: string[];
   analysis_job_id: string | null;
   analysis_idempotency_key: string | null;
+  previous_analysis_job_id: string | null;
 }
 
 export type WorkspaceEvent =
@@ -97,6 +98,7 @@ export function createNewCaseDraft(
     selected_competitor_ids: [],
     analysis_job_id: null,
     analysis_idempotency_key: null,
+    previous_analysis_job_id: null,
   };
 }
 
@@ -114,6 +116,7 @@ function clearDiscovery() {
     selected_competitor_ids: [],
     analysis_job_id: null,
     analysis_idempotency_key: null,
+    previous_analysis_job_id: null,
   } satisfies Partial<NewCaseDraft>;
 }
 
@@ -204,7 +207,11 @@ export function reduceWorkspaceState(
         ? touch(state, { analysis_job_id: event.job_id, analysis_idempotency_key: event.idempotency_key }, now)
         : state;
     case "RESET_ANALYSIS":
-      return touch(state, { analysis_job_id: null, analysis_idempotency_key: null }, now);
+      return touch(state, {
+        previous_analysis_job_id: state.analysis_job_id,
+        analysis_job_id: null,
+        analysis_idempotency_key: null,
+      }, now);
     case "CLEAR":
       return createNewCaseDraft(now);
   }

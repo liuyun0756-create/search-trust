@@ -14,6 +14,8 @@ const event: JobCallbackEvent = {
   progress: 10,
   message: "Running",
   attempt_count: 1,
+  run_generation: 1,
+  deadline_at: "2026-08-27T08:20:00Z",
   heartbeat_at: "2026-08-27T08:01:00Z",
   completed_at: null,
   error: null,
@@ -59,4 +61,3 @@ describe("Supabase job event repository", () => {
     });
   });
 });
-

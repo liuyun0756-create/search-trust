@@ -121,7 +121,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await db.close();
   });
 
-  it("creates the ten server-only v2.2 tables with RLS enabled", async () => {
+  it("creates the twelve server-only v2.2 tables with RLS enabled", async () => {
     const tables = await db.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity
        from pg_class
@@ -130,12 +130,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
            'client_cases', 'google_connections', 'case_source_bindings',
            'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
            'report_shares', 'google_oauth_sessions', 'google_connection_events',
-           'google_token_broker_requests'
+           'google_token_broker_requests', 'analysis_attempt_charges', 'audit_credit_ledger'
          ])
        order by relname`,
     );
 
-    expect(tables.rows).toHaveLength(10);
+    expect(tables.rows).toHaveLength(12);
     expect(tables.rows.every((row) => row.relrowsecurity)).toBe(true);
 
     const browserGrants = await db.query<{ count: number }>(
@@ -146,7 +146,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
            'client_cases', 'google_connections', 'case_source_bindings',
            'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
            'report_shares', 'google_oauth_sessions', 'google_connection_events',
-           'google_token_broker_requests'
+           'google_token_broker_requests', 'analysis_attempt_charges', 'audit_credit_ledger'
          ])
          and grantee in ('anon', 'authenticated')`,
     );
@@ -1080,7 +1080,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     expect(Number(persisted.rows[0].terminal_effects_revision)).toBe(3);
   });
 
-  it("fulfills one Case entitlement idempotently and returns it after a technical failure", async () => {
+  it("closes the Case entitlement and returns one general credit after a technical failure", async () => {
     const owner = await insertUser("payment-owner");
     const paidCase = await insertCase(owner, "paid-case");
     const localOrderId = await insertId(
@@ -1116,17 +1116,11 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
        returning id`,
       [owner, paidCase],
     );
-    const failedJob = await insertId(
-      `insert into public.analysis_jobs (
-         case_id, report_id, job_type, current_stage, idempotency_key
-       ) values ($1, $2, 'prospect_report', 'queued', 'paid-failed-job') returning id`,
-      [paidCase, failedReport],
-    );
-    const reserved = await db.query<{ reserved: boolean; idempotent: boolean }>(
-      `select * from public.reserve_v22_case_report_entitlement($1, $2, $3)`,
+    const failedJob = randomUUID();
+    await db.query(
+      `select * from public.start_v22_prospect_analysis($1, $2, $3, 'paid-failed-job')`,
       [owner, paidCase, failedJob],
     );
-    expect(reserved.rows[0]).toEqual({ reserved: true, idempotent: false });
 
     await db.query(
       `select * from public.apply_analysis_job_event(
@@ -1135,11 +1129,27 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
        )`,
       [failedJob, paidCase],
     );
-    const returned = await db.query<{ status: string; reserved_job_id: string | null }>(
-      `select status, reserved_job_id from public.case_report_entitlements where case_id = $1`,
-      [paidCase],
+    const returned = await db.query<{ status: string; reserved_job_id: string | null; credits: number; compensation_count: number }>(
+      `select status, reserved_job_id,
+         (select audit_credits from public.users where id = $2)::int as credits,
+         (select count(*) from public.audit_credit_ledger where job_id = $3 and kind = 'technical_failure_credit')::int as compensation_count
+       from public.case_report_entitlements where case_id = $1`,
+      [paidCase, owner, failedJob],
     );
-    expect(returned.rows[0]).toEqual({ status: "available", reserved_job_id: null });
+    expect(returned.rows[0]).toEqual({
+      status: "compensated", reserved_job_id: failedJob, credits: 6, compensation_count: 1,
+    });
+
+    await db.query(
+      `select * from public.apply_analysis_job_event(
+         $1, $2, 1, 'failed', 'failed', 40::smallint, 1,
+         'PROVIDER_TIMEOUT', 'Please retry.', '{}'::jsonb, now(), now()
+       )`,
+      [failedJob, paidCase],
+    );
+    expect((await db.query<{ credits: number }>(
+      `select audit_credits::int as credits from public.users where id = $1`, [owner],
+    )).rows[0].credits).toBe(6);
 
     const completedReport = await insertId(
       `insert into public.reports (
@@ -1149,13 +1159,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
        returning id`,
       [owner, paidCase],
     );
-    const completedJob = await insertId(
-      `insert into public.analysis_jobs (
-         case_id, report_id, job_type, current_stage, idempotency_key
-       ) values ($1, $2, 'prospect_report', 'queued', 'paid-completed-job') returning id`,
-      [paidCase, completedReport],
+    const completedJob = randomUUID();
+    await db.query(
+      `select * from public.start_v22_prospect_analysis($1, $2, $3, 'paid-completed-job', $4)`,
+      [owner, paidCase, completedJob, failedJob],
     );
-    await db.query(`select * from public.reserve_v22_case_report_entitlement($1, $2, $3)`, [owner, paidCase, completedJob]);
+    await db.query(`update public.analysis_jobs set report_id = $1 where id = $2`, [completedReport, completedJob]);
     await db.query(
       `select * from public.apply_analysis_job_event(
          $1, $2, 1, 'succeeded', 'completed', 100::smallint, 1,
@@ -1163,11 +1172,16 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
        )`,
       [completedJob, paidCase],
     );
-    const consumed = await db.query<{ status: string; consumed_report_id: string }>(
-      `select status, consumed_report_id from public.case_report_entitlements where case_id = $1`,
-      [paidCase],
+    const consumed = await db.query<{ status: string; consumed_report_id: string | null; charge_state: string; credits: number }>(
+      `select status, consumed_report_id,
+         (select state from public.analysis_attempt_charges where job_id = $2) as charge_state,
+         (select audit_credits from public.users where id = $3)::int as credits
+       from public.case_report_entitlements where case_id = $1`,
+      [paidCase, completedJob, owner],
     );
-    expect(consumed.rows[0]).toEqual({ status: "consumed", consumed_report_id: completedReport });
+    expect(consumed.rows[0]).toEqual({
+      status: "compensated", consumed_report_id: null, charge_state: "consumed", credits: 5,
+    });
 
     await expectSqlError(
       `select * from public.fulfill_v22_case_payment($1, 'pay_case_1', 'clerk_payment-owner', $2, 1900, 'USD')`,

@@ -49,6 +49,8 @@ export interface AnalysisError {
 
 export interface TaskStatusResponse {
   job_id: string;
+  revision: number;
+  run_generation: number;
   status: "queued" | "running" | "succeeded" | "failed";
   stage: AnalysisStage;
   progress: number;
@@ -56,6 +58,7 @@ export interface TaskStatusResponse {
   report: SearchTrustReportV2_2 | null;
   error: AnalysisError | null;
   created_at: string;
+  deadline_at: string;
   updated_at: string;
   database_report_id?: string | null;
 }

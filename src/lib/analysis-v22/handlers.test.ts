@@ -56,7 +56,7 @@ describe("v2.2 analysis handlers", () => {
     );
 
     expect(response.status).toBe(202);
-    expect(repo.start).toHaveBeenCalledWith(userId, caseId, jobId, `analyze:${jobId}`);
+    expect(repo.start).toHaveBeenCalledWith(userId, caseId, jobId, `analyze:${jobId}`, null);
     const [url, init] = fetcher.mock.calls[0];
     expect(url).toBe("https://internal.example/api/v2/analyze");
     const headers = new Headers(init?.headers);
@@ -81,9 +81,10 @@ describe("v2.2 analysis handlers", () => {
     repo.getOwned = vi.fn(async () => ({ id: jobId, caseId, reportId: null }));
     const timestamp = "2026-09-04T08:00:00Z";
     const fetcher = vi.fn<typeof fetch>(async () => Response.json({
-      job_id: jobId, status: "running", stage: "collecting_site", progress: 20,
+      job_id: jobId, revision: 2, run_generation: 1,
+      status: "running", stage: "collecting_site", progress: 20,
       message: "Collecting site evidence.", report: null, error: null,
-      created_at: timestamp, updated_at: timestamp,
+      created_at: timestamp, deadline_at: "2026-09-04T08:20:00Z", updated_at: timestamp,
     }));
     const response = await createAnalysisStatusHandler(deps(repo, fetcher))(
       request(`/api/v2/tasks/${jobId}`),

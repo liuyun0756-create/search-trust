@@ -34,6 +34,8 @@ export interface JobCallbackEvent {
   progress: number;
   message: string;
   attempt_count: number;
+  run_generation: number;
+  deadline_at: string;
   heartbeat_at: string | null;
   completed_at: string | null;
   error: JobCallbackError | null;
@@ -46,6 +48,7 @@ const ERROR_CODE_PATTERN = /^[A-Z0-9_]{1,120}$/;
 const EVENT_KEYS = new Set([
   "event_id", "job_id", "case_id", "revision", "status", "stage", "progress", "message",
   "attempt_count", "heartbeat_at", "completed_at", "error", "cost_counters", "occurred_at",
+  "run_generation", "deadline_at",
 ]);
 const ERROR_KEYS = new Set(["error_code", "user_message", "retryable", "stage", "diagnostic_id"]);
 
@@ -92,6 +95,8 @@ export function parseJobCallbackEvent(value: unknown): JobCallbackEvent {
     !Number.isInteger(value.progress) || Number(value.progress) < 0 || Number(value.progress) > 100 ||
     typeof value.message !== "string" || value.message.length < 1 || value.message.length > 500 ||
     !Number.isInteger(value.attempt_count) || Number(value.attempt_count) < 0 ||
+    !Number.isInteger(value.run_generation) || Number(value.run_generation) < 1 ||
+    !isTimestamp(value.deadline_at) ||
     !(value.heartbeat_at === null || isTimestamp(value.heartbeat_at)) ||
     !(value.completed_at === null || isTimestamp(value.completed_at)) ||
     !isTimestamp(value.occurred_at) ||
@@ -101,6 +106,9 @@ export function parseJobCallbackEvent(value: unknown): JobCallbackEvent {
 
   const error = parseError(value.error);
   const revision = Number(value.revision);
+  if (Date.parse(value.deadline_at as string) <= Date.parse(value.occurred_at as string) && !["succeeded", "failed"].includes(value.status as string)) {
+    throw new JobCallbackValidationError();
+  }
   if (value.event_id !== `${value.job_id}:${revision}`) throw new JobCallbackValidationError();
 
   if (value.status === "succeeded") {
@@ -117,4 +125,3 @@ export function parseJobCallbackEvent(value: unknown): JobCallbackEvent {
 
   return { ...value, revision, error } as JobCallbackEvent;
 }
-

@@ -39,6 +39,8 @@ export class SupabaseJobEventRepository implements JobEventRepository {
       p_current_stage: event.stage,
       p_progress: event.progress,
       p_attempt_count: event.attempt_count,
+      p_run_generation: event.run_generation,
+      p_deadline_at: event.deadline_at,
       p_error_code: event.error?.error_code ?? null,
       p_user_message: event.error?.user_message ?? event.message,
       p_cost_counters: event.cost_counters,
@@ -54,4 +56,3 @@ export class SupabaseJobEventRepository implements JobEventRepository {
     };
   }
 }
-
