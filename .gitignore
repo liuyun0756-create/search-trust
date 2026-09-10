@@ -34,6 +34,9 @@ next-env.d.ts
 # local visual brainstorming sessions
 /.superpowers/
 
+# local browser-test artifacts
+/output/playwright/
+
 # Supabase CLI local project-link cache
 /supabase/.temp/
 .env*
