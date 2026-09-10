@@ -149,6 +149,125 @@ begin
 end;
 $$;
 
+create function public.persist_v22_google_sync_cost(
+  p_job_id uuid,
+  p_job_kind text,
+  p_cost_counters jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  j public.google_sync_jobs%rowtype;
+  expected_source text;
+  ledger_revision bigint;
+begin
+  expected_source := case p_job_kind
+    when 'gsc_sync' then 'gsc'
+    when 'ga4_sync' then 'ga4'
+    when 'gbp_sync' then 'gbp'
+    else null
+  end;
+  if expected_source is null
+     or not public.is_v22_cost_counters(p_cost_counters)
+     or p_cost_counters = '{}'::jsonb
+     or p_cost_counters->>'cost_schema_version' is distinct from '1'
+     or p_cost_counters->>'cost_ledger_revision' is null then
+    raise exception 'INVALID_SYNC_COST' using errcode = '22023';
+  end if;
+  ledger_revision := (p_cost_counters->>'cost_ledger_revision')::bigint;
+  select * into j from public.google_sync_jobs where id = p_job_id for update;
+  if not found or j.source_type is distinct from expected_source then
+    raise exception 'SYNC_COST_IDENTITY_CONFLICT' using errcode = '40001';
+  end if;
+  if j.cost_counters <> '{}'::jsonb
+     and (j.cost_counters->>'cost_ledger_revision')::bigint > ledger_revision then
+    return;
+  end if;
+  update public.google_sync_jobs
+  set cost_counters = p_cost_counters
+  where id = j.id;
+  if j.status in ('succeeded', 'failed') and j.completed_at is not null then
+    perform public.upsert_v22_job_cost_summary(
+      j.id,
+      j.case_id,
+      p_job_kind,
+      j.status,
+      j.attempt_count,
+      ledger_revision,
+      p_cost_counters,
+      j.created_at,
+      j.completed_at
+    );
+  end if;
+end;
+$$;
+
+create function public.finish_v22_gsc_sync(
+  p_job_id uuid,p_lease_id uuid,p_payload jsonb,p_checksum text,p_health text,
+  p_reasons jsonb,p_cost_counters jsonb
+) returns uuid language plpgsql security definer set search_path=public as $$
+declare result uuid;
+begin
+  result := public.finish_v22_gsc_sync(
+    p_job_id,p_lease_id,p_payload,p_checksum,p_health,p_reasons
+  );
+  perform public.persist_v22_google_sync_cost(p_job_id,'gsc_sync',p_cost_counters);
+  return result;
+end; $$;
+
+create function public.fail_v22_gsc_sync(
+  p_job_id uuid,p_lease_id uuid,p_code text,p_retryable boolean,p_cost_counters jsonb
+) returns void language plpgsql security definer set search_path=public as $$
+begin
+  perform public.fail_v22_gsc_sync(p_job_id,p_lease_id,p_code,p_retryable);
+  perform public.persist_v22_google_sync_cost(p_job_id,'gsc_sync',p_cost_counters);
+end; $$;
+
+create function public.finish_v22_ga4_sync(
+  p_job_id uuid,p_lease_id uuid,p_payload jsonb,p_checksum text,p_health text,
+  p_reasons jsonb,p_cost_counters jsonb
+) returns uuid language plpgsql security definer set search_path=public as $$
+declare result uuid;
+begin
+  result := public.finish_v22_ga4_sync(
+    p_job_id,p_lease_id,p_payload,p_checksum,p_health,p_reasons
+  );
+  perform public.persist_v22_google_sync_cost(p_job_id,'ga4_sync',p_cost_counters);
+  return result;
+end; $$;
+
+create function public.fail_v22_ga4_sync(
+  p_job_id uuid,p_lease_id uuid,p_code text,p_retryable boolean,p_cost_counters jsonb
+) returns void language plpgsql security definer set search_path=public as $$
+begin
+  perform public.fail_v22_ga4_sync(p_job_id,p_lease_id,p_code,p_retryable);
+  perform public.persist_v22_google_sync_cost(p_job_id,'ga4_sync',p_cost_counters);
+end; $$;
+
+create function public.finish_v22_gbp_sync(
+  p_job_id uuid,p_lease_id uuid,p_manifest jsonb,p_raw_payload jsonb,p_checksum text,
+  p_health text,p_reasons jsonb,p_cost_counters jsonb
+) returns uuid language plpgsql security definer set search_path=public as $$
+declare result uuid;
+begin
+  result := public.finish_v22_gbp_sync(
+    p_job_id,p_lease_id,p_manifest,p_raw_payload,p_checksum,p_health,p_reasons
+  );
+  perform public.persist_v22_google_sync_cost(p_job_id,'gbp_sync',p_cost_counters);
+  return result;
+end; $$;
+
+create function public.fail_v22_gbp_sync(
+  p_job_id uuid,p_lease_id uuid,p_code text,p_retryable boolean,p_cost_counters jsonb
+) returns void language plpgsql security definer set search_path=public as $$
+begin
+  perform public.fail_v22_gbp_sync(p_job_id,p_lease_id,p_code,p_retryable);
+  perform public.persist_v22_google_sync_cost(p_job_id,'gbp_sync',p_cost_counters);
+end; $$;
+
 revoke all on function public.is_v22_cost_counters(jsonb)
   from public, anon, authenticated;
 grant execute on function public.is_v22_cost_counters(jsonb) to service_role;
@@ -158,6 +277,32 @@ revoke all on function public.upsert_v22_job_cost_summary(
 grant execute on function public.upsert_v22_job_cost_summary(
   uuid, uuid, text, text, integer, bigint, jsonb, timestamptz, timestamptz
 ) to service_role;
+revoke all on function public.persist_v22_google_sync_cost(uuid,text,jsonb)
+  from public, anon, authenticated;
+revoke all on function public.finish_v22_gsc_sync(uuid,uuid,jsonb,text,text,jsonb,jsonb)
+  from public, anon, authenticated;
+revoke all on function public.fail_v22_gsc_sync(uuid,uuid,text,boolean,jsonb)
+  from public, anon, authenticated;
+revoke all on function public.finish_v22_ga4_sync(uuid,uuid,jsonb,text,text,jsonb,jsonb)
+  from public, anon, authenticated;
+revoke all on function public.fail_v22_ga4_sync(uuid,uuid,text,boolean,jsonb)
+  from public, anon, authenticated;
+revoke all on function public.finish_v22_gbp_sync(uuid,uuid,jsonb,jsonb,text,text,jsonb,jsonb)
+  from public, anon, authenticated;
+revoke all on function public.fail_v22_gbp_sync(uuid,uuid,text,boolean,jsonb)
+  from public, anon, authenticated;
+grant execute on function public.finish_v22_gsc_sync(uuid,uuid,jsonb,text,text,jsonb,jsonb)
+  to service_role;
+grant execute on function public.fail_v22_gsc_sync(uuid,uuid,text,boolean,jsonb)
+  to service_role;
+grant execute on function public.finish_v22_ga4_sync(uuid,uuid,jsonb,text,text,jsonb,jsonb)
+  to service_role;
+grant execute on function public.fail_v22_ga4_sync(uuid,uuid,text,boolean,jsonb)
+  to service_role;
+grant execute on function public.finish_v22_gbp_sync(uuid,uuid,jsonb,jsonb,text,text,jsonb,jsonb)
+  to service_role;
+grant execute on function public.fail_v22_gbp_sync(uuid,uuid,text,boolean,jsonb)
+  to service_role;
 
 commit;
 

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(66);
+select plan(74);
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');
@@ -181,6 +181,48 @@ select has_function(
   'public', 'finish_v22_gbp_sync',
   array['uuid', 'uuid', 'jsonb', 'jsonb', 'text', 'text', 'jsonb'],
   'GBP synchronization atomically persists manifest and temporary Content'
+);
+select has_function(
+  'public', 'persist_v22_google_sync_cost', array['uuid', 'text', 'jsonb'],
+  'Google synchronization has a shared private cost persistence boundary'
+);
+select has_function(
+  'public', 'finish_v22_gsc_sync',
+  array['uuid', 'uuid', 'jsonb', 'text', 'text', 'jsonb', 'jsonb'],
+  'GSC finish accepts bounded cost counters'
+);
+select has_function(
+  'public', 'fail_v22_gsc_sync',
+  array['uuid', 'uuid', 'text', 'boolean', 'jsonb'],
+  'GSC failure accepts bounded cost counters'
+);
+select has_function(
+  'public', 'finish_v22_ga4_sync',
+  array['uuid', 'uuid', 'jsonb', 'text', 'text', 'jsonb', 'jsonb'],
+  'GA4 finish accepts bounded cost counters'
+);
+select has_function(
+  'public', 'fail_v22_ga4_sync',
+  array['uuid', 'uuid', 'text', 'boolean', 'jsonb'],
+  'GA4 failure accepts bounded cost counters'
+);
+select has_function(
+  'public', 'finish_v22_gbp_sync',
+  array['uuid', 'uuid', 'jsonb', 'jsonb', 'text', 'text', 'jsonb', 'jsonb'],
+  'GBP finish accepts bounded cost counters'
+);
+select has_function(
+  'public', 'fail_v22_gbp_sync',
+  array['uuid', 'uuid', 'text', 'boolean', 'jsonb'],
+  'GBP failure accepts bounded cost counters'
+);
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.finish_v22_gsc_sync(uuid,uuid,jsonb,text,text,jsonb,jsonb)',
+    'EXECUTE'
+  ),
+  'anon cannot execute cost-aware Google sync completion'
 );
 select has_function(
   'public', 'cleanup_v22_expired_gbp_content', array['timestamp with time zone', 'integer'],
