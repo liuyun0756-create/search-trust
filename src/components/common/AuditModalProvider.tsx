@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { GoogleLoginModal } from "@/components/common/GoogleLoginModal";
 import { AuditFormModal } from "@/components/common/AuditFormModal";
 import { PaymentModal } from "@/components/common/PaymentModal";
@@ -10,6 +9,7 @@ import { submitAudit } from "@/lib/submit-audit";
 import { track } from "@/lib/analytics-client";
 import { getAuditEventProperties, getCreditsBucket } from "@/lib/analytics-properties";
 import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
+import { useAppUser } from "@/lib/client-auth";
 
 const PENDING_AUDIT_STORAGE_KEY = "searchtrust_pending_audit";
 const OPEN_AUDIT_AFTER_LOGIN_KEY = "searchtrust_open_audit_after_login";
@@ -41,7 +41,7 @@ export function useAuditModal() {
 
 export function AuditModalProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useAppUser();
   const authenticatedFetch = useAuthenticatedFetch();
   const [loginOpen, setLoginOpen] = useState(false);
   const [auditFormOpen, setAuditFormOpen] = useState(false);

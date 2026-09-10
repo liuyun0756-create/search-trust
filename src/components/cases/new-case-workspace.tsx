@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -8,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
 import type { TaskStatusResponse } from "@/lib/analysis-v22";
+import { useAppUser } from "@/lib/client-auth";
 import {
   clearDraft,
   createNewCaseDraft,
@@ -63,7 +63,7 @@ export function NewCaseWorkspace() {
   const submittingAnalysis = useRef(false);
   const skipNextSave = useRef(false);
   const latestLookupCase = useRef<string | null>(null);
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn } = useAppUser();
   const { openLogin } = useAuditModal();
   const authenticatedFetch = useAuthenticatedFetch();
   const [analysisStatus, setAnalysisStatus] = useState<TaskStatusResponse | null>(null);

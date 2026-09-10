@@ -1,14 +1,14 @@
 "use client";
 
-import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, LogOut, FileText, Zap } from "lucide-react";
 import Link from "next/link";
 import { useAuditModal } from "@/components/common/AuditModalProvider";
+import { useAppAuth, useAppUser } from "@/lib/client-auth";
 
 export function UserDropdown() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user } = useAppUser();
+  const { signOut } = useAppAuth();
   const { credits } = useAuditModal();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

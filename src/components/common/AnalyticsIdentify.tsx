@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
 import posthog from "posthog-js";
 
+import { useAppUser } from "@/lib/client-auth";
+
 export function AnalyticsIdentify() {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn, user } = useAppUser();
 
   useEffect(() => {
     if (!isLoaded || !process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) return;

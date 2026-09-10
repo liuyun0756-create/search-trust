@@ -1,12 +1,13 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useCallback } from "react";
+
+import { useAppAuth } from "@/lib/client-auth";
 
 export type AuthenticatedFetch = typeof fetch;
 
 export function useAuthenticatedFetch(): AuthenticatedFetch {
-  const { getToken } = useAuth();
+  const { getToken } = useAppAuth();
 
   return useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
     const requestUrl = new URL(

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
+import { useAppUser } from "@/lib/client-auth";
 import { UserDropdown } from "./UserDropdown";
 
 interface HeaderUserActionsProps {
@@ -11,7 +11,7 @@ interface HeaderUserActionsProps {
 }
 
 export function HeaderUserActions({ mobile = false, onNavigate }: HeaderUserActionsProps) {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useAppUser();
 
   if (mobile) {
     return (

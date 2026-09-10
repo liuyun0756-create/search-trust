@@ -2,8 +2,16 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { createServerClient } from "@/lib/supabase";
 import { SupabaseIdentityWebhookRepository } from "@/lib/identity-webhooks/repository";
 import { identityDigest } from "@/lib/identity-webhooks/service";
+import { E2E_IDENTITY, isLocalE2ETestMode } from "@/lib/e2e-v22/config";
 
 export async function getCurrentUser() {
+  if (isLocalE2ETestMode()) {
+    return {
+      userId: E2E_IDENTITY.internalUserId,
+      clerkUserId: E2E_IDENTITY.clerkUserId,
+      auditCredits: 1,
+    };
+  }
   const session = await auth();
   const clerkUserId = session.userId;
   if (!clerkUserId) {

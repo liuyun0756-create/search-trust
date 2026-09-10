@@ -1,5 +1,7 @@
+import { E2E_IDENTITY } from "../../src/lib/e2e-v22/config";
+
 export const E2E_IDS = Object.freeze({
-  userId: "e2000000-0000-4000-8000-000000000001",
+  userId: E2E_IDENTITY.internalUserId,
   caseId: "e2000000-0000-4000-8000-000000000002",
   discoveryJobId: "e2000000-0000-4000-8000-000000000003",
   analysisJobId: "e2000000-0000-4000-8000-000000000004",

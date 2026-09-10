@@ -37,7 +37,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       NEXT_PUBLIC_E2E_TEST_MODE: "true",
-      E2E_BASE_URL: baseURL,
+      NEXT_PUBLIC_E2E_BASE_URL: baseURL,
       NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "",
     },
   },

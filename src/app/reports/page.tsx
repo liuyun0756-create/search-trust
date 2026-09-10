@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useAppUser } from "@/lib/client-auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileSearch, FileQuestion } from "lucide-react";
 import { ReportContent } from "@/components/report/ReportContent";
@@ -219,7 +219,7 @@ function ReportsPage() {
   const selectedDatabaseReportId = searchParams.get("database_report_id");
   const paymentReturnParam = searchParams.get("payment");
   const isPaymentReturn = paymentReturnParam === "success" || paymentReturnParam === "return";
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useAppUser();
   const { refreshCredits } = useAuditModal();
   const authenticatedFetch = useAuthenticatedFetch();
 

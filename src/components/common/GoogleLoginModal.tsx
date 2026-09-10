@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { X, ShieldCheck, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useClerk } from "@clerk/nextjs";
+import { useAppAuth } from "@/lib/client-auth";
 
 interface GoogleLoginModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface GoogleLoginModalProps {
 
 export function GoogleLoginModal({ isOpen, onClose, onSignInStart }: GoogleLoginModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const { openSignIn } = useClerk();
+  const { openSignIn } = useAppAuth();
 
   useEffect(() => {
     if (isOpen) {

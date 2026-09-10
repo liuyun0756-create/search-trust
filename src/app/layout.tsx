@@ -3,11 +3,11 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CTABanner } from "@/components/home/CTABanner";
-import { ClerkProvider } from "@clerk/nextjs";
 import { AuditModalProvider } from "@/components/common/AuditModalProvider";
 import { FooterPreCTA } from "@/components/layout/FooterPreCTA";
 import { AnalyticsIdentify } from "@/components/common/AnalyticsIdentify";
 import { siteUrl, ogImage } from "@/lib/seo";
+import { AppAuthProvider } from "@/lib/client-auth";
 
 
 export const metadata: Metadata = {
@@ -65,7 +65,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <ClerkProvider>
+        <AppAuthProvider>
           <AnalyticsIdentify />
           <AuditModalProvider>
           <Header />
@@ -74,7 +74,7 @@ export default function RootLayout({
           <FooterPreCTA />
           <CTABanner />
           </AuditModalProvider>
-        </ClerkProvider>
+        </AppAuthProvider>
       </body>
     </html>
   );
