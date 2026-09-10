@@ -24,6 +24,7 @@
     "test:e2e:ci": "CI=1 playwright test",
     "contracts:generate": "json2ts --input src/lib/report-v22/contracts/report_v2_2.schema.json --output src/lib/report-v22/generated/types.ts --no-additionalProperties --unknownAny --unreachableDefinitions --maxItems 5",
     "contracts:check": "npm run contracts:generate && git diff --exit-code -- src/lib/report-v22/contracts src/lib/report-v22/generated/types.ts",
+    "artifacts:prepare": "tsx scripts/prepare-playwright-artifacts.ts",
     "security:rotate-google-tokens": "tsx scripts/rotate-google-token-keys.ts",
     "security:scan": "tsx scripts/scan-security-artifacts.ts"
   },
@@ -58,6 +59,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4",
+    "fflate": "^0.8.2",
     "jsdom": "^30.0.1",
     "json-schema-to-typescript": "^15.0.4",
     "lucide-react": "^1.11.0",

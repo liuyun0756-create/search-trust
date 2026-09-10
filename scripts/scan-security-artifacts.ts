@@ -2,24 +2,25 @@ import path from "node:path";
 import { loadEnvConfig } from "@next/env";
 
 import { scanArtifacts } from "../src/lib/security-v22/artifact-scan";
-
-const SECRET_ENV_NAMES = [
-  "SUPABASE_SERVICE_ROLE_KEY", "CLERK_WEBHOOK_SIGNING_SECRET", "DODO_API_KEY",
-  "DODO_WEBHOOK_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_COOKIE_SECRET",
-  "GOOGLE_TOKEN_ENCRYPTION_KEYS", "GOOGLE_TOKEN_BROKER_SECRET",
-];
+import { configuredArtifactMarkers } from "./security-artifact-markers";
 
 async function main() {
   loadEnvConfig(process.cwd());
-  // Local templates intentionally reuse short placeholder text. Real deployment
-  // credentials are longer; ignoring values below 16 bytes prevents ordinary bundle
-  // words from being reported as credential leaks.
-  const markers = SECRET_ENV_NAMES.map((name) => {
-    const value = process.env[name] ?? "";
-    return value.length >= 16 ? value : "";
-  });
-  markers.push(process.env.SEARCHTRUST_SECURITY_SENTINEL ?? "");
-  const result = await scanArtifacts(path.resolve(process.cwd(), ".next/static"), markers);
+  const markers = configuredArtifactMarkers();
+  const roots = [
+    path.resolve(process.cwd(), ".next/static"),
+    path.resolve(process.cwd(), "output/playwright/test-results"),
+  ];
+  const results = await Promise.all(roots.map((root) => scanArtifacts(root, markers)));
+  const result = {
+    ok: results.every((entry) => entry.ok),
+    filesScanned: results.reduce((sum, entry) => sum + entry.filesScanned, 0),
+    secretValuesChecked: markers.length,
+    findings: results.flatMap((entry, rootIndex) => entry.findings.map((finding) => ({
+      file: `${rootIndex === 0 ? "static" : "browser"}/${finding.file}`,
+      marker: finding.marker,
+    }))),
+  };
   process.stdout.write(`${JSON.stringify(result)}\n`);
   if (!result.ok) process.exitCode = 2;
 }
