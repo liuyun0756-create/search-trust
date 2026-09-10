@@ -1,10 +1,73 @@
-name: 自动触发Vercel部署
+name: Frontend quality gate and Vercel deploy
+
 on:
+  pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
+
+concurrency:
+  group: frontend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  deploy:
+  quality:
+    name: Type, contracts, tests, build and security
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: 调用Vercel部署钩子
-        run: curl -X POST ${{ secrets.VERCEL_HOOK_URL }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run contracts:check
+      - run: npm run test:database
+      - run: npm run build
+      - run: npm run security:scan
+
+  browser:
+    name: Local stubbed browser journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - id: browser_tests
+        run: npm run test:e2e:ci
+      - id: browser_scan
+        if: always()
+        run: npm run security:scan
+      - id: prepare_artifacts
+        if: always()
+        run: npm run artifacts:prepare
+      - name: Upload safe final-failure diagnostics
+        if: ${{ always() && hashFiles('output/playwright/prepared/**') != '' && (steps.browser_tests.outcome == 'failure' || steps.browser_scan.outcome == 'failure') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-final-failure-${{ github.run_id }}
+          path: output/playwright/prepared
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    name: Trigger Vercel production deployment
+    needs: [quality, browser]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && success() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the protected Vercel deployment hook
+        env:
+          VERCEL_HOOK_URL: ${{ secrets.VERCEL_HOOK_URL }}
+        run: curl --fail --silent --show-error --request POST "$VERCEL_HOOK_URL"

@@ -22,6 +22,7 @@
     "test:database": "vitest run src/lib/database/v22Migration.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ci": "CI=1 playwright test",
+    "quality": "npm run typecheck && npm test && npm run contracts:check && npm run build && npm run security:scan && npm run test:e2e:ci",
     "contracts:generate": "json2ts --input src/lib/report-v22/contracts/report_v2_2.schema.json --output src/lib/report-v22/generated/types.ts --no-additionalProperties --unknownAny --unreachableDefinitions --maxItems 5",
     "contracts:check": "npm run contracts:generate && git diff --exit-code -- src/lib/report-v22/contracts src/lib/report-v22/generated/types.ts",
     "artifacts:prepare": "tsx scripts/prepare-playwright-artifacts.ts",
@@ -67,6 +68,7 @@
     "tailwindcss": "^4.2.4",
     "tsx": "^4.20.6",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "yaml": "^2.8.1"
   }
 }
