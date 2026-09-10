@@ -65,6 +65,28 @@ describe("v2.2 job callback handler", () => {
     expect(createRepository).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { nested: { value: 1 } },
+    { negative_counter: -1 },
+    { fractional_counter: 0.5 },
+    { "BAD-KEY": 1 },
+  ])("rejects invalid cost counter payloads", async (costCounters) => {
+    const createRepository = vi.fn(() => repositoryWith({
+      found: true, applied: true, terminalEffectsApplied: false, stateRevision: 2,
+    }));
+    const handler = createJobEventHandler({
+      getSecret: () => secret,
+      nowSeconds: () => now,
+      createRepository,
+      runTerminalEffects: async () => undefined,
+    });
+    const invalid = { ...event, cost_counters: costCounters };
+    const response = await handler.POST(request(invalid));
+
+    expect(response.status).toBe(400);
+    expect(createRepository).not.toHaveBeenCalled();
+  });
+
   it("returns 404 for unknown jobs and ignores duplicate or stale revisions", async () => {
     const unknownHandler = createJobEventHandler({
       getSecret: () => secret,

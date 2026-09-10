@@ -45,6 +45,7 @@ export interface JobCallbackEvent {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ERROR_CODE_PATTERN = /^[A-Z0-9_]{1,120}$/;
+const COST_COUNTER_KEY_PATTERN = /^[a-z][a-z0-9_]{0,79}$/;
 const EVENT_KEYS = new Set([
   "event_id", "job_id", "case_id", "revision", "status", "stage", "progress", "message",
   "attempt_count", "heartbeat_at", "completed_at", "error", "cost_counters", "occurred_at",
@@ -101,7 +102,14 @@ export function parseJobCallbackEvent(value: unknown): JobCallbackEvent {
     !(value.completed_at === null || isTimestamp(value.completed_at)) ||
     !isTimestamp(value.occurred_at) ||
     !isRecord(value.cost_counters) ||
-    !Object.values(value.cost_counters).every((counter) => typeof counter === "number" && Number.isFinite(counter))
+    Object.keys(value.cost_counters).length > 100 ||
+    !Object.entries(value.cost_counters).every(([key, counter]) =>
+      COST_COUNTER_KEY_PATTERN.test(key) &&
+      typeof counter === "number" &&
+      Number.isSafeInteger(counter) &&
+      counter >= 0 &&
+      counter <= 1_000_000_000_000_000
+    )
   ) throw new JobCallbackValidationError();
 
   const error = parseError(value.error);
