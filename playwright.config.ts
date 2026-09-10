@@ -36,9 +36,14 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
+      VERCEL_ENV: "",
       NEXT_PUBLIC_E2E_TEST_MODE: "true",
       NEXT_PUBLIC_E2E_BASE_URL: baseURL,
       NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "",
+      GOOGLE_CONNECTIONS_ENABLED: "true",
+      GOOGLE_GSC_SYNC_ENABLED: "true",
+      GOOGLE_GA4_SYNC_ENABLED: "true",
+      GOOGLE_GBP_SYNC_ENABLED: "true",
     },
   },
 });

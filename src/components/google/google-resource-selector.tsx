@@ -8,6 +8,7 @@ import { GoogleIdentityReview } from "./google-identity-review";
 import { GscSyncControl } from "./gsc-sync-control";
 import { Ga4SyncControl } from "./ga4-sync-control";
 import { GbpSyncControl } from "./gbp-sync-control";
+import { isLocalE2ETestMode } from "@/lib/e2e-v22/config";
 
 type Binding = { id: string; source_type: GoogleSource; external_resource_name: string; external_resource_id: string; connection_id: string | null;
   identity_match_status: string; confirmation_method: string | null; confirmed_at: string | null };
@@ -106,7 +107,10 @@ export function GoogleResourceSelector({
         case_id: caseId, sources: [source], return_path: `/cases/${caseId}/connections`,
       }) });
       const url = new URL(result.authorization_url);
-      if (url.origin !== "https://accounts.google.com") throw new Error("Google authorization could not be started.");
+      const localConsent = isLocalE2ETestMode()
+        && url.origin === window.location.origin
+        && url.pathname === "/e2e/google-consent";
+      if (url.origin !== "https://accounts.google.com" && !localConsent) throw new Error("Google authorization could not be started.");
       window.location.assign(url.toString());
     });
   }

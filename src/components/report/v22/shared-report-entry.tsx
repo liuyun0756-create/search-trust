@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, LoaderCircle } from "lucide-react";
 
 import type { ClientReportV22ViewModel } from "@/lib/report-v22/view-model";
-import { isReportShareToken } from "@/lib/report-shares/tokens";
+import { isReportShareToken } from "@/lib/report-shares/token-format";
 
 import { SharedClientReportShell } from "./shared-client-report-shell";
 

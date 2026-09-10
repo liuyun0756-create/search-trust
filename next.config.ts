@@ -21,6 +21,10 @@ const nextConfig: NextConfig = {
   },
   turbopack: {},
   webpack(config) {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: "**/output/playwright/**",
+    };
     config.module.rules.push({
       test: /\.svg$/i,
       issuer: /\.[jt]sx?$/,

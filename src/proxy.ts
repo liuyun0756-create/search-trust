@@ -1,4 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+
+import { isLocalE2ETestMode } from "@/lib/e2e-v22/config";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -33,11 +36,16 @@ const isPublicRoute = createRouteMatcher([
   "/api/user/credits",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
+const authenticatedProxy = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
 });
+
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (isLocalE2ETestMode()) return NextResponse.next();
+  return authenticatedProxy(request, event);
+}
 
 export const config = {
   matcher: [

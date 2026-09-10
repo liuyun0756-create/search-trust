@@ -88,7 +88,7 @@ function statusClasses(source: ConnectionCenterSource): string {
 }
 
 function displayDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(value));
 }
 
 function technicalLabel(value: string | null): string {

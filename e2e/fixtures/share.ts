@@ -1,6 +1,7 @@
 import { E2E_IDS } from "./ids";
 import { E2E_NOW } from "./preflight";
 import { prospectReportFixture } from "./report";
+import { buildReportV22ViewModel } from "../../src/lib/report-v22/view-model";
 
 export const E2E_SHARE_TOKEN = "searchtrust_e2e_share_token_000000000000000";
 
@@ -18,7 +19,7 @@ export const createdShareFixture = {
 } as const;
 
 export const resolvedShareFixture = {
-  report: prospectReportFixture,
+  report: buildReportV22ViewModel(prospectReportFixture, "client"),
   share: activeShareFixture,
 } as const;
 

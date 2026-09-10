@@ -81,6 +81,9 @@ export class LocalApiScenario {
   private syncPoll = 0;
   private checkoutUnlocked = false;
   private shareRevoked: boolean;
+  private caseId: string = E2E_IDS.caseId;
+  private discoveryJobId: string = E2E_IDS.discoveryJobId;
+  private analysisJobId: string = E2E_IDS.analysisJobId;
 
   constructor(options: LocalApiScenarioOptions = {}) {
     this.options = {
@@ -100,6 +103,9 @@ export class LocalApiScenario {
       syncPoll: this.syncPoll,
       checkoutUnlocked: this.checkoutUnlocked,
       shareRevoked: this.shareRevoked,
+      caseId: this.caseId,
+      discoveryJobId: this.discoveryJobId,
+      analysisJobId: this.analysisJobId,
     });
   }
 
@@ -107,67 +113,74 @@ export class LocalApiScenario {
     const key = routeKey(request);
     const url = new URL(request.url, "http://127.0.0.1:3100");
 
+    if (key === "GET /api/user/credits") return { status: 200, body: { credits: 3 } };
     if (key === "POST /api/v2/preflight") {
       valid(parsePreflightRequest(jsonBody(request)), "preflight");
       return { status: 200, body: preflightFixture };
     }
     if (key === "POST /api/v2/competitors/discover") {
-      valid(parseDiscoveryRequest(jsonBody(request)), "competitor discovery");
-      return { status: 202, body: { discovery_job_id: E2E_IDS.discoveryJobId, status: "queued", estimated_seconds: 2 } };
+      const input = jsonBody(request) as { case_id?: string };
+      valid(parseDiscoveryRequest(input), "competitor discovery");
+      this.caseId = input.case_id!;
+      this.discoveryJobId = request.headers?.["x-searchtrust-discovery-job-id"] ?? E2E_IDS.discoveryJobId;
+      return { status: 202, body: { discovery_job_id: this.discoveryJobId, status: "queued", estimated_seconds: 2 } };
     }
-    if (key === `GET /api/v2/competitors/tasks/${E2E_IDS.discoveryJobId}`) {
+    if (key === `GET /api/v2/competitors/tasks/${this.discoveryJobId}`) {
       const poll = this.discoveryPoll++;
-      if (this.options.competitors === "failure" && poll >= 1) return { status: 200, body: discoveryStatusFixture("failed") };
-      if (poll === 0) return { status: 200, body: discoveryStatusFixture("running") };
-      return { status: 200, body: discoveryStatusFixture(this.options.competitors === "zero" ? "zero" : "succeeded") };
+      const state = this.options.competitors === "failure" && poll >= 1 ? "failed" : poll === 0 ? "running" : this.options.competitors === "zero" ? "zero" : "succeeded";
+      const fixture = discoveryStatusFixture(state);
+      return { status: 200, body: { ...fixture, discovery_job_id: this.discoveryJobId, result: fixture.result ? { ...fixture.result, case_id: this.caseId } : null } };
     }
-    if (key === `POST /api/v2/competitors/tasks/${E2E_IDS.discoveryJobId}/retry`) {
+    if (key === `POST /api/v2/competitors/tasks/${this.discoveryJobId}/retry`) {
       this.discoveryPoll = 0;
-      return { status: 202, body: { discovery_job_id: E2E_IDS.discoveryJobId, status: "queued", attempt_count: 2 } };
+      return { status: 202, body: { discovery_job_id: this.discoveryJobId, status: "queued", attempt_count: 2 } };
     }
     if (key === "POST /api/v2/cases") {
-      valid(validateCreateCaseRequest(jsonBody(request)), "Case creation");
-      return { status: 201, body: caseFixture };
+      const input = jsonBody(request) as { draft_case_id?: string };
+      valid(validateCreateCaseRequest(input), "Case creation");
+      this.caseId = input.draft_case_id ?? E2E_IDS.caseId;
+      return { status: 201, body: { ...caseFixture, id: this.caseId } };
     }
-    if (key === `GET /api/v2/cases/${E2E_IDS.caseId}/tasks/latest`) return { status: 204 };
-    if (key === `GET /api/v2/cases/${E2E_IDS.caseId}/checkout`) {
+    if (key === `GET /api/v2/cases/${this.caseId}/tasks/latest`) return { status: 204 };
+    if (key === `GET /api/v2/cases/${this.caseId}/checkout`) {
       return { status: 200, body: checkoutStateFixture(this.checkoutUnlocked) };
     }
-    if (key === `POST /api/v2/cases/${E2E_IDS.caseId}/checkout`) {
+    if (key === `POST /api/v2/cases/${this.caseId}/checkout`) {
       if (this.options.checkout === "provider_error") return { status: 503, body: checkoutProviderErrorFixture };
       if (this.options.checkout === "cancelled") {
         return {
           status: 201,
           body: {
             ...checkoutCreatedFixture,
-            checkout_url: `http://127.0.0.1:3100/cases/new?payment=cancelled&case_id=${E2E_IDS.caseId}`,
+            case_id: this.caseId,
+            checkout_url: `http://127.0.0.1:3100/cases/new?payment=cancelled&case_id=${this.caseId}`,
           },
         };
       }
-      return { status: 201, body: checkoutCreatedFixture };
+      return { status: 201, body: { ...checkoutCreatedFixture, case_id: this.caseId, checkout_url: `http://127.0.0.1:3100/cases/new?payment=return&case_id=${this.caseId}&payment_id=searchtrust_e2e_payment` } };
     }
-    if (key === `POST /api/v2/cases/${E2E_IDS.caseId}/checkout/confirm`) {
+    if (key === `POST /api/v2/cases/${this.caseId}/checkout/confirm`) {
       if (this.options.checkout === "provider_error") return { status: 503, body: checkoutProviderErrorFixture };
       const alreadyConfirmed = this.checkoutUnlocked;
       this.checkoutUnlocked = true;
-      return { status: 200, body: { ...checkoutConfirmedFixture, already_confirmed: alreadyConfirmed } };
+      return { status: 200, body: { ...checkoutConfirmedFixture, case_id: this.caseId, already_confirmed: alreadyConfirmed } };
     }
     if (key === "POST /api/v2/analyze") {
       valid(parseAnalyzeRequest(jsonBody(request)), "analysis");
-      return { status: 202, body: { job_id: E2E_IDS.analysisJobId, status: "queued", estimated_seconds: 3 } };
+      this.analysisJobId = request.headers?.["x-searchtrust-job-id"] ?? E2E_IDS.analysisJobId;
+      return { status: 202, body: { job_id: this.analysisJobId, status: "queued", estimated_seconds: 3 } };
     }
-    if (key === `GET /api/v2/tasks/${E2E_IDS.analysisJobId}`) {
+    if (key === `GET /api/v2/tasks/${this.analysisJobId}`) {
       const poll = this.analysisPoll++;
-      if (this.options.analysis === "failure" && poll >= 1) return { status: 200, body: analysisStatusFixture("failed") };
-      if (poll === 0) return { status: 200, body: analysisStatusFixture("running") };
-      return { status: 200, body: { ...analysisStatusFixture("succeeded"), database_report_id: E2E_IDS.reportId } };
+      const state = this.options.analysis === "failure" && poll >= 1 ? "failed" : poll === 0 ? "running" : "succeeded";
+      return { status: 200, body: { ...analysisStatusFixture(state), job_id: this.analysisJobId, ...(state === "succeeded" ? { database_report_id: E2E_IDS.reportId } : {}) } };
     }
-    if (key === `GET /api/v2/tasks/${E2E_IDS.analysisJobId}/stream`) {
+    if (key === `GET /api/v2/tasks/${this.analysisJobId}/stream`) {
       if (this.options.analysis === "interrupted") return { status: 503, body: { error: { code: "E2E_STREAM_INTERRUPTED", message: "Use polling fallback." } } };
       return {
         status: 200,
         headers: { "content-type": "text/event-stream" },
-        body: `event: state\ndata: ${JSON.stringify(analysisStatusFixture("running"))}\n\n`,
+        body: `event: state\ndata: ${JSON.stringify({ ...analysisStatusFixture("running"), job_id: this.analysisJobId })}\n\n`,
       };
     }
     if (key === `GET /api/v2/cases/${E2E_IDS.caseId}/reports/${E2E_IDS.reportId}`) {
@@ -186,7 +199,10 @@ export class LocalApiScenario {
     }
     if (key === "POST /api/v2/google/connections/authorize" || key === `POST /api/v2/google/connections/${E2E_IDS.connectionId}/authorize`) {
       if (this.options.google === "denied") return { status: 400, body: googleDeniedFixture };
-      return { status: 201, body: googleAuthorizationFixture };
+      const input = request.body as { return_path?: string } | undefined;
+      const authorization = new URL(googleAuthorizationFixture.authorization_url);
+      authorization.searchParams.set("return_to", input?.return_path ?? `/cases/${this.caseId}/connections`);
+      return { status: 201, body: { ...googleAuthorizationFixture, authorization_url: authorization.toString() } };
     }
     if (key === `DELETE /api/v2/google/connections/${E2E_IDS.connectionId}`) {
       return { status: 200, body: { connection: { ...googleConnectionFixture, status: "revoked" } } };
@@ -236,8 +252,13 @@ async function requestBody(route: Route): Promise<unknown> {
 }
 
 export async function installLocalApiRouter(page: Page, scenario = new LocalApiScenario()): Promise<LocalApiScenario> {
-  await page.route("**/api/**", async (route) => {
+  await page.route("**/*", async (route) => {
     const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+    if (!pathname.startsWith("/api/") || pathname === "/api/user/credits") {
+      await route.fallback();
+      return;
+    }
     const response = scenario.resolve({
       method: request.method(),
       url: request.url(),

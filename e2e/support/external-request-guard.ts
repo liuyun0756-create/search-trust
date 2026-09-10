@@ -21,7 +21,7 @@ export async function installExternalRequestGuard(
 
   await page.route("**/*", async (route: Route, request: Request) => {
     if (isAllowedE2ERequest(request.url(), baseURL)) {
-      await route.continue();
+      await route.fallback();
       return;
     }
 
