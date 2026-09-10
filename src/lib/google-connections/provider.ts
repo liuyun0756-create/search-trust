@@ -65,6 +65,10 @@ export interface GoogleOAuthProvider {
   revoke(token: string): Promise<void>;
 }
 
+export interface GoogleTokenRevoker {
+  revoke(token: string): Promise<void>;
+}
+
 function unavailable(): GoogleConnectionError {
   return new GoogleConnectionError("GOOGLE_PROVIDER_UNAVAILABLE", {
     status: 503,
@@ -214,6 +218,32 @@ export class GoogleOAuthHttpProvider implements GoogleOAuthProvider {
       const payload = await limitedJson(response);
       if (!response.ok) throw providerFailure(payload);
       return normalizeTokenSet(payload, fallbackScopes);
+    } catch (error) {
+      if (error instanceof GoogleConnectionError) throw error;
+      throw unavailable();
+    }
+  }
+}
+
+export class GoogleOAuthHttpTokenRevoker implements GoogleTokenRevoker {
+  constructor(
+    private readonly fetcher: typeof fetch = fetch,
+    private readonly timeoutMs = 10_000,
+  ) {}
+
+  async revoke(token: string): Promise<void> {
+    try {
+      const response = await this.fetcher(REVOCATION_ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
+        body: new URLSearchParams({ token }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+      if (response.ok) return;
+      const body = await limitedJson(response);
+      if (response.status === 400 && body.error === "invalid_token") return;
+      throw providerFailure(body);
     } catch (error) {
       if (error instanceof GoogleConnectionError) throw error;
       throw unavailable();

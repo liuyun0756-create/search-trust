@@ -45,7 +45,7 @@ describe("Google connection safe logging", () => {
     expect(value).not.toContain("1//refresh");
     expect(value).not.toContain("secret-code");
     expect(value).not.toContain("secret-state");
-    expect(value).toContain("safe=yes");
+    expect(value).not.toContain("example.test");
   });
 
   it("turns exceptions into bounded safe objects", () => {

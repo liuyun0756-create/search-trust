@@ -13,7 +13,7 @@ const isPublicRoute = createRouteMatcher([
   "/refund-policy",
   "/reports",
   "/cases/new",
-  "/share/(.*)",
+  "/share",
   "/api/share/(.*)",
   "/api/webhook/(.*)",
   // Server-to-server worker callbacks use timestamped HMAC authentication.

@@ -1,5 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { createServerClient } from "@/lib/supabase";
+import { SupabaseIdentityWebhookRepository } from "@/lib/identity-webhooks/repository";
+import { identityDigest } from "@/lib/identity-webhooks/service";
 
 export async function getCurrentUser() {
   const session = await auth();
@@ -43,39 +45,26 @@ export async function getCurrentUser() {
     });
   }
 
-  const { data: newUser, error: insertError } = await supabase
-    .from("users")
-    .insert({ clerk_user_id: clerkUserId, email, name, audit_credits: 5 })
-    .select("id, audit_credits")
-    .single();
-
-  if (insertError?.code === "23505") {
-    const { data: concurrentUser } = await supabase
-      .from("users")
-      .select("id, audit_credits")
-      .eq("clerk_user_id", clerkUserId)
-      .maybeSingle();
-    if (concurrentUser) {
-      return {
-        userId: concurrentUser.id,
-        clerkUserId,
-        auditCredits: concurrentUser.audit_credits,
-      };
-    }
-  }
-
-  if (insertError) {
-    let supabaseHost = "invalid-url";
-    try {
-      supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "").hostname;
-    } catch {}
+  try {
+    const outcome = await new SupabaseIdentityWebhookRepository(supabase).register({
+      clerkUserId,
+      subjectDigest: identityDigest(clerkUserId),
+      email,
+      name,
+    });
+    if (outcome === "blocked_deleted_identity") return null;
+  } catch (error) {
     console.error("Current user resolution failed", {
       stage: "supabase_insert",
-      code: insertError.code || "SUPABASE_INSERT_FAILED",
-      message: insertError.message.slice(0, 200),
-      supabase_host: supabaseHost,
+      code: error instanceof Error ? error.name : "SUPABASE_INSERT_FAILED",
     });
+    return null;
   }
 
+  const { data: newUser } = await supabase
+    .from("users")
+    .select("id, audit_credits")
+    .eq("clerk_user_id", clerkUserId)
+    .maybeSingle();
   return newUser ? { userId: newUser.id, clerkUserId, auditCredits: newUser.audit_credits } : null;
 }

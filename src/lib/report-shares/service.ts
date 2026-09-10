@@ -62,7 +62,10 @@ export class ReportShareService {
   async resolve(token: string): Promise<{ report: ClientReportV22ViewModel; share: PublicShareRecord }> {
     if (!isReportShareToken(token)) throw new ReportShareNotFoundError();
     const resolved = await this.repository.resolve(hashReportShareToken(token), this.now().toISOString());
-    if (!resolved || resolved.share.view_mode !== "client") throw new ReportShareNotFoundError();
+    if (!resolved || resolved.share.view_mode !== "client" || resolved.share.revoked_at ||
+        new Date(resolved.share.expires_at).getTime() <= this.now().getTime()) {
+      throw new ReportShareNotFoundError();
+    }
     const selected = selectValidatedReportV22(resolved.report, resolved.share.case_id);
     if (!selected.ok) throw new ReportShareNotFoundError();
     return {

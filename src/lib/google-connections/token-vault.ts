@@ -50,6 +50,10 @@ export class TokenVault {
     private readonly keys: ReadonlyMap<string, Buffer>,
   ) {}
 
+  get activeKeyVersion(): string {
+    return this.activeVersion;
+  }
+
   static fromBase64Keys(activeVersion: string, base64Keys: Readonly<Record<string, string>>): TokenVault {
     try {
       if (!activeVersion.trim() || !Object.prototype.hasOwnProperty.call(base64Keys, activeVersion)) {

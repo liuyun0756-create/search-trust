@@ -1,8 +1,12 @@
 import posthog from "posthog-js";
+import { shouldInitializeBrowserAnalytics } from "@/lib/security-v22/browser-analytics";
 
 const posthogToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
 
-if (typeof window !== "undefined" && posthogToken) {
+// Share credentials live in the URL fragment so they never enter HTTP request
+// paths. Do not initialize third-party analytics on that credential-bearing page.
+if (typeof window !== "undefined" && posthogToken &&
+    shouldInitializeBrowserAnalytics(window.location.pathname)) {
   posthog.init(posthogToken, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
     autocapture: false,

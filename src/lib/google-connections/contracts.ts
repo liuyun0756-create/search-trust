@@ -5,6 +5,7 @@ export type GoogleConnectionStatus =
   | "active"
   | "error"
   | "reauth_required"
+  | "deleting"
   | "revoked"
   | "deleted";
 

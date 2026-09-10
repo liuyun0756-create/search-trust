@@ -28,7 +28,7 @@ export function Header() {
     pathname === "/privacy" ||
     pathname === "/refund-policy"
     || pathname === "/cases/new"
-    || pathname.startsWith("/share/")
+    || pathname === "/share"
     || isCaseReport
   ) return null;
 

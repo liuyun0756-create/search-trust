@@ -4,7 +4,7 @@ import prospectFixture from "../report-v22/contracts/fixtures/prospect.json";
 import type { SearchTrustReportV2_2 } from "../report-v22/generated/types";
 import type { Report, ReportShare } from "../../types/database";
 import { ReportShareNotFoundError, ReportShareService, type PublicShareRecord, type ReportShareRepository } from "./service";
-import { createReportShareToken, hashReportShareToken, isReportShareToken } from "./tokens";
+import { buildReportShareUrl, createReportShareToken, hashReportShareToken, isReportShareToken } from "./tokens";
 
 const reportV22 = prospectFixture as unknown as SearchTrustReportV2_2;
 const now = new Date("2026-09-04T00:00:00.000Z");
@@ -41,6 +41,14 @@ describe("report share tokens", () => {
     expect(first).not.toBe(second);
     expect(hashReportShareToken(first)).toMatch(/^[0-9a-f]{64}$/);
     expect(hashReportShareToken(first)).not.toContain(first);
+  });
+
+  it("keeps the bearer token out of the HTTP request path", () => {
+    const url = new URL(buildReportShareUrl("https://searchtrust.example", token));
+    expect(url.pathname).toBe("/share");
+    expect(url.pathname).not.toContain(token);
+    expect(url.search).toBe("");
+    expect(url.hash).toBe(`#${token}`);
   });
 });
 
@@ -86,6 +94,9 @@ describe("ReportShareService", () => {
     expect(serialized).not.toContain("rule_id");
     expect(serialized).not.toContain("original_value");
     expect(serialized).not.toContain("snapshot_id");
+    expect(serialized).not.toContain("connection_id");
+    expect(serialized).not.toContain("access_token");
+    expect(serialized).not.toContain("payment_id");
   });
 
   it("rejects malformed, missing, and cross-Case shares as not found", async () => {
@@ -94,5 +105,33 @@ describe("ReportShareService", () => {
     await expect(service.resolve("guessable")).rejects.toBeInstanceOf(ReportShareNotFoundError);
     await expect(service.resolve(token)).rejects.toBeInstanceOf(ReportShareNotFoundError);
     await expect(service.create(report.user_id, "wrong-case", report.id)).rejects.toBeInstanceOf(ReportShareNotFoundError);
+  });
+
+  it("fails closed for revoked, expired, and non-client records even if persistence returns them", async () => {
+    const repository = new FakeRepository();
+    const baseShare = {
+      id: "share-1", user_id: report.user_id, case_id: report.case_id!, report_id: report.id,
+      token_hash: hashReportShareToken(token), view_mode: "client" as const,
+      created_at: now.toISOString(), expires_at: "2026-10-04T00:00:00.000Z",
+      revoked_at: null, last_accessed_at: null,
+    };
+    const service = new ReportShareService(repository, () => now);
+
+    repository.resolved = { report, share: { ...baseShare, revoked_at: now.toISOString() } };
+    await expect(service.resolve(token)).rejects.toBeInstanceOf(ReportShareNotFoundError);
+
+    repository.resolved = { report, share: { ...baseShare, expires_at: now.toISOString() } };
+    await expect(service.resolve(token)).rejects.toBeInstanceOf(ReportShareNotFoundError);
+
+    repository.resolved = { report, share: { ...baseShare, view_mode: "advisor" as "client" } };
+    await expect(service.resolve(token)).rejects.toBeInstanceOf(ReportShareNotFoundError);
+  });
+
+  it("maps an unauthorized revoke to the same not-found contract", async () => {
+    const repository = new FakeRepository();
+    repository.revoke = async () => false;
+    const service = new ReportShareService(repository, () => now);
+    await expect(service.revoke(report.user_id, report.case_id!, report.id, "other-share"))
+      .rejects.toBeInstanceOf(ReportShareNotFoundError);
   });
 });

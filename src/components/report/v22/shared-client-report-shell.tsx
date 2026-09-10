@@ -1,10 +1,44 @@
+"use client";
+
 import type { ClientReportV22ViewModel } from "@/lib/report-v22/view-model";
 import { Download, LockKeyhole } from "lucide-react";
+import { useState } from "react";
 
 import { ClientReportView } from "./client-report-view";
 import { ReportContextPills, formatReportDate } from "./report-v22-shared";
 
-export function SharedClientReportShell({ report, pdfUrl }: { report: ClientReportV22ViewModel; pdfUrl: string }) {
+export function SharedClientReportShell({ report, token }: { report: ClientReportV22ViewModel; token: string }) {
+  const [downloading, setDownloading] = useState(false);
+  const [downloadFailed, setDownloadFailed] = useState(false);
+
+  async function downloadPdf() {
+    if (downloading) return;
+    setDownloading(true);
+    setDownloadFailed(false);
+    try {
+      const response = await fetch("/api/share/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+        cache: "no-store",
+        referrerPolicy: "no-referrer",
+      });
+      if (!response.ok) throw new Error("PDF_DOWNLOAD_FAILED");
+      const href = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = href;
+      anchor.download = "SearchTrust-Client-Report.pdf";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(href);
+    } catch {
+      setDownloadFailed(true);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
       <header className="relative overflow-hidden bg-[#172019] px-5 pb-12 pt-7 text-white sm:px-8 sm:pb-16 lg:px-12">
@@ -12,7 +46,10 @@ export function SharedClientReportShell({ report, pdfUrl }: { report: ClientRepo
         <div className="relative mx-auto max-w-[1180px]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/55"><LockKeyhole className="h-4 w-4 text-[#b8dd3c]" /> Secure client report</div>
-            <a href={pdfUrl} className="inline-flex items-center gap-2 rounded-full bg-[#a5d020] px-4 py-2.5 text-xs font-black text-[#172019] hover:bg-[#b8dd3c]"><Download className="h-4 w-4" /> Download PDF</a>
+            <div className="text-right">
+              <button type="button" disabled={downloading} onClick={() => void downloadPdf()} className="inline-flex items-center gap-2 rounded-full bg-[#a5d020] px-4 py-2.5 text-xs font-black text-[#172019] hover:bg-[#b8dd3c] disabled:cursor-wait disabled:opacity-70"><Download className="h-4 w-4" /> {downloading ? "Preparing PDF…" : "Download PDF"}</button>
+              {downloadFailed ? <p className="mt-2 text-xs font-bold text-[#f5c36c]" role="status">PDF download failed. Please try again.</p> : null}
+            </div>
           </div>
           <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>

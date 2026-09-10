@@ -19,7 +19,9 @@
     "test:contract": "vitest run src/lib/report-v22",
     "test:database": "vitest run src/lib/database/v22Migration.test.ts",
     "contracts:generate": "json2ts --input src/lib/report-v22/contracts/report_v2_2.schema.json --output src/lib/report-v22/generated/types.ts --no-additionalProperties --unknownAny --unreachableDefinitions --maxItems 5",
-    "contracts:check": "npm run contracts:generate && git diff --exit-code -- src/lib/report-v22/contracts src/lib/report-v22/generated/types.ts"
+    "contracts:check": "npm run contracts:generate && git diff --exit-code -- src/lib/report-v22/contracts src/lib/report-v22/generated/types.ts",
+    "security:rotate-google-tokens": "tsx scripts/rotate-google-token-keys.ts",
+    "security:scan": "tsx scripts/scan-security-artifacts.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.4.0",
@@ -52,6 +54,7 @@
     "lucide-react": "^1.11.0",
     "postcss": "^8.5.12",
     "tailwindcss": "^4.2.4",
+    "tsx": "^4.20.6",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
   }

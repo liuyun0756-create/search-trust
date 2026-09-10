@@ -121,7 +121,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await db.close();
   });
 
-  it("creates the twelve server-only v2.2 tables with RLS enabled", async () => {
+  it("creates the thirteen server-only v2.2 tables with RLS enabled", async () => {
     const tables = await db.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity
        from pg_class
@@ -130,12 +130,13 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
            'client_cases', 'google_connections', 'case_source_bindings',
            'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
            'report_shares', 'google_oauth_sessions', 'google_connection_events',
-           'google_token_broker_requests', 'analysis_attempt_charges', 'audit_credit_ledger'
+           'google_token_broker_requests', 'analysis_attempt_charges', 'audit_credit_ledger',
+           'identity_deletion_receipts'
          ])
        order by relname`,
     );
 
-    expect(tables.rows).toHaveLength(12);
+    expect(tables.rows).toHaveLength(13);
     expect(tables.rows.every((row) => row.relrowsecurity)).toBe(true);
 
     const browserGrants = await db.query<{ count: number }>(
@@ -146,7 +147,8 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
            'client_cases', 'google_connections', 'case_source_bindings',
            'data_snapshots', 'analysis_jobs', 'case_report_entitlements',
            'report_shares', 'google_oauth_sessions', 'google_connection_events',
-           'google_token_broker_requests', 'analysis_attempt_charges', 'audit_credit_ledger'
+           'google_token_broker_requests', 'analysis_attempt_charges', 'audit_credit_ledger',
+           'identity_deletion_receipts'
          ])
          and grantee in ('anon', 'authenticated')`,
     );
@@ -1264,6 +1266,121 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       [userC],
     );
     expect(userGraph.rows[0].count).toBe(0);
+  });
+
+  it("freezes Google access and atomically records an idempotent Clerk user deletion", async () => {
+    const owner = await insertUser("security-delete-owner");
+    const outsider = await insertUser("security-delete-outsider");
+    const caseId = await insertCase(owner, "security-delete-case");
+    const connectionId = await insertConnection(owner, "security-delete-connection");
+    const reportId = await insertId(
+      `insert into public.reports (
+         report_id, user_id, case_id, page_url, gbp_url, access_type
+       ) values ('security-delete-report', $1, $2, 'https://delete.example.com', '', 'free_trial')
+       returning id`,
+      [owner, caseId],
+    );
+    await db.query(
+      `insert into public.report_shares (
+         user_id, case_id, report_id, token_hash, view_mode, expires_at
+       ) values ($1, $2, $3, $4, 'client', now() + interval '30 days')`,
+      [owner, caseId, reportId, "b".repeat(64)],
+    );
+
+    const prepared = await db.query<{ user_id: string | null }>(
+      `select public.prepare_v22_user_deletion('clerk_security-delete-owner') as user_id`,
+    );
+    expect(prepared.rows[0].user_id).toBe(owner);
+    expect((await db.query<{ status: string; has_token: boolean }>(
+      `select status, access_token_ciphertext is not null as has_token
+       from public.google_connections where id = $1`,
+      [connectionId],
+    )).rows[0]).toEqual({ status: "deleting", has_token: true });
+
+    const eventDigest = "11".repeat(32);
+    const subjectDigest = "22".repeat(32);
+    const completed = await db.query<{ outcome: string }>(
+      `select public.complete_v22_user_deletion(
+         'clerk_security-delete-owner', decode($1, 'hex'), decode($2, 'hex'),
+         '2026-09-10T00:00:00Z'::timestamptz
+       ) as outcome`,
+      [eventDigest, subjectDigest],
+    );
+    expect(completed.rows[0].outcome).toBe("deleted");
+
+    const remaining = await db.query<{ count: number }>(
+      `select (
+         (select count(*) from public.users where id = $1) +
+         (select count(*) from public.client_cases where user_id = $1) +
+         (select count(*) from public.google_connections where user_id = $1) +
+         (select count(*) from public.reports where user_id = $1) +
+         (select count(*) from public.report_shares where user_id = $1)
+       )::int as count`,
+      [owner],
+    );
+    expect(remaining.rows[0].count).toBe(0);
+    expect((await db.query<{ count: number }>(
+      `select count(*)::int as count from public.users where id = $1`, [outsider],
+    )).rows[0].count).toBe(1);
+
+    const duplicate = await db.query<{ outcome: string }>(
+      `select public.complete_v22_user_deletion(
+         'clerk_security-delete-owner', decode($1, 'hex'), decode($2, 'hex'),
+         '2026-09-10T00:00:00Z'::timestamptz
+       ) as outcome`,
+      [eventDigest, subjectDigest],
+    );
+    expect(duplicate.rows[0].outcome).toBe("already_deleted");
+    await expectSqlError(
+      `select public.complete_v22_user_deletion(
+         'clerk_other', decode($1, 'hex'), decode($2, 'hex'),
+         '2026-09-10T00:00:00Z'::timestamptz
+       )`,
+      [eventDigest, "33".repeat(32)],
+      "DELETION_EVENT_CONFLICT",
+    );
+
+    const lateCreate = await db.query<{ outcome: string }>(
+      `select public.register_v22_clerk_user(
+         'clerk_security-delete-owner', decode($1, 'hex'),
+         'must-not-return@example.com', 'Deleted User'
+       ) as outcome`,
+      [subjectDigest],
+    );
+    expect(lateCreate.rows[0].outcome).toBe("blocked_deleted_identity");
+    expect((await db.query<{ count: number }>(
+      `select count(*)::int as count from public.users where clerk_user_id = 'clerk_security-delete-owner'`,
+    )).rows[0].count).toBe(0);
+
+    const receipt = (await db.query<{
+      event_bytes: number;
+      subject_bytes: number;
+      result_code: string;
+    }>(
+      `select octet_length(event_id_digest)::int as event_bytes,
+              octet_length(subject_digest)::int as subject_bytes,
+              result_code
+       from public.identity_deletion_receipts
+       where event_id_digest = decode($1, 'hex')`,
+      [eventDigest],
+    )).rows[0];
+    expect(receipt).toEqual({ event_bytes: 32, subject_bytes: 32, result_code: "deleted" });
+
+    const browserGrants = await db.query<{ count: number }>(
+      `select count(*)::int as count
+       from information_schema.table_privileges
+       where table_schema = 'public'
+         and table_name = 'identity_deletion_receipts'
+         and grantee in ('anon', 'authenticated')`,
+    );
+    expect(browserGrants.rows[0].count).toBe(0);
+    expect((await db.query<{ allowed: boolean }>(
+      `select has_function_privilege(
+         'authenticated',
+         'public.complete_v22_user_deletion(text,bytea,bytea,timestamptz)',
+         'EXECUTE'
+       ) as allowed`,
+    )).rows[0].allowed).toBe(false);
   });
 
   it("requires reauthorization and terminal Google connections to clear all token material", async () => {

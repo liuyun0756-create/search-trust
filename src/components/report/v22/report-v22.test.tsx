@@ -42,7 +42,7 @@ describe("v2.2 report views", () => {
     const html = renderToStaticMarkup(
       <SharedClientReportShell
         report={buildReportV22ViewModel(fixture, "client")}
-        pdfUrl="/api/share/safe-token/pdf"
+        token={"a".repeat(43)}
       />,
     );
     expect(html).toContain("Secure client report");

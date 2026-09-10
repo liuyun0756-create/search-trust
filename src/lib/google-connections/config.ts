@@ -15,6 +15,14 @@ export type GoogleConnectionConfig =
       brokerSecret: string;
     };
 
+export type GoogleTokenVaultConfig =
+  | { configured: false }
+  | {
+      configured: true;
+      activeKeyVersion: string;
+      tokenKeys: Record<string, string>;
+    };
+
 function invalidConfiguration(): GoogleConnectionError {
   return new GoogleConnectionError("GOOGLE_OAUTH_NOT_CONFIGURED", { status: 503 });
 }
@@ -71,8 +79,8 @@ export function loadGoogleConnectionConfig(env: Environment = process.env): Goog
   const clientSecret = required(env, "GOOGLE_OAUTH_CLIENT_SECRET");
   const baseUrl = required(env, "NEXT_PUBLIC_BASE_URL");
   const redirectUri = validateRedirectUri(required(env, "GOOGLE_OAUTH_REDIRECT_URI"), baseUrl);
-  const activeKeyVersion = required(env, "GOOGLE_TOKEN_ENCRYPTION_ACTIVE_VERSION");
-  const tokenKeys = parseKeys(required(env, "GOOGLE_TOKEN_ENCRYPTION_KEYS"), activeKeyVersion);
+  const vault = loadGoogleTokenVaultConfig(env);
+  if (!vault.configured) throw invalidConfiguration();
   const cookieSecret = required(env, "GOOGLE_OAUTH_COOKIE_SECRET");
   const brokerSecret = required(env, "GOOGLE_TOKEN_BROKER_SECRET");
   if (Buffer.byteLength(cookieSecret, "utf8") < 32 || Buffer.byteLength(brokerSecret, "utf8") < 32) {
@@ -84,9 +92,21 @@ export function loadGoogleConnectionConfig(env: Environment = process.env): Goog
     clientId,
     clientSecret,
     redirectUri,
-    activeKeyVersion,
-    tokenKeys,
+    activeKeyVersion: vault.activeKeyVersion,
+    tokenKeys: vault.tokenKeys,
     cookieSecret,
     brokerSecret,
+  };
+}
+
+export function loadGoogleTokenVaultConfig(env: Environment = process.env): GoogleTokenVaultConfig {
+  const activeKeyVersion = env.GOOGLE_TOKEN_ENCRYPTION_ACTIVE_VERSION?.trim();
+  const rawKeys = env.GOOGLE_TOKEN_ENCRYPTION_KEYS?.trim();
+  if (!activeKeyVersion && !rawKeys) return { configured: false };
+  if (!activeKeyVersion || !rawKeys) throw invalidConfiguration();
+  return {
+    configured: true,
+    activeKeyVersion,
+    tokenKeys: parseKeys(rawKeys, activeKeyVersion),
   };
 }

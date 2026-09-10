@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { loadGoogleConnectionConfig } from "./config";
+import { loadGoogleConnectionConfig, loadGoogleTokenVaultConfig } from "./config";
 import { GoogleConnectionError } from "./errors";
 
 const validEnv = {
@@ -19,6 +19,21 @@ describe("Google connection configuration", () => {
   it("stays disabled without requiring secrets", () => {
     expect(loadGoogleConnectionConfig({})).toEqual({ enabled: false });
     expect(loadGoogleConnectionConfig({ GOOGLE_CONNECTIONS_ENABLED: "false" })).toEqual({ enabled: false });
+  });
+
+  it("loads rotation keys independently while the user-facing feature is disabled", () => {
+    const vault = loadGoogleTokenVaultConfig({
+      GOOGLE_CONNECTIONS_ENABLED: "false",
+      GOOGLE_TOKEN_ENCRYPTION_ACTIVE_VERSION: "v2",
+      GOOGLE_TOKEN_ENCRYPTION_KEYS: JSON.stringify({
+        v1: Buffer.alloc(32, 3).toString("base64"),
+        v2: Buffer.alloc(32, 4).toString("base64"),
+      }),
+    });
+    expect(vault).toMatchObject({ configured: true, activeKeyVersion: "v2" });
+    expect(loadGoogleTokenVaultConfig({})).toEqual({ configured: false });
+    expect(() => loadGoogleTokenVaultConfig({ GOOGLE_TOKEN_ENCRYPTION_ACTIVE_VERSION: "v2" }))
+      .toThrowError(GoogleConnectionError);
   });
 
   it("loads a complete enabled server-only configuration", () => {

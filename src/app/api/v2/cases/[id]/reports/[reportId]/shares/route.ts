@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { ReportShareNotFoundError } from "@/lib/report-shares/service";
 import { createServerReportShareService } from "@/lib/report-shares/server";
+import { buildReportShareUrl } from "@/lib/report-shares/tokens";
 
 type Context = { params: Promise<{ id: string; reportId: string }> };
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest, context: Context) {
     return NextResponse.json({
       id: share.id,
       expiresAt: share.expires_at,
-      url: new URL(`/share/${share.token}`, request.nextUrl.origin).toString(),
+      url: buildReportShareUrl(request.nextUrl.origin, share.token),
     }, { status: 201 });
   } catch (error) {
     return failure(error);

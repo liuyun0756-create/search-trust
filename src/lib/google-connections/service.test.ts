@@ -386,6 +386,25 @@ describe("Google connection lifecycle service", () => {
     expect(record.refreshToken).toBeNull();
   });
 
+  it("refuses token brokerage after account deletion fencing begins", async () => {
+    const h = harness();
+    const auth = await start(h);
+    const created = await h.service.completeAuthorization({
+      userId: userA,
+      state: auth.state,
+      cookieBinding: auth.cookieBinding,
+      code: "fake-code",
+      requestId: "callback-delete-fence",
+    });
+    const record = h.repository.connections.get(created.connection.id)!;
+    record.status = "deleting";
+    await expectGoogleError(
+      h.service.getAccessToken(record.id, "ga4", "broker-after-delete"),
+      "GOOGLE_REAUTH_REQUIRED",
+    );
+    expect(h.provider.refreshCalls).toBe(0);
+  });
+
   it("revokes and clears an owned connection without exposing tokens", async () => {
     const h = harness();
     const auth = await start(h);
