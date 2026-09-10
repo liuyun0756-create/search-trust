@@ -7,6 +7,7 @@ describe("report share response policy", () => {
     const rules = await nextConfig.headers!();
     expect(rules).toEqual([
       { source: "/share", headers: SHARE_SECURITY_HEADERS },
+      { source: "/share/:path*", headers: SHARE_SECURITY_HEADERS },
       { source: "/api/share/:path*", headers: SHARE_SECURITY_HEADERS },
     ]);
     expect(SHARE_SECURITY_HEADERS).toEqual(expect.arrayContaining([

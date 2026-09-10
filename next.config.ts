@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/share", headers: SHARE_SECURITY_HEADERS },
+      { source: "/share/:path*", headers: SHARE_SECURITY_HEADERS },
       { source: "/api/share/:path*", headers: SHARE_SECURITY_HEADERS },
     ];
   },
