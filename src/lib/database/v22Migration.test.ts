@@ -1082,6 +1082,59 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     expect(Number(persisted.rows[0].terminal_effects_revision)).toBe(3);
   });
 
+  it("stores monotonic service-only job cost summaries without identity replacement", async () => {
+    const jobId = randomUUID();
+    const startedAt = new Date(Date.now() - 2_000).toISOString();
+    const completedAt = new Date().toISOString();
+    const counters = {
+      cost_schema_version: 1,
+      cost_ledger_revision: 2,
+      serpapi_attempts: 1,
+      estimated_cost_usd_micros: 2500,
+    };
+    const inserted = await db.query<{
+      job_id: string; ledger_revision: bigint; status: string; cost_counters: Record<string, number>;
+    }>(
+      `select (public.upsert_v22_job_cost_summary(
+         $1, $2, 'competitor_discovery', 'succeeded', 1, 2,
+         $3::jsonb, $4::timestamptz, $5::timestamptz
+       )).*`,
+      [jobId, caseA, JSON.stringify(counters), startedAt, completedAt],
+    );
+    expect(inserted.rows[0].job_id).toBe(jobId);
+    expect(Number(inserted.rows[0].ledger_revision)).toBe(2);
+
+    const stale = await db.query<{ ledger_revision: bigint; cost_counters: Record<string, number> }>(
+      `select ledger_revision, cost_counters from public.upsert_v22_job_cost_summary(
+         $1, $2, 'competitor_discovery', 'succeeded', 1, 1,
+         '{"cost_schema_version":1,"cost_ledger_revision":1,"serpapi_attempts":0}'::jsonb,
+         $3::timestamptz, $4::timestamptz
+       )`,
+      [jobId, caseA, startedAt, completedAt],
+    );
+    expect(Number(stale.rows[0].ledger_revision)).toBe(2);
+    expect(stale.rows[0].cost_counters.serpapi_attempts).toBe(1);
+
+    await expectSqlError(
+      `select public.upsert_v22_job_cost_summary(
+         $1, $2, 'competitor_discovery', 'succeeded', 1, 3,
+         '{"cost_schema_version":1,"cost_ledger_revision":3}'::jsonb,
+         $3::timestamptz, $4::timestamptz
+       )`,
+      [jobId, caseB, startedAt, completedAt],
+      "COST_SUMMARY_IDENTITY_CONFLICT",
+    );
+    await expectSqlError(
+      `select public.upsert_v22_job_cost_summary(
+         $1, $2, 'prospect_report', 'succeeded', 1, 1,
+         '{"cost_schema_version":1,"cost_ledger_revision":1,"bad":1.5}'::jsonb,
+         $3::timestamptz, $4::timestamptz
+       )`,
+      [randomUUID(), caseA, startedAt, completedAt],
+      "INVALID_COST_SUMMARY",
+    );
+  });
+
   it("closes the Case entitlement and returns one general credit after a technical failure", async () => {
     const owner = await insertUser("payment-owner");
     const paidCase = await insertCase(owner, "paid-case");

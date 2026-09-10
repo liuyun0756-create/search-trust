@@ -2,13 +2,14 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(58);
+select plan(66);
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');
 select has_table('public', 'case_source_bindings', 'v2.2 case_source_bindings exists');
 select has_table('public', 'data_snapshots', 'v2.2 data_snapshots exists');
 select has_table('public', 'analysis_jobs', 'v2.2 analysis_jobs exists');
+select has_table('public', 'job_cost_summaries', 'v2.2 job cost summaries exist');
 select has_table('public', 'report_shares', 'v2.2 report_shares exists');
 select has_table('public', 'google_oauth_sessions', 'v2.2 Google OAuth sessions exist');
 select has_table('public', 'google_connection_events', 'v2.2 Google connection events exist');
@@ -19,6 +20,7 @@ select has_column('public', 'reports', 'report_v2_2', 'reports has the v2.2 cont
 select has_column('public', 'reports', 'snapshot_ids', 'reports records immutable input snapshots');
 select has_column('public', 'client_cases', 'location_key', 'Cases have a generated Location identity key');
 select has_column('public', 'analysis_jobs', 'state_revision', 'analysis jobs track backend state revisions');
+select has_column('public', 'google_sync_jobs', 'cost_counters', 'Google sync jobs track provider cost counters');
 select has_column(
   'public', 'analysis_jobs', 'terminal_effects_revision',
   'analysis jobs track the terminal revision claimed for side effects'
@@ -34,6 +36,7 @@ select has_pk('public', 'google_connections', 'google_connections has a primary 
 select has_pk('public', 'case_source_bindings', 'case_source_bindings has a primary key');
 select has_pk('public', 'data_snapshots', 'data_snapshots has a primary key');
 select has_pk('public', 'analysis_jobs', 'analysis_jobs has a primary key');
+select has_pk('public', 'job_cost_summaries', 'job cost summaries have a primary key');
 select has_pk('public', 'google_oauth_sessions', 'google_oauth_sessions has a primary key');
 select has_pk('public', 'google_connection_events', 'google_connection_events has a primary key');
 select has_pk('public', 'google_token_broker_requests', 'google_token_broker_requests has a primary key');
@@ -59,6 +62,10 @@ select ok(
   'analysis_jobs has RLS enabled'
 );
 select ok(
+  (select relrowsecurity from pg_class where oid = 'public.job_cost_summaries'::regclass),
+  'job_cost_summaries has RLS enabled'
+);
+select ok(
   (select relrowsecurity from pg_class where oid = 'public.report_shares'::regclass),
   'report_shares has RLS enabled'
 );
@@ -78,6 +85,22 @@ select ok(
 select ok(
   has_table_privilege('service_role', 'public.client_cases', 'SELECT'),
   'service_role can read client_cases'
+);
+select ok(
+  has_table_privilege('service_role', 'public.job_cost_summaries', 'SELECT'),
+  'service_role can read job cost summaries'
+);
+select ok(
+  not has_table_privilege('anon', 'public.job_cost_summaries', 'SELECT'),
+  'anon cannot read job cost summaries'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.job_cost_summaries', 'SELECT'),
+  'authenticated cannot read job cost summaries'
+);
+select ok(
+  not has_table_privilege('anon', 'public.job_cost_summaries', 'INSERT'),
+  'anon cannot insert job cost summaries'
 );
 select ok(
   not has_table_privilege('anon', 'public.client_cases', 'SELECT'),

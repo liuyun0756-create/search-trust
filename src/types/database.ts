@@ -175,6 +175,26 @@ export interface AnalysisJob {
   updated_at: string;
 }
 
+export interface JobCostSummary {
+  job_id: string;
+  case_id: string;
+  job_kind:
+    | "competitor_discovery"
+    | "prospect_report"
+    | "verified_report"
+    | "gsc_sync"
+    | "ga4_sync"
+    | "gbp_sync";
+  status: "succeeded" | "failed";
+  attempt_count: number;
+  ledger_revision: number;
+  cost_counters: JsonObject;
+  started_at: string;
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Report {
   id: string;
   report_id: string;
