@@ -18,6 +18,11 @@ async function workflow(): Promise<Workflow> {
   return parse(source) as Workflow;
 }
 
+async function vercelConfig(): Promise<{ git?: { deploymentEnabled?: boolean } }> {
+  const source = await readFile(path.resolve(process.cwd(), "vercel.json"), "utf8");
+  return JSON.parse(source) as { git?: { deploymentEnabled?: boolean } };
+}
+
 describe("Vercel deployment workflow", () => {
   it("runs quality and browser checks for pull requests and main pushes", async () => {
     const value = await workflow();
@@ -40,6 +45,7 @@ describe("Vercel deployment workflow", () => {
     expect(deploy.if).toContain("github.event_name == 'push'");
     expect(deploy.if).toContain("github.ref == 'refs/heads/main'");
     expect(deploy.if).toContain("success()");
+    await expect(vercelConfig()).resolves.toMatchObject({ git: { deploymentEnabled: false } });
   });
 
   it("keeps the deployment hook secret out of the command and retains safe failures for seven days", async () => {
