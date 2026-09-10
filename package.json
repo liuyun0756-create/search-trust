@@ -17,7 +17,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:components": "vitest run --environment jsdom src/**/*.interaction.test.tsx",
+    "test:components": "vitest run interaction.test.tsx --environment jsdom",
     "test:contract": "vitest run src/lib/report-v22",
     "test:database": "vitest run src/lib/database/v22Migration.test.ts",
     "test:e2e": "playwright test",
