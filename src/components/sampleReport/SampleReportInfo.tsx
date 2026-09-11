@@ -19,7 +19,7 @@ export function SampleReportInfo() {
       icon: Target,
       title: "Purpose of the sample",
       items: [
-        "to show the complete Agency Audit structure",
+        "to show the complete Advisor report structure",
         "to connect findings, evidence, and layer actions",
         "to preview the implementation roadmap and client delivery formats"
       ]
@@ -27,7 +27,7 @@ export function SampleReportInfo() {
   ];
 
   return (
-    <section className="pt-50 bg-white">
+    <section id="report-structure" className="scroll-mt-24 pt-50 bg-white">
       <div className="container mx-auto max-w-6xl px-6">
         <div className="text-center max-w-4xl mx-auto mb-16">
           <h2 className="text-[36px] md:text-[44px] font-bold text-[#1A1F2B] mb-6">

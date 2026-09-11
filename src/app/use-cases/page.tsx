@@ -10,7 +10,7 @@ import { FAQAccordion } from "@/components/common/FAQAccordion";
 const useCasesFAQData = [
   {
     question: 'Which use case is best for agencies?',
-    answer: 'Start with a one-time client audit and proposal. The full audit supports internal diagnosis and scoping, while the client preview and client-ready PDF explain the problem, priority, and recommended work without exposing internal evidence detail.',
+    answer: 'Start with a one-time client Case and proposal. The Advisor view supports internal diagnosis and scoping, while the Client view and client-ready PDF explain the problem, priority, and recommended work without exposing internal evidence detail.',
   },
   {
     question: 'Can I use SearchTrust before publishing pages?',
@@ -26,7 +26,7 @@ const useCasesFAQData = [
   },
   {
     question: 'Is this only for local SEO?',
-    answer: 'The MVP is primarily built for local pages and local trust diagnosis. The v2.1 8-layer framework is designed for pages that need to establish entity authority, evidence, and accountability in local search contexts.',
+    answer: 'SearchTrust V2.2 is built for local pages and local trust diagnosis. Its 8-layer framework is designed for pages that need to establish entity authority, evidence, and accountability in local search contexts.',
   },
   {
     question: 'Can multi-location brands use it?',

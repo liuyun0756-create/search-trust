@@ -38,9 +38,9 @@ const tabs = [
       'Use the Full Audit for evidence, layer diagnosis, and implementation detail',
       'Turn confirmed findings into proposal-ready actions',
       'Preview exactly what the client will see',
-      'Export a simplified Client PDF or the Full Audit PDF',
+      'Export a focused Client PDF or the Advisor PDF',
     ],
-    outputs: ['Full Agency Audit', 'Client Report Preview', 'Client PDF', 'Full Audit PDF'],
+    outputs: ['Advisor Report', 'Client Report', 'Client PDF', 'Advisor PDF'],
     benefits: [
       'More defensible proposal scope',
       'Clearer client approval conversations',
@@ -395,11 +395,10 @@ export function PrimaryUseCasesOverview() {
                     Start free preflight
                   </a>
                   <a
-                    href="/sample-case"
-                    target="_blank"
+                    href="/sample-report"
                     className="inline-flex min-w-[220px] items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-8 py-4 text-[15px] font-bold text-[#4B5563] transition-colors hover:border-gray-400 hover:text-[#1A1F2B]"
                   >
-                    View Sample Report
+                    Explore report structure
                     <ArrowRight size={16} />
                   </a>
                 </div>

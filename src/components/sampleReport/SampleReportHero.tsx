@@ -50,13 +50,13 @@ export function SampleReportHero() {
             </div>
 
             <div className="mt-10 flex flex-wrap gap-4">
-              <Link href="/sample-case" target="_blank" className="inline-flex items-center gap-2 px-8 py-3 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
-                View Sample Report
+              <Link href="#report-structure" className="inline-flex items-center gap-2 px-8 py-3 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
+                Explore report structure
                 <ArrowRight size={18} />
               </Link>
-              <Link href="/sample-case" target="_blank" className="inline-flex items-center gap-2 px-8 py-3 bg-white text-[#4B5563] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:border-[#A5D020]/60 hover:bg-[#F8FCEB] active:scale-95">
+              <Link href="/cases/new" className="inline-flex items-center gap-2 px-8 py-3 bg-white text-[#4B5563] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:border-[#A5D020]/60 hover:bg-[#F8FCEB] active:scale-95">
                 <Download size={20} strokeWidth={2.4} />
-                Open Sample and Export PDF
+                Start free preflight
               </Link>
             </div>
           </div>
@@ -65,7 +65,7 @@ export function SampleReportHero() {
             <div className="w-full max-w-[600px] overflow-hidden rounded-2xl border border-white/70 bg-white/90 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.10)] backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                 <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8BAF18]">Sample Agency Audit</p>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8BAF18]">Sample V2.2 report</p>
                   <h2 className="mt-1 text-[19px] font-extrabold text-[#1A1F2B]">Trust Audit Report</h2>
                 </div>
                 <span className="bg-[#1A1F2B] px-3 py-2 text-[10px] font-bold text-white">Export PDF</span>
@@ -73,12 +73,12 @@ export function SampleReportHero() {
 
               <div className="mt-4 grid grid-cols-3 gap-1.5 text-center sm:grid-cols-6">
                 {[
-                  ["Overall", true],
-                  ["Page Level", false],
-                  ["Key Issues", false],
-                  ["L1-L8", false],
-                  ["Roadmap", false],
-                  ["Presence", false],
+                  ["Decision", true],
+                  ["Market", false],
+                  ["Findings", false],
+                  ["Actions", false],
+                  ["30/60/90", false],
+                  ["Layers", false],
                 ].map(([label, active]) => (
                   <span
                     key={String(label)}
@@ -118,7 +118,7 @@ export function SampleReportHero() {
               </div>
 
               <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-4">
-                <p className="text-[10px] font-semibold text-[#657083]">Full Agency Audit</p>
+                <p className="text-[10px] font-semibold text-[#657083]">Advisor and Client views</p>
                 <p className="text-[10px] font-semibold text-[#657083]">Client Report Preview</p>
               </div>
             </div>

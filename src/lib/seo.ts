@@ -62,7 +62,7 @@ export const pageSeo = {
   home: {
     title: "SearchTrust | Evidence-Backed Local Page Trust Audit",
     description:
-      "Audit one local page with an evidence-backed L1-L8 model, traceable findings, executable actions, a four-phase implementation roadmap, and client-ready PDF delivery.",
+      "Audit one local Case with an evidence-backed L1-L8 model, traceable findings, executable actions, a 30/60/90 roadmap, and client-ready PDF delivery.",
     path: "/",
   },
   framework: {
@@ -74,7 +74,7 @@ export const pageSeo = {
   sampleReport: {
     title: "Sample Local SEO Trust Audit Report | SearchTrust",
     description:
-      "Explore a real-format SearchTrust report with L1-L8 findings, source evidence, layer actions, a four-phase implementation roadmap, Business Presence Audit, and two PDF formats.",
+      "Explore the SearchTrust V2.2 report structure with L1-L8 findings, source evidence, prioritized actions, a 30/60/90 roadmap, data coverage, and Advisor and Client delivery formats.",
     path: "/sample-report",
   },
   useCases: {

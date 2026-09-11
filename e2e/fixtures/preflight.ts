@@ -6,7 +6,8 @@ import type {
 import { E2E_IDS } from "./ids";
 
 export const E2E_NOW = "2026-09-10T08:00:00.000Z";
-export const E2E_LATER = "2026-09-11T08:00:00.000Z";
+// Keep expiry-based browser journeys deterministic as wall-clock time advances.
+export const E2E_LATER = "2099-09-11T08:00:00.000Z";
 export const E2E_DIGEST = `sha256:${"a".repeat(64)}`;
 export const E2E_CANDIDATE_DIGEST = `sha256:${"b".repeat(64)}`;
 export const E2E_MARKET_DIGEST = `sha256:${"c".repeat(64)}`;

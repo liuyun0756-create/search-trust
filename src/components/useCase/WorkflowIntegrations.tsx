@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 const workflowStages = [
   { stage: 'Select one priority page', desc: 'Choose a high-value, underperforming, or representative public URL.' },
-  { stage: 'Run the Agency Audit', desc: 'Assess the fixed L1-L8 model and available Business Presence data.' },
+  { stage: 'Run the Advisor report', desc: 'Assess the fixed L1-L8 model and available data coverage.' },
   { stage: 'Approve the work scope', desc: 'Use confirmed findings, actions, and the Client PDF to align stakeholders.' },
   { stage: 'Complete the active phase', desc: 'Implement the highlighted phase and confirm its completion requirements.' },
   { stage: 'Observe after publishing', desc: 'Allow the page and search systems time to absorb the completed changes.' },

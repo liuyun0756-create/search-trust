@@ -27,7 +27,7 @@ const faqData = [
   {
     question: 'Is this only for local SEO?',
     answer:
-      'The MVP is primarily built for local pages and local trust diagnosis. The v2.1 8-layer framework is designed for pages that need to establish entity authority, evidence, and accountability in local search contexts.',
+      'SearchTrust V2.2 is built for local pages and local trust diagnosis. Its 8-layer framework is designed for pages that need to establish entity authority, evidence, and accountability in local search contexts.',
   },
   {
     question: 'Can multi-location brands use it?',

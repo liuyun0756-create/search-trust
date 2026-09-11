@@ -11,7 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         "/checkout/",
         "/reports/",
         "/sign-in/",
-        "/test-report/",
         "/webhook/",
       ],
     },

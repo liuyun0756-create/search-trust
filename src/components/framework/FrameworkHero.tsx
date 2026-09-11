@@ -59,8 +59,8 @@ export function FrameworkHero() {
             </div>
 
             <div className="mt-10 flex flex-wrap gap-4">
-              <Link href="/sample-case" target="_blank" className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
-                View Sample Report
+              <Link href="/sample-report" className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
+                Explore report structure
                 <ArrowRight size={18} />
               </Link>
             </div>

@@ -1,10 +1,8 @@
-import { Suspense } from "react";
 import { PricingHero } from "@/components/pricing/PricingHero";
 import { WhoThisIsFor } from "@/components/pricing/WhoThisIsFor";
 import { BillingDetails } from "@/components/pricing/BillingDetails";
 import { DeliveryRefund } from "@/components/pricing/DeliveryRefund";
 import { PricingCTA } from "@/components/pricing/PricingCTA";
-import { PricingPaymentNotice } from "@/components/pricing/PricingPaymentNotice";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 import { createPageMetadata, pageSeo } from "@/lib/seo";
 
@@ -49,9 +47,6 @@ export default function PricingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
       />
-      <Suspense fallback={null}>
-        <PricingPaymentNotice />
-      </Suspense>
       <PricingHero />
       <WhoThisIsFor />
       <BillingDetails />

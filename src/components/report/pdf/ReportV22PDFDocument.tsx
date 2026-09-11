@@ -2,7 +2,7 @@ import React from "react";
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import type { ReportV22ViewModel } from "@/lib/report-v22/view-model";
-import type { EffectiveBranding } from "@/lib/report-v21";
+import type { EffectiveBranding } from "@/lib/report-pdf/branding";
 
 const C = {
   ink: "#172019",

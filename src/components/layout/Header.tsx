@@ -21,7 +21,6 @@ export function Header() {
   const isCaseReport = /^\/cases\/[^/]+\/reports\/[^/]+$/.test(pathname);
 
   if (
-    pathname === "/sample-case" ||
     pathname === "/reports" ||
     pathname === "/policy" ||
     pathname === "/terms" ||

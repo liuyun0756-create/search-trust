@@ -22,7 +22,7 @@ export function ReportDifference() {
         "fixed L1-L8 diagnosis",
         "source-traceable findings",
         "executable layer actions",
-        "four-phase implementation order",
+        "30/60/90 implementation order",
         "agency and client delivery formats"
       ]
     }

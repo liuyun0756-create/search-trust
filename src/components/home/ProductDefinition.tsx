@@ -6,7 +6,7 @@ const isItems = [
   "A fixed L1-L8 trust diagnosis for one local page",
   "A source-traceable record of confirmed findings",
   "An implementation roadmap ordered by trust-layer dependency",
-  "An Agency Audit with a separate client-ready delivery format",
+  "An Advisor report with a separate client-ready delivery format",
   "A supplemental Business Presence review when public data is available",
 ];
 

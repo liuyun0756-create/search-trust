@@ -1,31 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Building2, Check, FileSearch, Layers3, Route, Target } from "lucide-react";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
 import { AuditForm } from "@/components/common/AuditForm";
-import { AuditFormModal } from "@/components/common/AuditFormModal";
-import { PaymentModal } from "@/components/common/PaymentModal";
-
-const DEV_MODE = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true";
 
 export function HeroSection() {
-  // --- Dev test flow state ---
-  const [devModalOpen, setDevModalOpen] = useState(false);
-  const [devPaymentOpen, setDevPaymentOpen] = useState(false);
-  const [devSubmitting] = useState(false);
-
-  const handleDevSubmit = useCallback((_data: { url: string; gbpUrl: string; pageType: string }) => {
-    // Dev-only checkout smoke test. Purchasing never auto-runs an audit.
-    setDevModalOpen(false);
-    setDevPaymentOpen(true);
-  }, []);
-
-  const handleDevPaymentClose = useCallback(() => {
-    setDevPaymentOpen(false);
-  }, []);
-
   return (
     <section className="relative min-h-[880px] w-full bg-[#F9F9F9] flex justify-center overflow-visible">
       {/* 背景纹理 - 使用图片或SVG抽象线条 */}
@@ -74,19 +54,9 @@ export function HeroSection() {
               <RunAuditButton className="px-8 py-3 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95">
                 Start free preflight
               </RunAuditButton>
-              <Link href="/sample-case" target="_blank" className="px-8 py-3 bg-white text-[#1A1F2B] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:bg-gray-50 active:scale-95">
-                View Sample Report
+              <Link href="/sample-report" className="px-8 py-3 bg-white text-[#1A1F2B] border border-[#D1D5DB] rounded-lg font-semibold text-[15px] transition-all hover:bg-gray-50 active:scale-95">
+                Explore report structure
               </Link>
-
-              {/* === DEV TEST BUTTON === */}
-              {DEV_MODE && (
-                <button
-                  onClick={() => setDevModalOpen(true)}
-                  className="px-8 py-3 bg-red-500 text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-red-600 active:scale-95"
-                >
-                  [Dev] Test Payment Flow
-                </button>
-              )}
             </div>
           </div>
 
@@ -95,7 +65,7 @@ export function HeroSection() {
               <div className="mb-5 border-b border-gray-100 pb-4">
                 <div>
                   <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#8BAF18]">
-                    Agency Audit
+                    V2.2 Case report
                   </p>
                   <h2 className="mt-1 text-[20px] font-extrabold text-[#1A1F2B]">Trust Audit Report</h2>
                   <p className="mt-1 text-[12px] font-medium text-[#7B8495]">One priority local service page</p>
@@ -184,21 +154,6 @@ export function HeroSection() {
       </div>
       <AuditForm floating />
 
-      {/* === DEV TEST MODALS === */}
-      {DEV_MODE && (
-        <>
-          <AuditFormModal
-            isOpen={devModalOpen}
-            onClose={() => setDevModalOpen(false)}
-            onSubmit={handleDevSubmit}
-            submitting={devSubmitting}
-          />
-          <PaymentModal
-            isOpen={devPaymentOpen}
-            onClose={handleDevPaymentClose}
-          />
-        </>
-      )}
     </section>
   );
 };

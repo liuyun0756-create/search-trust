@@ -62,11 +62,10 @@ export function UseCasesHero() {
 
             <div className="mt-5 flex flex-wrap gap-4">
               <a
-                href="/sample-case"
-                target="_blank"
+                href="/sample-report"
                 className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#1A1F2B] text-white rounded-lg font-semibold text-[15px] transition-all hover:bg-black hover:shadow-lg active:scale-95"
               >
-                View Sample Report
+                Explore report structure
                 <ArrowRight size={18} />
               </a>
             </div>

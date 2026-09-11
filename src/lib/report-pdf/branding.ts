@@ -1,4 +1,12 @@
-import type { EffectiveBranding } from "../report-v21";
+export type PdfVariant = "full" | "client";
+
+export interface EffectiveBranding {
+  enabled: boolean;
+  agencyName: string | null;
+  agencyLogoData: string | null;
+  clientName: string | null;
+  footerNote: string | null;
+}
 
 export function parsePdfBranding(value: unknown): EffectiveBranding | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;

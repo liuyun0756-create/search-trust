@@ -7,7 +7,6 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/framework",
   "/sample-report",
-  "/sample-case",
   "/use-cases",
   "/pricing",
   "/policy",
@@ -23,16 +22,11 @@ const isPublicRoute = createRouteMatcher([
   "/api/internal/v2/job-events",
   // The token broker authenticates Railway requests with HMAC, not a browser session.
   "/api/internal/v2/google/connections/(.*)/access-token",
-  "/api/generate-report",
-  "/api/report-status",
-  "/api/report-meta",
-  "/api/reports(.*)",
   // Case, checkout, report-share, and analysis routes are intentionally not
   // public: Clerk must validate and attach the current user session before
   // their handlers call auth().
   "/api/v2/preflight",
   "/api/v2/competitors(.*)",
-  "/api/checkout(.*)",
   "/api/user/credits",
 ]);
 

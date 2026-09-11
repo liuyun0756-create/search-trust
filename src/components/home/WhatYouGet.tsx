@@ -26,11 +26,11 @@ const defaultBenefits = [
   },
   {
     icon: ListOrdered,
-    title: "A four-phase implementation roadmap with completion and re-audit guidance",
+    title: "A 30/60/90 implementation roadmap with completion and review guidance",
   },
   {
     icon: Send,
-    title: "A full Agency Audit plus a simplified client preview and client-ready PDF",
+    title: "An Advisor report plus a focused Client view and client-ready PDF",
   }
 ];
 

@@ -50,7 +50,7 @@ export function HowItWorks() {
                   'Source-traceable findings',
                   'Page and GBP alignment when available',
                   'Layer-specific implementation actions',
-                  'Four-phase implementation roadmap',
+                  '30/60/90 implementation roadmap',
                   'Agency and client-ready PDF formats'
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-gray-200 text-[16px] font-medium">

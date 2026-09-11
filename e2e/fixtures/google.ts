@@ -165,7 +165,7 @@ export function syncStatusFixture(state: "queued" | "running" | "succeeded" | "f
 
 export const googleAuthorizationFixture = {
   authorization_url: `http://127.0.0.1:3100/e2e/google-consent?connection_id=${E2E_IDS.connectionId}`,
-  expires_at: "2026-09-10T08:10:00.000Z",
+  expires_at: "2099-09-10T08:10:00.000Z",
 } as const;
 
 export const googleDeniedFixture = { error: { code: "GOOGLE_AUTHORIZATION_DENIED", message: "Google authorization was cancelled.", retryable: true } } as const;

@@ -4,8 +4,8 @@ import React, { useState } from "react";
 
 const tabs = [
   {
-    label: "Overall Conclusion",
-    title: "Overall Conclusion",
+    label: "Decision",
+    title: "Executive Decision",
     content: (
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-3">
@@ -35,15 +35,15 @@ const tabs = [
     ),
   },
   {
-    label: "Page Level",
-    title: "Page-Level Interpretation",
+    label: "Market",
+    title: "Market and Competitor Interpretation",
     content: (
       <div className="grid gap-4 md:grid-cols-2">
         {[
-          ["Existing foundation", "The page clearly communicates its service purpose and commercial intent."],
-          ["Main limitation", "Identity and local proof need to be stabilized before broader content expansion."],
-          ["Likely outcome", "The page can compete, but trust may remain uneven until the earlier layers improve."],
-          ["Competitive interpretation", "Pages with cleaner identity and stronger local proof are easier to defend."],
+          ["Confirmed market", "The service and target location define the search set used for comparison."],
+          ["Competitor set", "One to three real businesses are confirmed before report generation can continue."],
+          ["Search evidence", "Observed positions and appearances are recorded without inventing missing coverage."],
+          ["Comparative interpretation", "Pages with cleaner identity and stronger local proof are easier to defend."],
         ].map(([label, value]) => (
           <div key={label} className="rounded-lg border border-gray-100 bg-white p-5">
             <h4 className="mb-2 text-[12px] font-black uppercase text-[#7FA40F]">{label}</h4>
@@ -54,8 +54,8 @@ const tabs = [
     ),
   },
   {
-    label: "Key Issues",
-    title: "Confirmed Issues and Actions",
+    label: "Findings",
+    title: "Confirmed Findings and Actions",
     content: (
       <div className="space-y-3">
         {[
@@ -72,7 +72,7 @@ const tabs = [
     ),
   },
   {
-    label: "Trust Layer Breakdown",
+    label: "Eight Layers",
     title: "Complete L1-L8 Trust Breakdown",
     content: (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -98,15 +98,14 @@ const tabs = [
     ),
   },
   {
-    label: "Implementation Roadmap",
-    title: "Four-Phase Implementation Roadmap",
+    label: "30 / 60 / 90",
+    title: "30 / 60 / 90 Implementation Roadmap",
     content: (
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-3">
         {[
-          ["01", "L1-L3", "Stabilize the business entity"],
-          ["02", "L4-L5", "Build local credibility"],
-          ["03", "L6-L7", "Add accountable, unique proof"],
-          ["04", "L8", "Reassess search-era fit"],
+          ["30", "Days 1-30", "Stabilize the business entity"],
+          ["60", "Days 31-60", "Build local credibility and accountable proof"],
+          ["90", "Days 61-90", "Validate completion criteria and reassess"],
         ].map(([step, range, title]) => (
           <div key={step} className="rounded-lg border border-gray-100 bg-white p-5">
             <div className="mb-3 flex items-center justify-between">
@@ -120,14 +119,14 @@ const tabs = [
     ),
   },
   {
-    label: "Business Presence Audit",
-    title: "Supplemental Business Presence Audit",
+    label: "Coverage",
+    title: "Data Coverage and Identity Alignment",
     content: (
       <div className="grid gap-4 md:grid-cols-3">
         {[
-          ["GBP × Page Alignment", "Compares available name, phone, address, website, hours, service area, and category fields."],
-          ["Profile Activity", "Shows returned profile categories, photos, and posts without inventing missing dates."],
-          ["Review Operations", "Summarizes a recent review sample, reply workload, rating distribution, and usable proof opportunities."],
+          ["Site", "Records crawl health, analyzed inventory, and the exact snapshots supporting page findings."],
+          ["SERP and competitors", "Shows the confirmed competitive set and the observed search evidence available to the report."],
+          ["GBP and first-party data", "Separates public GBP evidence from optional verified GSC, GA4, and GBP account data."],
         ].map(([title, value]) => (
           <div key={title} className="rounded-lg border border-gray-100 bg-[#F8F9FA] p-5">
             <h4 className="mb-2 text-[14px] font-bold text-[#1A1F2B]">{title}</h4>
@@ -135,7 +134,7 @@ const tabs = [
           </div>
         ))}
         <p className="md:col-span-3 text-[12px] font-semibold text-gray-500">
-          This section is availability-based and does not change the fixed L1-L8 score.
+          Missing sources remain explicit limitations; the report never fills them with inferred data.
         </p>
       </div>
     ),
@@ -150,7 +149,7 @@ export function ReportPreview() {
     <section className="bg-[#F8F9FB] py-20">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
-          <h2 className="text-[36px] font-bold text-[#1A1F2B] md:text-[44px]">Inside the Agency Audit</h2>
+          <h2 className="text-[36px] font-bold text-[#1A1F2B] md:text-[44px]">Inside the Advisor Report</h2>
           <div className="section-title-bar" />
           <p className="mx-auto mt-5 max-w-3xl text-[16px] leading-relaxed text-gray-500">
             One working report connects the decision summary, confirmed findings, source evidence, layer actions, and implementation order.

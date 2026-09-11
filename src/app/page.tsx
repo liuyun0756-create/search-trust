@@ -41,7 +41,7 @@ const homeFAQData = [
   },
   {
     question: "What can an agency deliver to a client?",
-    answer: "Agencies receive a full working audit with evidence and implementation detail, plus a simplified client report preview and a client-ready PDF. A full audit PDF is also available for internal delivery."
+    answer: "Agencies receive an Advisor report with evidence and implementation detail, plus a focused Client report. Both views can be exported as PDFs."
   },
   {
     question: "What is included in Business Presence Audit?",

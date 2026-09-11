@@ -41,8 +41,8 @@ export function TrustCollapseModel() {
               </p>
             </div>
 
-            <Link href="/sample-case" target="_blank" className="inline-flex items-center gap-3 px-8 py-4 bg-white border-2 border-gray-100 rounded-2xl font-black text-[15px] hover:border-[#A5D020] transition-all group shadow-sm">
-              View Sample Report
+            <Link href="/cases/new" className="inline-flex items-center gap-3 px-8 py-4 bg-white border-2 border-gray-100 rounded-2xl font-black text-[15px] hover:border-[#A5D020] transition-all group shadow-sm">
+              Start free preflight
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>

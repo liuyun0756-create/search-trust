@@ -3,7 +3,6 @@ import { WhatsInsideReport } from "@/components/sampleReport/WhatsInsideReport";
 import { KeyInsights } from "@/components/sampleReport/KeyInsights";
 import { WhoThisReportFor } from "@/components/sampleReport/WhoThisReportFor";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
-import { SampleReportContent } from "@/components/report/SampleReportContent";
 
 const sampleReportFAQData = [
   {
@@ -20,7 +19,7 @@ const sampleReportFAQData = [
   },
   {
     question: "What do I receive after purchase?",
-    answer: "You receive one structured web report for one submitted URL. It includes an overall decision summary, page-level interpretation, confirmed key issues, the complete L1-L8 trust breakdown, traceable evidence, executable actions, a four-phase implementation roadmap, and PDF export.",
+    answer: "You receive one structured web report for one Case. It includes an executive decision, market comparison, confirmed findings, the complete L1-L8 trust breakdown, traceable evidence, three prioritized actions, a 30/60/90 roadmap, and PDF export.",
   },
   {
     question: "How is the report delivered?",
@@ -40,7 +39,7 @@ const sampleReportFAQData = [
   },
   {
     question: "Is this suitable for agencies?",
-    answer: "Yes. Agencies can use the full audit as an internal working document, preview the simplified client report, and export either a client-ready PDF or a full audit PDF.",
+    answer: "Yes. Agencies can use the Advisor report as an internal working document, open the focused Client report, and export either view as a PDF.",
   },
   {
     question: "Can I get a refund?",
@@ -75,7 +74,6 @@ export default function SampleReportPage() {
       />
       <SampleReportHero />
       <SampleReportInfo />
-      <SampleReportContent embedded />
       <WhatsInsideReport />
       <KeyInsights />
       <ReportDifference />

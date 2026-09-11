@@ -12,8 +12,8 @@ const sections = [
   },
   {
     icon: Compass,
-    title: 'Page-level interpretation',
-    desc: 'The current assessment, existing foundation, main limitation, and likely outcome.',
+    title: 'Market interpretation',
+    desc: 'The current search landscape, confirmed competitors, comparative strengths, and limits.',
   },
   {
     icon: Target,
@@ -27,13 +27,13 @@ const sections = [
   },
   {
     icon: Zap,
-    title: 'Four-phase roadmap',
-    desc: 'Ordered remediation with completion gates, observation guidance, and re-audit timing.',
+    title: '30/60/90 roadmap',
+    desc: 'Ordered remediation with phase objectives, exit criteria, and review timing.',
   },
   {
     icon: FileText,
     title: 'Business Presence and delivery',
-    desc: 'Public GBP checks plus a client preview, Client PDF, and Full Audit PDF.',
+    desc: 'Public GBP checks plus Advisor and Client views with matching PDF exports.',
   },
 ];
 

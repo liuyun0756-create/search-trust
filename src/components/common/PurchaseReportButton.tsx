@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuditModal } from "@/components/common/AuditModalProvider";
+import { useRouter } from "next/navigation";
 import { track } from "@/lib/analytics-client";
 
 interface PurchaseReportButtonProps {
@@ -14,14 +14,14 @@ export function PurchaseReportButton({
   children,
   trackingSource = "pricing",
 }: PurchaseReportButtonProps) {
-  const { openPurchase } = useAuditModal();
+  const router = useRouter();
 
   return (
     <button
       type="button"
       onClick={() => {
         track("purchase cta clicked", { source: trackingSource });
-        openPurchase();
+        router.push("/cases/new");
       }}
       className={className}
     >

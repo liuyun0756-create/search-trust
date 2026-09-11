@@ -54,7 +54,7 @@ export function analysisStatusFixture(state: "queued" | "running" | "succeeded" 
       diagnostic_id: E2E_IDS.marketSnapshotId,
     } : null,
     created_at: E2E_NOW,
-    deadline_at: "2026-09-10T08:15:00.000Z",
+    deadline_at: "2099-09-10T08:15:00.000Z",
     updated_at: E2E_NOW,
   };
 }

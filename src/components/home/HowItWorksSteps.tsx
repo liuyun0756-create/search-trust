@@ -21,7 +21,7 @@ const steps = [
   {
     icon: MousePointer2,
     title: "Deliver the work plan",
-    desc: "Use the full Agency Audit, four-phase roadmap, client preview, and two PDF formats.",
+    desc: "Use the Advisor report, 30/60/90 roadmap, Client view, and two PDF formats.",
   },
 ];
 

@@ -25,7 +25,7 @@ const benefits = [
   {
     icon: MessageSquare,
     title: 'More credible client communication',
-    description: 'Use the client preview and Client PDF to explain priority and scope without exposing internal evidence detail.',
+    description: 'Use the Client view and Client PDF to explain priority and scope without exposing internal evidence detail.',
   },
   {
     icon: ClipboardCheck,
@@ -35,7 +35,7 @@ const benefits = [
   {
     icon: ListOrdered,
     title: 'Clearer prioritization of fixes',
-    description: 'Use the four-phase roadmap, completion gates, and re-audit guidance instead of changing everything at once.',
+    description: 'Use the 30/60/90 roadmap, exit criteria, and review guidance instead of changing everything at once.',
   },
   {
     icon: TrendingUp,
