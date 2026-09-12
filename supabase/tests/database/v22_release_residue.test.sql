@@ -1,9 +1,11 @@
 begin;
 
+set local role postgres;
 set local lock_timeout = '2s';
 set local statement_timeout = '30s';
 
 create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions, pg_catalog;
 
 select plan(1);
 
