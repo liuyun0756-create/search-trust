@@ -37,6 +37,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       VERCEL_ENV: "",
+      V22_PUBLIC_ENTRY_ENABLED: "true",
       NEXT_PUBLIC_E2E_TEST_MODE: "true",
       NEXT_PUBLIC_E2E_BASE_URL: baseURL,
       NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "",

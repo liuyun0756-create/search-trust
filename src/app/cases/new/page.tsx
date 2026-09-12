@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
+import { IntakePaused } from "@/components/cases/intake-paused";
 import { NewCaseWorkspace } from "@/components/cases/new-case-workspace";
+import { isV22PublicEntryEnabled } from "@/lib/release-v22/public-entry";
 
 export const metadata: Metadata = {
   title: "Start a Free Local SEO Preflight | SearchTrust",
@@ -9,5 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function NewCasePage() {
-  return <NewCaseWorkspace />;
+  return isV22PublicEntryEnabled() ? <NewCaseWorkspace /> : <IntakePaused />;
 }

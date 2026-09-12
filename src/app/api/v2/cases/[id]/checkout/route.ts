@@ -6,6 +6,7 @@ import {
   DodoClient,
   SupabaseCasePaymentRepository,
 } from "@/lib/payments-v22";
+import { requireV22PublicEntry } from "@/lib/release-v22/public-entry";
 
 const handlers = createCasePaymentHandlers({
   getCurrentUser,
@@ -22,4 +23,4 @@ const handlers = createCasePaymentHandlers({
 });
 
 export const GET = handlers.GET;
-export const POST = handlers.POST;
+export const POST = requireV22PublicEntry(handlers.POST);

@@ -36,6 +36,7 @@ next-env.d.ts
 
 # local browser-test artifacts
 /output/playwright/
+/output/playwright-paused/
 /output/v22-data-migration/
 
 # Supabase CLI local project-link cache
