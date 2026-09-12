@@ -156,7 +156,8 @@ select has_function(
   'public', 'apply_analysis_job_event',
   array[
     'uuid', 'uuid', 'bigint', 'text', 'text', 'smallint', 'integer',
-    'text', 'text', 'jsonb', 'timestamp with time zone', 'timestamp with time zone'
+    'text', 'text', 'jsonb', 'timestamp with time zone', 'timestamp with time zone',
+    'integer', 'timestamp with time zone'
   ],
   'analysis job callback function exists'
 );

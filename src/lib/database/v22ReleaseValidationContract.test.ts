@@ -50,6 +50,32 @@ describe("V22-092 migration release validation safety", () => {
     ]) expect(() => assertTransactionOnlySql(sql)).toThrow();
   });
 
+  it("keeps both release SQL suites rollback-only and residue-addressable", async () => {
+    const validation = await readFile(
+      path.join(root, "supabase/tests/database/v22_release_validation.test.sql"),
+      "utf8",
+    );
+    const residue = await readFile(
+      path.join(root, "supabase/tests/database/v22_release_residue.test.sql"),
+      "utf8",
+    );
+    expect(assertTransactionOnlySql(validation)).toMatchObject({ digest: expect.stringMatching(/^[a-f0-9]{64}$/) });
+    expect(assertTransactionOnlySql(residue)).toMatchObject({ digest: expect.stringMatching(/^[a-f0-9]{64}$/) });
+    expect(validation).toContain("v22-release-validation-20260912");
+    expect(residue).toContain("v22-release-validation-%");
+    expect(validation.toLowerCase()).not.toMatch(/\bcommit\b/);
+  });
+
+  it("ships the approved server-only report-share privilege remediation", async () => {
+    const migration = await readFile(
+      path.join(root, "supabase/migrations/20260912100000_restrict_v2_2_report_share_rotation.sql"),
+      "utf8",
+    );
+    expect(migration).toContain("rotate_v22_report_share");
+    expect(migration).toMatch(/revoke execute[\s\S]+from anon, authenticated/i);
+    expect(migration).not.toMatch(/\b(delete|truncate|drop)\b/i);
+  });
+
   it("parses CLI JSON without retaining status chatter", () => {
     expect(parseSupabaseJson("Initialising login role...\n{\"migrations\":[]}"))
       .toEqual({ migrations: [] });
