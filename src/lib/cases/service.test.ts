@@ -70,6 +70,7 @@ class InMemoryCaseRepository implements CaseRepository {
       id: input.id ?? this.nextId(),
       status: "active",
       latest_report_id: null,
+      latest_verified_report_id: null,
       location_key: locationKey,
       archived_at: null,
       created_at: now,

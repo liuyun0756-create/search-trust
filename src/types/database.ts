@@ -26,6 +26,7 @@ export interface ClientCase {
   target_market: JsonObject;
   status: "active" | "archived";
   latest_report_id: string | null;
+  latest_verified_report_id: string | null;
   location_key: string | null;
   archived_at: string | null;
   created_at: string;
@@ -193,6 +194,107 @@ export interface JobCostSummary {
   completed_at: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface VerifiedAnalysisInput {
+  job_id: string;
+  case_id: string;
+  parent_report_id: string;
+  gsc_snapshot_id: string;
+  ga4_snapshot_id: string;
+  public_gbp_snapshot_id: string;
+  parent_snapshot_ids: string[];
+  parent_payload: SearchTrustReportV2_2;
+  parent_payload_checksum: string;
+  input_schema_version: "v22_verified_job_input_v1";
+  created_at: string;
+}
+
+export interface StartV22VerifiedAnalysisArgs {
+  p_user_id: string;
+  p_case_id: string;
+  p_job_id: string;
+  p_idempotency_key: string;
+  p_parent_payload_checksum: string;
+  p_previous_job_id?: string | null;
+}
+
+export interface StartV22VerifiedAnalysisResult {
+  job_id: string;
+  created: boolean;
+  idempotent: boolean;
+  parent_report_id: string;
+  gsc_snapshot_id: string;
+  ga4_snapshot_id: string;
+  public_gbp_snapshot_id: string;
+  audit_credits: number;
+}
+
+export interface ResolveV22VerifiedAnalysisInputArgs {
+  p_job_id: string;
+  p_case_id: string;
+  p_run_generation: number;
+}
+
+export interface VerifiedResolvedSourceSnapshot {
+  snapshot_id: string;
+  case_id: string;
+  source_type: "site" | "serp" | "competitor";
+  schema_version: string;
+  normalized_payload: JsonObject;
+  payload_checksum: string;
+}
+
+export interface VerifiedResolvedFirstPartySnapshot {
+  snapshot_id: string;
+  case_id: string;
+  binding_id: string;
+  source_type: "gsc" | "ga4";
+  schema_version: "gsc_sync_v1" | "ga4_sync_v1";
+  fetched_at: string;
+  expires_at: string;
+  identity_match_status: "matched";
+  health_status: "healthy";
+  health_reasons: Json[];
+  normalized_payload: JsonObject;
+  raw_payload: null;
+  payload_checksum: string;
+  external_resource_id: string;
+  coverage_start: string;
+  coverage_end: string;
+}
+
+export interface ResolveV22VerifiedAnalysisInputResult {
+  schema_version: "v22_verified_resolved_input_v1";
+  job_id: string;
+  case_id: string;
+  parent_report: SearchTrustReportV2_2;
+  parent_payload_checksum: string;
+  site_snapshot: VerifiedResolvedSourceSnapshot;
+  serp_snapshot: VerifiedResolvedSourceSnapshot;
+  competitor_snapshot: VerifiedResolvedSourceSnapshot;
+  first_party_snapshots: [VerifiedResolvedFirstPartySnapshot, VerifiedResolvedFirstPartySnapshot];
+}
+
+export interface PersistV22VerifiedResultArgs extends ResolveV22VerifiedAnalysisInputArgs {
+  p_report_payload: SearchTrustReportV2_2;
+}
+
+export interface PersistV22VerifiedResultResult {
+  report_id: string;
+  idempotent: boolean;
+}
+
+export interface ExpireV22StaleVerifiedJobsArgs {
+  p_now: string;
+  p_limit?: number;
+}
+
+export interface VerifiedAnalysisDatabaseFunctions {
+  start_v22_verified_analysis: { Args: StartV22VerifiedAnalysisArgs; Returns: StartV22VerifiedAnalysisResult[] };
+  resolve_v22_verified_analysis_input: { Args: ResolveV22VerifiedAnalysisInputArgs; Returns: ResolveV22VerifiedAnalysisInputResult };
+  persist_v22_verified_result: { Args: PersistV22VerifiedResultArgs; Returns: PersistV22VerifiedResultResult[] };
+  expire_v22_stale_verified_jobs: { Args: ExpireV22StaleVerifiedJobsArgs; Returns: Array<{ job_id: string }> };
 }
 
 export interface Report {

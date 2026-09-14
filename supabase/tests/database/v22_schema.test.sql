@@ -4,7 +4,26 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(74);
+select plan(87);
+
+select has_table('public', 'verified_analysis_inputs', 'Verified inputs exist');
+select has_column('public', 'client_cases', 'latest_verified_report_id', 'Case retains latest Verified');
+select col_is_fk('public', 'client_cases', 'latest_verified_report_id', 'Verified pointer has a report FK');
+select has_pk('public', 'verified_analysis_inputs', 'Verified input job identity is unique');
+select has_index('public', 'verified_analysis_inputs', 'uq_verified_analysis_inputs_case_job', 'Verified Case/job index exists');
+select ok((select relrowsecurity from pg_class where oid='public.verified_analysis_inputs'::regclass), 'Verified inputs have RLS');
+select ok(not has_table_privilege('anon','public.verified_analysis_inputs','SELECT') and not has_table_privilege('authenticated','public.verified_analysis_inputs','SELECT'), 'Browsers cannot read inputs');
+select has_function('public','start_v22_verified_analysis',array['uuid','uuid','uuid','text','text','uuid'],'Verified start RPC exists');
+select has_function('public','resolve_v22_verified_analysis_input',array['uuid','uuid','integer'],'Verified resolve RPC exists');
+select has_function('public','persist_v22_verified_result',array['uuid','uuid','jsonb','integer'],'Verified persist RPC exists');
+select has_function('public','expire_v22_stale_verified_jobs',array['timestamp with time zone','integer'],'Verified compensation RPC exists');
+select ok((select bool_and(has_function_privilege('service_role',signature,'EXECUTE') and not has_function_privilege('anon',signature,'EXECUTE') and not has_function_privilege('authenticated',signature,'EXECUTE')) from unnest(array[
+  'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)',
+  'public.resolve_v22_verified_analysis_input(uuid,uuid,integer)',
+  'public.persist_v22_verified_result(uuid,uuid,jsonb,integer)',
+  'public.expire_v22_stale_verified_jobs(timestamptz,integer)'
+]) as signatures(signature)), 'All Verified RPCs are service-role-only');
+select ok((select count(*)=5 from pg_constraint where conrelid='public.verified_analysis_inputs'::regclass and contype='f'), 'Verified input has job, Case, parent and two snapshot FKs');
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');

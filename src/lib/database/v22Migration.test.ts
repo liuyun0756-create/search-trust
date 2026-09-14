@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { CaseLocation } from "../cases/contracts";
 import { caseLocationKey } from "../cases/normalize";
 
@@ -96,6 +96,166 @@ async function insertCompleteCase(
 }
 
 describe.sequential("SearchTrust v2.2 Supabase migration", () => {
+  describe("verified analysis job contract", () => {
+    const canonical = (value: unknown): string => {
+      if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+      if (value !== null && typeof value === "object") return `{${Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([key, item]) => `${JSON.stringify(key)}:${canonical(item)}`).join(",")}}`;
+      return JSON.stringify(value);
+    };
+    const digest = (value: unknown) => `sha256:${createHash("sha256").update(canonical(value)).digest("hex")}`;
+    async function fixture() {
+      const owner = await insertUser(randomUUID());
+      const caseId = await insertCase(owner, randomUUID());
+      const connection = await insertConnection(owner, randomUUID());
+      const parentId = randomUUID();
+      const publicGbp = randomUUID();
+      const url = "https://maps.google.com/?cid=123456789";
+      await db.query(`update public.users set audit_credits=5 where id=$1`, [owner]);
+      await db.query(`update public.client_cases set business_identity=jsonb_build_object('public_gbp_url',$2::text) where id=$1`, [caseId, url]);
+      const snapshots: Record<string, string> = {};
+      const bindings: Record<string, string> = {};
+      for (const [source, schema] of Object.entries({site: "site_inventory_snapshot_v1", serp: "serp_market_snapshot_v1", competitor: "competitor_collection_snapshot_v1", gsc: "gsc_sync_v1", ga4: "ga4_sync_v1"})) {
+        if (source === "gsc" || source === "ga4") bindings[source] = await insertId(`insert into public.case_source_bindings
+          (case_id,connection_id,source_type,external_resource_id,external_resource_name,identity_match_status,health_status,confirmed_by_user_id,confirmed_at)
+          values ($1,$2,$3,$3,$3,'matched','healthy',$4,now()) returning id`, [caseId,connection,source,owner]);
+        snapshots[source] = await insertId(`insert into public.data_snapshots
+          (case_id,binding_id,source_type,schema_version,fetched_at,expires_at,coverage_start,coverage_end,sync_trigger,health_status,normalized_payload,payload_checksum,provider_request_context)
+          values ($1,$2,$3,$4,now()-interval '1 minute',now()+interval '7 days',current_date-30,current_date-1,'report_generation','healthy',jsonb_build_object('schema_version',$4::text),$5,jsonb_build_object('external_resource_id',$3::text)) returning id`,
+          [caseId,bindings[source] ?? null,source,schema,checksum]);
+      }
+      const parent = JSON.parse(await readFile(path.join(process.cwd(), "src/lib/report-v22/contracts/fixtures/prospect.json"), "utf8"));
+      parent.identity.case_id = caseId;
+      parent.report_version.report_id = parentId;
+      for (const evidence of parent.evidence_index) evidence.snapshot_id = evidence.source_type === "gbp" ? publicGbp : snapshots[evidence.source_type];
+      for (const coverage of parent.data_coverage.sources) coverage.snapshot_ids = coverage.source_type === "gbp" ? [publicGbp] : snapshots[coverage.source_type] ? [snapshots[coverage.source_type]] : [];
+      parent.data_coverage.sources.find((source: {source_type:string}) => source.source_type === "gbp").identity_match_status = "matched";
+      await db.query(`insert into public.reports
+        (id,report_id,user_id,page_url,gbp_url,status,access_type,case_id,report_type,schema_version,version_number,report_v2_2,snapshot_ids,coverage_state,version_diff,generation_config,ruleset_version,copy_model_version)
+        values ($1::uuid,$1::text,$2,'https://example.com',$3,'paid_full','unlocked',$4,'prospect','2.2.0',1,$5,array[$6::uuid,$7::uuid,$8::uuid],$9,'{}','{}','rules-v1','copy-v1')`,
+        [parentId,owner,url,caseId,JSON.stringify(parent),snapshots.site,snapshots.serp,snapshots.competitor,JSON.stringify(parent.data_coverage)]);
+      await db.query(`update public.client_cases set latest_report_id=$2 where id=$1`, [caseId,parentId]);
+      const jobId = randomUUID();
+      const key = `verified:${caseId}:attempt:1`;
+      const start = (job = jobId, idem = key, user = owner, hash = digest(parent), previous: string | null = null) => db.query<Record<string, unknown>>(
+        `select * from public.start_v22_verified_analysis($1,$2,$3,$4,$5,$6)`, [user,caseId,job,idem,hash,previous]);
+      const result = () => ({...parent, report_version: {...parent.report_version, report_id:jobId,report_type:"verified_execution",parent_report_id:parentId,version_number:2},
+        first_party_performance:{...parent.first_party_performance,gsc:{...parent.first_party_performance.gsc,snapshot_id:snapshots.gsc},ga4:{...parent.first_party_performance.ga4,snapshot_id:snapshots.ga4}}});
+      const persist = (payload = result(), generation = 1) => db.query(`select * from public.persist_v22_verified_result($1,$2,$3,$4)`, [jobId,caseId,JSON.stringify(payload),generation]);
+      return {owner,caseId,connection,parentId,publicGbp,parent,snapshots,bindings,jobId,key,start,result,persist};
+    }
+
+    it("atomically freezes inputs and debits one credit, with stable identity replay", async () => {
+      const f = await fixture();
+      expect((await f.start()).rows[0]).toMatchObject({job_id:f.jobId,created:true,idempotent:false,parent_report_id:f.parentId,gsc_snapshot_id:f.snapshots.gsc,ga4_snapshot_id:f.snapshots.ga4,public_gbp_snapshot_id:f.publicGbp,audit_credits:4});
+      expect((await f.start()).rows[0]).toMatchObject({created:false,idempotent:true,audit_credits:4});
+      await expect(f.start(randomUUID())).rejects.toThrow("V22_VERIFIED_IDENTITY_CONFLICT");
+      await expect(f.start(f.jobId,f.key,f.owner,checksum)).rejects.toThrow("V22_VERIFIED_IDENTITY_CONFLICT");
+      const input = (await db.query<{parent_payload: unknown}>(`select parent_payload from public.verified_analysis_inputs where job_id=$1`, [f.jobId])).rows[0];
+      expect(input.parent_payload).toEqual(f.parent);
+      await expect(db.query(`update public.verified_analysis_inputs set parent_payload='{}' where job_id=$1`, [f.jobId])).rejects.toThrow("immutable");
+    });
+
+    it.each(["cross-user", "zero-credit", "missing-gsc", "missing-ga4", "expired", "identity", "inactive", "missing-gbp", "no-parent", "previous", "checksum"])("rejects %s without a job, charge or debit", async (reason) => {
+      const f = await fixture();
+      if (reason === "zero-credit") await db.query(`update public.users set audit_credits=0 where id=$1`, [f.owner]);
+      if (reason === "missing-gsc" || reason === "missing-ga4") await db.query(`update public.case_source_bindings set is_active=false,disconnected_at=now() where id=$1`, [f.bindings[reason.slice(8)]]);
+      if (reason === "identity") await db.query(`update public.case_source_bindings set identity_match_status='mismatch' where id=$1`, [f.bindings.gsc]);
+      if (reason === "inactive") await db.query(`update public.google_connections set status='reauth_required',access_token_ciphertext=null,access_token_iv=null,access_token_auth_tag=null,refresh_token_ciphertext=null,refresh_token_iv=null,refresh_token_auth_tag=null,encryption_key_version=null,token_expires_at=null where id=$1`, [f.connection]);
+      if (reason === "missing-gbp") await db.query(`update public.client_cases set business_identity='{}' where id=$1`, [f.caseId]);
+      if (reason === "no-parent") await db.query(`update public.client_cases set latest_report_id=null where id=$1`, [f.caseId]);
+      if (reason === "expired") {
+        // Latest snapshot must be checked, not an older healthy fallback.
+        await db.query(`insert into public.data_snapshots (case_id,binding_id,source_type,schema_version,fetched_at,expires_at,sync_trigger,health_status,normalized_payload,payload_checksum)
+          values ($1,$2,'gsc','gsc_sync_v1',now(),now()-interval '1 second','user_sync','healthy','{}',$3)`, [f.caseId,f.bindings.gsc,checksum]);
+      }
+      await expect(f.start(f.jobId,f.key,reason === "cross-user" ? await insertUser(randomUUID()) : f.owner,reason === "checksum" ? "invalid" : digest(f.parent),reason === "previous" ? randomUUID() : null)).rejects.toThrow("V22_VERIFIED_");
+      expect((await db.query(`select id from public.analysis_jobs where case_id=$1`,[f.caseId])).rows).toHaveLength(0);
+      expect((await db.query(`select id from public.analysis_attempt_charges where case_id=$1`,[f.caseId])).rows).toHaveLength(0);
+      expect((await db.query(`select id from public.audit_credit_ledger where case_id=$1`,[f.caseId])).rows).toHaveLength(0);
+      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:reason === "zero-credit" ? 0 : 5});
+    });
+
+    it("resolves frozen inputs with generation fencing even after bindings change", async () => {
+      const f = await fixture(); await f.start();
+      await db.query(`update public.case_source_bindings set is_active=false,disconnected_at=now() where case_id=$1`,[f.caseId]);
+      const resolve = (generation=1) => db.query<{payload:Record<string, any>}>(`select public.resolve_v22_verified_analysis_input($1,$2,$3) as payload`,[f.jobId,f.caseId,generation]);
+      const payload = (await resolve()).rows[0].payload;
+      expect(Object.keys(payload).sort()).toEqual(["schema_version","job_id","case_id","parent_report","parent_payload_checksum","site_snapshot","serp_snapshot","competitor_snapshot","first_party_snapshots"].sort());
+      expect(payload).toMatchObject({schema_version:"v22_verified_resolved_input_v1",parent_report:f.parent,parent_payload_checksum:digest(f.parent),site_snapshot:{snapshot_id:f.snapshots.site},serp_snapshot:{snapshot_id:f.snapshots.serp},competitor_snapshot:{snapshot_id:f.snapshots.competitor}});
+      expect(payload.first_party_snapshots.map((s:Record<string,unknown>)=>s.snapshot_id)).toEqual([f.snapshots.gsc,f.snapshots.ga4]);
+      await expect(resolve(2)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+    });
+
+    it("persists only bound evidence and advances both pointers while retaining the original Prospect", async () => {
+      const f = await fixture(); await f.start();
+      await expect(f.persist(f.result(),2)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      for (const mutate of [
+        (p:ReturnType<typeof f.result>) => {p.report_version.parent_report_id=randomUUID();},
+        (p:ReturnType<typeof f.result>) => {p.report_version.version_number=3;},
+        (p:ReturnType<typeof f.result>) => {p.first_party_performance.gsc.snapshot_id=randomUUID();},
+        (p:ReturnType<typeof f.result>) => {p.evidence_index=[...p.evidence_index,{snapshot_id:randomUUID()}];},
+      ]) { const p=structuredClone(f.result()); mutate(p); await expect(f.persist(p)).rejects.toThrow("V22_VERIFIED_"); }
+      expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:false}]);
+      expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
+      expect((await db.query(`select latest_report_id,latest_verified_report_id from public.client_cases where id=$1`,[f.caseId])).rows[0]).toEqual({latest_report_id:f.jobId,latest_verified_report_id:f.jobId});
+      const next=await f.start(randomUUID(),`${f.key}:2`);
+      expect(next.rows[0].parent_report_id).toBe(f.parentId);
+      expect((await db.query(`select report_v2_2 from public.reports where id=$1`,[f.parentId])).rows[0]).toEqual({report_v2_2:f.parent});
+      await expect(db.query(`update public.client_cases set latest_verified_report_id=$2 where id=$1`,[f.caseId,f.parentId])).rejects.toThrow("latest_verified_report_id");
+    });
+
+    it("compensates expired queued jobs exactly once through existing settlement", async () => {
+      const f = await fixture(); await f.start();
+      await db.query(`update public.analysis_jobs set created_at=now()-interval '2 hours',deadline_at=now()-interval '1 hour' where id=$1`,[f.jobId]);
+      const expire = () => db.query(`select * from public.expire_v22_stale_verified_jobs(now(),100)`);
+      expect((await expire()).rows).toEqual([{job_id:f.jobId}]);
+      expect((await expire()).rows).toEqual([]);
+      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:5});
+      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0]).toEqual({state:"compensated"});
+      expect((await db.query(`select error_code from public.analysis_jobs where id=$1`,[f.jobId])).rows[0]).toEqual({error_code:"V22_VERIFIED_ENQUEUE_TIMEOUT"});
+      expect((await db.query(`select kind from public.audit_credit_ledger where job_id=$1 order by delta`,[f.jobId])).rows).toEqual([{kind:"attempt_debit"},{kind:"technical_failure_credit"}]);
+      const retry = await f.start(randomUUID(),`${f.key}:retry`,f.owner,digest(f.parent),f.jobId);
+      expect(retry.rows[0]).toMatchObject({created:true,audit_credits:4,parent_report_id:f.parentId});
+    });
+
+    it.each(["running","report-backed","terminal"])("does not compensate a %s job", async (state) => {
+      const f=await fixture(); await f.start();
+      if (state === "report-backed") await f.persist();
+      if (state === "running") await db.query(`update public.analysis_jobs set status='running' where id=$1`,[f.jobId]);
+      if (state === "terminal") {
+        await f.persist();
+        await db.query(`select public.apply_analysis_job_event($1,$2,1,'succeeded','completed',100::smallint,1,null,null,'{}',null,now(),1,null)`,[f.jobId,f.caseId]);
+        expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
+      }
+      await db.query(`update public.analysis_jobs set created_at=now()-interval '2 hours',deadline_at=now()-interval '1 hour' where id=$1`,[f.jobId]);
+      expect((await db.query(`select * from public.expire_v22_stale_verified_jobs(now(),100)`)).rows).toEqual([]);
+      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
+    });
+
+    it("rejects mismatched first-party coverage and evidence source identities", async () => {
+      const f=await fixture(); await f.start();
+      const wrongCoverage=structuredClone(f.result());
+      wrongCoverage.data_coverage.sources.find((s:{source_type:string})=>s.source_type === "gsc").snapshot_ids=[f.snapshots.ga4];
+      await expect(f.persist(wrongCoverage)).rejects.toThrow("V22_VERIFIED_");
+      const wrongEvidence=structuredClone(f.result());
+      wrongEvidence.evidence_index.push({...wrongEvidence.evidence_index[0],source_type:"gsc",snapshot_id:f.snapshots.ga4});
+      await expect(f.persist(wrongEvidence)).rejects.toThrow("V22_VERIFIED_");
+    });
+
+    it("keeps Case deletion possible after frozen Verified inputs are created", async () => {
+      const f=await fixture(); await f.start(); await f.persist();
+      await db.query(`delete from public.client_cases where id=$1`,[f.caseId]);
+      expect((await db.query(`select job_id from public.verified_analysis_inputs where job_id=$1`,[f.jobId])).rows).toEqual([]);
+    });
+
+    it("exposes the table and four RPCs only to service_role", async () => {
+      expect((await db.query(`select relrowsecurity from pg_class where oid='public.verified_analysis_inputs'::regclass`)).rows[0]).toEqual({relrowsecurity:true});
+      for (const signature of ["start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)","resolve_v22_verified_analysis_input(uuid,uuid,integer)","persist_v22_verified_result(uuid,uuid,jsonb,integer)","expire_v22_stale_verified_jobs(timestamptz,integer)"]) {
+        for (const role of ["anon","authenticated","service_role"]) expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,[role,`public.${signature}`])).rows[0]).toEqual({allowed:role === "service_role"});
+      }
+      for (const role of ["anon","authenticated","service_role"]) expect((await db.query(`select has_table_privilege($1,'public.verified_analysis_inputs','SELECT') as allowed`,[role])).rows[0]).toEqual({allowed:role === "service_role"});
+    });
+  });
   beforeAll(async () => {
     db = new PGlite();
     await db.exec("create role anon; create role authenticated; create role service_role bypassrls;");

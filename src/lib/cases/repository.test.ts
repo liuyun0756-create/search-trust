@@ -72,6 +72,7 @@ const record: CaseRecord = {
   target_market: location,
   status: "active",
   latest_report_id: null,
+  latest_verified_report_id: null,
   location_key: "geo:30.267200:-97.743100",
   archived_at: null,
   created_at: "2026-08-27T00:00:00.000Z",
