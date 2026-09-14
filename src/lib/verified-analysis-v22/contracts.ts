@@ -29,9 +29,22 @@ export function isUuid(value: unknown): value is string {
   return typeof value === "string" && UUID_PATTERN.test(value);
 }
 
+const BINDING_KEYS = new Set([
+  "job_id", "created", "idempotent", "parent_report_id", "gsc_snapshot_id",
+  "ga4_snapshot_id", "public_gbp_snapshot_id", "audit_credits",
+]);
+
 export function parseVerifiedStartBinding(value: unknown): VerifiedStartBinding | null {
-  if (!isRecord(value)
-    || !isUuid(value.job_id) || !isUuid(value.parent_report_id)
+  if (!isRecord(value)) return null;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return null;
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== BINDING_KEYS.size || keys.some((key) => {
+    if (typeof key !== "string" || !BINDING_KEYS.has(key)) return true;
+    const property = Object.getOwnPropertyDescriptor(value, key);
+    return !property?.enumerable || !("value" in property);
+  })) return null;
+  if (!isUuid(value.job_id) || !isUuid(value.parent_report_id)
     || !isUuid(value.gsc_snapshot_id) || !isUuid(value.ga4_snapshot_id) || !isUuid(value.public_gbp_snapshot_id)
     || typeof value.created !== "boolean" || typeof value.idempotent !== "boolean" || value.created === value.idempotent
     || typeof value.audit_credits !== "number" || !Number.isSafeInteger(value.audit_credits) || value.audit_credits < 0) return null;

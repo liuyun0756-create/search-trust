@@ -88,6 +88,18 @@ describe("Verified service-role repository", () => {
     await expect(new SupabaseVerifiedAnalysisRepository(database({ rpcData }).db).start(userId, caseId, jobId, "verified-attempt-1")).rejects.toThrow();
   });
 
+  it.each([
+    ["extra enumerable field", () => ({ ...binding, extra: "unexpected" })],
+    ["extra non-enumerable field", () => Object.defineProperty({ ...binding }, "extra", { value: "unexpected" })],
+    ["extra symbol field", () => ({ ...binding, [Symbol("extra")]: "unexpected" })],
+    ["inherited declared fields", () => Object.create(binding)],
+    ["inherited extra field", () => Object.assign(Object.create({ extra: "unexpected" }), binding)],
+    ["non-enumerable declared field", () => Object.defineProperty({ ...binding }, "job_id", { value: jobId, enumerable: false })],
+    ["accessor declared field", () => Object.defineProperty({ ...binding }, "job_id", { get: () => jobId, enumerable: true })],
+  ] as const)("rejects RPC bindings with %s", async (_label, makeBinding) => {
+    await expect(new SupabaseVerifiedAnalysisRepository(database({ rpcData: makeBinding() }).db).start(userId, caseId, jobId, "verified-attempt-1")).rejects.toThrow("invalid binding");
+  });
+
   it("propagates RPC eligibility failure as a safe error", async () => {
     await expect(new SupabaseVerifiedAnalysisRepository(database({ rpcError: { message: "secret database diagnostic" } }).db).start(userId, caseId, jobId, "verified-attempt-1")).rejects.toThrow("The Verified analysis could not be started.");
   });

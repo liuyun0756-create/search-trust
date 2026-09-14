@@ -24,4 +24,40 @@ describe("Verified canonical digest", () => {
   it.each([undefined, NaN, Infinity, -Infinity, BigInt(1), { bad: undefined }, [undefined], new Date(), new Map(), Array(1)])("rejects values outside deterministic JSON: %s", (value) => {
     expect(() => canonicalDigest(value)).toThrow();
   });
+
+  it.each([
+    ["symbol-keyed object", () => ({ [Symbol("bad")]: undefined })],
+    ["nested symbol-keyed object", () => ({ nested: { [Symbol("bad")]: 1 } })],
+    ["non-enumerable property", () => Object.defineProperty({}, "bad", { value: undefined })],
+    ["accessor property", () => Object.defineProperty({}, "bad", { get: () => 1, enumerable: true })],
+    ["symbol-keyed array", () => Object.assign([], { [Symbol("bad")]: undefined })],
+    ["extra array property", () => Object.assign([1], { bad: undefined })],
+    ["non-enumerable array property", () => Object.defineProperty([1], "bad", { value: 1 })],
+    ["non-enumerable array index", () => Object.defineProperty([1], "0", { value: 1, enumerable: false })],
+    ["accessor array index", () => Object.defineProperty([1], "0", { get: () => 1, enumerable: true })],
+    ["inherited sparse array index", () => Object.setPrototypeOf(Array(1), Object.assign(Object.create(Array.prototype), { 0: 1 }))],
+    ["custom object prototype", () => Object.create({ bad: 1 })],
+    ["Set", () => new Set([1])],
+    ["class instance", () => new (class Value { a = 1; })()],
+    ["array subclass", () => new (class Values extends Array {})()],
+    ["function value", () => ({ bad: () => 1 })],
+    ["symbol value", () => ({ bad: Symbol("bad") })],
+    ["nested nonfinite number", () => ({ bad: NaN })],
+  ] as const)("rejects %s instead of silently hashing it as plain JSON", (_label, makeValue) => {
+    expect(() => canonicalDigest(makeValue())).toThrow(TypeError);
+  });
+
+  it("rejects object and array cycles with a deterministic boundary error", () => {
+    const object: Record<string, unknown> = {};
+    object.self = object;
+    const array: unknown[] = [];
+    array.push(array);
+    for (const value of [object, array]) expect(() => canonicalDigest(value)).toThrow(TypeError);
+  });
+
+  it("accepts shared noncyclic values and plain null-prototype objects", () => {
+    const shared = { a: 1 };
+    expect(canonicalDigest([shared, shared])).toBe(canonicalDigest([{ a: 1 }, { a: 1 }]));
+    expect(canonicalDigest(Object.assign(Object.create(null), { a: 1 }))).toBe(canonicalDigest({ a: 1 }));
+  });
 });
