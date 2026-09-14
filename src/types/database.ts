@@ -357,7 +357,7 @@ export interface Order {
   checkout_session_id?: string | null;
   checkout_url?: string | null;
   amount: number;
-  currency?: string;
+  currency?: string | null;
   credits_purchased: number;
   status: "pending" | "paid" | "failed" | "refunded";
   created_at: string;

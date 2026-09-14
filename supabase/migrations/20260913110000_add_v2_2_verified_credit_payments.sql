@@ -12,7 +12,7 @@ alter table public.orders
     (purchase_kind = 'legacy_credit' and case_id is null and credits_purchased > 0) or
     (purchase_kind = 'case_prospect_report' and case_id is not null and credits_purchased = 0) or
     (purchase_kind = 'case_verified_credit' and case_id is not null
-      and credits_purchased = 1 and amount = 1900 and currency = 'USD')
+      and credits_purchased = 1 and amount = 1900 and currency is not distinct from 'USD')
   ),
   add constraint orders_payment_reference_check check (
     (purchase_kind = 'case_verified_credit' and

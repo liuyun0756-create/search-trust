@@ -123,6 +123,32 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         values ($1,$2,'case_verified_credit',1,1900,'USD','pending')`, [f.owner,f.caseId]);
     });
 
+    it("rejects inserting a Verified credit order with NULL currency", async () => {
+      const owner = await insertUser(randomUUID());
+      const caseId = await insertCase(owner, randomUUID());
+      await expectSqlError(`insert into public.orders
+        (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status)
+        values ($1,$2,'case_verified_credit',1,1900,null,'pending')`,
+        [owner,caseId], "orders_purchase_shape_check");
+    });
+
+    it("rejects updating a Verified credit order to NULL currency", async () => {
+      const f = await fixture();
+      await expectSqlError(`update public.orders set currency=null where id=$1`,
+        [f.orderId], "orders_purchase_shape_check");
+    });
+
+    it.each(["legacy_credit", "case_prospect_report"])("preserves nullable currency for %s orders", async kind => {
+      const owner = await insertUser(randomUUID());
+      const caseId = kind === "case_prospect_report" ? await insertCase(owner,randomUUID()) : null;
+      const orderId = await insertId(`insert into public.orders
+        (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status,payment_id)
+        values ($1,$2,$3,$4,1900,null,'pending',$5) returning id`,
+        [owner,caseId,kind,kind === "legacy_credit" ? 1 : 0,randomUUID()]);
+      expect((await db.query(`select currency from public.orders where id=$1`,[orderId])).rows[0])
+        .toEqual({currency:null});
+    });
+
     it("requires a payment ID for completed Verified orders even with another provider reference", async () => {
       const f = await fixture();
       for (const status of ["paid", "refunded"]) await expectSqlError(`update public.orders
