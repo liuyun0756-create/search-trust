@@ -97,6 +97,45 @@ describe("Verified submit boundary", () => {
     expect(start).toHaveBeenCalledTimes(1);
   });
 
+  it.each([null, { baseUrl: "invalid", token: "secret" }, { baseUrl: "ftp://railway.invalid", token: "secret" }, { baseUrl: "https://user:pass@railway.invalid", token: "secret" }, { baseUrl: "https://railway.invalid?redirect=elsewhere", token: "secret" }, { baseUrl: "https://railway.invalid#fragment", token: "secret" }, { baseUrl: "https://railway.invalid", token: " " }, { baseUrl: "https://railway.invalid", token: "bad\r\ntoken" }])("rejects missing/invalid upstream configuration before debit: %s", async (config) => {
+    const { deps, submit, start, fetcher } = setup();
+    deps.getConfig = () => config;
+    expect((await submit(request(), context())).status).toBe(503);
+    expect(start).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("returns 504 when headers arrive but the body stalls until abort", async () => {
+    const { submit, fetcher, start } = setup();
+    fetcher.mockImplementation(async (_url, init) => new Response(new ReadableStream({
+      start(controller) {
+        init?.signal?.addEventListener("abort", () => controller.error(new DOMException("body timed out", "AbortError")));
+      },
+    }), { status: 202 }));
+    expect((await submit(request(), context())).status).toBe(504);
+    expect(start).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a token that cannot be sent as an HTTP header before debit", async () => {
+    const { deps, submit, start, fetcher } = setup();
+    deps.getConfig = () => ({ baseUrl: "https://railway.invalid", token: "secret🔒" });
+    expect((await submit(request(), context())).status).toBe(503);
+    expect(start).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("preserves network errors while reading the response body", async () => {
+    const { submit, fetcher } = setup();
+    fetcher.mockResolvedValue(new Response(new ReadableStream({ start(controller) { controller.error(new TypeError("connection lost")); } }), { status: 202 }));
+    expect((await submit(request(), context())).status).toBe(503);
+  });
+
+  it("maps only invalid JSON syntax to a 502 contract error", async () => {
+    const { submit, fetcher } = setup();
+    fetcher.mockResolvedValue(new Response("{", { status: 202 }));
+    expect((await submit(request(), context())).status).toBe(502);
+  });
+
   it("returns a safe error on immediate Railway failure without compensation", async () => {
     const { submit, fetcher, start } = setup();
     fetcher.mockRejectedValue(new Error("server-secret"));

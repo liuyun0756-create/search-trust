@@ -19,6 +19,18 @@ function jsonError(code: string, message: string, status: number) {
   return NextResponse.json({ error: { code, message } }, { status });
 }
 
+function upstreamConfig(deps: Dependencies) {
+  const config = deps.getConfig();
+  if (!config) return null;
+  const token = config.token.trim();
+  if (!/^[\x21-\x7e]+$/u.test(token)) return null;
+  try {
+    const url = new URL(config.baseUrl.trim());
+    if (!/^https?:$/.test(url.protocol) || url.username || url.password || url.search || url.hash) return null;
+    return { baseUrl: url.toString().replace(/\/$/, ""), token };
+  } catch { return null; }
+}
+
 export function createVerifiedAnalysisSubmitHandler(deps: Dependencies) {
   return async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     const user = await deps.getCurrentUser();
@@ -38,6 +50,8 @@ export function createVerifiedAnalysisSubmitHandler(deps: Dependencies) {
     } catch {
       return jsonError("INVALID_REQUEST", "The Verified analysis request must be an empty JSON object.", 400);
     }
+    const config = upstreamConfig(deps);
+    if (!config) return jsonError("V22_ANALYSIS_NOT_CONFIGURED", "The v2.2 analysis service is not configured.", 503);
     let started;
     try {
       started = await deps.createRepository().start(user.userId, caseId, jobId, idempotencyKey, previousJobId);
@@ -47,8 +61,6 @@ export function createVerifiedAnalysisSubmitHandler(deps: Dependencies) {
     }
     // The RPC owns the debit. Any dispatch failure is compensated once by stale-job
     // reconciliation; this handler must never adjust credits or refund the attempt.
-    const config = deps.getConfig();
-    if (!config) return jsonError("V22_ANALYSIS_NOT_CONFIGURED", "The v2.2 analysis service is not configured.", 503);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), deps.timeoutMs);
     try {
@@ -59,7 +71,12 @@ export function createVerifiedAnalysisSubmitHandler(deps: Dependencies) {
           "X-SearchTrust-Job-ID": started.binding.job_id, "Idempotency-Key": idempotencyKey,
         },
       });
-      const payload: unknown = await response.json().catch(() => null);
+      // Abort/network failures while consuming the body must retain their status.
+      // Only JSON syntax errors are invalid contracts, not transport failures.
+      const payload: unknown = await response.json().catch((error: unknown) => {
+        if (error instanceof SyntaxError) return null;
+        throw error;
+      });
       if (!response.ok) {
         const status = response.status === 404 ? 404 : response.status === 409 || response.status === 422 ? 409 : response.status === 503 ? 503 : 502;
         return jsonError("V22_ANALYSIS_UNAVAILABLE", "The analysis task could not be started yet.", status);

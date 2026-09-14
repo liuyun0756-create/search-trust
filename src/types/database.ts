@@ -216,6 +216,7 @@ export interface StartV22VerifiedAnalysisArgs {
   p_job_id: string;
   p_idempotency_key: string;
   p_parent_payload_checksum: string;
+  p_expected_parent_report_id: string;
   p_previous_job_id?: string | null;
 }
 

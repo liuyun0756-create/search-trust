@@ -315,8 +315,8 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       await db.query(`update public.client_cases set latest_report_id=$2 where id=$1`, [caseId,parentId]);
       const jobId = randomUUID();
       const key = `verified:${caseId}:attempt:1`;
-      const start = (job = jobId, idem = key, user = owner, hash = digest(parent), previous: string | null = null) => db.query<Record<string, unknown>>(
-        `select * from public.start_v22_verified_analysis($1,$2,$3,$4,$5,$6)`, [user,caseId,job,idem,hash,previous]);
+      const start = (job = jobId, idem = key, user = owner, hash = digest(parent), previous: string | null = null, expectedParent: string | null = parentId) => db.query<Record<string, unknown>>(
+        `select * from public.start_v22_verified_analysis($1,$2,$3,$4,$5,$6,$7)`, [user,caseId,job,idem,hash,expectedParent,previous]);
       const result = () => ({...parent, report_version: {...parent.report_version, report_id:jobId,report_type:"verified_execution",parent_report_id:parentId,version_number:2},
         first_party_performance:{...parent.first_party_performance,gsc:{...parent.first_party_performance.gsc,snapshot_id:snapshots.gsc},ga4:{...parent.first_party_performance.ga4,snapshot_id:snapshots.ga4}}});
       const persist = (payload = result(), generation = 1) => db.query(`select * from public.persist_v22_verified_result($1,$2,$3,$4)`, [jobId,caseId,JSON.stringify(payload),generation]);
@@ -334,11 +334,29 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       await expect(db.query(`update public.verified_analysis_inputs set parent_payload='{}' where job_id=$1`, [f.jobId])).rejects.toThrow("immutable");
     });
 
+    it.each(["mismatched", "missing"])("rejects a %s expected parent before creating any debit or job", async (reason) => {
+      const f = await fixture();
+      await expect(f.start(f.jobId, f.key, f.owner, digest(f.parent), null, reason === "missing" ? null : randomUUID())).rejects.toThrow("V22_VERIFIED_PARENT_CHANGED");
+      for (const table of ["analysis_jobs", "analysis_attempt_charges", "audit_credit_ledger", "verified_analysis_inputs"]) {
+        expect((await db.query(`select * from public.${table} where case_id=$1`, [f.caseId])).rows).toHaveLength(0);
+      }
+      expect((await db.query(`select audit_credits from public.users where id=$1`, [f.owner])).rows[0]).toEqual({ audit_credits: 5 });
+    });
+
+    it("rejects an expected parent mismatch on idempotent replay without a second debit", async () => {
+      const f = await fixture();
+      await f.start();
+      await expect(f.start(f.jobId, f.key, f.owner, digest(f.parent), null, randomUUID())).rejects.toThrow("V22_VERIFIED_IDENTITY_CONFLICT");
+      expect((await db.query(`select * from public.analysis_jobs where case_id=$1`, [f.caseId])).rows).toHaveLength(1);
+      expect((await db.query(`select * from public.audit_credit_ledger where case_id=$1`, [f.caseId])).rows).toHaveLength(1);
+      expect((await db.query(`select audit_credits from public.users where id=$1`, [f.owner])).rows[0]).toEqual({ audit_credits: 4 });
+    });
+
     it("locks Google connections in deterministic order before the Case and bindings", async () => {
       // PGlite serializes queries on one embedded PostgreSQL instance; this is an
       // explicit lock-order contract, not a claim to exercise concurrent sessions.
       const definition = (await db.query<{definition:string}>(`select pg_get_functiondef(
-        'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)'::regprocedure) as definition`)).rows[0].definition
+        'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)'::regprocedure) as definition`)).rows[0].definition
         .replace(/--[^\n]*/g, "").replace(/\s+/g, " ");
       const connectionLock = /from public\.google_connections\b[^;]*for (?:update|share)/i.exec(definition);
       const caseLock = /from public\.client_cases\b[^;]*for (?:no key )?update/i.exec(definition);
@@ -352,7 +370,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     });
 
     it.each([
-      "start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)",
+      "start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)",
       "persist_v22_verified_result(uuid,uuid,jsonb,integer)",
     ])("keeps %s Case serialization compatible with compensation FK checks", async signature => {
       // Compensation holds the job while its ledger INSERT requests Case KEY SHARE.
@@ -504,7 +522,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
 
     it("exposes the table and four RPCs only to service_role", async () => {
       expect((await db.query(`select relrowsecurity from pg_class where oid='public.verified_analysis_inputs'::regclass`)).rows[0]).toEqual({relrowsecurity:true});
-      for (const signature of ["start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)","resolve_v22_verified_analysis_input(uuid,uuid,integer)","persist_v22_verified_result(uuid,uuid,jsonb,integer)","expire_v22_stale_verified_jobs(timestamptz,integer)"]) {
+      for (const signature of ["start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)","resolve_v22_verified_analysis_input(uuid,uuid,integer)","persist_v22_verified_result(uuid,uuid,jsonb,integer)","expire_v22_stale_verified_jobs(timestamptz,integer)"]) {
         for (const role of ["anon","authenticated","service_role"]) expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,[role,`public.${signature}`])).rows[0]).toEqual({allowed:role === "service_role"});
       }
       for (const role of ["anon","authenticated","service_role"]) expect((await db.query(`select has_table_privilege($1,'public.verified_analysis_inputs','SELECT') as allowed`,[role])).rows[0]).toEqual({allowed:role === "service_role"});

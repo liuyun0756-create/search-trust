@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import prospect from "../report-v22/contracts/fixtures/prospect.json";
+import { validateReportV22 } from "../report-v22/validate";
 import { canonicalDigest } from "./digest";
 
 describe("Verified canonical digest", () => {
@@ -19,6 +21,25 @@ describe("Verified canonical digest", () => {
   it("matches backend request_digest for the complete Prospect ReportV22 fixture", () => {
     // Computed by app.jobs_v22.digest.request_digest(json.load(prospect.json)).
     expect(canonicalDigest(prospect)).toBe("sha256:5c437ac449da35e7ae9b060a3b0c8a54c7b9aa472dd77cc923b2f95388183f60");
+  });
+
+  it.each([
+    [1.0, "1"], [-0, "0"], [1e-6, "0.000001"], [1e-7, "1e-7"],
+    [1e20, "100000000000000000000"], [1e21, "1e+21"],
+    [333333333.33333329, "333333333.3333333"], [0.1 + 0.2, "0.30000000000000004"],
+    [1000000000000000128, "1000000000000000100"],
+    [Number.MIN_VALUE, "5e-324"], [Number.MAX_VALUE, "1.7976931348623157e+308"],
+  ] as const)("uses ECMAScript numeric bytes for %s", (value, expectedBytes) => {
+    expect(canonicalDigest(value)).toBe(`sha256:${createHash("sha256").update(expectedBytes).digest("hex")}`);
+  });
+
+  it("matches the Verified backend digest for a modified schema-valid Prospect with numeric boundaries", () => {
+    const report = structuredClone(prospect);
+    Object.assign(report.case_context.target_market, { latitude: 1.0, longitude: -0 });
+    Object.assign(report.market_snapshot.target_market, { latitude: 1.0, longitude: -0 });
+    Object.assign(report.identity.business.primary_location, { latitude: 1e-6, longitude: -0 });
+    expect(validateReportV22(report).ok).toBe(true);
+    expect(canonicalDigest(report)).toBe("sha256:b976d1b3fba055fdb91c0a3e31477cb515f2add186831d8779741c2ead0e2c3c");
   });
 
   it.each([undefined, NaN, Infinity, -Infinity, BigInt(1), { bad: undefined }, [undefined], new Date(), new Map(), Array(1)])("rejects values outside deterministic JSON: %s", (value) => {

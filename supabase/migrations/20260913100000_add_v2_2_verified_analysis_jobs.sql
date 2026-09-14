@@ -55,7 +55,7 @@ for each row execute function public.enforce_v22_verified_input_immutability();
 
 create function public.start_v22_verified_analysis(
   p_user_id uuid, p_case_id uuid, p_job_id uuid, p_idempotency_key text,
-  p_parent_payload_checksum text, p_previous_job_id uuid default null
+  p_parent_payload_checksum text, p_expected_parent_report_id uuid, p_previous_job_id uuid default null
 ) returns table (
   job_id uuid, created boolean, idempotent boolean, parent_report_id uuid,
   gsc_snapshot_id uuid, ga4_snapshot_id uuid, public_gbp_snapshot_id uuid, audit_credits integer
@@ -114,6 +114,7 @@ begin
       or existing_job.job_type <> 'verified_report' or existing_job.idempotency_key <> p_idempotency_key
       or existing_job.previous_job_id is distinct from p_previous_job_id
       or bound.job_id is null or bound.case_id <> p_case_id
+      or bound.parent_report_id is distinct from p_expected_parent_report_id
       or bound.parent_payload_checksum is distinct from p_parent_payload_checksum
       or not exists (select 1 from public.analysis_attempt_charges a where a.job_id = p_job_id
         and a.case_id = p_case_id and a.user_id = p_user_id and a.source = 'account_credit') then
@@ -133,6 +134,11 @@ begin
   select * into parent from public.reports r
   where r.id = case when current_report.report_type = 'prospect' then current_report.id
     when current_report.report_type = 'verified_execution' then current_report.parent_report_id end for share;
+  -- The trusted caller hashes a report before this transaction. Bind its exact
+  -- identity to the parent selected under the Case lock before any debit/write.
+  if p_expected_parent_report_id is null or parent.id is distinct from p_expected_parent_report_id then
+    raise exception 'V22_VERIFIED_PARENT_CHANGED';
+  end if;
   if parent.id is null or parent.user_id <> p_user_id or parent.case_id <> p_case_id
     or parent.report_type <> 'prospect' or parent.status <> 'paid_full' or parent.schema_version <> '2.2.0'
     or parent.parent_report_id is not null or jsonb_typeof(parent.report_v2_2) is distinct from 'object'
@@ -399,8 +405,8 @@ begin
 end;
 $$;
 
-revoke all on function public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid) from public,anon,authenticated;
-grant execute on function public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid) to service_role;
+revoke all on function public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid) from public,anon,authenticated;
+grant execute on function public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid) to service_role;
 revoke all on function public.resolve_v22_verified_analysis_input(uuid,uuid,integer) from public,anon,authenticated;
 grant execute on function public.resolve_v22_verified_analysis_input(uuid,uuid,integer) to service_role;
 revoke all on function public.persist_v22_verified_result(uuid,uuid,jsonb,integer) from public,anon,authenticated;

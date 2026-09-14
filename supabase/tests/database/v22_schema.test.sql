@@ -29,12 +29,12 @@ select has_pk('public', 'verified_analysis_inputs', 'Verified input job identity
 select has_index('public', 'verified_analysis_inputs', 'uq_verified_analysis_inputs_case_job', 'Verified Case/job index exists');
 select ok((select relrowsecurity from pg_class where oid='public.verified_analysis_inputs'::regclass), 'Verified inputs have RLS');
 select ok(not has_table_privilege('anon','public.verified_analysis_inputs','SELECT') and not has_table_privilege('authenticated','public.verified_analysis_inputs','SELECT'), 'Browsers cannot read inputs');
-select has_function('public','start_v22_verified_analysis',array['uuid','uuid','uuid','text','text','uuid'],'Verified start RPC exists');
+select has_function('public','start_v22_verified_analysis',array['uuid','uuid','uuid','text','text','uuid','uuid'],'Verified start RPC includes expected parent');
 select has_function('public','resolve_v22_verified_analysis_input',array['uuid','uuid','integer'],'Verified resolve RPC exists');
 select has_function('public','persist_v22_verified_result',array['uuid','uuid','jsonb','integer'],'Verified persist RPC exists');
 select has_function('public','expire_v22_stale_verified_jobs',array['timestamp with time zone','integer'],'Verified compensation RPC exists');
 select ok((select bool_and(has_function_privilege('service_role',signature,'EXECUTE') and not has_function_privilege('anon',signature,'EXECUTE') and not has_function_privilege('authenticated',signature,'EXECUTE')) from unnest(array[
-  'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)',
+  'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)',
   'public.resolve_v22_verified_analysis_input(uuid,uuid,integer)',
   'public.persist_v22_verified_result(uuid,uuid,jsonb,integer)',
   'public.expire_v22_stale_verified_jobs(timestamptz,integer)'

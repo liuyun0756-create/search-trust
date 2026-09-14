@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { StartV22VerifiedAnalysisArgs } from "@/types/database";
 import { validateReportV22 } from "../report-v22/validate";
 import { isRecord, isUuid, parseVerifiedStartBinding, type VerifiedStartBinding, type VerifiedTaskRequest } from "./contracts";
 import { canonicalDigest } from "./digest";
@@ -62,10 +63,11 @@ export class SupabaseVerifiedAnalysisRepository implements VerifiedAnalysisRepos
     const { data, error } = await this.db.rpc("start_v22_verified_analysis", {
       p_user_id: userId, p_case_id: caseId, p_job_id: jobId, p_idempotency_key: idempotencyKey,
       p_parent_payload_checksum: canonicalDigest(parent.report_v2_2), p_previous_job_id: previousJobId,
-    }).single();
+      p_expected_parent_report_id: parsed.report.report_version.report_id,
+    } satisfies StartV22VerifiedAnalysisArgs).single();
     if (error) throw new VerifiedAnalysisPersistenceError();
     const binding = parseVerifiedStartBinding(data);
-    if (!binding || binding.job_id !== jobId) throw new VerifiedAnalysisContractError();
+    if (!binding || binding.job_id !== jobId || binding.parent_report_id !== parent.id) throw new VerifiedAnalysisContractError();
 
     // Exact checksum input: Case + RPC job/parent/GSC/GA4/public-GBP IDs below.
     // Exclude created/idempotent/audit_credits: they can change on an identical replay.

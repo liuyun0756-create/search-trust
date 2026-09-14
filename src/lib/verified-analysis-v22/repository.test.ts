@@ -35,7 +35,7 @@ describe("Verified service-role repository", () => {
   it("hashes the complete stored Prospect and passes only server-resolved inputs to the RPC", async () => {
     const { db, rpc, from } = database();
     const result = await new SupabaseVerifiedAnalysisRepository(db).start(userId, caseId, jobId, "verified-attempt-1", null);
-    expect(rpc).toHaveBeenCalledWith("start_v22_verified_analysis", { p_user_id: userId, p_case_id: caseId, p_job_id: jobId, p_idempotency_key: "verified-attempt-1", p_parent_payload_checksum: canonicalDigest(prospect), p_previous_job_id: null });
+    expect(rpc).toHaveBeenCalledWith("start_v22_verified_analysis", { p_user_id: userId, p_case_id: caseId, p_job_id: jobId, p_idempotency_key: "verified-attempt-1", p_parent_payload_checksum: canonicalDigest(prospect), p_expected_parent_report_id: parentId, p_previous_job_id: null });
     expect(result).toEqual({ binding, request: { schema_version: "v22_verified_task_request_v1", case_id: caseId, parent_report_id: parentId, gsc_snapshot_id: gscId, ga4_snapshot_id: ga4Id, public_gbp_snapshot_id: publicGbpId, input_checksum: canonicalDigest(identity) } });
     expect(from.mock.calls.map(([table]) => table)).toEqual(["client_cases", "reports"]);
   });
@@ -46,11 +46,9 @@ describe("Verified service-role repository", () => {
     expect(rpc).toHaveBeenCalledWith("start_v22_verified_analysis", expect.objectContaining({ p_parent_payload_checksum: canonicalDigest(prospect), p_previous_job_id: latestId }));
   });
 
-  it("uses the RPC binding even when it differs from the preflight report", async () => {
+  it("rejects an RPC binding that does not identify the exact Prospect hashed", async () => {
     const { db } = database({ rpcData: { ...binding, parent_report_id: latestId } });
-    const result = await new SupabaseVerifiedAnalysisRepository(db).start(userId, caseId, jobId, "verified-attempt-1");
-    expect(result.request.parent_report_id).toBe(latestId);
-    expect(result.request.input_checksum).toBe(canonicalDigest({ ...identity, parent_report_id: latestId }));
+    await expect(new SupabaseVerifiedAnalysisRepository(db).start(userId, caseId, jobId, "verified-attempt-1")).rejects.toThrow("invalid binding");
   });
 
   it("does not allow extra caller parent/snapshot arguments to change the binding", async () => {
