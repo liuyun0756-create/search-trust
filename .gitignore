@@ -33,6 +33,7 @@ next-env.d.ts
 
 # local visual brainstorming sessions
 /.superpowers/
+/.worktrees/
 
 # local browser-test artifacts
 /output/playwright/
