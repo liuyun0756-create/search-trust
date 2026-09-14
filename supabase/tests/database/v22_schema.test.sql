@@ -4,7 +4,23 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(87);
+select plan(99);
+
+select has_column('public','audit_credit_ledger','order_id','Payment ledger retains order identity');
+select col_is_fk('public','audit_credit_ledger','order_id','Payment ledger order has FK');
+select col_is_null('public','audit_credit_ledger','order_id','Attempt ledger does not require an order');
+select has_index('public','orders','uq_orders_pending_case_verified_credit_checkout','Only one pending Verified checkout per Case');
+select has_index('public','audit_credit_ledger','uq_audit_credit_ledger_order_kind','Payment ledger deduplicates order and kind');
+select ok((select pg_get_constraintdef(oid) like '%case_verified_credit%' from pg_constraint where conrelid='public.orders'::regclass and conname='orders_purchase_kind_check'),'Verified purchase kind is accepted');
+select ok((select pg_get_constraintdef(oid) like '%1900%' and pg_get_constraintdef(oid) like '%USD%' from pg_constraint where conrelid='public.orders'::regclass and conname='orders_purchase_shape_check'),'Verified purchase requires $19 USD');
+select ok((select pg_get_constraintdef(oid) like '%case_verified_credit%' from pg_constraint where conrelid='public.orders'::regclass and conname='orders_payment_reference_check'),'Verified payment reference states are constrained');
+select ok((select pg_get_constraintdef(oid) like '%purchase_credit%' and pg_get_constraintdef(oid) like '%payment_refund_debit%' and pg_get_constraintdef(oid) like '%payment_refund_manual_review%' from pg_constraint where conrelid='public.audit_credit_ledger'::regclass and conname='audit_credit_ledger_kind_check'),'Payment and refund ledger kinds exist');
+select has_function('public','fulfill_v22_verified_credit_payment',array['uuid','text','text','uuid','integer','text'],'Verified credit fulfillment RPC exists');
+select has_function('public','refund_v22_verified_credit_payment',array['uuid','text','text','uuid','integer','text'],'Verified credit refund validates payment identity and value');
+select ok((select bool_and(has_function_privilege('service_role',signature,'EXECUTE') and not has_function_privilege('anon',signature,'EXECUTE') and not has_function_privilege('authenticated',signature,'EXECUTE')) from unnest(array[
+  'public.fulfill_v22_verified_credit_payment(uuid,text,text,uuid,integer,text)',
+  'public.refund_v22_verified_credit_payment(uuid,text,text,uuid,integer,text)'
+]) as signatures(signature)), 'Verified payment RPCs are service-role-only');
 
 select has_table('public', 'verified_analysis_inputs', 'Verified inputs exist');
 select has_column('public', 'client_cases', 'latest_verified_report_id', 'Case retains latest Verified');

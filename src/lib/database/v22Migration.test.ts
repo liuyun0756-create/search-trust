@@ -96,6 +96,157 @@ async function insertCompleteCase(
 }
 
 describe.sequential("SearchTrust v2.2 Supabase migration", () => {
+  describe("verified credit payment contract", () => {
+    async function fixture() {
+      const suffix = randomUUID();
+      const owner = await insertUser(suffix);
+      const caseId = await insertCase(owner, suffix);
+      await db.query(`update public.users set audit_credits=0 where id=$1`, [owner]);
+      const orderId = await insertId(`insert into public.orders
+        (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status)
+        values ($1,$2,'case_verified_credit',1,1900,'USD','pending') returning id`, [owner,caseId]);
+      const args = [orderId, `pay_${suffix}`, `clerk_${suffix}`, caseId, 1900, "USD"];
+      const fulfill = (params: unknown[] = args) => db.query(`select * from public.fulfill_v22_verified_credit_payment($1,$2,$3,$4,$5,$6)`, params);
+      const refund = (params: unknown[] = args) => db.query(`select * from public.refund_v22_verified_credit_payment($1,$2,$3,$4,$5,$6)`, params);
+      return {owner,caseId,orderId,args,fulfill,refund};
+    }
+
+    it("requires exactly one $19 USD credit and one pending checkout per Case", async () => {
+      const f = await fixture();
+      for (const change of ["case_id=null", "credits_purchased=0", "credits_purchased=2", "amount=1899", "currency='EUR'", "purchase_kind='unknown'"]) {
+        await expectSqlError(`update public.orders set ${change} where id=$1`, [f.orderId], "check constraint");
+      }
+      await expectSqlError(`insert into public.orders (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status)
+        values ($1,$2,'case_verified_credit',1,1900,'USD','pending')`, [f.owner,f.caseId], "uq_orders_pending_case_verified_credit_checkout");
+      await f.fulfill();
+      await db.query(`insert into public.orders (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status)
+        values ($1,$2,'case_verified_credit',1,1900,'USD','pending')`, [f.owner,f.caseId]);
+    });
+
+    it("requires a payment ID for completed Verified orders even with another provider reference", async () => {
+      const f = await fixture();
+      for (const status of ["paid", "refunded"]) await expectSqlError(`update public.orders
+        set status=$2,checkout_session_id='checkout_ref',order_id='provider_order' where id=$1`, [f.orderId,status], "orders_payment_reference_check");
+      await db.query(`update public.orders set status='failed' where id=$1`, [f.orderId]);
+      await f.fulfill();
+    });
+
+    it("preserves every legacy and Prospect payment-reference state", async () => {
+      const owner = await insertUser(randomUUID());
+      for (const kind of ["legacy_credit", "case_prospect_report"]) {
+        for (const status of ["pending", "failed", "paid", "refunded"]) {
+          for (const reference of [null, "payment_id", "order_id", "checkout_session_id"]) {
+            const caseId = kind === "case_prospect_report" ? await insertCase(owner,randomUUID()) : null;
+            const statement = `insert into public.orders (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status${reference ? `,${reference}` : ""})
+              values ($1,$2,$3,$4,2500,'EUR',$5${reference ? ",$6" : ""})`;
+            const args = [owner,caseId,kind,kind === "legacy_credit" ? 2 : 0,status,...(reference ? [randomUUID()] : [])];
+            if (reference || (kind === "case_prospect_report" && ["pending","failed"].includes(status))) await db.query(statement,args);
+            else await expectSqlError(statement,args,"orders_payment_reference_check");
+          }
+        }
+      }
+    });
+
+    it("adds one credit exactly once across confirm and webhook replay without generating", async () => {
+      const f = await fixture();
+      expect((await f.fulfill()).rows[0]).toEqual({fulfilled:true,idempotent:false,credits_added:1,audit_credits:1});
+      expect((await f.fulfill()).rows[0]).toEqual({fulfilled:true,idempotent:true,credits_added:0,audit_credits:1});
+      expect((await db.query(`select order_id,kind,delta,balance_after,job_id from public.audit_credit_ledger where order_id=$1`, [f.orderId])).rows)
+        .toEqual([{order_id:f.orderId,kind:"purchase_credit",delta:1,balance_after:1,job_id:null}]);
+      expect((await db.query(`select id from public.analysis_jobs where case_id=$1`, [f.caseId])).rows).toEqual([]);
+    });
+
+    it.each(["fulfill", "refund"] as const)("rejects mismatched %s amount, currency, owner, Case and payment identifiers", async operation => {
+      const f = await fixture();
+      if (operation === "refund") await f.fulfill();
+      const otherCase = await insertCase(f.owner, randomUUID());
+      const otherOwner = randomUUID();
+      await insertUser(otherOwner);
+      for (const [index,value] of [[0,randomUUID()],[1,""],[1,null],[2,`clerk_${otherOwner}`],[2,null],[3,otherCase],[3,null],[4,1899],[4,null],[5,"EUR"],[5,"usd"],[5,null]] as const) {
+        const params: unknown[] = [...f.args]; params[index] = value;
+        await expect(f[operation](params)).rejects.toThrow("V22_VERIFIED_PAYMENT");
+      }
+      if (operation === "fulfill") await f.fulfill();
+      const wrongPayment = [...f.args]; wrongPayment[1] = "pay_other";
+      await expect(f[operation](wrongPayment)).rejects.toThrow("V22_VERIFIED_PAYMENT");
+      const prospectOrder = await insertId(`insert into public.orders
+        (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status,payment_id)
+        values ($1,$2,'case_prospect_report',0,1900,'USD','paid',$3) returning id`, [f.owner,f.caseId,`prospect_${randomUUID()}`]);
+      const wrongKind = [...f.args]; wrongKind[0] = prospectOrder;
+      await expect(f[operation](wrongKind)).rejects.toThrow("V22_VERIFIED_PAYMENT");
+    });
+
+    it("checks the Case still belongs to the order owner", async () => {
+      const f = await fixture();
+      const outsider = await insertUser(randomUUID());
+      await db.query(`update public.client_cases set user_id=$2 where id=$1`, [f.caseId,outsider]);
+      await expect(f.fulfill()).rejects.toThrow("V22_VERIFIED_PAYMENT");
+      await expect(f.refund()).rejects.toThrow("V22_VERIFIED_PAYMENT");
+    });
+
+    it("refunds an unspent credit once and preserves immutable purchase evidence", async () => {
+      const f = await fixture(); await f.fulfill();
+      expect((await f.refund()).rows[0]).toEqual({refunded:true,idempotent:false,reversal_applied:true,manual_review:false,audit_credits:0});
+      expect((await f.refund()).rows[0]).toEqual({refunded:true,idempotent:true,reversal_applied:true,manual_review:false,audit_credits:0});
+      await expect(f.fulfill()).rejects.toThrow("V22_VERIFIED_PAYMENT");
+      expect((await db.query(`select kind,delta from public.audit_credit_ledger where order_id=$1 order by delta`,[f.orderId])).rows)
+        .toEqual([{kind:"payment_refund_debit",delta:-1},{kind:"purchase_credit",delta:1}]);
+      await expectSqlError(`update public.audit_credit_ledger set balance_after=10 where order_id=$1`,[f.orderId],"immutable");
+      await expectSqlError(`delete from public.audit_credit_ledger where order_id=$1`,[f.orderId],"immutable");
+      await expectSqlError(`delete from public.orders where id=$1`,[f.orderId],"foreign key constraint");
+    });
+
+    it("records a consumed-credit refund for manual review without negative balance or later replay debit", async () => {
+      const f = await fixture(); await f.fulfill();
+      await db.query(`select * from public.start_v22_prospect_analysis($1,$2,$3,$4)`,[f.owner,f.caseId,randomUUID(),`spend_${randomUUID()}`]);
+      expect((await f.refund()).rows[0]).toEqual({refunded:true,idempotent:false,reversal_applied:false,manual_review:true,audit_credits:0});
+      await db.query(`update public.users set audit_credits=1 where id=$1`,[f.owner]);
+      expect((await f.refund()).rows[0]).toEqual({refunded:true,idempotent:true,reversal_applied:false,manual_review:true,audit_credits:1});
+      expect((await db.query(`select kind,delta from public.audit_credit_ledger where order_id=$1 order by delta`,[f.orderId])).rows)
+        .toEqual([{kind:"payment_refund_manual_review",delta:0},{kind:"purchase_credit",delta:1}]);
+    });
+
+    it("rejects reuse of another order's payment ID with no partial credit or order change", async () => {
+      const first = await fixture(); const second = await fixture(); await first.fulfill();
+      const duplicatePayment = [...second.args]; duplicatePayment[1] = first.args[1];
+      await expect(second.fulfill(duplicatePayment)).rejects.toThrow("orders_payment_id_key");
+      expect((await db.query(`select status,payment_id from public.orders where id=$1`,[second.orderId])).rows[0]).toEqual({status:"pending",payment_id:null});
+      expect((await db.query(`select audit_credits from public.users where id=$1`,[second.owner])).rows[0]).toEqual({audit_credits:0});
+      expect((await db.query(`select id from public.audit_credit_ledger where order_id=$1`,[second.orderId])).rows).toEqual([]);
+    });
+
+    it("rejects refund before fulfillment and corrupt paid orders without a purchase entry", async () => {
+      const f = await fixture();
+      await expect(f.refund()).rejects.toThrow("V22_VERIFIED_PAYMENT");
+      await db.query(`update public.orders set status='paid',payment_id=$2 where id=$1`,[f.orderId,f.args[1]]);
+      await expect(f.fulfill()).rejects.toThrow("V22_VERIFIED_PAYMENT");
+      await expect(f.refund()).rejects.toThrow("V22_VERIFIED_PAYMENT");
+    });
+
+    it("enforces payment ledger deltas, order identity and exact-once entries", async () => {
+      const f = await fixture(); await f.fulfill();
+      const insert = `insert into public.audit_credit_ledger (user_id,case_id,order_id,kind,delta,balance_after) values ($1,$2,$3,$4,$5,1)`;
+      for (const [kind,delta] of [["purchase_credit",0],["payment_refund_debit",1],["payment_refund_manual_review",-1]]) {
+        await expectSqlError(insert,[f.owner,f.caseId,f.orderId,kind,delta],"check constraint");
+      }
+      await expectSqlError(insert,[f.owner,f.caseId,null,"purchase_credit",1],"check constraint");
+      await expectSqlError(insert,[f.owner,f.caseId,randomUUID(),"purchase_credit",1],"foreign key constraint");
+      await expectSqlError(insert,[f.owner,f.caseId,f.orderId,"purchase_credit",1],"uq_audit_credit_ledger_order_kind");
+    });
+
+    it.each(["fulfill", "refund"])("restricts %s to service role with compatible Case/order/user lock order", async operation => {
+      const signature = `public.${operation}_v22_verified_credit_payment(uuid,text,text,uuid,integer,text)`;
+      for (const role of ["anon","authenticated","service_role"]) expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,[role,signature])).rows[0]).toEqual({allowed:role === "service_role"});
+      // Embedded PGlite serializes sessions: assert the lock contract explicitly.
+      const definition = (await db.query<{definition:string}>(`select pg_get_functiondef($1::regprocedure) as definition`,[signature])).rows[0].definition.replace(/--[^\n]*/g, "").replace(/\s+/g," ");
+      const caseLock = /from public\.client_cases\b[^;]*for no key update/i.exec(definition);
+      const orderLock = /from public\.orders\b[^;]*for update/i.exec(definition);
+      const userLock = /from public\.users\b[^;]*for update/i.exec(definition);
+      expect(caseLock).not.toBeNull(); expect(orderLock).not.toBeNull(); expect(userLock).not.toBeNull();
+      expect(caseLock!.index).toBeLessThan(orderLock!.index); expect(orderLock!.index).toBeLessThan(userLock!.index);
+    });
+  });
+
   describe("verified analysis job contract", () => {
     const canonical = (value: unknown): string => {
       if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;

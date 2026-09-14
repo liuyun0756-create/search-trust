@@ -353,14 +353,66 @@ export interface Order {
   payment_id?: string | null;
   order_id: string | null;
   case_id?: string | null;
-  purchase_kind?: "legacy_credit" | "case_prospect_report";
+  purchase_kind?: "legacy_credit" | "case_prospect_report" | "case_verified_credit";
   checkout_session_id?: string | null;
   checkout_url?: string | null;
   amount: number;
+  currency?: string;
   credits_purchased: number;
   status: "pending" | "paid" | "failed" | "refunded";
   created_at: string;
   paid_at: string | null;
+}
+
+export interface AuditCreditLedger {
+  id: string;
+  user_id: string;
+  case_id: string | null;
+  job_id: string | null;
+  order_id: string | null;
+  kind: "attempt_debit" | "technical_failure_credit" | "purchase_credit"
+    | "payment_refund_debit" | "payment_refund_manual_review";
+  delta: -1 | 0 | 1;
+  balance_after: number;
+  created_at: string;
+}
+
+export interface FulfillV22VerifiedCreditPaymentArgs {
+  p_local_order_id: string;
+  p_payment_id: string;
+  p_clerk_user_id: string;
+  p_case_id: string;
+  p_amount: number;
+  p_currency: string;
+}
+
+export interface FulfillV22VerifiedCreditPaymentResult {
+  fulfilled: boolean;
+  idempotent: boolean;
+  credits_added: number;
+  audit_credits: number;
+}
+
+export type RefundV22VerifiedCreditPaymentArgs = FulfillV22VerifiedCreditPaymentArgs;
+
+export interface RefundV22VerifiedCreditPaymentResult {
+  refunded: boolean;
+  idempotent: boolean;
+  /** On replay, reports whether the original refund debited the credit. */
+  reversal_applied: boolean;
+  manual_review: boolean;
+  audit_credits: number;
+}
+
+export interface VerifiedCreditPaymentDatabaseFunctions {
+  fulfill_v22_verified_credit_payment: {
+    Args: FulfillV22VerifiedCreditPaymentArgs;
+    Returns: FulfillV22VerifiedCreditPaymentResult[];
+  };
+  refund_v22_verified_credit_payment: {
+    Args: RefundV22VerifiedCreditPaymentArgs;
+    Returns: RefundV22VerifiedCreditPaymentResult[];
+  };
 }
 
 export interface CaseReportEntitlement {
