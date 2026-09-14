@@ -52,6 +52,20 @@ export function createVerifiedAnalysisSubmitHandler(deps: Dependencies) {
     }
     const config = upstreamConfig(deps);
     if (!config) return jsonError("V22_ANALYSIS_NOT_CONFIGURED", "The v2.2 analysis service is not configured.", 503);
+    const readinessController = new AbortController();
+    const readinessTimer = setTimeout(() => readinessController.abort(), deps.timeoutMs);
+    try {
+      const readiness = await deps.fetcher(`${config.baseUrl}/api/v2/verified-analyze`, {
+        method: "HEAD", cache: "no-store", signal: readinessController.signal,
+        headers: { authorization: `Bearer ${config.token}` },
+      });
+      if (readiness.status !== 204) return jsonError("V22_ANALYSIS_UNAVAILABLE", "The analysis task could not be started yet.", readiness.status === 404 ? 404 : 503);
+    } catch (error) {
+      const timedOut = error instanceof Error && error.name === "AbortError";
+      return jsonError(timedOut ? "V22_ANALYSIS_TIMEOUT" : "V22_ANALYSIS_UNAVAILABLE", timedOut ? "The analysis service took too long to respond." : "The analysis service is temporarily unavailable.", timedOut ? 504 : 503);
+    } finally {
+      clearTimeout(readinessTimer);
+    }
     let started;
     try {
       started = await deps.createRepository().start(user.userId, caseId, jobId, idempotencyKey, previousJobId);

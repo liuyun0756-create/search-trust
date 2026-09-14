@@ -18,7 +18,9 @@ const taskRequest = { schema_version: "v22_verified_task_request_v1" as const, c
 const accepted = { job_id: jobId, status: "queued", estimated_seconds: 600 };
 function setup() {
   const start = vi.fn<VerifiedAnalysisRepository["start"]>(async () => ({ binding, request: taskRequest }));
-  const fetcher = vi.fn<typeof fetch>(async () => Response.json(accepted, { status: 202 }));
+  const fetcher = vi.fn<typeof fetch>(async (_url, init) => init?.method === "HEAD"
+    ? new Response(null, { status: 204 })
+    : Response.json(accepted, { status: 202 }));
   const deps = { getCurrentUser: vi.fn(async (): Promise<{ userId: string } | null> => ({ userId })), isEnabled: vi.fn(() => true), createRepository: () => ({ start }), getConfig: (): { baseUrl: string; token: string } | null => ({ baseUrl: "https://railway.invalid", token: "server-secret" }), fetcher, timeoutMs: 10 };
   return { deps, start, fetcher, submit: createVerifiedAnalysisSubmitHandler(deps) };
 }
@@ -36,7 +38,19 @@ describe("Verified submit boundary", () => {
     expect(await response.json()).toEqual(accepted);
     expect(start).toHaveBeenCalledWith(userId, caseId, jobId, "verified-attempt-1", null);
     expect(fetcher).toHaveBeenCalledWith("https://railway.invalid/api/v2/verified-analyze", expect.objectContaining({ method: "POST", body: JSON.stringify({ schema_version: "v22_verified_task_request_v1", case_id: caseId, parent_report_id: parentId, gsc_snapshot_id: gscId, ga4_snapshot_id: ga4Id, public_gbp_snapshot_id: publicGbpId, input_checksum: bindingChecksum }), headers: expect.objectContaining({ authorization: "Bearer server-secret", "X-SearchTrust-Job-ID": jobId, "Idempotency-Key": "verified-attempt-1" }) }));
-    expect(start.mock.invocationCallOrder[0]).toBeLessThan(fetcher.mock.invocationCallOrder[0]);
+    expect(fetcher).toHaveBeenCalledWith("https://railway.invalid/api/v2/verified-analyze", expect.objectContaining({ method: "HEAD", headers: { authorization: "Bearer server-secret" } }));
+    expect(fetcher.mock.invocationCallOrder[0]).toBeLessThan(start.mock.invocationCallOrder[0]);
+    expect(start.mock.invocationCallOrder[0]).toBeLessThan(fetcher.mock.invocationCallOrder[1]);
+  });
+
+  it("checks Railway readiness before the debit and stops when callback configuration is incomplete", async () => {
+    const { submit, start, fetcher } = setup();
+    fetcher.mockResolvedValueOnce(Response.json({ detail: { code: "V22_VERIFIED_ANALYSIS_NOT_READY" } }, { status: 503 }));
+    const response = await submit(request(), context());
+    expect(response.status).toBe(503);
+    expect(start).not.toHaveBeenCalled();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledWith("https://railway.invalid/api/v2/verified-analyze", expect.objectContaining({ method: "HEAD" }));
   });
 
   it("returns 401 before checking the flag for unauthenticated users", async () => {
@@ -80,19 +94,23 @@ describe("Verified submit boundary", () => {
     const response = await submit(request(), context());
     expect(response.status).toBe(409);
     expect(await response.text()).not.toContain(message);
-    expect(fetcher).not.toHaveBeenCalled();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ method: "HEAD" }));
   });
 
   it("rejects malformed RPC output with 502 before Railway", async () => {
     const { submit, start, fetcher } = setup();
     start.mockRejectedValue(new VerifiedAnalysisContractError());
     expect((await submit(request(), context())).status).toBe(502);
-    expect(fetcher).not.toHaveBeenCalled();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ method: "HEAD" }));
   });
 
   it("returns 504 on timeout without compensation or another start", async () => {
     const { submit, fetcher, start } = setup();
-    fetcher.mockImplementation((_url, init) => new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("secret", "AbortError")))));
+    fetcher.mockImplementation((_url, init) => init?.method === "HEAD"
+      ? Promise.resolve(new Response(null, { status: 204 }))
+      : new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("secret", "AbortError")))));
     expect((await submit(request(), context())).status).toBe(504);
     expect(start).toHaveBeenCalledTimes(1);
   });
@@ -107,11 +125,13 @@ describe("Verified submit boundary", () => {
 
   it("returns 504 when headers arrive but the body stalls until abort", async () => {
     const { submit, fetcher, start } = setup();
-    fetcher.mockImplementation(async (_url, init) => new Response(new ReadableStream({
-      start(controller) {
-        init?.signal?.addEventListener("abort", () => controller.error(new DOMException("body timed out", "AbortError")));
-      },
-    }), { status: 202 }));
+    fetcher.mockImplementation(async (_url, init) => init?.method === "HEAD"
+      ? new Response(null, { status: 204 })
+      : new Response(new ReadableStream({
+        start(controller) {
+          init?.signal?.addEventListener("abort", () => controller.error(new DOMException("body timed out", "AbortError")));
+        },
+      }), { status: 202 }));
     expect((await submit(request(), context())).status).toBe(504);
     expect(start).toHaveBeenCalledTimes(1);
   });
@@ -125,20 +145,28 @@ describe("Verified submit boundary", () => {
   });
 
   it("preserves network errors while reading the response body", async () => {
-    const { submit, fetcher } = setup();
-    fetcher.mockResolvedValue(new Response(new ReadableStream({ start(controller) { controller.error(new TypeError("connection lost")); } }), { status: 202 }));
+    const { submit, fetcher, start } = setup();
+    fetcher.mockImplementation(async (_url, init) => init?.method === "HEAD"
+      ? new Response(null, { status: 204 })
+      : new Response(new ReadableStream({ start(controller) { controller.error(new TypeError("connection lost")); } }), { status: 202 }));
     expect((await submit(request(), context())).status).toBe(503);
+    expect(start).toHaveBeenCalledTimes(1);
   });
 
   it("maps only invalid JSON syntax to a 502 contract error", async () => {
-    const { submit, fetcher } = setup();
-    fetcher.mockResolvedValue(new Response("{", { status: 202 }));
+    const { submit, fetcher, start } = setup();
+    fetcher.mockImplementation(async (_url, init) => init?.method === "HEAD"
+      ? new Response(null, { status: 204 })
+      : new Response("{", { status: 202 }));
     expect((await submit(request(), context())).status).toBe(502);
+    expect(start).toHaveBeenCalledTimes(1);
   });
 
   it("returns a safe error on immediate Railway failure without compensation", async () => {
     const { submit, fetcher, start } = setup();
-    fetcher.mockRejectedValue(new Error("server-secret"));
+    fetcher.mockImplementation((_url, init) => init?.method === "HEAD"
+      ? Promise.resolve(new Response(null, { status: 204 }))
+      : Promise.reject(new Error("server-secret")));
     const response = await submit(request(), context());
     expect(response.status).toBe(503);
     expect(await response.text()).not.toContain("server-secret");
@@ -146,9 +174,12 @@ describe("Verified submit boundary", () => {
   });
 
   it.each([{}, null, { ...accepted, job_id: parentId }, { ...accepted, status: "succeeded" }, { ...accepted, estimated_seconds: "600" }, { ...accepted, token: "server-secret" }])("rejects invalid upstream response: %s", async (payload) => {
-    const { submit, fetcher } = setup();
-    fetcher.mockResolvedValue(Response.json(payload));
+    const { submit, fetcher, start } = setup();
+    fetcher.mockImplementation(async (_url, init) => init?.method === "HEAD"
+      ? new Response(null, { status: 204 })
+      : Response.json(payload));
     expect((await submit(request(), context())).status).toBe(502);
+    expect(start).toHaveBeenCalledTimes(1);
   });
 
   it("returns 202 on replay with the same trusted Railway request", async () => {

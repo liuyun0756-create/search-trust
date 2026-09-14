@@ -542,6 +542,46 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
     });
 
+    it("re-resolves the exact frozen graph after an acknowledged-loss success for idempotent recovery", async () => {
+      const f=await fixture(); await f.start();
+      const resolve=() => db.query<{payload:Record<string,unknown>}>(
+        `select public.resolve_v22_verified_analysis_input($1,$2,1) as payload`,[f.jobId,f.caseId]);
+      const before=(await resolve()).rows[0].payload;
+      await f.persist(); // Commit succeeded; model the Worker never receiving its HTTP response.
+      const after=(await resolve()).rows[0].payload;
+      expect(after).toEqual(before);
+      expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
+      expect((await db.query(`select status,report_id from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
+        .toEqual({status:"succeeded",report_id:f.jobId});
+      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+        .toEqual({state:"consumed"});
+      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
+    });
+
+    it("does not resolve a compensated terminal Verified attempt", async () => {
+      const f=await fixture(); await f.start();
+      const state=(await db.query<{state_revision:number}>(`select state_revision from public.analysis_jobs where id=$1`,[f.jobId])).rows[0];
+      await db.query(`select * from public.apply_analysis_job_event(
+        $1,$2,$3,'failed','failed',20::smallint,1,'V22_INTERNAL_ERROR','failed','{}',null,now(),1,null)`,
+        [f.jobId,f.caseId,state.state_revision+1]);
+      await expect(db.query(`select public.resolve_v22_verified_analysis_input($1,$2,1)`,[f.jobId,f.caseId]))
+        .rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+        .toEqual({state:"compensated"});
+    });
+
+    it("rejects an impossible report-backed replay if its charge was tampered to compensated", async () => {
+      const f=await fixture(); await f.start(); await f.persist();
+      await db.exec(`alter table public.analysis_attempt_charges disable trigger prevent_v22_report_backed_compensation`);
+      try {
+        await db.query(`update public.analysis_attempt_charges set state='compensated',settled_at=now() where job_id=$1`,[f.jobId]);
+        await expect(db.query(`select public.resolve_v22_verified_analysis_input($1,$2,1)`,[f.jobId,f.caseId]))
+          .rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      } finally {
+        await db.exec(`alter table public.analysis_attempt_charges enable trigger prevent_v22_report_backed_compensation`);
+      }
+    });
+
     it("compensates expired queued jobs exactly once through existing settlement", async () => {
       const f = await fixture(); await f.start();
       await db.query(`update public.analysis_jobs set created_at=now()-interval '2 hours',deadline_at=now()-interval '1 hour' where id=$1`,[f.jobId]);
