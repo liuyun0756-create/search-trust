@@ -15,6 +15,21 @@ const input = {
 };
 
 describe("Dodo v2.2 client", () => {
+  it("accepts the Verified credit purchase kind without changing the checkout shape", async () => {
+    const request = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({
+      session_id: "cks_verified",
+      checkout_url: "https://test.checkout.dodopayments.com/session/cks_verified",
+    }), { status: 200 }));
+    const client = new DodoClient("https://test.dodopayments.com", "secret", request as typeof fetch);
+    await client.createCheckout({
+      ...input,
+      productId: "prod_verified",
+      metadata: { ...input.metadata, purchase_kind: "case_verified_credit" },
+    });
+    expect(JSON.parse(String((request.mock.calls[0][1] as RequestInit).body)).metadata.purchase_kind)
+      .toBe("case_verified_credit");
+  });
+
   it("creates a hosted checkout with Case metadata", async () => {
     const request = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({
       session_id: "cks_123",

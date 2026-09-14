@@ -144,4 +144,23 @@ describe("v2.2 Case payment handlers", () => {
     }).catch((error) => error);
     expect(mismatched).toMatchObject({ code: "PAYMENT_CASE_MISMATCH", status: 403 });
   });
+
+  it("keeps Prospect fulfillment strict after Dodo adds the Verified purchase kind", async () => {
+    const result = await fulfillVerifiedCasePayment({
+      payment: {
+        payment_id: "pay_verified",
+        status: "succeeded",
+        total_amount: 1900,
+        currency: "USD",
+        metadata: {
+          clerk_user_id: user.clerkUserId,
+          case_id: caseId,
+          order_id: orderId,
+          purchase_kind: "case_verified_credit",
+        },
+      },
+      repository: repository(),
+    }).catch((error) => error);
+    expect(result).toMatchObject({ code: "INVALID_REQUEST", status: 400 });
+  });
 });
