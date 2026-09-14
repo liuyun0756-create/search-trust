@@ -280,12 +280,11 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       return JSON.stringify(value);
     };
     const digest = (value: unknown) => `sha256:${createHash("sha256").update(canonical(value)).digest("hex")}`;
-    async function fixture(withParentCoverageEvidence = false) {
+    async function fixture(withParentCoverageEvidence = false, publicFault?: "unhealthy"|"reference"|"checksum"|"schema") {
       const owner = await insertUser(randomUUID());
       const caseId = await insertCase(owner, randomUUID());
       const connection = await insertConnection(owner, randomUUID());
       const parentId = randomUUID();
-      const publicGbp = randomUUID();
       const url = "https://maps.google.com/?cid=123456789";
       await db.query(`update public.users set audit_credits=5 where id=$1`, [owner]);
       await db.query(`update public.client_cases set business_identity=jsonb_build_object('public_gbp_url',$2::text) where id=$1`, [caseId, url]);
@@ -303,6 +302,33 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const parent = JSON.parse(await readFile(path.join(process.cwd(), "src/lib/report-v22/contracts/fixtures/prospect.json"), "utf8"));
       parent.identity.case_id = caseId;
       parent.report_version.report_id = parentId;
+      const publicReference = {case_id:caseId,site_url:parent.identity.business.site_url,
+        public_gbp_url:url,entity_keys:[{kind:"cid",value:"123456789"}],
+        confirmation_source:"user",confirmed_at:"2026-09-13T07:00:00Z"};
+      const publicPayload = {schema_version:"customer_public_gbp_snapshot_v1",
+        request_target:{public_gbp_url:url,entity_keys:publicReference.entity_keys},
+        started_at:"2026-09-13T07:01:00Z",completed_at:"2026-09-13T07:02:00Z",
+        expires_at:"2099-09-13T07:02:00Z",provider:"serpapi_public",
+        request_record_id:"req_aaaaaaaaaaaaaaaa",response_checksum:checksum,
+        collection_status:"succeeded",failure_code:null,
+        record:{observed_entity_keys:publicReference.entity_keys,observed_public_gbp_url:url,fields:{}},
+        limitations:[],subject_reference_checksum:checksum,
+        identity_rule_version:"customer_public_gbp_identity_v1",identity_match_status:"matched",
+        identity_reasons:["strong_id_matched"],health_status:"healthy"};
+      if (publicFault === "unhealthy") publicPayload.health_status = "unavailable";
+      if (publicFault === "schema") publicPayload.schema_version = "customer_public_gbp_snapshot_bad";
+      if (publicFault === "reference") publicReference.site_url = "https://wrong.example/";
+      const storedSubjectChecksum = publicFault === "checksum" ? `sha256:${"b".repeat(64)}` : checksum;
+      const publicGbp = await insertId(`insert into public.data_snapshots
+        (case_id,source_type,schema_version,fetched_at,expires_at,sync_trigger,health_status,
+         normalized_payload,payload_checksum,provider_request_context)
+        values ($1,'gbp','customer_public_gbp_snapshot_v1',$2::timestamptz,$3::timestamptz,
+          'report_generation',$8,$4::jsonb,$5,
+          jsonb_build_object('job_id',$6::uuid,'customer_public_gbp_reference',$7::jsonb,
+            'subject_reference_checksum',$9::text)) returning id`,
+        [caseId,publicPayload.completed_at,publicPayload.expires_at,JSON.stringify(publicPayload),checksum,
+          parentId,JSON.stringify(publicReference),publicPayload.health_status,storedSubjectChecksum]);
+      snapshots.gbp = publicGbp;
       for (const evidence of parent.evidence_index) evidence.snapshot_id = evidence.source_type === "gbp" ? publicGbp : snapshots[evidence.source_type];
       for (const coverage of parent.data_coverage.sources) coverage.snapshot_ids = coverage.source_type === "gbp" ? [publicGbp] : snapshots[coverage.source_type] ? [snapshots[coverage.source_type]] : [];
       parent.data_coverage.sources.find((source: {source_type:string}) => source.source_type === "gbp").identity_match_status = "matched";
@@ -310,8 +336,8 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         evidence_id:"ev_parent_coverage",source_type:"coverage",snapshot_id:snapshots.site});
       await db.query(`insert into public.reports
         (id,report_id,user_id,page_url,gbp_url,status,access_type,case_id,report_type,schema_version,version_number,report_v2_2,snapshot_ids,coverage_state,version_diff,generation_config,ruleset_version,copy_model_version)
-        values ($1::uuid,$1::text,$2,'https://example.com',$3,'paid_full','unlocked',$4,'prospect','2.2.0',1,$5,array[$6::uuid,$7::uuid,$8::uuid],$9,'{}','{}','rules-v1','copy-v1')`,
-        [parentId,owner,url,caseId,JSON.stringify(parent),snapshots.site,snapshots.serp,snapshots.competitor,JSON.stringify(parent.data_coverage)]);
+        values ($1::uuid,$1::text,$2,'https://example.com',$3,'paid_full','unlocked',$4,'prospect','2.2.0',1,$5,array[$6::uuid,$7::uuid,$8::uuid,$9::uuid],$10,'{}','{}','rules-v1','copy-v1')`,
+        [parentId,owner,url,caseId,JSON.stringify(parent),snapshots.site,snapshots.serp,snapshots.competitor,publicGbp,JSON.stringify(parent.data_coverage)]);
       await db.query(`update public.client_cases set latest_report_id=$2 where id=$1`, [caseId,parentId]);
       const jobId = randomUUID();
       const key = `verified:${caseId}:attempt:1`;
@@ -409,14 +435,26 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:reason === "zero-credit" ? 0 : 5});
     });
 
+    it.each(["unhealthy","reference","checksum","schema"] as const)(
+      "rejects a %s persisted public GBP source before committing a debit", async publicFault => {
+        const f = await fixture(false, publicFault);
+        await expect(f.start()).rejects.toThrow("V22_VERIFIED_PUBLIC_GBP_INVALID");
+        expect((await db.query(`select id from public.analysis_jobs where case_id=$1`,[f.caseId])).rows).toEqual([]);
+        expect((await db.query(`select id from public.audit_credit_ledger where case_id=$1`,[f.caseId])).rows).toEqual([]);
+        expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0])
+          .toEqual({audit_credits:5});
+      });
+
     it("resolves frozen inputs with generation fencing even after bindings change", async () => {
       const f = await fixture(); await f.start();
       await db.query(`update public.case_source_bindings set is_active=false,disconnected_at=now() where case_id=$1`,[f.caseId]);
       const resolve = (generation=1) => db.query<{payload:Record<string, any>}>(`select public.resolve_v22_verified_analysis_input($1,$2,$3) as payload`,[f.jobId,f.caseId,generation]);
       const payload = (await resolve()).rows[0].payload;
-      expect(Object.keys(payload).sort()).toEqual(["schema_version","job_id","case_id","parent_report","parent_payload_checksum","site_snapshot","serp_snapshot","competitor_snapshot","first_party_snapshots"].sort());
+      expect(Object.keys(payload).sort()).toEqual(["schema_version","job_id","case_id","parent_report","parent_payload_checksum","site_snapshot","serp_snapshot","competitor_snapshot","public_gbp_snapshot","first_party_snapshots"].sort());
       expect(payload).toMatchObject({schema_version:"v22_verified_resolved_input_v1",parent_report:f.parent,parent_payload_checksum:digest(f.parent),site_snapshot:{snapshot_id:f.snapshots.site},serp_snapshot:{snapshot_id:f.snapshots.serp},competitor_snapshot:{snapshot_id:f.snapshots.competitor}});
       expect(payload.first_party_snapshots.map((s:Record<string,unknown>)=>s.snapshot_id)).toEqual([f.snapshots.gsc,f.snapshots.ga4]);
+      expect(payload.public_gbp_snapshot).toMatchObject({snapshot_id:f.publicGbp,source_type:"gbp",
+        schema_version:"customer_public_gbp_snapshot_v1",reference:{case_id:f.caseId}});
       for (const source of ["site", "serp", "competitor"]) {
         const expected = (await db.query<{ dates: Record<string, unknown> }>(
           `select jsonb_build_object('created_at',created_at,'fetched_at',fetched_at,'expires_at',expires_at) as dates
@@ -1922,7 +1960,10 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     const siteId = "88888888-8888-4888-8888-888888888888";
     const serpId = "99999999-9999-4999-8999-999999999999";
     const competitorId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const publicGbpId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
     const now = "2026-09-04T08:00:00Z";
+    const publicGbpExpires = "2026-09-05T08:00:00Z";
+    const publicGbpUrl = "https://maps.google.com/?cid=123456789";
 
     const started = await db.query<{ job_id: string; created: boolean; idempotent: boolean }>(
       `select * from public.start_v22_prospect_analysis($1, $2, $3, 'analyze:result:1')`,
@@ -1945,10 +1986,18 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       completed_at: now,
       limitations: [],
     };
+    const publicGbpReference = {case_id:caseId,site_url:"https://result.example.com",
+      public_gbp_url:publicGbpUrl,entity_keys:[{kind:"cid",value:"123456789"}],
+      confirmation_source:"user",confirmed_at:"2026-09-04T07:00:00Z"};
+    const publicGbpPayload = {schema_version:"customer_public_gbp_snapshot_v1",
+      request_target:{public_gbp_url:publicGbpUrl,entity_keys:publicGbpReference.entity_keys},
+      started_at:"2026-09-04T07:30:00Z",completed_at:now,expires_at:publicGbpExpires,
+      health_status:"healthy",identity_match_status:"matched",subject_reference_checksum:checksum,
+      limitations:[]};
     const reportPayload = {
       identity: {
         case_id: caseId,
-        business: { site_url: "https://result.example.com", public_gbp_url: null },
+        business: { site_url: "https://result.example.com", public_gbp_url: publicGbpUrl },
       },
       report_version: {
         report_id: jobId,
@@ -1960,8 +2009,10 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         ruleset_version: "rules-v1",
         copy_model_version: "copy-v1",
       },
-      data_coverage: { sources: [] },
-      evidence_index: [{ snapshot_id: siteId }],
+      data_coverage: { sources: [{source_type:"gbp",health_status:"healthy",
+        identity_match_status:"matched",snapshot_ids:[publicGbpId]}] },
+      evidence_index: [{ snapshot_id: siteId },{snapshot_id:publicGbpId,source_type:"gbp",
+        health_status:"healthy",source_locator:{url:publicGbpUrl}}],
       version_diff: { kind: "initial", parent_report_id: null, entries: [] },
     };
     const persistArgs = [
@@ -1969,12 +2020,14 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       siteId, JSON.stringify(sitePayload), checksum,
       serpId, JSON.stringify(serpPayload), checksum, "2026-09-04T09:00:00Z",
       competitorId, JSON.stringify(competitorPayload), checksum,
+      publicGbpId, JSON.stringify(publicGbpPayload), checksum, publicGbpExpires,
+      JSON.stringify(publicGbpReference),
       JSON.stringify(reportPayload),
     ];
     const persisted = await db.query<{ report_id: string; idempotent: boolean }>(
       `select * from public.persist_v22_prospect_result(
          $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9,
-         $10, $11::jsonb, $12, $13::jsonb
+         $10, $11::jsonb, $12, $13, $14::jsonb, $15, $16, $17::jsonb, $18::jsonb
        )`,
       persistArgs,
     );
@@ -1982,11 +2035,18 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     const persistedAgain = await db.query<{ report_id: string; idempotent: boolean }>(
       `select * from public.persist_v22_prospect_result(
          $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9,
-         $10, $11::jsonb, $12, $13::jsonb
+         $10, $11::jsonb, $12, $13, $14::jsonb, $15, $16, $17::jsonb, $18::jsonb
        )`,
       persistArgs,
     );
     expect(persistedAgain.rows[0]).toEqual({ report_id: jobId, idempotent: true });
+    const changedReference = [...persistArgs];
+    changedReference[16] = JSON.stringify({...publicGbpReference,confirmed_at:"2026-09-04T06:00:00Z"});
+    await expect(db.query(
+      `select * from public.persist_v22_prospect_result(
+         $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9,
+         $10, $11::jsonb, $12, $13, $14::jsonb, $15, $16, $17::jsonb, $18::jsonb
+       )`, changedReference)).rejects.toThrow("immutable v2.2 public GBP reference conflict");
 
     await db.query(
       `select * from public.apply_analysis_job_event(
@@ -2006,10 +2066,21 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       [caseId, jobId],
     );
     expect(graph.rows[0]).toEqual({
-      snapshots: 3,
+      snapshots: 4,
       report_id: jobId,
       latest_report_id: jobId,
       entitlement_status: "consumed",
     });
+  });
+
+  it("restricts both four-source Prospect persistence overloads to service_role", async () => {
+    const base = "uuid,uuid,uuid,jsonb,text,uuid,jsonb,text,timestamptz,uuid,jsonb,text,uuid,jsonb,text,timestamptz,jsonb,jsonb";
+    for (const signature of [base, `${base},integer`]) {
+      for (const role of ["anon","authenticated","service_role"]) {
+        expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,
+          [role,`public.persist_v22_prospect_result(${signature})`])).rows[0])
+          .toEqual({allowed:role === "service_role"});
+      }
+    }
   });
 });

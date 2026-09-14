@@ -244,6 +244,23 @@ export interface VerifiedResolvedSourceSnapshot {
   schema_version: string;
   normalized_payload: JsonObject;
   payload_checksum: string;
+  created_at: string;
+  fetched_at: string;
+  expires_at: string | null;
+}
+
+export interface VerifiedResolvedPublicGbpSnapshot extends Omit<VerifiedResolvedSourceSnapshot, "source_type" | "expires_at"> {
+  source_type: "gbp";
+  schema_version: "customer_public_gbp_snapshot_v1";
+  expires_at: string;
+  reference: {
+    case_id: string;
+    site_url: string;
+    public_gbp_url: string;
+    entity_keys: Array<{ kind: "place_id" | "data_id" | "cid"; value: string }>;
+    confirmation_source: "user";
+    confirmed_at: string;
+  };
 }
 
 export interface VerifiedResolvedFirstPartySnapshot {
@@ -274,6 +291,7 @@ export interface ResolveV22VerifiedAnalysisInputResult {
   site_snapshot: VerifiedResolvedSourceSnapshot;
   serp_snapshot: VerifiedResolvedSourceSnapshot;
   competitor_snapshot: VerifiedResolvedSourceSnapshot;
+  public_gbp_snapshot: VerifiedResolvedPublicGbpSnapshot;
   first_party_snapshots: [VerifiedResolvedFirstPartySnapshot, VerifiedResolvedFirstPartySnapshot];
 }
 
