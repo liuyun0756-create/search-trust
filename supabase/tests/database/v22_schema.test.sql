@@ -4,7 +4,7 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(99);
+select plan(104);
 
 select has_column('public','audit_credit_ledger','order_id','Payment ledger retains order identity');
 select col_is_fk('public','audit_credit_ledger','order_id','Payment ledger order has FK');
@@ -33,6 +33,15 @@ select has_function('public','start_v22_verified_analysis',array['uuid','uuid','
 select has_function('public','resolve_v22_verified_analysis_input',array['uuid','uuid','integer'],'Verified resolve RPC exists');
 select has_function('public','persist_v22_verified_result',array['uuid','uuid','jsonb','integer'],'Verified persist RPC exists');
 select has_function('public','expire_v22_stale_verified_jobs',array['timestamp with time zone','integer'],'Verified compensation RPC exists');
+select has_function('public','settle_v22_verified_job_on_report_link',array[]::text[],'Verified report linking has an atomic settlement trigger function');
+select has_function('public','prevent_v22_report_backed_compensation',array[]::text[],'Report-backed jobs have a compensation guard function');
+select has_trigger('public','analysis_jobs','settle_v22_verified_job_on_report_link','Verified report linking triggers atomic success settlement');
+select has_trigger('public','analysis_attempt_charges','prevent_v22_report_backed_compensation','Charge compensation cannot cross the durable report boundary');
+select ok(not has_function_privilege('anon','public.settle_v22_verified_job_on_report_link()','EXECUTE')
+  and not has_function_privilege('authenticated','public.settle_v22_verified_job_on_report_link()','EXECUTE')
+  and not has_function_privilege('anon','public.prevent_v22_report_backed_compensation()','EXECUTE')
+  and not has_function_privilege('authenticated','public.prevent_v22_report_backed_compensation()','EXECUTE'),
+  'Verified settlement trigger functions are not browser-callable');
 select ok((select bool_and(has_function_privilege('service_role',signature,'EXECUTE') and not has_function_privilege('anon',signature,'EXECUTE') and not has_function_privilege('authenticated',signature,'EXECUTE')) from unnest(array[
   'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)',
   'public.resolve_v22_verified_analysis_input(uuid,uuid,integer)',

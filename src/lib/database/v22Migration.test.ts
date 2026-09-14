@@ -486,6 +486,62 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       await expect(db.query(`update public.client_cases set latest_verified_report_id=$2 where id=$1`,[f.caseId,f.parentId])).rejects.toThrow("latest_verified_report_id");
     });
 
+    it("atomically persists a Verified report, succeeds its job and consumes its charge", async () => {
+      const f=await fixture(); await f.start();
+      expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:false}]);
+      expect((await db.query(`select status,current_stage,progress,report_id,error_code,completed_at is not null as completed
+        from public.analysis_jobs where id=$1`,[f.jobId])).rows[0]).toEqual({
+          status:"succeeded",current_stage:"completed",progress:100,report_id:f.jobId,error_code:null,completed:true,
+        });
+      expect((await db.query(`select state,settled_at is not null as settled
+        from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0]).toEqual({state:"consumed",settled:true});
+      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
+      expect((await db.query(`select kind from public.audit_credit_ledger where job_id=$1 order by created_at`,[f.jobId])).rows)
+        .toEqual([{kind:"attempt_debit"}]);
+      await expect(db.query(`update public.analysis_attempt_charges set state='compensated',settled_at=now()
+        where job_id=$1`,[f.jobId])).rejects.toThrow("V22_REPORT_BACKED_JOB_CANNOT_BE_COMPENSATED");
+      expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
+    });
+
+    it("chooses compensation atomically when deadline settlement wins before report persistence", async () => {
+      const f=await fixture(); await f.start();
+      const state=(await db.query<{state_revision:number}>(`select state_revision from public.analysis_jobs where id=$1`,[f.jobId])).rows[0];
+      const callback=await db.query(`select * from public.apply_analysis_job_event(
+        $1,$2,$3,'failed','failed',90::smallint,1,'JOB_DEADLINE_EXCEEDED','deadline','{}',null,now(),1,null)`,
+        [f.jobId,f.caseId,state.state_revision+1]);
+      expect(callback.rows[0]).toMatchObject({found:true,applied:true,terminal_effects_applied:true});
+      await expect(f.persist()).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      expect((await db.query(`select id from public.reports where id=$1`,[f.jobId])).rows).toEqual([]);
+      expect((await db.query(`select status,report_id from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
+        .toEqual({status:"failed",report_id:null});
+      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+        .toEqual({state:"compensated"});
+      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:5});
+      expect((await db.query(`select kind from public.audit_credit_ledger where job_id=$1 order by delta`,[f.jobId])).rows)
+        .toEqual([{kind:"attempt_debit"},{kind:"technical_failure_credit"}]);
+    });
+
+    it("never refunds after persist commits even when its response is lost and a deadline failure arrives", async () => {
+      const f=await fixture(); await f.start();
+      await f.persist(); // Simulate a committed RPC whose HTTP response never reached the Worker.
+      await db.query(`update public.analysis_jobs set created_at=now()-interval '2 hours',
+        deadline_at=now()-interval '1 hour' where id=$1`,[f.jobId]);
+      expect((await db.query(`select * from public.expire_v22_stale_verified_jobs(now(),100)`)).rows).toEqual([]);
+      const state=(await db.query<{state_revision:number}>(`select state_revision from public.analysis_jobs where id=$1`,[f.jobId])).rows[0];
+      const callback=await db.query(`select * from public.apply_analysis_job_event(
+        $1,$2,$3,'failed','failed',90::smallint,1,'JOB_DEADLINE_EXCEEDED','deadline','{}',null,now(),1,null)`,
+        [f.jobId,f.caseId,state.state_revision+1]);
+      expect(callback.rows[0]).toMatchObject({found:true,applied:false,terminal_effects_applied:false});
+      expect((await db.query(`select status,report_id from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
+        .toEqual({status:"succeeded",report_id:f.jobId});
+      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+        .toEqual({state:"consumed"});
+      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
+      expect((await db.query(`select kind from public.audit_credit_ledger where job_id=$1 order by created_at`,[f.jobId])).rows)
+        .toEqual([{kind:"attempt_debit"}]);
+      expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
+    });
+
     it("compensates expired queued jobs exactly once through existing settlement", async () => {
       const f = await fixture(); await f.start();
       await db.query(`update public.analysis_jobs set created_at=now()-interval '2 hours',deadline_at=now()-interval '1 hour' where id=$1`,[f.jobId]);
