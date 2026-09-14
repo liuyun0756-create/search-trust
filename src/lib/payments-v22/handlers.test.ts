@@ -131,6 +131,9 @@ describe("v2.2 Case payment handlers", () => {
         status: "succeeded",
         total_amount: 1900,
         currency: "USD",
+        checkout_session_id: null,
+        product_cart: null,
+        refund_status: null,
         metadata: {
           clerk_user_id: user.clerkUserId,
           case_id: "44444444-4444-4444-8444-444444444444",
@@ -152,6 +155,9 @@ describe("v2.2 Case payment handlers", () => {
         status: "succeeded",
         total_amount: 1900,
         currency: "USD",
+        checkout_session_id: null,
+        product_cart: null,
+        refund_status: null,
         metadata: {
           clerk_user_id: user.clerkUserId,
           case_id: caseId,

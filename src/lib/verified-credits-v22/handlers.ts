@@ -10,7 +10,11 @@ import {
   type DodoClient,
   type DodoPayment,
 } from "@/lib/payments-v22";
-import { CASE_VERIFIED_CREDIT_PURCHASE, parseVerifiedCreditPaymentMetadata } from "./contracts";
+import {
+  CASE_VERIFIED_CREDIT_PURCHASE,
+  isExactVerifiedCreditPayment,
+  parseVerifiedCreditPaymentMetadata,
+} from "./contracts";
 import type { VerifiedCreditRepository } from "./repository";
 
 type CurrentUser = { userId: string; clerkUserId: string } | null;
@@ -57,17 +61,27 @@ async function requireOwnedCase(dependencies: VerifiedCreditHandlerDependencies,
   }
 }
 
+export function parseVerifiedCheckoutBaseUrl(raw: string): URL | null {
+  try {
+    const url = new URL(raw.trim());
+    const loopback = url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]";
+    if (url.protocol !== "https:" && !(loopback && url.protocol === "http:")) return null;
+    if (url.username || url.password || url.hash || url.search || (url.pathname !== "/" && url.pathname !== "")) return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 function requireCheckoutConfiguration(dependencies: VerifiedCreditHandlerDependencies) {
   const productId = dependencies.getProductId();
   const baseUrl = dependencies.getBaseUrl();
   if (!dependencies.isCheckoutEnabled() || !dependencies.isDodoConfigured() || !productId || !baseUrl) {
     throw CasePaymentError.unavailable();
   }
-  try {
-    return { productId, baseUrl: new URL(baseUrl) };
-  } catch {
-    throw CasePaymentError.unavailable();
-  }
+  const parsedBaseUrl = parseVerifiedCheckoutBaseUrl(baseUrl);
+  if (!parsedBaseUrl) throw CasePaymentError.unavailable();
+  return { productId, baseUrl: parsedBaseUrl };
 }
 
 function isSafeDodoCheckoutUrl(value: string) {
@@ -109,7 +123,8 @@ export function createVerifiedCreditHandlers(dependencies: VerifiedCreditHandler
         const { productId, baseUrl } = requireCheckoutConfiguration(dependencies);
         repository = dependencies.createRepository();
         const existing = await repository.getPendingCheckout(user.userId, caseId);
-        if (existing?.checkout_session_id && existing.checkout_url && isSafeDodoCheckoutUrl(existing.checkout_url)) {
+        if (existing?.checkout_session_id && existing.checkout_url
+          && existing.provider_product_id === productId && isSafeDodoCheckoutUrl(existing.checkout_url)) {
           return NextResponse.json({
             case_id: caseId,
             order_id: existing.id,
@@ -122,7 +137,7 @@ export function createVerifiedCreditHandlers(dependencies: VerifiedCreditHandler
           await repository.markOrderFailed(existing.id);
         }
 
-        const order = await repository.createPendingOrder(user.userId, caseId);
+        const order = await repository.createPendingOrder(user.userId, caseId, productId);
         pendingOrderId = order.id;
         const connectionPath = `/cases/${caseId}/connections`;
         const returnUrl = new URL(connectionPath, baseUrl);
@@ -158,9 +173,11 @@ export function createVerifiedCreditHandlers(dependencies: VerifiedCreditHandler
   };
 }
 
-function verifiedPaymentInput(payment: DodoPayment) {
+function verifiedPaymentInput(payment: DodoPayment, expectedProductId: string) {
   const metadata = parseVerifiedCreditPaymentMetadata(payment.metadata);
-  if (!metadata) throw CasePaymentError.invalid("Payment metadata is invalid.");
+  if (!metadata || !isExactVerifiedCreditPayment(payment, expectedProductId)) {
+    throw CasePaymentError.invalid("Payment settlement is invalid.");
+  }
   return { metadata, payment: {
     localOrderId: metadata.order_id,
     paymentId: payment.payment_id,
@@ -168,6 +185,8 @@ function verifiedPaymentInput(payment: DodoPayment) {
     caseId: metadata.case_id,
     amount: payment.total_amount,
     currency: payment.currency,
+    checkoutSessionId: payment.checkout_session_id,
+    productId: expectedProductId,
   } };
 }
 
@@ -175,9 +194,10 @@ export async function fulfillVerifiedCreditPayment(input: {
   payment: DodoPayment;
   expectedClerkUserId?: string;
   expectedCaseId?: string;
+  expectedProductId: string;
   repository: VerifiedCreditRepository;
 }) {
-  const parsed = verifiedPaymentInput(input.payment);
+  const parsed = verifiedPaymentInput(input.payment, input.expectedProductId);
   if (input.expectedClerkUserId && parsed.metadata.clerk_user_id !== input.expectedClerkUserId) {
     throw new CasePaymentError("PAYMENT_OWNER_MISMATCH", "Payment does not belong to the current user.", 403);
   }
@@ -190,9 +210,10 @@ export async function fulfillVerifiedCreditPayment(input: {
 
 export async function refundVerifiedCreditPayment(input: {
   payment: DodoPayment;
+  expectedProductId: string;
   repository: VerifiedCreditRepository;
 }) {
-  const parsed = verifiedPaymentInput(input.payment);
+  const parsed = verifiedPaymentInput(input.payment, input.expectedProductId);
   return input.repository.refund(parsed.payment);
 }
 
@@ -205,7 +226,8 @@ export function createVerifiedCreditConfirmHandler(dependencies: VerifiedCreditH
         const user = await requireUser(dependencies);
         const caseId = (await context.params).id;
         await requireOwnedCase(dependencies, user.userId, caseId);
-        if (!dependencies.isDodoConfigured()) throw CasePaymentError.unavailable();
+        const productId = dependencies.getProductId();
+        if (!dependencies.isDodoConfigured() || !productId) throw CasePaymentError.unavailable();
         const body = await request.json().catch(() => null) as { payment_id?: unknown } | null;
         if (!body || typeof body.payment_id !== "string" || !body.payment_id) {
           throw CasePaymentError.invalid("payment_id is required.");
@@ -213,6 +235,7 @@ export function createVerifiedCreditConfirmHandler(dependencies: VerifiedCreditH
         const payment = await dependencies.createDodoClient().getPayment(body.payment_id);
         const result = await fulfillVerifiedCreditPayment({
           payment,
+          expectedProductId: productId,
           expectedClerkUserId: user.clerkUserId,
           expectedCaseId: caseId,
           repository: dependencies.createRepository(),

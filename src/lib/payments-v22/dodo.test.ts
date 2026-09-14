@@ -64,7 +64,7 @@ describe("Dodo v2.2 client", () => {
       detail: [{
         type: "value_error",
         loc: ["body", "product_cart", 0, "product_id"],
-        msg: "Product is not available",
+        msg: "Product prod_report is not available",
         input: "prod_private_value",
       }],
     }), { status: 422 }));
@@ -78,10 +78,50 @@ describe("Dodo v2.2 client", () => {
       provider_error: [{
         type: "value_error",
         location: ["body", "product_cart", 0, "product_id"],
-        message: "Product is not available",
+        message: "Product [redacted] is not available",
       }],
     });
     expect(JSON.stringify(log.mock.calls)).not.toContain("prod_private_value");
+    expect(JSON.stringify(log.mock.calls)).not.toContain("prod_report");
     log.mockRestore();
+  });
+
+  it("enforces one total deadline even when fetch never resolves", async () => {
+    const request = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) => new Promise<Response>(() => undefined));
+    const client = new DodoClient("https://test.dodopayments.com", "secret", request as typeof fetch, { timeoutMs: 5 });
+    await expect(client.getPayment("pay_123")).rejects.toMatchObject({ code: "CHECKOUT_TIMEOUT", status: 504 });
+  });
+
+  it("applies the same total deadline to checkout creation", async () => {
+    const request = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) => new Promise<Response>(() => undefined));
+    const client = new DodoClient("https://test.dodopayments.com", "secret", request as typeof fetch, { timeoutMs: 5 });
+    await expect(client.createCheckout(input)).rejects.toMatchObject({ code: "CHECKOUT_TIMEOUT", status: 504 });
+  });
+
+  it("enforces the same deadline while a response body trickles", async () => {
+    const body = new ReadableStream<Uint8Array>({ start(controller) { controller.enqueue(new TextEncoder().encode("{")); } });
+    const request = vi.fn(async () => new Response(body, { status: 200 }));
+    const client = new DodoClient("https://test.dodopayments.com", "secret", request as typeof fetch, { timeoutMs: 5 });
+    await expect(client.getPayment("pay_123")).rejects.toMatchObject({ code: "CHECKOUT_TIMEOUT", status: 504 });
+  });
+
+  it.each([
+    ["declared oversize", new Response("{}", { headers: { "content-length": "2049" } })],
+    ["actual oversize", new Response("x".repeat(2049))],
+    ["compressed", new Response("{}", { headers: { "content-encoding": "gzip" } })],
+    ["malformed JSON", new Response("{not json")],
+  ])("rejects %s provider responses without logging payloads", async (_label, response) => {
+    const request = vi.fn(async () => response.clone());
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const client = new DodoClient("https://test.dodopayments.com", "secret", request as typeof fetch, { maxResponseBytes: 2048 });
+    await expect(client.getPayment("pay_123")).rejects.toMatchObject({ code: "CHECKOUT_UNAVAILABLE" });
+    expect(JSON.stringify(log.mock.calls)).not.toContain("not json");
+    log.mockRestore();
+  });
+
+  it("maps provider AbortError to a safe timeout", async () => {
+    const request = vi.fn(async () => { throw new DOMException("private provider detail", "AbortError"); });
+    const client = new DodoClient("https://test.dodopayments.com", "secret", request as typeof fetch);
+    await expect(client.getPayment("pay_123")).rejects.toMatchObject({ code: "CHECKOUT_TIMEOUT", status: 504 });
   });
 });

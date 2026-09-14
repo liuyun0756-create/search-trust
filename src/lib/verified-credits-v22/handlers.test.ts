@@ -3,9 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { CaseService } from "@/lib/cases/service";
 import type { DodoClient } from "@/lib/payments-v22";
+import { CasePaymentError } from "@/lib/payments-v22";
 import {
   createVerifiedCreditConfirmHandler,
   createVerifiedCreditHandlers,
+  parseVerifiedCheckoutBaseUrl,
   refundVerifiedCreditPayment,
   type VerifiedCreditHandlerDependencies,
 } from "./handlers";
@@ -40,6 +42,9 @@ function dependencies(repo: VerifiedCreditRepository, overrides: Partial<Verifie
       status: "succeeded",
       total_amount: 1900,
       currency: "USD",
+      checkout_session_id: "cks_verified",
+      product_cart: [{ product_id: "prod_verified_credit", quantity: 1 }],
+      refund_status: null,
       metadata: {
         clerk_user_id: user.clerkUserId,
         case_id: caseId,
@@ -88,9 +93,24 @@ describe("Verified credit handlers", () => {
     expect(new URL(input.cancelUrl).pathname).toBe(`/cases/${caseId}/connections`);
   });
 
+  it.each([
+    "ftp://searchtrust.example",
+    "https://user:password@searchtrust.example",
+    "http://searchtrust.example",
+    "https://searchtrust.example/#fragment",
+  ])("rejects unsafe public return base URL %s", (value) => {
+    expect(parseVerifiedCheckoutBaseUrl(value)).toBeNull();
+  });
+
+  it("allows HTTPS production and HTTP loopback public bases", () => {
+    expect(parseVerifiedCheckoutBaseUrl("https://searchtrust.example")?.origin).toBe("https://searchtrust.example");
+    expect(parseVerifiedCheckoutBaseUrl("http://localhost:3000")?.origin).toBe("http://localhost:3000");
+    expect(parseVerifiedCheckoutBaseUrl("http://127.0.0.1:3000")?.origin).toBe("http://127.0.0.1:3000");
+  });
+
   it("reuses only a pending checkout and does not treat a paid order as open", async () => {
     const pending = repository({
-      getPendingCheckout: vi.fn(async () => ({ id: orderId, checkout_session_id: "cks_old", checkout_url: "https://test.checkout.dodopayments.com/session/cks_old", status: "pending" as const })),
+      getPendingCheckout: vi.fn(async () => ({ id: orderId, checkout_session_id: "cks_old", checkout_url: "https://test.checkout.dodopayments.com/session/cks_old", status: "pending" as const, provider_product_id: "prod_verified_credit" })),
     });
     const pendingDeps = dependencies(pending);
     const reused = await createVerifiedCreditHandlers(pendingDeps).POST(new NextRequest("https://searchtrust.example", { method: "POST" }), context);
@@ -110,6 +130,7 @@ describe("Verified credit handlers", () => {
         checkout_session_id: "cks_tampered",
         checkout_url: "https://attacker.example/collect",
         status: "pending" as const,
+        provider_product_id: "prod_verified_credit",
       })),
     });
     const response = await createVerifiedCreditHandlers(dependencies(repo)).POST(
@@ -141,6 +162,30 @@ describe("Verified credit handlers", () => {
     });
   });
 
+  it("maps a Dodo deadline to a safe 504 response", async () => {
+    const repo = repository();
+    const deps = dependencies(repo);
+    vi.mocked(deps.createDodoClient().getPayment).mockRejectedValue(CasePaymentError.timeout());
+    const response = await createVerifiedCreditConfirmHandler(deps).POST(new NextRequest(
+      `https://searchtrust.example/api/v2/cases/${caseId}/verified-credit/checkout/confirm`,
+      { method: "POST", body: JSON.stringify({ payment_id: "pay_verified" }) },
+    ), context);
+    expect(response.status).toBe(504);
+    expect(await response.json()).toMatchObject({ error: { code: "CHECKOUT_TIMEOUT" } });
+    expect(repo.fulfill).not.toHaveBeenCalled();
+  });
+
+  it("closes a pending order and returns 504 when checkout creation times out", async () => {
+    const repo = repository();
+    const deps = dependencies(repo);
+    vi.mocked(deps.createDodoClient().createCheckout).mockRejectedValue(CasePaymentError.timeout());
+    const response = await createVerifiedCreditHandlers(deps).POST(
+      new NextRequest("https://searchtrust.example", { method: "POST" }), context,
+    );
+    expect(response.status).toBe(504);
+    expect(repo.markOrderFailed).toHaveBeenCalledWith(orderId);
+  });
+
   it("confirms idempotently without ever submitting a Verified analysis", async () => {
     const repo = repository({
       fulfill: vi.fn(async () => ({ fulfilled: true, idempotent: true, credits_added: 0, audit_credits: 3 })),
@@ -156,6 +201,23 @@ describe("Verified credit handlers", () => {
     analysisRequest.mockRestore();
   });
 
+  it.each([
+    { product_cart: [{ product_id: "prod_other", quantity: 1 }] },
+    { product_cart: [{ product_id: "prod_verified_credit", quantity: 2 }] },
+    { product_cart: [{ product_id: "prod_verified_credit", quantity: 1 }, { product_id: "prod_extra", quantity: 1 }] },
+  ])("rejects a payment that does not match the exact Verified product/session: %o", async patch => {
+    const repo = repository();
+    const deps = dependencies(repo);
+    const basePayment = await deps.createDodoClient().getPayment("pay_verified");
+    vi.mocked(deps.createDodoClient().getPayment).mockResolvedValue({ ...basePayment, ...patch });
+    const response = await createVerifiedCreditConfirmHandler(deps).POST(new NextRequest(
+      `https://searchtrust.example/api/v2/cases/${caseId}/verified-credit/checkout/confirm`,
+      { method: "POST", body: JSON.stringify({ payment_id: "pay_verified" }) },
+    ), context);
+    expect(response.status).toBe(400);
+    expect(repo.fulfill).not.toHaveBeenCalled();
+  });
+
   it("returns the structured manual-review outcome from a refund", async () => {
     const repo = repository({
       refund: vi.fn(async () => ({ refunded: true, idempotent: false, reversal_applied: false, manual_review: true, audit_credits: 0 })),
@@ -166,8 +228,12 @@ describe("Verified credit handlers", () => {
         status: "refunded",
         total_amount: 1900,
         currency: "USD",
+        checkout_session_id: "cks_verified",
+        product_cart: [{ product_id: "prod_verified_credit", quantity: 1 }],
+        refund_status: "full",
         metadata: { clerk_user_id: user.clerkUserId, case_id: caseId, order_id: orderId, purchase_kind: "case_verified_credit" },
       },
+      expectedProductId: "prod_verified_credit",
       repository: repo,
     });
     expect(result).toMatchObject({ manual_review: true, reversal_applied: false, audit_credits: 0 });

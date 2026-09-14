@@ -1,4 +1,4 @@
-import { isUuid } from "@/lib/payments-v22/contracts";
+import { isUuid, type DodoPayment } from "@/lib/payments-v22/contracts";
 
 export const CASE_VERIFIED_CREDIT_PURCHASE = "case_verified_credit" as const;
 
@@ -39,6 +39,18 @@ export function parseVerifiedCreditPaymentMetadata(value: unknown): VerifiedCred
     order_id: metadata.order_id,
     purchase_kind: CASE_VERIFIED_CREDIT_PURCHASE,
   };
+}
+
+export function isExactVerifiedCreditPayment(payment: DodoPayment, productId: string): payment is DodoPayment & {
+  checkout_session_id: string;
+  product_cart: [{ product_id: string; quantity: 1 }];
+} {
+  return Boolean(productId)
+    && typeof payment.checkout_session_id === "string"
+    && payment.checkout_session_id.length > 0
+    && payment.product_cart?.length === 1
+    && payment.product_cart[0].product_id === productId
+    && payment.product_cart[0].quantity === 1;
 }
 
 function isBalance(value: unknown): value is number {

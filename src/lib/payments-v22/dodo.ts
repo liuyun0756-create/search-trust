@@ -1,6 +1,9 @@
 import { CASE_PROSPECT_PURCHASE, parseDodoPayment, type DodoPayment } from "./contracts";
 import { CasePaymentError } from "./errors";
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_MAX_RESPONSE_BYTES = 64 * 1024;
+
 export interface CheckoutSession {
   session_id: string;
   checkout_url: string;
@@ -18,6 +21,11 @@ export interface CreateCheckoutInput {
   };
 }
 
+export interface DodoClientOptions {
+  timeoutMs?: number;
+  maxResponseBytes?: number;
+}
+
 function safeCheckoutUrl(value: unknown): string | null {
   if (typeof value !== "string") return null;
   try {
@@ -28,6 +36,14 @@ function safeCheckoutUrl(value: unknown): string | null {
   } catch {
     return null;
   }
+}
+
+function redact(value: string, redactions: string[], maxLength: number) {
+  let safe = value;
+  for (const redaction of redactions) {
+    if (redaction) safe = safe.replaceAll(redaction, "[redacted]");
+  }
+  return safe.slice(0, maxLength);
 }
 
 function safeProviderError(value: unknown, redactions: string[]) {
@@ -41,28 +57,120 @@ function safeProviderError(value: unknown, redactions: string[]) {
         type: typeof error.type === "string" ? error.type : "unknown",
         location: Array.isArray(error.loc)
           ? error.loc.filter((part): part is string | number => typeof part === "string" || typeof part === "number")
+            .map((part) => typeof part === "string" ? redact(part, redactions, 64) : part)
           : [],
-        message: typeof error.msg === "string" ? error.msg.slice(0, 160) : undefined,
+        message: typeof error.msg === "string" ? redact(error.msg, redactions, 160) : undefined,
       };
     });
   }
-  let summary = JSON.stringify(value).slice(0, 500);
-  for (const redaction of redactions) {
-    if (redaction) summary = summary.replaceAll(redaction, "[redacted]");
+  return redact(JSON.stringify(value), redactions, 500);
+}
+
+class DodoDeadlineError extends Error {
+  constructor() {
+    super("Dodo request deadline exceeded.");
+    this.name = "DodoDeadlineError";
   }
-  return summary;
+}
+
+async function boundedJson(response: Response, maxBytes: number, signal: AbortSignal): Promise<unknown> {
+  const encoding = response.headers.get("content-encoding");
+  if (encoding && encoding.toLowerCase() !== "identity") throw CasePaymentError.unavailable();
+  const declaredRaw = response.headers.get("content-length");
+  if (declaredRaw !== null) {
+    const declared = Number(declaredRaw);
+    if (!Number.isSafeInteger(declared) || declared < 0 || declared > maxBytes) throw CasePaymentError.unavailable();
+  }
+  const reader = response.body?.getReader();
+  if (!reader) throw CasePaymentError.unavailable();
+  const cancel = () => { void reader.cancel().catch(() => undefined); };
+  signal.addEventListener("abort", cancel, { once: true });
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        void reader.cancel().catch(() => undefined);
+        throw CasePaymentError.unavailable();
+      }
+      chunks.push(value);
+    }
+  } catch (error) {
+    if (error instanceof CasePaymentError) throw error;
+    throw CasePaymentError.unavailable();
+  } finally {
+    signal.removeEventListener("abort", cancel);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  } catch {
+    throw CasePaymentError.unavailable();
+  }
 }
 
 export class DodoClient {
+  private readonly timeoutMs: number;
+  private readonly maxResponseBytes: number;
+
   constructor(
     private readonly baseUrl: string,
     private readonly apiKey: string,
     private readonly request: typeof fetch = fetch,
-  ) {}
+    options: DodoClientOptions = {},
+  ) {
+    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.maxResponseBytes = options.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
+  }
+
+  private async requestJson(endpoint: URL, init: RequestInit): Promise<{ response: Response; payload: unknown }> {
+    const controller = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_resolve, reject) => {
+      timeoutId = setTimeout(() => {
+        controller.abort();
+        reject(new DodoDeadlineError());
+      }, this.timeoutMs);
+    });
+    try {
+      const operation = (async () => {
+        const response = await this.request(endpoint, {
+          ...init,
+          signal: controller.signal,
+          cache: "no-store",
+          headers: { accept: "application/json", "accept-encoding": "identity", ...(init.headers ?? {}) },
+        });
+        const payload = await boundedJson(response, this.maxResponseBytes, controller.signal);
+        return { response, payload };
+      })();
+      return await Promise.race([operation, deadline]);
+    } catch (error) {
+      if (error instanceof DodoDeadlineError || (error instanceof Error && error.name === "AbortError")) {
+        throw CasePaymentError.timeout();
+      }
+      if (error instanceof CasePaymentError) throw error;
+      throw CasePaymentError.unavailable();
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  }
 
   async createCheckout(input: CreateCheckoutInput): Promise<CheckoutSession> {
-    const endpoint = new URL("/checkouts", this.baseUrl);
-    const response = await this.request(endpoint, {
+    let endpoint: URL;
+    try {
+      endpoint = new URL("/checkouts", this.baseUrl);
+    } catch {
+      throw CasePaymentError.unavailable();
+    }
+    const { response, payload } = await this.requestJson(endpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -76,7 +184,7 @@ export class DodoClient {
       }),
     });
     if (!response.ok) {
-      const providerError = safeProviderError(await response.json().catch(() => null), [
+      const providerError = safeProviderError(payload, [
         input.productId,
         input.returnUrl,
         input.cancelUrl,
@@ -89,22 +197,28 @@ export class DodoClient {
       });
       throw CasePaymentError.unavailable();
     }
-    const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
-    const checkoutUrl = safeCheckoutUrl(payload?.checkout_url);
-    if (!payload || typeof payload.session_id !== "string" || !payload.session_id || !checkoutUrl) {
+    const record = payload && typeof payload === "object" && !Array.isArray(payload)
+      ? payload as Record<string, unknown> : null;
+    const checkoutUrl = safeCheckoutUrl(record?.checkout_url);
+    if (!record || typeof record.session_id !== "string" || !record.session_id || !checkoutUrl) {
       throw CasePaymentError.unavailable();
     }
-    return { session_id: payload.session_id, checkout_url: checkoutUrl };
+    return { session_id: record.session_id, checkout_url: checkoutUrl };
   }
 
   async getPayment(paymentId: string): Promise<DodoPayment> {
-    const response = await this.request(`${this.baseUrl}/payments/${encodeURIComponent(paymentId)}`, {
+    let endpoint: URL;
+    try {
+      endpoint = new URL(`/payments/${encodeURIComponent(paymentId)}`, this.baseUrl);
+    } catch {
+      throw CasePaymentError.unavailable();
+    }
+    const { response, payload } = await this.requestJson(endpoint, {
       method: "GET",
       headers: { authorization: `Bearer ${this.apiKey}` },
-      cache: "no-store",
     });
     if (!response.ok) throw CasePaymentError.unavailable();
-    const payment = parseDodoPayment(await response.json().catch(() => null));
+    const payment = parseDodoPayment(payload);
     if (!payment) throw CasePaymentError.unavailable();
     return payment;
   }

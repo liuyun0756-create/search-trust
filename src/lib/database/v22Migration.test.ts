@@ -102,13 +102,15 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const owner = await insertUser(suffix);
       const caseId = await insertCase(owner, suffix);
       await db.query(`update public.users set audit_credits=0 where id=$1`, [owner]);
+      const checkoutSessionId = `cks_${suffix}`;
+      const productId = `prod_${suffix}`;
       const orderId = await insertId(`insert into public.orders
-        (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status)
-        values ($1,$2,'case_verified_credit',1,1900,'USD','pending') returning id`, [owner,caseId]);
-      const args = [orderId, `pay_${suffix}`, `clerk_${suffix}`, caseId, 1900, "USD"];
-      const fulfill = (params: unknown[] = args) => db.query(`select * from public.fulfill_v22_verified_credit_payment($1,$2,$3,$4,$5,$6)`, params);
-      const refund = (params: unknown[] = args) => db.query(`select * from public.refund_v22_verified_credit_payment($1,$2,$3,$4,$5,$6)`, params);
-      return {owner,caseId,orderId,args,fulfill,refund};
+        (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status,checkout_session_id,provider_product_id)
+        values ($1,$2,'case_verified_credit',1,1900,'USD','pending',$3,$4) returning id`, [owner,caseId,checkoutSessionId,productId]);
+      const args = [orderId, `pay_${suffix}`, `clerk_${suffix}`, caseId, 1900, "USD", checkoutSessionId, productId];
+      const fulfill = (params: unknown[] = args) => db.query(`select * from public.fulfill_v22_verified_credit_payment($1,$2,$3,$4,$5,$6,$7,$8)`, params);
+      const refund = (params: unknown[] = args) => db.query(`select * from public.refund_v22_verified_credit_payment($1,$2,$3,$4,$5,$6,$7,$8)`, params);
+      return {owner,caseId,orderId,args,checkoutSessionId,productId,fulfill,refund};
     }
 
     it("requires exactly one $19 USD credit and one pending checkout per Case", async () => {
@@ -188,7 +190,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const otherCase = await insertCase(f.owner, randomUUID());
       const otherOwner = randomUUID();
       await insertUser(otherOwner);
-      for (const [index,value] of [[0,randomUUID()],[1,""],[1,null],[2,`clerk_${otherOwner}`],[2,null],[3,otherCase],[3,null],[4,1899],[4,null],[5,"EUR"],[5,"usd"],[5,null]] as const) {
+      for (const [index,value] of [[0,randomUUID()],[1,""],[1,null],[2,`clerk_${otherOwner}`],[2,null],[3,otherCase],[3,null],[4,1899],[4,null],[5,"EUR"],[5,"usd"],[5,null],[6,"cks_other"],[6,null],[7,"prod_other"],[7,null]] as const) {
         const params: unknown[] = [...f.args]; params[index] = value;
         await expect(f[operation](params)).rejects.toThrow("V22_VERIFIED_PAYMENT");
       }
@@ -214,7 +216,9 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const f = await fixture(); await f.fulfill();
       expect((await f.refund()).rows[0]).toEqual({refunded:true,idempotent:false,reversal_applied:true,manual_review:false,audit_credits:0});
       expect((await f.refund()).rows[0]).toEqual({refunded:true,idempotent:true,reversal_applied:true,manual_review:false,audit_credits:0});
-      await expect(f.fulfill()).rejects.toThrow("V22_VERIFIED_PAYMENT");
+      expect((await f.fulfill()).rows[0]).toEqual({fulfilled:true,idempotent:true,credits_added:0,audit_credits:0});
+      const wrongPayment = [...f.args]; wrongPayment[1] = "pay_different_after_refund";
+      await expect(f.fulfill(wrongPayment)).rejects.toThrow("V22_VERIFIED_PAYMENT");
       expect((await db.query(`select kind,delta from public.audit_credit_ledger where order_id=$1 order by delta`,[f.orderId])).rows)
         .toEqual([{kind:"payment_refund_debit",delta:-1},{kind:"purchase_credit",delta:1}]);
       await expectSqlError(`update public.audit_credit_ledger set balance_after=10 where order_id=$1`,[f.orderId],"immutable");
@@ -230,6 +234,15 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       expect((await f.refund()).rows[0]).toEqual({refunded:true,idempotent:true,reversal_applied:false,manual_review:true,audit_credits:1});
       expect((await db.query(`select kind,delta from public.audit_credit_ledger where order_id=$1 order by delta`,[f.orderId])).rows)
         .toEqual([{kind:"payment_refund_manual_review",delta:0},{kind:"purchase_credit",delta:1}]);
+    });
+
+    it("rejects refunded replay when reversal evidence contains conflicting tuples", async () => {
+      const f = await fixture(); await f.fulfill(); await f.refund();
+      await db.query(`insert into public.audit_credit_ledger
+        (user_id,case_id,order_id,kind,delta,balance_after)
+        values ($1,$2,$3,'payment_refund_manual_review',0,0)`, [f.owner,f.caseId,f.orderId]);
+      await expect(f.fulfill()).rejects.toThrow("V22_VERIFIED_PAYMENT_LEDGER_INVALID");
+      await expect(f.refund()).rejects.toThrow("V22_VERIFIED_PAYMENT_LEDGER_INVALID");
     });
 
     it("rejects reuse of another order's payment ID with no partial credit or order change", async () => {
@@ -261,7 +274,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     });
 
     it.each(["fulfill", "refund"])("restricts %s to service role with compatible Case/order/user lock order", async operation => {
-      const signature = `public.${operation}_v22_verified_credit_payment(uuid,text,text,uuid,integer,text)`;
+      const signature = `public.${operation}_v22_verified_credit_payment(uuid,text,text,uuid,integer,text,text,text)`;
       for (const role of ["anon","authenticated","service_role"]) expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,[role,signature])).rows[0]).toEqual({allowed:role === "service_role"});
       // Embedded PGlite serializes sessions: assert the lock contract explicitly.
       const definition = (await db.query<{definition:string}>(`select pg_get_functiondef($1::regprocedure) as definition`,[signature])).rows[0].definition.replace(/--[^\n]*/g, "").replace(/\s+/g," ");

@@ -32,6 +32,10 @@ export class CasePaymentError extends Error {
     return new CasePaymentError("CHECKOUT_UNAVAILABLE", "Secure checkout is temporarily unavailable.", 503);
   }
 
+  static timeout() {
+    return new CasePaymentError("CHECKOUT_TIMEOUT", "Secure checkout took too long to respond.", 504);
+  }
+
   static internal() {
     return new CasePaymentError("INTERNAL_ERROR", "The payment could not be processed.", 500);
   }
@@ -40,4 +44,3 @@ export class CasePaymentError extends Error {
 export function casePaymentErrorBody(error: CasePaymentError) {
   return { error: { code: error.code, message: error.message } };
 }
-

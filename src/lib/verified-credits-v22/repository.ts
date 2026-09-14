@@ -16,6 +16,7 @@ export interface PendingVerifiedCreditCheckout {
   checkout_session_id: string | null;
   checkout_url: string | null;
   status: "pending";
+  provider_product_id: string | null;
 }
 
 export interface VerifiedCreditPaymentInput {
@@ -25,12 +26,14 @@ export interface VerifiedCreditPaymentInput {
   caseId: string;
   amount: number;
   currency: string;
+  checkoutSessionId: string;
+  productId: string;
 }
 
 export interface VerifiedCreditRepository {
   getBalance(userId: string): Promise<number>;
   getPendingCheckout(userId: string, caseId: string): Promise<PendingVerifiedCreditCheckout | null>;
-  createPendingOrder(userId: string, caseId: string): Promise<PendingVerifiedCreditOrder>;
+  createPendingOrder(userId: string, caseId: string, productId: string): Promise<PendingVerifiedCreditOrder>;
   attachCheckoutSession(orderId: string, sessionId: string, checkoutUrl: string): Promise<void>;
   markOrderFailed(orderId: string): Promise<void>;
   fulfill(input: VerifiedCreditPaymentInput): Promise<VerifiedCreditFulfillmentResult>;
@@ -59,7 +62,7 @@ export class SupabaseVerifiedCreditRepository implements VerifiedCreditRepositor
 
   async getPendingCheckout(userId: string, caseId: string): Promise<PendingVerifiedCreditCheckout | null> {
     const { data, error } = await this.supabase.from("orders")
-      .select("id,checkout_session_id,checkout_url,status")
+      .select("id,checkout_session_id,checkout_url,status,provider_product_id")
       .eq("user_id", userId).eq("case_id", caseId)
       .eq("purchase_kind", CASE_VERIFIED_CREDIT_PURCHASE).eq("status", "pending")
       .limit(1).maybeSingle();
@@ -67,7 +70,7 @@ export class SupabaseVerifiedCreditRepository implements VerifiedCreditRepositor
     return data as PendingVerifiedCreditCheckout | null;
   }
 
-  async createPendingOrder(userId: string, caseId: string): Promise<PendingVerifiedCreditOrder> {
+  async createPendingOrder(userId: string, caseId: string, productId: string): Promise<PendingVerifiedCreditOrder> {
     const { data, error } = await this.supabase.from("orders").insert({
       user_id: userId,
       case_id: caseId,
@@ -76,6 +79,7 @@ export class SupabaseVerifiedCreditRepository implements VerifiedCreditRepositor
       currency: "USD",
       credits_purchased: 1,
       status: "pending",
+      provider_product_id: productId,
     }).select("id").single();
     if (error || !data || typeof data.id !== "string") throw new VerifiedCreditPersistenceError();
     return { id: data.id };
@@ -102,6 +106,8 @@ export class SupabaseVerifiedCreditRepository implements VerifiedCreditRepositor
       p_case_id: input.caseId,
       p_amount: input.amount,
       p_currency: input.currency,
+      p_checkout_session_id: input.checkoutSessionId,
+      p_product_id: input.productId,
     }).single();
     const parsed = parseVerifiedCreditFulfillmentResult(data);
     if (error || !parsed) throw new VerifiedCreditPersistenceError();
@@ -116,6 +122,8 @@ export class SupabaseVerifiedCreditRepository implements VerifiedCreditRepositor
       p_case_id: input.caseId,
       p_amount: input.amount,
       p_currency: input.currency,
+      p_checkout_session_id: input.checkoutSessionId,
+      p_product_id: input.productId,
     }).single();
     const parsed = parseVerifiedCreditRefundResult(data);
     if (error || !parsed) throw new VerifiedCreditPersistenceError();

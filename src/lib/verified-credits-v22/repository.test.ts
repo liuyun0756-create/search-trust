@@ -27,7 +27,7 @@ describe("SupabaseVerifiedCreditRepository", () => {
   it("creates exactly one $19 USD credit pending order", async () => {
     const orders = query({ data: { id: orderId }, error: null });
     const db = { from: vi.fn(() => orders), rpc: vi.fn() } as never;
-    await expect(new SupabaseVerifiedCreditRepository(db).createPendingOrder(userId, caseId)).resolves.toEqual({ id: orderId });
+    await expect(new SupabaseVerifiedCreditRepository(db).createPendingOrder(userId, caseId, "prod_verified")).resolves.toEqual({ id: orderId });
     expect(orders.insert).toHaveBeenCalledWith({
       user_id: userId,
       case_id: caseId,
@@ -36,6 +36,7 @@ describe("SupabaseVerifiedCreditRepository", () => {
       currency: "USD",
       credits_purchased: 1,
       status: "pending",
+      provider_product_id: "prod_verified",
     });
   });
 
@@ -53,12 +54,16 @@ describe("SupabaseVerifiedCreditRepository", () => {
     const rpcChain = { single: vi.fn().mockResolvedValueOnce({ data: fulfillResult, error: null }).mockResolvedValueOnce({ data: refundResult, error: null }) };
     const db = { from: vi.fn(), rpc: vi.fn(() => rpcChain) } as never;
     const repo = new SupabaseVerifiedCreditRepository(db);
-    const input = { localOrderId: orderId, paymentId: "pay_1", clerkUserId: "user_123", caseId, amount: 1900, currency: "USD" };
+    const input = { localOrderId: orderId, paymentId: "pay_1", clerkUserId: "user_123", caseId, amount: 1900, currency: "USD", checkoutSessionId: "cks_1", productId: "prod_1" };
     await expect(repo.fulfill(input)).resolves.toEqual(fulfillResult);
     await expect(repo.refund(input)).resolves.toEqual(refundResult);
     expect((db as { rpc: ReturnType<typeof vi.fn> }).rpc.mock.calls.map((call) => call[0])).toEqual([
       "fulfill_v22_verified_credit_payment",
       "refund_v22_verified_credit_payment",
     ]);
+    expect((db as { rpc: ReturnType<typeof vi.fn> }).rpc.mock.calls[0][1]).toMatchObject({
+      p_checkout_session_id: "cks_1",
+      p_product_id: "prod_1",
+    });
   });
 });

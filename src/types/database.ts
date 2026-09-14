@@ -375,6 +375,7 @@ export interface Order {
   purchase_kind?: "legacy_credit" | "case_prospect_report" | "case_verified_credit";
   checkout_session_id?: string | null;
   checkout_url?: string | null;
+  provider_product_id?: string | null;
   amount: number;
   currency?: string | null;
   credits_purchased: number;
@@ -403,6 +404,8 @@ export interface FulfillV22VerifiedCreditPaymentArgs {
   p_case_id: string;
   p_amount: number;
   p_currency: string;
+  p_checkout_session_id: string;
+  p_product_id: string;
 }
 
 export interface FulfillV22VerifiedCreditPaymentResult {

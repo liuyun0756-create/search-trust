@@ -24,9 +24,19 @@ describe("v2.2 case payment contracts", () => {
       total_amount: 1900,
       currency: "USD",
       metadata,
-    })).toMatchObject({ payment_id: "pay_123", total_amount: 1900 });
+      checkout_session_id: "cks_123",
+      product_cart: [{ product_id: "prod_123", quantity: 1 }],
+      refund_status: "full",
+    })).toMatchObject({
+      payment_id: "pay_123",
+      total_amount: 1900,
+      checkout_session_id: "cks_123",
+      product_cart: [{ product_id: "prod_123", quantity: 1 }],
+      refund_status: "full",
+    });
     expect(parseDodoPayment({ status: "succeeded", total_amount: 1900, currency: "USD", metadata })).toBeNull();
     expect(parseDodoPayment({ payment_id: "pay_123", status: "succeeded", total_amount: "1900", currency: "USD", metadata })).toBeNull();
+    expect(parseDodoPayment({ payment_id: "pay_123", status: "succeeded", total_amount: 1900, currency: "USD", metadata, product_cart: [{ product_id: "prod", quantity: 0 }] })).toBeNull();
+    expect(parseDodoPayment({ payment_id: "pay_123", status: "succeeded", total_amount: 1900, currency: "USD", metadata, checkout_session_id: 42 })).toBeNull();
   });
 });
-
