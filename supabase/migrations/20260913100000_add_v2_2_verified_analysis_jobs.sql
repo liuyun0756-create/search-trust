@@ -74,12 +74,31 @@ declare
   selected_ga4 uuid;
   public_ids uuid[];
   resulting_balance integer;
+  discovered_connection_ids uuid[];
+  locked_connection_ids uuid[] := '{}'::uuid[];
+  current_connection_ids uuid[];
+  connection_to_lock record;
 begin
   if p_job_id is null or btrim(coalesce(p_idempotency_key, '')) = '' or length(p_idempotency_key) > 200
     or p_parent_payload_checksum is null or p_parent_payload_checksum !~ '^sha256:[0-9a-f]{64}$' then
     raise exception 'V22_VERIFIED_INPUT_INVALID';
   end if;
-  -- Serialize all attempts for a Case before touching jobs, reports or credits.
+  -- Google selection/sync locks connection -> Case -> binding. Discover without
+  -- locks, then acquire every relevant connection in UUID order before the Case.
+  select coalesce(array_agg(distinct binding.connection_id order by binding.connection_id)
+    filter (where binding.connection_id is not null), '{}'::uuid[]) into discovered_connection_ids
+  from public.case_source_bindings binding
+  join public.client_cases owned_case on owned_case.id = binding.case_id
+  where binding.case_id = p_case_id and owned_case.user_id = p_user_id
+    and binding.is_active and binding.source_type in ('gsc','ga4');
+  for connection_to_lock in select g.id from public.google_connections g
+    where g.id = any(discovered_connection_ids) and g.user_id = p_user_id
+    order by g.id for update
+  loop
+    locked_connection_ids := array_append(locked_connection_ids, connection_to_lock.id);
+  end loop;
+
+  -- Serialize attempts only after obtaining the shared Google lock prefix.
   select * into c from public.client_cases
   where id = p_case_id and user_id = p_user_id and status = 'active' for update;
   if not found then raise exception 'V22_VERIFIED_CASE_INVALID'; end if;
@@ -139,6 +158,19 @@ begin
         and coverage->'snapshot_ids' @> jsonb_build_array(e->>'snapshot_id'));
   if cardinality(public_ids) is distinct from 1 then raise exception 'V22_VERIFIED_PUBLIC_GBP_INVALID'; end if;
 
+  perform 1 from public.case_source_bindings binding
+    where binding.case_id = p_case_id and binding.is_active and binding.source_type in ('gsc','ga4')
+    order by binding.id for share;
+  select coalesce(array_agg(distinct binding.connection_id order by binding.connection_id)
+    filter (where binding.connection_id is not null), '{}'::uuid[]) into current_connection_ids
+  from public.case_source_bindings binding
+  where binding.case_id = p_case_id and binding.is_active and binding.source_type in ('gsc','ga4');
+  -- A rebinding may finish between discovery and our Case lock. Never acquire a
+  -- newly discovered connection after the Case: roll back so callers can retry.
+  if current_connection_ids is distinct from discovered_connection_ids
+    or current_connection_ids is distinct from locked_connection_ids then
+    raise exception 'V22_VERIFIED_BINDING_CHANGED' using errcode = '40001';
+  end if;
   foreach source in array array['gsc','ga4'] loop
     select * into b from public.case_source_bindings binding
     where binding.case_id = p_case_id and binding.source_type = source and binding.is_active for share;
@@ -147,7 +179,7 @@ begin
       raise exception 'V22_VERIFIED_BINDING_INVALID';
     end if;
     perform 1 from public.google_connections g
-      where g.id = b.connection_id and g.user_id = p_user_id and g.status = 'active' for share;
+      where g.id = b.connection_id and g.user_id = p_user_id and g.status = 'active';
     if not found then raise exception 'V22_VERIFIED_CONNECTION_INVALID'; end if;
     -- Pick the latest first, then validate; never fall back to an older healthy row.
     select * into s from public.data_snapshots d where d.binding_id = b.id and d.source_type = source
@@ -232,7 +264,12 @@ declare
   parent public.reports;
   existing_report public.reports;
   generated timestamptz;
-  allowed_ids uuid[];
+  source_snapshot_map jsonb;
+  inherited_aliases jsonb;
+  coverage_sources jsonb;
+  coverage_entry jsonb;
+  required_source text;
+  required_sources text[] := array['site','serp','competitor','gbp','gsc','ga4'];
 begin
   select * into c from public.client_cases where id = p_case_id for update;
   select * into job from public.analysis_jobs j where j.id = p_job_id and j.case_id = p_case_id for update;
@@ -259,16 +296,59 @@ begin
     or jsonb_typeof(p_report_payload->'evidence_index') is distinct from 'array' then
     raise exception 'V22_VERIFIED_RESULT_INVALID';
   end if;
-  allowed_ids := bound.parent_snapshot_ids || array[bound.public_gbp_snapshot_id,bound.gsc_snapshot_id,bound.ga4_snapshot_id];
-  if jsonb_typeof(p_report_payload #> '{data_coverage,sources}') is distinct from 'array' or exists (
-    select 1 from jsonb_array_elements(p_report_payload #> '{data_coverage,sources}') coverage
-    where coverage->>'source_type' in ('gsc','ga4') and coverage->'snapshot_ids' is distinct from
-      jsonb_build_array(case coverage->>'source_type' when 'gsc' then bound.gsc_snapshot_id else bound.ga4_snapshot_id end)
-  ) then raise exception 'V22_VERIFIED_COVERAGE_INVALID'; end if;
+  -- Provenance is a source -> snapshot mapping, never an untyped UUID allowlist.
+  select jsonb_object_agg(d.source_type,jsonb_build_array(d.id)) into source_snapshot_map
+    from public.data_snapshots d where d.id = any(bound.parent_snapshot_ids) and d.case_id = p_case_id;
+  source_snapshot_map := source_snapshot_map || jsonb_build_object(
+    'gbp',jsonb_build_array(bound.public_gbp_snapshot_id),
+    'gsc',jsonb_build_array(bound.gsc_snapshot_id),'ga4',jsonb_build_array(bound.ga4_snapshot_id),
+    'coverage','[]'::jsonb,'pagespeed','[]'::jsonb);
+  if (source_snapshot_map ?& required_sources) is not true then
+    raise exception 'V22_VERIFIED_PARENT_CHANGED';
+  end if;
+  -- The parent can contain derived coverage/pagespeed observations backed by a
+  -- public source snapshot. Preserve only source/ID pairs frozen in that parent.
+  select jsonb_object_agg(pairs.source_type,pairs.snapshot_ids) into inherited_aliases
+  from (
+    select provenance.source_type,jsonb_agg(distinct provenance.snapshot_id) as snapshot_ids
+    from (
+      select e->>'source_type' as source_type,e->>'snapshot_id' as snapshot_id
+        from jsonb_array_elements(bound.parent_payload->'evidence_index') e
+      union
+      select coverage->>'source_type',snapshot_id
+        from jsonb_array_elements(bound.parent_payload #> '{data_coverage,sources}') coverage
+        cross join lateral jsonb_array_elements_text(coverage->'snapshot_ids') ids(snapshot_id)
+    ) provenance
+    where provenance.source_type in ('coverage','pagespeed')
+      and provenance.snapshot_id::uuid = any(bound.parent_snapshot_ids || array[bound.public_gbp_snapshot_id])
+    group by provenance.source_type
+  ) pairs;
+  source_snapshot_map := source_snapshot_map || coalesce(inherited_aliases,'{}'::jsonb);
+  coverage_sources := p_report_payload #> '{data_coverage,sources}';
+  if jsonb_typeof(coverage_sources) is distinct from 'array' then
+    raise exception 'V22_VERIFIED_COVERAGE_INVALID';
+  end if;
+  foreach required_source in array required_sources loop
+    if (select count(*) from jsonb_array_elements(coverage_sources) coverage
+      where coverage->>'source_type' = required_source) <> 1 then
+      raise exception 'V22_VERIFIED_COVERAGE_INVALID';
+    end if;
+  end loop;
+  if exists (select 1 from jsonb_array_elements(coverage_sources) coverage
+    group by coverage->>'source_type' having count(*) > 1) then
+    raise exception 'V22_VERIFIED_COVERAGE_INVALID';
+  end if;
+  for coverage_entry in select * from jsonb_array_elements(coverage_sources) loop
+    if (source_snapshot_map ? (coverage_entry->>'source_type')) is not true
+      or jsonb_typeof(coverage_entry->'snapshot_ids') is distinct from 'array'
+      or ((source_snapshot_map->(coverage_entry->>'source_type')) @> (coverage_entry->'snapshot_ids')) is not true
+      or (coverage_entry->>'source_type' = any(required_sources)
+        and coverage_entry->'snapshot_ids' is distinct from source_snapshot_map->(coverage_entry->>'source_type')) then
+      raise exception 'V22_VERIFIED_COVERAGE_INVALID';
+    end if;
+  end loop;
   if exists (select 1 from jsonb_array_elements(p_report_payload->'evidence_index') e
-    where e->>'snapshot_id' is null or not ((e->>'snapshot_id')::uuid = any(allowed_ids))
-      or (e->>'source_type' = 'gsc' and e->>'snapshot_id' is distinct from bound.gsc_snapshot_id::text)
-      or (e->>'source_type' = 'ga4' and e->>'snapshot_id' is distinct from bound.ga4_snapshot_id::text)) then
+    where ((source_snapshot_map->(e->>'source_type')) @> jsonb_build_array(e->>'snapshot_id')) is not true) then
     raise exception 'V22_VERIFIED_EVIDENCE_INVALID';
   end if;
   if job.report_id is not null then

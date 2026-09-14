@@ -103,7 +103,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       return JSON.stringify(value);
     };
     const digest = (value: unknown) => `sha256:${createHash("sha256").update(canonical(value)).digest("hex")}`;
-    async function fixture() {
+    async function fixture(withParentCoverageEvidence = false) {
       const owner = await insertUser(randomUUID());
       const caseId = await insertCase(owner, randomUUID());
       const connection = await insertConnection(owner, randomUUID());
@@ -129,6 +129,8 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       for (const evidence of parent.evidence_index) evidence.snapshot_id = evidence.source_type === "gbp" ? publicGbp : snapshots[evidence.source_type];
       for (const coverage of parent.data_coverage.sources) coverage.snapshot_ids = coverage.source_type === "gbp" ? [publicGbp] : snapshots[coverage.source_type] ? [snapshots[coverage.source_type]] : [];
       parent.data_coverage.sources.find((source: {source_type:string}) => source.source_type === "gbp").identity_match_status = "matched";
+      if (withParentCoverageEvidence) parent.evidence_index.push({...parent.evidence_index[0],
+        evidence_id:"ev_parent_coverage",source_type:"coverage",snapshot_id:snapshots.site});
       await db.query(`insert into public.reports
         (id,report_id,user_id,page_url,gbp_url,status,access_type,case_id,report_type,schema_version,version_number,report_v2_2,snapshot_ids,coverage_state,version_diff,generation_config,ruleset_version,copy_model_version)
         values ($1::uuid,$1::text,$2,'https://example.com',$3,'paid_full','unlocked',$4,'prospect','2.2.0',1,$5,array[$6::uuid,$7::uuid,$8::uuid],$9,'{}','{}','rules-v1','copy-v1')`,
@@ -153,6 +155,30 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const input = (await db.query<{parent_payload: unknown}>(`select parent_payload from public.verified_analysis_inputs where job_id=$1`, [f.jobId])).rows[0];
       expect(input.parent_payload).toEqual(f.parent);
       await expect(db.query(`update public.verified_analysis_inputs set parent_payload='{}' where job_id=$1`, [f.jobId])).rejects.toThrow("immutable");
+    });
+
+    it("locks Google connections in deterministic order before the Case and bindings", async () => {
+      // PGlite serializes queries on one embedded PostgreSQL instance; this is an
+      // explicit lock-order contract, not a claim to exercise concurrent sessions.
+      const definition = (await db.query<{definition:string}>(`select pg_get_functiondef(
+        'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)'::regprocedure) as definition`)).rows[0].definition
+        .replace(/--[^\n]*/g, "").replace(/\s+/g, " ");
+      const connectionLock = /from public\.google_connections\b[^;]*for (?:update|share)/i.exec(definition);
+      const caseLock = /from public\.client_cases\b[^;]*for update/i.exec(definition);
+      const bindingLock = /from public\.case_source_bindings\b[^;]*for (?:update|share)/i.exec(definition);
+      expect(connectionLock).not.toBeNull(); expect(caseLock).not.toBeNull(); expect(bindingLock).not.toBeNull();
+      expect(connectionLock!.index).toBeLessThan(caseLock!.index);
+      expect(caseLock!.index).toBeLessThan(bindingLock!.index);
+      expect(connectionLock![0]).toMatch(/order by \w+\.id/i);
+      expect(definition.slice(caseLock!.index + caseLock![0].length)).not.toMatch(/from public\.google_connections\b[^;]*for (?:update|share)/i);
+      expect(definition).toMatch(/V22_VERIFIED_BINDING_CHANGED[^;]*errcode\s*=\s*'40001'/i);
+    });
+
+    it("starts with GSC and GA4 on separate owned connections", async () => {
+      const f=await fixture();
+      const second=await insertConnection(f.owner,randomUUID());
+      await db.query(`update public.case_source_bindings set connection_id=$2 where id=$1`,[f.bindings.ga4,second]);
+      expect((await f.start()).rows[0]).toMatchObject({created:true,gsc_snapshot_id:f.snapshots.gsc,ga4_snapshot_id:f.snapshots.ga4,audit_credits:4});
     });
 
     it.each(["cross-user", "zero-credit", "missing-gsc", "missing-ga4", "expired", "identity", "inactive", "missing-gbp", "no-parent", "previous", "checksum"])("rejects %s without a job, charge or debit", async (reason) => {
@@ -240,6 +266,44 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const wrongEvidence=structuredClone(f.result());
       wrongEvidence.evidence_index.push({...wrongEvidence.evidence_index[0],source_type:"gsc",snapshot_id:f.snapshots.ga4});
       await expect(f.persist(wrongEvidence)).rejects.toThrow("V22_VERIFIED_");
+    });
+
+    it.each(["site","serp","competitor","gbp","gsc","ga4"])("rejects an unbound %s coverage snapshot without persisting", async source => {
+      const f=await fixture(); await f.start();
+      const result=structuredClone(f.result());
+      result.data_coverage.sources.find((s:{source_type:string})=>s.source_type === source).snapshot_ids=[randomUUID()];
+      await expect(f.persist(result)).rejects.toThrow("V22_VERIFIED_COVERAGE_INVALID");
+      expect((await db.query(`select id from public.reports where id=$1`,[f.jobId])).rows).toEqual([]);
+      expect((await db.query(`select report_id from public.analysis_jobs where id=$1`,[f.jobId])).rows).toEqual([{report_id:null}]);
+    });
+
+    it.each(["site","serp","competitor","gbp","gsc","ga4","both-first-party"])("rejects missing %s coverage", async source => {
+      const f=await fixture(); await f.start();
+      const result=structuredClone(f.result());
+      result.data_coverage.sources=result.data_coverage.sources.filter((s:{source_type:string})=>source === "both-first-party" ? !["gsc","ga4"].includes(s.source_type) : s.source_type !== source);
+      await expect(f.persist(result)).rejects.toThrow("V22_VERIFIED_COVERAGE_INVALID");
+    });
+
+    it.each([
+      ["site","ga4"],["serp","site"],["competitor","serp"],["gbp","site"],["gsc","ga4"],["ga4","gsc"],
+      ["coverage","site"],["pagespeed","ga4"],
+    ])("rejects %s Evidence relabeled from a %s snapshot", async (source,snapshotSource) => {
+      const f=await fixture(); await f.start();
+      const result=structuredClone(f.result());
+      result.evidence_index.push({...result.evidence_index[0],evidence_id:"ev_forged_source",source_type:source,snapshot_id:f.snapshots[snapshotSource]});
+      await expect(f.persist(result)).rejects.toThrow("V22_VERIFIED_EVIDENCE_INVALID");
+    });
+
+    it("rejects duplicate source coverage entries", async () => {
+      const f=await fixture(); await f.start();
+      const result=structuredClone(f.result());
+      result.data_coverage.sources.push({...result.data_coverage.sources[0]});
+      await expect(f.persist(result)).rejects.toThrow("V22_VERIFIED_COVERAGE_INVALID");
+    });
+
+    it("preserves coverage Evidence provenance explicitly frozen in the parent", async () => {
+      const f=await fixture(true); await f.start();
+      expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:false}]);
     });
 
     it("keeps Case deletion possible after frozen Verified inputs are created", async () => {
