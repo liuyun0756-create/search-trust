@@ -397,7 +397,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
 
     it.each([
       "start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)",
-      "persist_v22_verified_result(uuid,uuid,jsonb,integer)",
+      "persist_v22_verified_result_strict_generation_v2(uuid,uuid,jsonb,integer)",
     ])("keeps %s Case serialization compatible with compensation FK checks", async signature => {
       // Compensation holds the job while its ledger INSERT requests Case KEY SHARE.
       // A waiter for that job must not hold the conflicting Case FOR UPDATE lock.
@@ -544,18 +544,38 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
 
     it("re-resolves the exact frozen graph after an acknowledged-loss success for idempotent recovery", async () => {
       const f=await fixture(); await f.start();
-      const resolve=() => db.query<{payload:Record<string,unknown>}>(
-        `select public.resolve_v22_verified_analysis_input($1,$2,1) as payload`,[f.jobId,f.caseId]);
+      const resolve=(generation=1) => db.query<{payload:Record<string,unknown>}>(
+        `select public.resolve_v22_verified_analysis_input($1,$2,$3) as payload`,[f.jobId,f.caseId,generation]);
       const before=(await resolve()).rows[0].payload;
       await f.persist(); // Commit succeeded; model the Worker never receiving its HTTP response.
-      const after=(await resolve()).rows[0].payload;
+      const after=(await resolve(2)).rows[0].payload;
       expect(after).toEqual(before);
-      expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
-      expect((await db.query(`select status,report_id from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
-        .toEqual({status:"succeeded",report_id:f.jobId});
+      expect((await f.persist(f.result(),2)).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
+      await expect(resolve(0)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      await expect(f.persist(f.result(),0)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      expect((await db.query(`select status,report_id,run_generation from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
+        .toEqual({status:"succeeded",report_id:f.jobId,run_generation:1});
       expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
         .toEqual({state:"consumed"});
       expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
+    });
+
+    it("rejects lower generations before and after a generation-two success", async () => {
+      const f=await fixture(); await f.start();
+      await db.query(`update public.analysis_jobs set run_generation=2 where id=$1`,[f.jobId]);
+      await expect(db.query(`select public.resolve_v22_verified_analysis_input($1,$2,1)`,[f.jobId,f.caseId]))
+        .rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      expect((await db.query<{payload:Record<string,unknown>}>(`select public.resolve_v22_verified_analysis_input($1,$2,2) as payload`,
+        [f.jobId,f.caseId])).rows[0].payload).toMatchObject({job_id:f.jobId,case_id:f.caseId});
+      await expect(f.persist(f.result(),1)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      expect((await f.persist(f.result(),2)).rows).toEqual([{report_id:f.jobId,idempotent:false}]);
+      await expect(db.query(`select public.resolve_v22_verified_analysis_input($1,$2,1)`,[f.jobId,f.caseId]))
+        .rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      await expect(f.persist(f.result(),1)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
+      expect((await db.query(`select status,run_generation from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
+        .toEqual({status:"succeeded",run_generation:2});
+      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+        .toEqual({state:"consumed"});
     });
 
     it("does not resolve a compensated terminal Verified attempt", async () => {
@@ -670,6 +690,19 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         for (const role of ["anon","authenticated","service_role"]) expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,[role,`public.${signature}`])).rows[0]).toEqual({allowed:role === "service_role"});
       }
       for (const role of ["anon","authenticated","service_role"]) expect((await db.query(`select has_table_privilege($1,'public.verified_analysis_inputs','SELECT') as allowed`,[role])).rows[0]).toEqual({allowed:role === "service_role"});
+    });
+
+    it("keeps takeover replay helpers service-role only", async () => {
+      for (const signature of [
+        "is_v22_verified_success_replay(uuid,uuid,integer)",
+        "resolve_v22_verified_analysis_input_strict_generation_v2(uuid,uuid,integer)",
+        "persist_v22_verified_result_strict_generation_v2(uuid,uuid,jsonb,integer)",
+      ]) {
+        for (const role of ["anon","authenticated","service_role"]) {
+          expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,
+            [role,`public.${signature}`])).rows[0]).toEqual({allowed:role === "service_role"});
+        }
+      }
     });
   });
   beforeAll(async () => {
