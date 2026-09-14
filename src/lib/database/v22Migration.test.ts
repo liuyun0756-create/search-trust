@@ -417,6 +417,16 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       expect(Object.keys(payload).sort()).toEqual(["schema_version","job_id","case_id","parent_report","parent_payload_checksum","site_snapshot","serp_snapshot","competitor_snapshot","first_party_snapshots"].sort());
       expect(payload).toMatchObject({schema_version:"v22_verified_resolved_input_v1",parent_report:f.parent,parent_payload_checksum:digest(f.parent),site_snapshot:{snapshot_id:f.snapshots.site},serp_snapshot:{snapshot_id:f.snapshots.serp},competitor_snapshot:{snapshot_id:f.snapshots.competitor}});
       expect(payload.first_party_snapshots.map((s:Record<string,unknown>)=>s.snapshot_id)).toEqual([f.snapshots.gsc,f.snapshots.ga4]);
+      for (const source of ["site", "serp", "competitor"]) {
+        const expected = (await db.query<{ dates: Record<string, unknown> }>(
+          `select jsonb_build_object('created_at',created_at,'fetched_at',fetched_at,'expires_at',expires_at) as dates
+            from public.data_snapshots where id=$1`, [f.snapshots[source]])).rows[0].dates;
+        expect(payload[`${source}_snapshot`]).toMatchObject(expected);
+        expect(Object.keys(payload[`${source}_snapshot`]).sort()).toEqual([
+          "snapshot_id", "case_id", "source_type", "schema_version", "normalized_payload", "payload_checksum",
+          "created_at", "fetched_at", "expires_at",
+        ].sort());
+      }
       await expect(resolve(2)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
     });
 

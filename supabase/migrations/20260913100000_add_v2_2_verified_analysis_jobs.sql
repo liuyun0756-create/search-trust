@@ -243,7 +243,8 @@ begin
   if not found then raise exception 'V22_VERIFIED_INPUT_INVALID'; end if;
   select jsonb_object_agg(d.source_type, jsonb_build_object(
     'snapshot_id',d.id,'case_id',d.case_id,'source_type',d.source_type,
-    'schema_version',d.schema_version,'normalized_payload',d.normalized_payload,'payload_checksum',d.payload_checksum
+    'schema_version',d.schema_version,'normalized_payload',d.normalized_payload,'payload_checksum',d.payload_checksum,
+    'created_at',d.created_at,'fetched_at',d.fetched_at,'expires_at',d.expires_at
   )) into source_snapshots from public.data_snapshots d where d.id = any(bound.parent_snapshot_ids);
   -- Eligibility was frozen at start; neither current binding nor connection state
   -- may silently replace an already paid attempt's evidence.
