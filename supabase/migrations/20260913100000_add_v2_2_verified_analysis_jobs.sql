@@ -99,8 +99,10 @@ begin
   end loop;
 
   -- Serialize attempts only after obtaining the shared Google lock prefix.
+  -- NO KEY UPDATE lets compensation's ledger FK take Case KEY SHARE while this
+  -- transaction waits for the job; FOR UPDATE would form a Case/job deadlock.
   select * into c from public.client_cases
-  where id = p_case_id and user_id = p_user_id and status = 'active' for update;
+  where id = p_case_id and user_id = p_user_id and status = 'active' for no key update;
   if not found then raise exception 'V22_VERIFIED_CASE_INVALID'; end if;
 
   select * into existing_job from public.analysis_jobs j
@@ -271,7 +273,8 @@ declare
   required_source text;
   required_sources text[] := array['site','serp','competitor','gbp','gsc','ga4'];
 begin
-  select * into c from public.client_cases where id = p_case_id for update;
+  -- Serialize Case pointer changes without blocking a job holder's ledger FK.
+  select * into c from public.client_cases where id = p_case_id for no key update;
   select * into job from public.analysis_jobs j where j.id = p_job_id and j.case_id = p_case_id for update;
   if job.id is null or job.job_type <> 'verified_report' or job.run_generation is distinct from p_run_generation then
     raise exception 'V22_VERIFIED_JOB_INVALID';

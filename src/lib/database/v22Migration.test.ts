@@ -164,7 +164,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)'::regprocedure) as definition`)).rows[0].definition
         .replace(/--[^\n]*/g, "").replace(/\s+/g, " ");
       const connectionLock = /from public\.google_connections\b[^;]*for (?:update|share)/i.exec(definition);
-      const caseLock = /from public\.client_cases\b[^;]*for update/i.exec(definition);
+      const caseLock = /from public\.client_cases\b[^;]*for (?:no key )?update/i.exec(definition);
       const bindingLock = /from public\.case_source_bindings\b[^;]*for (?:update|share)/i.exec(definition);
       expect(connectionLock).not.toBeNull(); expect(caseLock).not.toBeNull(); expect(bindingLock).not.toBeNull();
       expect(connectionLock!.index).toBeLessThan(caseLock!.index);
@@ -172,6 +172,19 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       expect(connectionLock![0]).toMatch(/order by \w+\.id/i);
       expect(definition.slice(caseLock!.index + caseLock![0].length)).not.toMatch(/from public\.google_connections\b[^;]*for (?:update|share)/i);
       expect(definition).toMatch(/V22_VERIFIED_BINDING_CHANGED[^;]*errcode\s*=\s*'40001'/i);
+    });
+
+    it.each([
+      "start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid)",
+      "persist_v22_verified_result(uuid,uuid,jsonb,integer)",
+    ])("keeps %s Case serialization compatible with compensation FK checks", async signature => {
+      // Compensation holds the job while its ledger INSERT requests Case KEY SHARE.
+      // A waiter for that job must not hold the conflicting Case FOR UPDATE lock.
+      const definition=(await db.query<{definition:string}>(`select pg_get_functiondef($1::regprocedure) as definition`,[`public.${signature}`])).rows[0].definition
+        .replace(/--[^\n]*/g, "").replace(/\s+/g, " ");
+      const caseLocks=[...definition.matchAll(/from public\.client_cases\b[^;]*for (?:no key )?update/gi)];
+      expect(caseLocks).toHaveLength(1);
+      expect(caseLocks[0][0]).toMatch(/for no key update$/i);
     });
 
     it("starts with GSC and GA4 on separate owned connections", async () => {
