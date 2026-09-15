@@ -1,7 +1,7 @@
 import { CASE_PROSPECT_PURCHASE, parseDodoPayment, type DodoPayment } from "./contracts";
 import { CasePaymentError } from "./errors";
 
-const DEFAULT_TIMEOUT_MS = 10_000;
+export const DODO_REQUEST_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_RESPONSE_BYTES = 64 * 1024;
 
 export interface CheckoutSession {
@@ -127,7 +127,7 @@ export class DodoClient {
     private readonly request: typeof fetch = fetch,
     options: DodoClientOptions = {},
   ) {
-    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.timeoutMs = options.timeoutMs ?? DODO_REQUEST_TIMEOUT_MS;
     this.maxResponseBytes = options.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
   }
 

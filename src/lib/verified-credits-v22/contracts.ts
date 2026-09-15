@@ -1,6 +1,7 @@
 import { isUuid, type DodoPayment } from "@/lib/payments-v22/contracts";
 
 export const CASE_VERIFIED_CREDIT_PURCHASE = "case_verified_credit" as const;
+export const VERIFIED_CHECKOUT_INITIALIZATION_STALE_SECONDS = 60;
 
 export interface VerifiedCreditPaymentMetadata {
   clerk_user_id: string;
@@ -35,6 +36,24 @@ export interface VerifiedCreditRefundReviewResult {
   idempotent: boolean;
   status: "manual_review";
   reason: VerifiedCreditRefundReviewReason;
+}
+
+export type VerifiedCreditCheckoutClaimAction = "create" | "reuse" | "initializing";
+
+export interface VerifiedCreditCheckoutClaimResult {
+  action: VerifiedCreditCheckoutClaimAction;
+  order_id: string;
+  checkout_session_id: string | null;
+  checkout_url: string | null;
+  provider_product_id: string;
+  initialization_token: string;
+  retry_after_seconds: number;
+}
+
+export interface VerifiedCreditCheckoutAttachResult {
+  checkout_session_id: string;
+  checkout_url: string;
+  idempotent: boolean;
 }
 
 export function parseVerifiedCreditPaymentMetadata(value: unknown): VerifiedCreditPaymentMetadata | null {
@@ -100,4 +119,35 @@ export function parseVerifiedCreditRefundReviewResult(value: unknown): VerifiedC
     return null;
   }
   return result as unknown as VerifiedCreditRefundReviewResult;
+}
+
+export function parseVerifiedCreditCheckoutClaimResult(value: unknown): VerifiedCreditCheckoutClaimResult | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const result = value as Record<string, unknown>;
+  const action = result.action;
+  const sessionId = result.checkout_session_id;
+  const checkoutUrl = result.checkout_url;
+  const retryAfter = result.retry_after_seconds;
+  if (!isUuid(result.order_id) || !isUuid(result.initialization_token)
+    || typeof result.provider_product_id !== "string" || !result.provider_product_id.trim()
+    || (action !== "create" && action !== "reuse" && action !== "initializing")
+    || !Number.isSafeInteger(retryAfter) || (retryAfter as number) < 0 || (retryAfter as number) > 60) {
+    return null;
+  }
+  if (action === "reuse") {
+    if (typeof sessionId !== "string" || !sessionId || typeof checkoutUrl !== "string" || !checkoutUrl) return null;
+  } else if (sessionId !== null || checkoutUrl !== null) {
+    return null;
+  }
+  if (action === "initializing" ? retryAfter === 0 : retryAfter !== 0) return null;
+  return result as unknown as VerifiedCreditCheckoutClaimResult;
+}
+
+export function parseVerifiedCreditCheckoutAttachResult(value: unknown): VerifiedCreditCheckoutAttachResult | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const result = value as Record<string, unknown>;
+  if (typeof result.checkout_session_id !== "string" || !result.checkout_session_id
+    || typeof result.checkout_url !== "string" || !result.checkout_url
+    || typeof result.idempotent !== "boolean") return null;
+  return result as unknown as VerifiedCreditCheckoutAttachResult;
 }

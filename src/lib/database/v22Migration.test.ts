@@ -105,8 +105,10 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const checkoutSessionId = `cks_${suffix}`;
       const productId = `prod_${suffix}`;
       const orderId = await insertId(`insert into public.orders
-        (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status,checkout_session_id,provider_product_id)
-        values ($1,$2,'case_verified_credit',1,1900,'USD','pending',$3,$4) returning id`, [owner,caseId,checkoutSessionId,productId]);
+        (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status,checkout_session_id,
+          checkout_url,provider_product_id,checkout_initialization_token,checkout_initialization_started_at)
+        values ($1,$2,'case_verified_credit',1,1900,'USD','pending',$3,$4,$5,gen_random_uuid(),now()) returning id`,
+        [owner,caseId,checkoutSessionId,`https://test.checkout.dodopayments.com/session/${checkoutSessionId}`,productId]);
       const args = [orderId, `pay_${suffix}`, `clerk_${suffix}`, caseId, 1900, "USD", checkoutSessionId, productId];
       const fulfill = (params: unknown[] = args) => db.query(`select * from public.fulfill_v22_verified_credit_payment($1,$2,$3,$4,$5,$6,$7,$8)`, params);
       const refund = (params: unknown[] = args) => db.query(`select * from public.refund_v22_verified_credit_payment($1,$2,$3,$4,$5,$6,$7,$8)`, params);
@@ -122,16 +124,125 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       return {owner,caseId,orderId,args,checkoutSessionId,productId,fulfill,refund,reviewArgs,review};
     }
 
+    const claimCheckout = (owner: string, caseId: string, productId: string) => db.query<{
+      action:string; order_id:string; checkout_session_id:string|null; checkout_url:string|null;
+      provider_product_id:string; initialization_token:string; retry_after_seconds:number;
+    }>(`select * from public.claim_v22_verified_credit_checkout($1,$2,$3)`, [owner,caseId,productId]);
+
+    const attachCheckout = (input: {
+      owner:string; caseId:string; orderId:string; token:string; productId:string;
+      sessionId:string; checkoutUrl:string;
+    }) => db.query<{checkout_session_id:string;checkout_url:string;idempotent:boolean}>(
+      `select * from public.attach_v22_verified_credit_checkout($1,$2,$3,$4,$5,$6,$7)`,
+      [input.owner,input.caseId,input.orderId,input.token,input.productId,input.sessionId,input.checkoutUrl],
+    );
+
+    it("serializes a fresh checkout claim and reuses its attached session", async () => {
+      const suffix = randomUUID();
+      const owner = await insertUser(suffix);
+      const caseId = await insertCase(owner,suffix);
+      const productId = `prod_${suffix}`;
+      const first = (await claimCheckout(owner,caseId,productId)).rows[0];
+      expect(first).toMatchObject({action:"create",provider_product_id:productId,
+        checkout_session_id:null,checkout_url:null,retry_after_seconds:0});
+      const concurrent = (await claimCheckout(owner,caseId,productId)).rows[0];
+      expect(concurrent).toMatchObject({action:"initializing",order_id:first.order_id,
+        initialization_token:first.initialization_token,checkout_session_id:null,checkout_url:null});
+      expect(concurrent.retry_after_seconds).toBeGreaterThan(0);
+      expect(concurrent.retry_after_seconds).toBeLessThanOrEqual(60);
+
+      const sessionId = `cks_${suffix}`;
+      const checkoutUrl = `https://test.checkout.dodopayments.com/session/${sessionId}`;
+      expect((await attachCheckout({owner,caseId,orderId:first.order_id,token:first.initialization_token,
+        productId,sessionId,checkoutUrl})).rows[0]).toEqual({checkout_session_id:sessionId,checkout_url:checkoutUrl,idempotent:false});
+      const reused = (await claimCheckout(owner,caseId,"prod_rotated")).rows[0];
+      expect(reused).toMatchObject({action:"reuse",order_id:first.order_id,checkout_session_id:sessionId,
+        checkout_url:checkoutUrl,provider_product_id:productId,retry_after_seconds:0});
+      expect((await db.query(`select * from public.fulfill_v22_verified_credit_payment($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [first.order_id,`pay_${suffix}`,`clerk_${suffix}`,caseId,1900,"USD",sessionId,productId])).rows[0])
+        .toMatchObject({fulfilled:true,idempotent:false,credits_added:1});
+      const nextPurchase = (await claimCheckout(owner,caseId,"prod_rotated")).rows[0];
+      expect(nextPurchase).toMatchObject({action:"create",provider_product_id:"prod_rotated"});
+      expect((await db.query(`select count(*)::integer as count from public.orders where case_id=$1
+        and purchase_kind='case_verified_credit'`,[caseId])).rows[0]).toEqual({count:2});
+    });
+
+    it("lets a late attach win before stale recovery without creating another checkout", async () => {
+      const suffix = randomUUID();
+      const owner = await insertUser(suffix);
+      const caseId = await insertCase(owner,suffix);
+      const productId = `prod_${suffix}`;
+      const first = (await claimCheckout(owner,caseId,productId)).rows[0];
+      await db.query(`update public.orders set checkout_initialization_started_at=now()-interval '61 seconds'
+        where id=$1`,[first.order_id]);
+      const sessionId = `cks_${suffix}`;
+      const checkoutUrl = `https://test.checkout.dodopayments.com/session/${sessionId}`;
+      await attachCheckout({owner,caseId,orderId:first.order_id,token:first.initialization_token,
+        productId,sessionId,checkoutUrl});
+      const afterLateAttach = (await claimCheckout(owner,caseId,"prod_new")).rows[0];
+      expect(afterLateAttach).toMatchObject({action:"reuse",order_id:first.order_id,
+        checkout_session_id:sessionId,provider_product_id:productId});
+      expect((await db.query(`select count(*)::integer as count from public.orders where case_id=$1
+        and purchase_kind='case_verified_credit'`,[caseId])).rows[0]).toEqual({count:1});
+    });
+
+    it("CAS-recovers only a stale empty claim and rejects its late attach", async () => {
+      const suffix = randomUUID();
+      const owner = await insertUser(suffix);
+      const caseId = await insertCase(owner,suffix);
+      const first = (await claimCheckout(owner,caseId,`prod_old_${suffix}`)).rows[0];
+      await db.query(`update public.orders set checkout_initialization_started_at=now()-interval '30 seconds'
+        where id=$1`,[first.order_id]);
+      expect((await claimCheckout(owner,caseId,"prod_new")).rows[0]).toMatchObject({
+        action:"initializing",order_id:first.order_id,
+      });
+      await db.query(`update public.orders set checkout_initialization_started_at=now()-interval '61 seconds'
+        where id=$1`,[first.order_id]);
+      const replacement = (await claimCheckout(owner,caseId,"prod_new")).rows[0];
+      expect(replacement).toMatchObject({action:"create",provider_product_id:"prod_new"});
+      expect(replacement.order_id).not.toBe(first.order_id);
+      expect((await db.query(`select id,status from public.orders where case_id=$1
+        and purchase_kind='case_verified_credit' order by created_at,id`,[caseId])).rows)
+        .toEqual(expect.arrayContaining([{id:first.order_id,status:"failed"},{id:replacement.order_id,status:"pending"}]));
+
+      await expect(attachCheckout({owner,caseId,orderId:first.order_id,token:first.initialization_token,
+        productId:first.provider_product_id,sessionId:"cks_late",checkoutUrl:"https://checkout.dodopayments.com/late"}))
+        .rejects.toThrow("V22_VERIFIED_CHECKOUT_ATTACH_MISMATCH");
+      expect((await db.query(`select count(*)::integer as count from public.orders where case_id=$1
+        and purchase_kind='case_verified_credit' and status='pending'`,[caseId])).rows[0]).toEqual({count:1});
+    });
+
+    it("attaches exactly once and rejects a different session, token, order or Case", async () => {
+      const suffix = randomUUID();
+      const owner = await insertUser(suffix);
+      const caseId = await insertCase(owner,suffix);
+      const productId = `prod_${suffix}`;
+      const claimed = (await claimCheckout(owner,caseId,productId)).rows[0];
+      const input = {owner,caseId,orderId:claimed.order_id,token:claimed.initialization_token,
+        productId,sessionId:`cks_${suffix}`,checkoutUrl:`https://checkout.dodopayments.com/${suffix}`};
+      expect((await attachCheckout(input)).rows[0].idempotent).toBe(false);
+      expect((await attachCheckout(input)).rows[0].idempotent).toBe(true);
+      await expect(attachCheckout({...input,sessionId:"cks_other"})).rejects.toThrow("V22_VERIFIED_CHECKOUT_ATTACH_REPLAY_MISMATCH");
+      await expect(attachCheckout({...input,token:randomUUID()})).rejects.toThrow("V22_VERIFIED_CHECKOUT_ATTACH_MISMATCH");
+      await expect(attachCheckout({...input,orderId:randomUUID()})).rejects.toThrow("V22_VERIFIED_CHECKOUT_ATTACH_MISMATCH");
+      const otherCase = await insertCase(owner,randomUUID());
+      await expect(attachCheckout({...input,caseId:otherCase})).rejects.toThrow("V22_VERIFIED_CHECKOUT_ATTACH_MISMATCH");
+    });
+
     it("requires exactly one $19 USD credit and one pending checkout per Case", async () => {
       const f = await fixture();
       for (const change of ["case_id=null", "credits_purchased=0", "credits_purchased=2", "amount=1899", "currency='EUR'", "purchase_kind='unknown'"]) {
         await expectSqlError(`update public.orders set ${change} where id=$1`, [f.orderId], "check constraint");
       }
-      await expectSqlError(`insert into public.orders (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status)
-        values ($1,$2,'case_verified_credit',1,1900,'USD','pending')`, [f.owner,f.caseId], "uq_orders_pending_case_verified_credit_checkout");
+      await expectSqlError(`insert into public.orders (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status,
+        provider_product_id,checkout_initialization_token,checkout_initialization_started_at)
+        values ($1,$2,'case_verified_credit',1,1900,'USD','pending','prod_duplicate',gen_random_uuid(),now())`,
+        [f.owner,f.caseId], "uq_orders_pending_case_verified_credit_checkout");
       await f.fulfill();
-      await db.query(`insert into public.orders (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status)
-        values ($1,$2,'case_verified_credit',1,1900,'USD','pending')`, [f.owner,f.caseId]);
+      await db.query(`insert into public.orders (user_id,case_id,purchase_kind,credits_purchased,amount,currency,status,
+        provider_product_id,checkout_initialization_token,checkout_initialization_started_at)
+        values ($1,$2,'case_verified_credit',1,1900,'USD','pending','prod_next',gen_random_uuid(),now())`,
+        [f.owner,f.caseId]);
     });
 
     it("rejects inserting a Verified credit order with NULL currency", async () => {
@@ -346,6 +457,25 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       for (const role of ["anon","authenticated"]) {
         expect((await db.query(`select has_table_privilege($1,'public.verified_credit_refund_reviews','SELECT') as allowed`,[role])).rows[0])
           .toEqual({allowed:false});
+      }
+    });
+
+    it("restricts checkout claim and attach RPCs to service role with compatible lock order", async () => {
+      for (const signature of [
+        "public.claim_v22_verified_credit_checkout(uuid,uuid,text)",
+        "public.attach_v22_verified_credit_checkout(uuid,uuid,uuid,uuid,text,text,text)",
+      ]) {
+        for (const role of ["anon","authenticated","service_role"]) {
+          expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,[role,signature])).rows[0])
+            .toEqual({allowed:role === "service_role"});
+        }
+        const definition = (await db.query<{definition:string}>(
+          `select pg_get_functiondef($1::regprocedure) as definition`,[signature],
+        )).rows[0].definition.replace(/--[^\n]*/g, "").replace(/\s+/g," ");
+        const caseLock = /from public\.client_cases\b[^;]*for no key update/i.exec(definition);
+        const orderLock = /from public\.orders\b[^;]*for update/i.exec(definition);
+        expect(caseLock).not.toBeNull(); expect(orderLock).not.toBeNull();
+        expect(caseLock!.index).toBeLessThan(orderLock!.index);
       }
     });
   });

@@ -376,6 +376,8 @@ export interface Order {
   checkout_session_id?: string | null;
   checkout_url?: string | null;
   provider_product_id?: string | null;
+  checkout_initialization_token?: string | null;
+  checkout_initialization_started_at?: string | null;
   amount: number;
   currency?: string | null;
   credits_purchased: number;
@@ -450,6 +452,38 @@ export interface RecordV22VerifiedCreditRefundReviewResult {
   reason: RecordV22VerifiedCreditRefundReviewArgs["p_reason"];
 }
 
+export interface ClaimV22VerifiedCreditCheckoutArgs {
+  p_user_id: string;
+  p_case_id: string;
+  p_product_id: string;
+}
+
+export interface ClaimV22VerifiedCreditCheckoutResult {
+  action: "create" | "reuse" | "initializing";
+  order_id: string;
+  checkout_session_id: string | null;
+  checkout_url: string | null;
+  provider_product_id: string;
+  initialization_token: string;
+  retry_after_seconds: number;
+}
+
+export interface AttachV22VerifiedCreditCheckoutArgs {
+  p_user_id: string;
+  p_case_id: string;
+  p_order_id: string;
+  p_initialization_token: string;
+  p_product_id: string;
+  p_checkout_session_id: string;
+  p_checkout_url: string;
+}
+
+export interface AttachV22VerifiedCreditCheckoutResult {
+  checkout_session_id: string;
+  checkout_url: string;
+  idempotent: boolean;
+}
+
 export interface VerifiedCreditRefundReview {
   id: string;
   provider_refund_id: string;
@@ -472,6 +506,14 @@ export interface VerifiedCreditRefundReview {
 }
 
 export interface VerifiedCreditPaymentDatabaseFunctions {
+  claim_v22_verified_credit_checkout: {
+    Args: ClaimV22VerifiedCreditCheckoutArgs;
+    Returns: ClaimV22VerifiedCreditCheckoutResult[];
+  };
+  attach_v22_verified_credit_checkout: {
+    Args: AttachV22VerifiedCreditCheckoutArgs;
+    Returns: AttachV22VerifiedCreditCheckoutResult[];
+  };
   fulfill_v22_verified_credit_payment: {
     Args: FulfillV22VerifiedCreditPaymentArgs;
     Returns: FulfillV22VerifiedCreditPaymentResult[];

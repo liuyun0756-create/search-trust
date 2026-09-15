@@ -114,35 +114,46 @@ export function createVerifiedCreditHandlers(dependencies: VerifiedCreditHandler
 
     async POST(_request: NextRequest, context: Context) {
       const requestId = randomUUID();
-      let pendingOrderId: string | null = null;
-      let repository: VerifiedCreditRepository | null = null;
       try {
         const user = await requireUser(dependencies);
         const caseId = (await context.params).id;
         await requireOwnedCase(dependencies, user.userId, caseId);
         const { productId, baseUrl } = requireCheckoutConfiguration(dependencies);
-        repository = dependencies.createRepository();
-        const existing = await repository.getPendingCheckout(user.userId, caseId);
-        if (existing?.checkout_session_id && existing.checkout_url
-          && existing.provider_product_id === productId && isSafeDodoCheckoutUrl(existing.checkout_url)) {
+        const repository = dependencies.createRepository();
+        const claim = await repository.claimCheckout(user.userId, caseId, productId);
+        if (claim.action === "reuse") {
+          if (!claim.checkout_session_id || !claim.checkout_url || !isSafeDodoCheckoutUrl(claim.checkout_url)) {
+            throw CasePaymentError.unavailable();
+          }
           return NextResponse.json({
             case_id: caseId,
-            order_id: existing.id,
-            checkout_session_id: existing.checkout_session_id,
-            checkout_url: existing.checkout_url,
+            order_id: claim.order_id,
+            checkout_session_id: claim.checkout_session_id,
+            checkout_url: claim.checkout_url,
             reused: true,
           }, { headers: { "x-request-id": requestId } });
         }
-        if (existing) {
-          await repository.markOrderFailed(existing.id);
+        if (claim.action === "initializing") {
+          return NextResponse.json({
+            error: {
+              code: "CHECKOUT_INITIALIZING",
+              message: "Secure checkout is still being prepared. Please retry shortly.",
+            },
+            retry_after_seconds: claim.retry_after_seconds,
+          }, {
+            status: 409,
+            headers: {
+              "x-request-id": requestId,
+              "cache-control": "no-store",
+              "retry-after": String(claim.retry_after_seconds),
+            },
+          });
         }
-
-        const order = await repository.createPendingOrder(user.userId, caseId, productId);
-        pendingOrderId = order.id;
+        if (claim.provider_product_id !== productId) throw CasePaymentError.unavailable();
         const connectionPath = `/cases/${caseId}/connections`;
         const returnUrl = new URL(connectionPath, baseUrl);
         returnUrl.searchParams.set("payment", "return");
-        returnUrl.searchParams.set("order_id", order.id);
+        returnUrl.searchParams.set("order_id", claim.order_id);
         const cancelUrl = new URL(connectionPath, baseUrl);
         cancelUrl.searchParams.set("payment", "cancelled");
 
@@ -153,20 +164,32 @@ export function createVerifiedCreditHandlers(dependencies: VerifiedCreditHandler
           metadata: {
             clerk_user_id: user.clerkUserId,
             case_id: caseId,
-            order_id: order.id,
+            order_id: claim.order_id,
             purchase_kind: CASE_VERIFIED_CREDIT_PURCHASE,
           },
         });
-        await repository.attachCheckoutSession(order.id, checkout.session_id, checkout.checkout_url);
+        const attached = await repository.attachCheckoutSession({
+          userId: user.userId,
+          caseId,
+          orderId: claim.order_id,
+          initializationToken: claim.initialization_token,
+          productId: claim.provider_product_id,
+          sessionId: checkout.session_id,
+          checkoutUrl: checkout.checkout_url,
+        });
+        if (attached.checkout_session_id !== checkout.session_id
+          || attached.checkout_url !== checkout.checkout_url
+          || !isSafeDodoCheckoutUrl(attached.checkout_url)) {
+          throw CasePaymentError.unavailable();
+        }
         return NextResponse.json({
           case_id: caseId,
-          order_id: order.id,
-          checkout_session_id: checkout.session_id,
-          checkout_url: checkout.checkout_url,
+          order_id: claim.order_id,
+          checkout_session_id: attached.checkout_session_id,
+          checkout_url: attached.checkout_url,
           reused: false,
         }, { status: 201, headers: { "x-request-id": requestId } });
       } catch (error) {
-        if (repository && pendingOrderId) await repository.markOrderFailed(pendingOrderId).catch(() => undefined);
         return errorResponse(error, "POST /api/v2/cases/:id/verified-credit/checkout", requestId);
       }
     },

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { CaseService } from "@/lib/cases/service";
 import type { DodoClient } from "@/lib/payments-v22";
-import { CasePaymentError } from "@/lib/payments-v22";
+import { CasePaymentError, DODO_REQUEST_TIMEOUT_MS } from "@/lib/payments-v22";
 import {
   createVerifiedCreditConfirmHandler,
   createVerifiedCreditHandlers,
@@ -12,6 +12,7 @@ import {
   type VerifiedCreditHandlerDependencies,
 } from "./handlers";
 import type { VerifiedCreditRepository } from "./repository";
+import { VERIFIED_CHECKOUT_INITIALIZATION_STALE_SECONDS } from "./contracts";
 
 const caseId = "11111111-1111-4111-8111-111111111111";
 const orderId = "22222222-2222-4222-8222-222222222222";
@@ -21,9 +22,20 @@ const context = { params: Promise.resolve({ id: caseId }) };
 function repository(overrides: Partial<VerifiedCreditRepository> = {}): VerifiedCreditRepository {
   return {
     getBalance: vi.fn(async () => 2),
-    getPendingCheckout: vi.fn(async () => null),
-    createPendingOrder: vi.fn(async () => ({ id: orderId })),
-    attachCheckoutSession: vi.fn(async () => undefined),
+    claimCheckout: vi.fn(async () => ({
+      action: "create" as const,
+      order_id: orderId,
+      checkout_session_id: null,
+      checkout_url: null,
+      provider_product_id: "prod_verified_credit",
+      initialization_token: "44444444-4444-4444-8444-444444444444",
+      retry_after_seconds: 0,
+    })),
+    attachCheckoutSession: vi.fn(async input => ({
+      checkout_session_id: input.sessionId,
+      checkout_url: input.checkoutUrl,
+      idempotent: false,
+    })),
     markOrderFailed: vi.fn(async () => undefined),
     fulfill: vi.fn(async () => ({ fulfilled: true, idempotent: false, credits_added: 1, audit_credits: 3 })),
     refund: vi.fn(async () => ({ refunded: true, idempotent: false, reversal_applied: true, manual_review: false, audit_credits: 2 })),
@@ -73,6 +85,10 @@ function dependencies(repo: VerifiedCreditRepository, overrides: Partial<Verifie
 }
 
 describe("Verified credit handlers", () => {
+  it("keeps stale recovery beyond the complete Dodo request deadline", () => {
+    expect(VERIFIED_CHECKOUT_INITIALIZATION_STALE_SECONDS * 1_000).toBeGreaterThan(DODO_REQUEST_TIMEOUT_MS);
+  });
+
   it("returns the signed-in account balance", async () => {
     const response = await createVerifiedCreditHandlers(dependencies(repository())).GET(
       new NextRequest(`https://searchtrust.example/api/v2/cases/${caseId}/verified-credit/checkout`),
@@ -116,35 +132,69 @@ describe("Verified credit handlers", () => {
 
   it("reuses only a pending checkout and does not treat a paid order as open", async () => {
     const pending = repository({
-      getPendingCheckout: vi.fn(async () => ({ id: orderId, checkout_session_id: "cks_old", checkout_url: "https://test.checkout.dodopayments.com/session/cks_old", status: "pending" as const, provider_product_id: "prod_verified_credit" })),
+      claimCheckout: vi.fn(async () => ({
+        action: "reuse" as const,
+        order_id: orderId,
+        checkout_session_id: "cks_old",
+        checkout_url: "https://test.checkout.dodopayments.com/session/cks_old",
+        provider_product_id: "prod_verified_credit",
+        initialization_token: "44444444-4444-4444-8444-444444444444",
+        retry_after_seconds: 0,
+      })),
     });
     const pendingDeps = dependencies(pending);
     const reused = await createVerifiedCreditHandlers(pendingDeps).POST(new NextRequest("https://searchtrust.example", { method: "POST" }), context);
     expect(await reused.json()).toMatchObject({ reused: true, order_id: orderId });
-    expect(pending.createPendingOrder).not.toHaveBeenCalled();
+    expect(pendingDeps.createDodoClient().createCheckout).not.toHaveBeenCalled();
 
     const afterPaid = repository();
     const fresh = await createVerifiedCreditHandlers(dependencies(afterPaid)).POST(new NextRequest("https://searchtrust.example", { method: "POST" }), context);
     expect(fresh.status).toBe(201);
-    expect(afterPaid.createPendingOrder).toHaveBeenCalledOnce();
+    expect(afterPaid.claimCheckout).toHaveBeenCalledOnce();
   });
 
   it("does not reuse a persisted checkout URL outside Dodo", async () => {
     const repo = repository({
-      getPendingCheckout: vi.fn(async () => ({
-        id: orderId,
+      claimCheckout: vi.fn(async () => ({
+        action: "reuse" as const,
+        order_id: orderId,
         checkout_session_id: "cks_tampered",
         checkout_url: "https://attacker.example/collect",
-        status: "pending" as const,
         provider_product_id: "prod_verified_credit",
+        initialization_token: "44444444-4444-4444-8444-444444444444",
+        retry_after_seconds: 0,
       })),
     });
     const response = await createVerifiedCreditHandlers(dependencies(repo)).POST(
       new NextRequest("https://searchtrust.example", { method: "POST" }), context,
     );
-    expect(response.status).toBe(201);
-    expect(repo.markOrderFailed).toHaveBeenCalledWith(orderId);
-    expect(repo.createPendingOrder).toHaveBeenCalledOnce();
+    expect(response.status).toBe(503);
+    expect(repo.markOrderFailed).not.toHaveBeenCalled();
+  });
+
+  it("returns a retryable initializing response without creating a duplicate Dodo checkout", async () => {
+    const repo = repository({
+      claimCheckout: vi.fn(async () => ({
+        action: "initializing" as const,
+        order_id: orderId,
+        checkout_session_id: null,
+        checkout_url: null,
+        provider_product_id: "prod_verified_credit",
+        initialization_token: "44444444-4444-4444-8444-444444444444",
+        retry_after_seconds: 37,
+      })),
+    });
+    const deps = dependencies(repo);
+    const response = await createVerifiedCreditHandlers(deps).POST(
+      new NextRequest("https://searchtrust.example", { method: "POST" }), context,
+    );
+    expect(response.status).toBe(409);
+    expect(response.headers.get("retry-after")).toBe("37");
+    expect(await response.json()).toMatchObject({
+      error: { code: "CHECKOUT_INITIALIZING" }, retry_after_seconds: 37,
+    });
+    expect(deps.createDodoClient().createCheckout).not.toHaveBeenCalled();
+    expect(repo.markOrderFailed).not.toHaveBeenCalled();
   });
 
   it("gates new checkout, while confirm remains usable after the flag closes", async () => {
@@ -192,7 +242,7 @@ describe("Verified credit handlers", () => {
     expect(repo.fulfill).not.toHaveBeenCalled();
   });
 
-  it("closes a pending order and returns 504 when checkout creation times out", async () => {
+  it("leaves an initializing order recoverable and returns 504 when checkout creation times out", async () => {
     const repo = repository();
     const deps = dependencies(repo);
     vi.mocked(deps.createDodoClient().createCheckout).mockRejectedValue(CasePaymentError.timeout());
@@ -200,7 +250,67 @@ describe("Verified credit handlers", () => {
       new NextRequest("https://searchtrust.example", { method: "POST" }), context,
     );
     expect(response.status).toBe(504);
-    expect(repo.markOrderFailed).toHaveBeenCalledWith(orderId);
+    expect(repo.markOrderFailed).not.toHaveBeenCalled();
+  });
+
+  it("does not let a concurrent request invalidate an order while Dodo checkout creation is running", async () => {
+    let releaseDodo!: () => void;
+    const dodoBarrier = new Promise<void>(resolve => { releaseDodo = resolve; });
+    let claimCount = 0;
+    const repo = repository({
+      claimCheckout: vi.fn(async () => {
+        claimCount += 1;
+        return claimCount === 1
+          ? {
+              action: "create" as const, order_id: orderId, checkout_session_id: null,
+              checkout_url: null, provider_product_id: "prod_verified_credit",
+              initialization_token: "44444444-4444-4444-8444-444444444444", retry_after_seconds: 0,
+            }
+          : {
+              action: "initializing" as const, order_id: orderId, checkout_session_id: null,
+              checkout_url: null, provider_product_id: "prod_verified_credit",
+              initialization_token: "44444444-4444-4444-8444-444444444444", retry_after_seconds: 59,
+            };
+      }),
+    });
+    const deps = dependencies(repo);
+    vi.mocked(deps.createDodoClient().createCheckout).mockImplementation(async () => {
+      await dodoBarrier;
+      return {
+        session_id: "cks_verified",
+        checkout_url: "https://test.checkout.dodopayments.com/session/cks_verified",
+      };
+    });
+    const handler = createVerifiedCreditHandlers(deps);
+    const firstPromise = handler.POST(new NextRequest("https://searchtrust.example", { method: "POST" }), context);
+    await vi.waitFor(() => expect(deps.createDodoClient().createCheckout).toHaveBeenCalledOnce());
+    const second = await handler.POST(new NextRequest("https://searchtrust.example", { method: "POST" }), context);
+    expect(second.status).toBe(409);
+    expect(repo.markOrderFailed).not.toHaveBeenCalled();
+    expect(deps.createDodoClient().createCheckout).toHaveBeenCalledOnce();
+    releaseDodo();
+    const first = await firstPromise;
+    expect(first.status).toBe(201);
+    expect(repo.attachCheckoutSession).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ["zero-row attach", repository({
+      attachCheckoutSession: vi.fn(async () => { throw new Error("no matching initialization"); }),
+    })],
+    ["different attached session", repository({
+      attachCheckoutSession: vi.fn(async () => ({
+        checkout_session_id: "cks_other",
+        checkout_url: "https://checkout.dodopayments.com/session/cks_other",
+        idempotent: true,
+      })),
+    })],
+  ])("does not return a Dodo URL after %s", async (_label, repo) => {
+    const response = await createVerifiedCreditHandlers(dependencies(repo)).POST(
+      new NextRequest("https://searchtrust.example", { method: "POST" }), context,
+    );
+    expect(response.status).toBeGreaterThanOrEqual(500);
+    expect(JSON.stringify(await response.json())).not.toContain("checkout_url");
   });
 
   it("confirms idempotently without ever submitting a Verified analysis", async () => {

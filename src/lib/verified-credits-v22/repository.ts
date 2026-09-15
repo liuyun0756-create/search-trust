@@ -3,23 +3,27 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   CASE_VERIFIED_CREDIT_PURCHASE,
+  parseVerifiedCreditCheckoutAttachResult,
+  parseVerifiedCreditCheckoutClaimResult,
   parseVerifiedCreditFulfillmentResult,
   parseVerifiedCreditRefundResult,
   parseVerifiedCreditRefundReviewResult,
+  type VerifiedCreditCheckoutAttachResult,
+  type VerifiedCreditCheckoutClaimResult,
   type VerifiedCreditFulfillmentResult,
   type VerifiedCreditRefundResult,
   type VerifiedCreditRefundReviewReason,
   type VerifiedCreditRefundReviewResult,
 } from "./contracts";
 
-export interface PendingVerifiedCreditOrder { id: string }
-
-export interface PendingVerifiedCreditCheckout {
-  id: string;
-  checkout_session_id: string | null;
-  checkout_url: string | null;
-  status: "pending";
-  provider_product_id: string | null;
+export interface VerifiedCreditCheckoutAttachInput {
+  userId: string;
+  caseId: string;
+  orderId: string;
+  initializationToken: string;
+  productId: string;
+  sessionId: string;
+  checkoutUrl: string;
 }
 
 export interface VerifiedCreditPaymentInput {
@@ -52,9 +56,8 @@ export interface VerifiedCreditRefundReviewInput {
 
 export interface VerifiedCreditRepository {
   getBalance(userId: string): Promise<number>;
-  getPendingCheckout(userId: string, caseId: string): Promise<PendingVerifiedCreditCheckout | null>;
-  createPendingOrder(userId: string, caseId: string, productId: string): Promise<PendingVerifiedCreditOrder>;
-  attachCheckoutSession(orderId: string, sessionId: string, checkoutUrl: string): Promise<void>;
+  claimCheckout(userId: string, caseId: string, productId: string): Promise<VerifiedCreditCheckoutClaimResult>;
+  attachCheckoutSession(input: VerifiedCreditCheckoutAttachInput): Promise<VerifiedCreditCheckoutAttachResult>;
   markOrderFailed(orderId: string): Promise<void>;
   fulfill(input: VerifiedCreditPaymentInput): Promise<VerifiedCreditFulfillmentResult>;
   refund(input: VerifiedCreditPaymentInput): Promise<VerifiedCreditRefundResult>;
@@ -81,36 +84,30 @@ export class SupabaseVerifiedCreditRepository implements VerifiedCreditRepositor
     return balance;
   }
 
-  async getPendingCheckout(userId: string, caseId: string): Promise<PendingVerifiedCreditCheckout | null> {
-    const { data, error } = await this.supabase.from("orders")
-      .select("id,checkout_session_id,checkout_url,status,provider_product_id")
-      .eq("user_id", userId).eq("case_id", caseId)
-      .eq("purchase_kind", CASE_VERIFIED_CREDIT_PURCHASE).eq("status", "pending")
-      .limit(1).maybeSingle();
-    if (error) throw new VerifiedCreditPersistenceError();
-    return data as PendingVerifiedCreditCheckout | null;
+  async claimCheckout(userId: string, caseId: string, productId: string): Promise<VerifiedCreditCheckoutClaimResult> {
+    const { data, error } = await this.supabase.rpc("claim_v22_verified_credit_checkout", {
+      p_user_id: userId,
+      p_case_id: caseId,
+      p_product_id: productId,
+    }).single();
+    const parsed = parseVerifiedCreditCheckoutClaimResult(data);
+    if (error || !parsed) throw new VerifiedCreditPersistenceError();
+    return parsed;
   }
 
-  async createPendingOrder(userId: string, caseId: string, productId: string): Promise<PendingVerifiedCreditOrder> {
-    const { data, error } = await this.supabase.from("orders").insert({
-      user_id: userId,
-      case_id: caseId,
-      purchase_kind: CASE_VERIFIED_CREDIT_PURCHASE,
-      amount: 1900,
-      currency: "USD",
-      credits_purchased: 1,
-      status: "pending",
-      provider_product_id: productId,
-    }).select("id").single();
-    if (error || !data || typeof data.id !== "string") throw new VerifiedCreditPersistenceError();
-    return { id: data.id };
-  }
-
-  async attachCheckoutSession(orderId: string, sessionId: string, checkoutUrl: string): Promise<void> {
-    const { error } = await this.supabase.from("orders")
-      .update({ checkout_session_id: sessionId, checkout_url: checkoutUrl })
-      .eq("id", orderId).eq("purchase_kind", CASE_VERIFIED_CREDIT_PURCHASE).eq("status", "pending");
-    if (error) throw new VerifiedCreditPersistenceError();
+  async attachCheckoutSession(input: VerifiedCreditCheckoutAttachInput): Promise<VerifiedCreditCheckoutAttachResult> {
+    const { data, error } = await this.supabase.rpc("attach_v22_verified_credit_checkout", {
+      p_user_id: input.userId,
+      p_case_id: input.caseId,
+      p_order_id: input.orderId,
+      p_initialization_token: input.initializationToken,
+      p_product_id: input.productId,
+      p_checkout_session_id: input.sessionId,
+      p_checkout_url: input.checkoutUrl,
+    }).single();
+    const parsed = parseVerifiedCreditCheckoutAttachResult(data);
+    if (error || !parsed) throw new VerifiedCreditPersistenceError();
+    return parsed;
   }
 
   async markOrderFailed(orderId: string): Promise<void> {

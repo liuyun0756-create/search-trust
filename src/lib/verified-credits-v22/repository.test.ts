@@ -24,28 +24,65 @@ describe("SupabaseVerifiedCreditRepository", () => {
     expect(users.eq).toHaveBeenCalledWith("id", userId);
   });
 
-  it("creates exactly one $19 USD credit pending order", async () => {
-    const orders = query({ data: { id: orderId }, error: null });
-    const db = { from: vi.fn(() => orders), rpc: vi.fn() } as never;
-    await expect(new SupabaseVerifiedCreditRepository(db).createPendingOrder(userId, caseId, "prod_verified")).resolves.toEqual({ id: orderId });
-    expect(orders.insert).toHaveBeenCalledWith({
-      user_id: userId,
-      case_id: caseId,
-      purchase_kind: "case_verified_credit",
-      amount: 1900,
-      currency: "USD",
-      credits_purchased: 1,
-      status: "pending",
+  it("claims checkout initialization only through the cross-instance-safe RPC", async () => {
+    const claim = {
+      action: "create",
+      order_id: orderId,
+      checkout_session_id: null,
+      checkout_url: null,
       provider_product_id: "prod_verified",
-    });
+      initialization_token: "44444444-4444-4444-8444-444444444444",
+      retry_after_seconds: 0,
+    };
+    const rpcChain = { single: vi.fn(async () => ({ data: claim, error: null })) };
+    const db = { from: vi.fn(), rpc: vi.fn(() => rpcChain) } as never;
+    await expect(new SupabaseVerifiedCreditRepository(db).claimCheckout(userId, caseId, "prod_verified"))
+      .resolves.toEqual(claim);
+    expect((db as { rpc: ReturnType<typeof vi.fn> }).rpc).toHaveBeenCalledWith(
+      "claim_v22_verified_credit_checkout",
+      { p_user_id: userId, p_case_id: caseId, p_product_id: "prod_verified" },
+    );
   });
 
-  it("queries only a pending Verified checkout so paid orders do not block repurchase", async () => {
-    const orders = query({ data: null, error: null });
-    const db = { from: vi.fn(() => orders), rpc: vi.fn() } as never;
-    await new SupabaseVerifiedCreditRepository(db).getPendingCheckout(userId, caseId);
-    expect(orders.eq).toHaveBeenCalledWith("purchase_kind", "case_verified_credit");
-    expect(orders.eq).toHaveBeenCalledWith("status", "pending");
+  it("rejects an inconsistent checkout claim returned by the database", async () => {
+    const rpcChain = { single: vi.fn(async () => ({ data: {
+      action: "reuse",
+      order_id: orderId,
+      checkout_session_id: null,
+      checkout_url: null,
+      provider_product_id: "prod_verified",
+      initialization_token: "44444444-4444-4444-8444-444444444444",
+      retry_after_seconds: 0,
+    }, error: null })) };
+    const db = { from: vi.fn(), rpc: vi.fn(() => rpcChain) } as never;
+    await expect(new SupabaseVerifiedCreditRepository(db).claimCheckout(userId, caseId, "prod_verified"))
+      .rejects.toThrow("persistence failed");
+  });
+
+  it("atomically attaches a checkout and rejects an invalid zero-row result", async () => {
+    const attached = {
+      checkout_session_id: "cks_1",
+      checkout_url: "https://test.checkout.dodopayments.com/session/cks_1",
+      idempotent: false,
+    };
+    const rpcChain = { single: vi.fn()
+      .mockResolvedValueOnce({ data: attached, error: null })
+      .mockResolvedValueOnce({ data: null, error: null }) };
+    const db = { from: vi.fn(), rpc: vi.fn(() => rpcChain) } as never;
+    const repo = new SupabaseVerifiedCreditRepository(db);
+    const input = {
+      userId, caseId, orderId,
+      initializationToken: "44444444-4444-4444-8444-444444444444",
+      productId: "prod_verified",
+      sessionId: "cks_1",
+      checkoutUrl: attached.checkout_url,
+    };
+    await expect(repo.attachCheckoutSession(input)).resolves.toEqual(attached);
+    await expect(repo.attachCheckoutSession(input)).rejects.toThrow("persistence failed");
+    expect((db as { rpc: ReturnType<typeof vi.fn> }).rpc).toHaveBeenCalledWith(
+      "attach_v22_verified_credit_checkout",
+      expect.objectContaining({ p_order_id: orderId, p_initialization_token: input.initializationToken }),
+    );
   });
 
   it("fulfills and refunds only through the Verified credit RPCs", async () => {
