@@ -222,6 +222,96 @@ describe("ConnectionCenter interactions", () => {
     expect(screen.getAllByText(/J2 running|Verified Action Plan/).length).toBeGreaterThan(0);
   });
 
+  it.each(["503", "network"] as const)("keeps generation locked after J1 settles until the latest J2 projection recovers from %s", async (failure) => {
+    const j1 = E2E_IDS.analysisJobId;
+    const j2 = "00000000-0000-4000-8000-000000000099";
+    const reserved = healthy();
+    reserved.billing.audit_credits = 0;
+    reserved.verified_job = { id: j1, status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
+    reserved.coverage.next_action = { code: "wait_for_verified_analysis", label: "Finalizing credit return", source_key: null };
+    const compensated = structuredClone(reserved);
+    compensated.billing.audit_credits = 1;
+    compensated.verified_job!.charge_state = "compensated";
+    const j2Running = structuredClone(reserved);
+    j2Running.verified_job = { id: j2, status: "running", report_id: null, charge_state: "reserved", error_code: null };
+    let exactSeen = false;
+    let exactReads = 0;
+    let latestReads = 0;
+    let generated = 0;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("connection-center?tracked_job_id=")) {
+        exactSeen = true;
+        exactReads += 1;
+        return new Response(JSON.stringify(compensated), { status: 200 });
+      }
+      if (url.includes("connection-center")) {
+        if (!exactSeen) return new Response(JSON.stringify(reserved), { status: 200 });
+        latestReads += 1;
+        if (latestReads === 1) {
+          if (failure === "network") throw new TypeError("offline");
+          return new Response(null, { status: 503 });
+        }
+        return new Response(JSON.stringify(j2Running), { status: 200 });
+      }
+      if (url.includes(`/api/v2/tasks/${j2}`)) return new Response(JSON.stringify({ job_id: j2, status: "running", message: "J2 running" }), { status: 200 });
+      if (url.endsWith("/verified-analysis")) { generated += 1; return new Response(null, { status: 500 }); }
+      throw new Error(`Unexpected request: ${url}`);
+    }));
+    render(<ConnectionCenter caseId={E2E_IDS.caseId} businessName="SearchTrust E2E Plumbing" siteUrl={E2E_IDS.siteUrl} initialData={reserved} />);
+    expect((await screen.findAllByText(/latest status refresh is pending/i)).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /Latest status refresh pending/ })).toBeDisabled();
+    const retry = screen.getByRole("button", { name: "Refresh latest status" });
+    retry.focus();
+    expect(document.activeElement).toBe(retry);
+    await act(async () => { retry.click(); await Promise.resolve(); await Promise.resolve(); });
+    expect(latestReads).toBe(2);
+    expect(exactReads).toBe(1);
+    expect(generated).toBe(0);
+    expect(screen.getByRole("button", { name: /Generating Verified Action Plan/ })).toBeDisabled();
+    expect(screen.getAllByText(/J2 running|Verified Action Plan/).length).toBeGreaterThan(0);
+  });
+
+  it("keeps a keyboard refresh available and never unlocks after bounded latest projection retries fail", async () => {
+    vi.useFakeTimers();
+    const reserved = healthy();
+    reserved.billing.audit_credits = 0;
+    reserved.verified_job = { id: E2E_IDS.analysisJobId, status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
+    reserved.coverage.next_action = { code: "wait_for_verified_analysis", label: "Finalizing credit return", source_key: null };
+    const compensated = structuredClone(reserved);
+    compensated.billing.audit_credits = 1;
+    compensated.verified_job!.charge_state = "compensated";
+    let exactSeen = false;
+    let exactReads = 0;
+    let latestReads = 0;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("connection-center?tracked_job_id=")) {
+        exactSeen = true;
+        exactReads += 1;
+        return new Response(JSON.stringify(compensated), { status: 200 });
+      }
+      if (url.includes("connection-center")) {
+        if (!exactSeen) return new Response(JSON.stringify(reserved), { status: 200 });
+        latestReads += 1;
+        return new Response(null, { status: 503 });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    }));
+    render(<ConnectionCenter caseId={E2E_IDS.caseId} businessName="SearchTrust E2E Plumbing" siteUrl={E2E_IDS.siteUrl} initialData={reserved} />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(6_000); });
+    expect(latestReads).toBe(3);
+    const refreshLatest = screen.getByRole("button", { name: "Refresh latest status" });
+    expect(refreshLatest).toBeEnabled();
+    refreshLatest.focus();
+    expect(document.activeElement).toBe(refreshLatest);
+    expect(screen.getByRole("button", { name: /Latest status refresh pending/ })).toBeDisabled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(latestReads).toBe(3);
+    expect(exactReads).toBe(1);
+  });
+
   it("stops exact settlement polling after a tracked job is repeatedly missing and asks for a manual refresh", async () => {
     vi.useFakeTimers();
     const reserved = healthy();

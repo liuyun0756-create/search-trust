@@ -184,6 +184,7 @@ export function ConnectionCenter({
     return job?.status === "failed" && job.charge_state === "reserved" ? job.id : null;
   });
   const [settlementRecoveryBlocked, setSettlementRecoveryBlocked] = useState(false);
+  const [latestProjectionSync, setLatestProjectionSync] = useState<"hidden" | "refreshing" | "pending">("hidden");
   const [taskMessage, setTaskMessage] = useState("");
   const [paymentRetry, setPaymentRetry] = useState<"hidden" | "waiting" | "ready">("hidden");
   const [balanceRefresh, setBalanceRefresh] = useState<"hidden" | "refreshing" | "pending">("hidden");
@@ -198,8 +199,14 @@ export function ConnectionCenter({
   const balanceRefreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const balanceRefreshAbort = useRef<AbortController | null>(null);
   const balanceRefreshCallback = useRef<() => void>(() => undefined);
+  const settledJobRef = useRef<NonNullable<ConnectionCenterResponse["verified_job"]> | null>(null);
+  const latestProjectionAttemptRef = useRef(0);
+  const latestProjectionFlight = useRef(false);
+  const latestProjectionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestProjectionAbort = useRef<AbortController | null>(null);
+  const latestProjectionCallback = useRef<() => void>(() => undefined);
   const loadSequence = useRef(0);
-  const loadFlight = useRef<{ key: string; request: Promise<ConnectionCenterResponse | null> } | null>(null);
+  const loadFlights = useRef(new Map<string, { sequence: number; request: Promise<ConnectionCenterResponse | null> }>());
   const mounted = useRef(true);
   const go = useCallback((url: string) => {
     if (navigate) navigate(url);
@@ -209,9 +216,16 @@ export function ConnectionCenter({
   const activeSync = useMemo(() => Boolean(data && [...data.sources, ...data.optional_sources]
     .some((source) => source.technical_status.job && ["queued", "running"].includes(source.technical_status.job.status))), [data]);
 
-  const load = useCallback((signal?: AbortSignal, force = false, trackedJobId?: string): Promise<ConnectionCenterResponse | null> => {
+  const load = useCallback(async (signal?: AbortSignal, force = false, trackedJobId?: string): Promise<ConnectionCenterResponse | null> => {
     const requestUrl = trackedJobId ? `${endpoint}?tracked_job_id=${encodeURIComponent(trackedJobId)}` : endpoint;
-    if (loadFlight.current?.key === requestUrl && !force) return loadFlight.current.request;
+    if (!force) {
+      for (;;) {
+        const existing = loadFlights.current.get(requestUrl);
+        if (!existing) break;
+        if (existing.sequence === loadSequence.current) return existing.request;
+        try { await existing.request; } catch { /* An obsolete request cannot satisfy this refresh. */ }
+      }
+    }
     const sequence = ++loadSequence.current;
     const request = (async () => {
       const response = await fetch(requestUrl, { cache: "no-store", signal });
@@ -232,11 +246,59 @@ export function ConnectionCenter({
       setError("");
       return next;
     })();
-    loadFlight.current = { key: requestUrl, request };
-    const clear = () => { if (loadFlight.current?.request === request) loadFlight.current = null; };
+    loadFlights.current.set(requestUrl, { sequence, request });
+    const clear = () => { if (loadFlights.current.get(requestUrl)?.request === request) loadFlights.current.delete(requestUrl); };
     void request.then(clear, clear);
     return request;
   }, [endpoint]);
+
+  const refreshLatestProjection = useCallback(async () => {
+    const settledJob = settledJobRef.current;
+    if (!settledJob || latestProjectionFlight.current) return;
+    if (latestProjectionTimer.current) clearTimeout(latestProjectionTimer.current);
+    latestProjectionTimer.current = null;
+    latestProjectionFlight.current = true;
+    latestProjectionAttemptRef.current += 1;
+    setLatestProjectionSync("refreshing");
+    setTaskMessage("Credit status settled. Refreshing the latest Verified Action Plan status…");
+    const controller = new AbortController();
+    latestProjectionAbort.current = controller;
+    try {
+      const latest = await load(controller.signal);
+      if (!latest) throw new Error("A newer status refresh replaced this response.");
+      if (!mounted.current) return;
+      settledJobRef.current = null;
+      latestProjectionAttemptRef.current = 0;
+      setLatestProjectionSync("hidden");
+      if (latest.verified_job?.id === settledJob.id && settledJob.status === "succeeded" && settledJob.report_id) {
+        go(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(settledJob.report_id)}`);
+      } else if (latest.verified_job && ["queued", "running"].includes(latest.verified_job.status)) {
+        setTaskMessage("Latest Verified Action Plan found. Resuming its status…");
+      } else if (settledJob.charge_state === "compensated") {
+        setTaskMessage("Generation failed. 1 credit returned. You can try again when ready.");
+      } else {
+        setTaskMessage("The saved job has finished. Your current balance is shown above.");
+      }
+    } catch (value) {
+      if (value instanceof Error && value.name === "AbortError") return;
+      if (!mounted.current) return;
+      setLatestProjectionSync("pending");
+      setTaskMessage("Credit status settled. The latest status refresh is pending; generation remains locked.");
+      if (latestProjectionAttemptRef.current < 3) {
+        const delayMs = 2 ** latestProjectionAttemptRef.current * 1000;
+        latestProjectionTimer.current = setTimeout(() => {
+          latestProjectionTimer.current = null;
+          latestProjectionCallback.current();
+        }, delayMs);
+      }
+    } finally {
+      if (latestProjectionAbort.current === controller) {
+        latestProjectionAbort.current = null;
+        latestProjectionFlight.current = false;
+      }
+    }
+  }, [caseId, go, load]);
+  latestProjectionCallback.current = () => { void refreshLatestProjection(); };
 
   const schedulePaymentRetry = useCallback((retryAfter: string | null) => {
     if (paymentRetryTimer.current) clearTimeout(paymentRetryTimer.current);
@@ -437,16 +499,11 @@ export function ConnectionCenter({
         }
         missingAttempts = 0;
         if (job.charge_state !== "reserved") {
-          try { await load(controller.signal, true); } catch { /* Exact settlement is already authoritative. */ }
-          if (cancelled) return;
+          settledJobRef.current = job;
           setSettlingJobId(null);
-          if (job.status === "succeeded" && job.report_id) {
-            go(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(job.report_id)}`);
-          } else if (job.charge_state === "compensated") {
-            setTaskMessage("Generation failed. 1 credit returned. You can try again when ready.");
-          } else {
-            setTaskMessage("The saved job has finished. Your current balance is shown above.");
-          }
+          setLatestProjectionSync("refreshing");
+          setTaskMessage("Credit status settled. Refreshing the latest Verified Action Plan status…");
+          latestProjectionCallback.current();
           return;
         }
         setTaskMessage("Finalizing the saved job and credit status. This can take a little longer…");
@@ -491,15 +548,21 @@ export function ConnectionCenter({
       paymentRetryTimer.current = null;
       if (balanceRefreshTimer.current) clearTimeout(balanceRefreshTimer.current);
       balanceRefreshTimer.current = null;
+      if (latestProjectionTimer.current) clearTimeout(latestProjectionTimer.current);
+      latestProjectionTimer.current = null;
       const controller = paymentAbort.current;
       const balanceController = balanceRefreshAbort.current;
+      const latestController = latestProjectionAbort.current;
       paymentAbort.current = null;
       balanceRefreshAbort.current = null;
+      latestProjectionAbort.current = null;
       paymentConfirmFlight.current = false;
       balanceRefreshFlight.current = false;
+      latestProjectionFlight.current = false;
       actionLock.current = false;
       controller?.abort();
       balanceController?.abort();
+      latestController?.abort();
     };
     // Payment return is a mount-time handoff. The ID is scrubbed once and kept
     // only in refs so render changes cannot duplicate confirmation requests.
@@ -507,6 +570,10 @@ export function ConnectionCenter({
   }, []);
 
   function refresh() {
+    if (latestProjectionSync !== "hidden") {
+      latestProjectionCallback.current();
+      return;
+    }
     setSettlementRecoveryBlocked(false);
     setLoading(true);
     setRevision((value) => value + 1);
@@ -591,7 +658,7 @@ export function ConnectionCenter({
   }
 
   const current = data?.case ?? { business_name: businessName, site_url: siteUrl };
-  const generationActive = Boolean(activeJobId || settlingJobId || settlementRecoveryBlocked || (data?.verified_job && (["queued", "running"].includes(data.verified_job.status)
+  const generationActive = Boolean(activeJobId || settlingJobId || latestProjectionSync !== "hidden" || settlementRecoveryBlocked || (data?.verified_job && (["queued", "running"].includes(data.verified_job.status)
     || (data.verified_job.status === "failed" && data.verified_job.charge_state === "reserved"))));
   const primaryDisabled = loading || actionBusy !== null || balanceRefresh !== "hidden" || generationActive || data?.coverage.next_action.code === "wait_for_verified_analysis";
   const returnedCredit = data?.verified_job?.status === "failed" && data.verified_job.charge_state === "compensated";
@@ -639,6 +706,7 @@ export function ConnectionCenter({
             {actionBusy === "checkout" ? "Opening secure checkout…"
               : actionBusy === "generate" ? "Starting…"
                 : settlementRecoveryBlocked ? "Refresh status required"
+                  : latestProjectionSync !== "hidden" ? "Latest status refresh pending"
                   : settlingJobId ? "Finalizing credit status…"
                     : generationActive ? "Generating Verified Action Plan…"
                   : data?.coverage.next_action.label ?? "Check readiness"}
@@ -654,6 +722,9 @@ export function ConnectionCenter({
         </button>}
         {balanceRefresh !== "hidden" && <button type="button" disabled={balanceRefresh === "refreshing"} onClick={() => void refreshBalanceAfterPayment()} className="ml-3 font-semibold underline underline-offset-4 disabled:cursor-wait disabled:opacity-60">
           Refresh balance
+        </button>}
+        {latestProjectionSync !== "hidden" && <button type="button" disabled={latestProjectionSync === "refreshing"} onClick={() => void refreshLatestProjection()} className="ml-3 font-semibold underline underline-offset-4 disabled:cursor-wait disabled:opacity-60">
+          Refresh latest status
         </button>}
       </div>
 

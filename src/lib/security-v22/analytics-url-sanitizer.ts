@@ -15,18 +15,49 @@ function isSensitivePaymentKey(key: string): boolean {
   return SENSITIVE_PAYMENT_KEYS.has(key.toLowerCase().replace(/[^a-z\d]/gu, ""));
 }
 
+function decodedKey(value: string): string {
+  try { return decodeURIComponent(value); }
+  catch { return value; }
+}
+
+function redactSensitiveAssignments(value: string): string {
+  return value.replace(/(^|[?&#;])([^=?&#;\s]+)=([^&#;\s]*)/gu, (match, prefix: string, key: string) => (
+    isSensitivePaymentKey(decodedKey(key)) ? `${prefix}${key}=[redacted]` : match
+  ));
+}
+
+function sanitizeFragment(value: string): string {
+  if (!value) return value;
+  const content = value.startsWith("#") ? value.slice(1) : value;
+  const queryIndex = content.indexOf("?");
+  if (queryIndex < 0) return `#${redactSensitiveAssignments(content)}`;
+  const route = content.slice(0, queryIndex);
+  const params = new URLSearchParams(content.slice(queryIndex + 1));
+  for (const key of [...params.keys()]) {
+    if (isSensitivePaymentKey(key)) params.delete(key);
+  }
+  const query = params.toString();
+  return `#${route}${query ? `?${query}` : ""}`;
+}
+
 export function sanitizeAnalyticsUrl(value: string): string {
   const absolute = /^[a-z][a-z\d+.-]*:\/\//iu.test(value);
-  const relative = value.startsWith("/");
-  if (!absolute && !relative) return value;
+  const pathRelative = value.startsWith("/");
+  const queryRelative = value.startsWith("?");
+  const fragmentRelative = value.startsWith("#");
+  if (!absolute && !pathRelative && !queryRelative && !fragmentRelative) return redactSensitiveAssignments(value);
   try {
     const parsed = new URL(value, "https://analytics.invalid");
     for (const key of [...parsed.searchParams.keys()]) {
       if (isSensitivePaymentKey(key)) parsed.searchParams.delete(key);
     }
-    return absolute ? parsed.toString() : `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    parsed.hash = sanitizeFragment(parsed.hash);
+    if (absolute) return parsed.toString();
+    if (queryRelative) return `${parsed.search}${parsed.hash}`;
+    if (fragmentRelative) return parsed.hash;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
-    return value;
+    return redactSensitiveAssignments(value);
   }
 }
 
@@ -36,6 +67,10 @@ function sanitizeValue(
   budget: { nodes: number },
   depth: number,
 ): unknown {
+  if (value instanceof Date) {
+    budget.nodes += 1;
+    return budget.nodes > MAX_NODES ? TRUNCATED : new Date(value.getTime());
+  }
   if (value !== null && typeof value === "object") {
     const known = seen.get(value);
     if (known !== undefined) return TRUNCATED;
@@ -44,6 +79,8 @@ function sanitizeValue(
   if (budget.nodes > MAX_NODES) return TRUNCATED;
   if (typeof value === "string") return sanitizeAnalyticsUrl(value);
   if (value === null || typeof value !== "object") return value;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null && !Array.isArray(value)) return value;
   if (depth >= MAX_DEPTH) return TRUNCATED;
   if (Array.isArray(value)) {
     const output: unknown[] = [];

@@ -25,7 +25,7 @@ describe("PostHog URL privacy sanitizer", () => {
       expect(sanitized.properties.$current_url).toBe("https://searchtrust.example/cases/case-1/connections?utm_source=email");
       expect(sanitized.properties.$referrer).toBe("https://searchtrust.example/connections?safe=1");
       expect(sanitized.properties.current_url).toBe("/connections?tab=source");
-      expect(sanitized.properties.unrelated).toBe("payment_id=must-not-be-treated-as-a-url");
+      expect(sanitized.properties.unrelated).not.toContain("must-not-be-treated-as-a-url");
     }
   });
 
@@ -73,5 +73,39 @@ describe("PostHog URL privacy sanitizer", () => {
     expect(JSON.stringify(sanitized.properties.deep)).not.toContain("pay_too_deep");
     expect(sanitized.properties.count).toBe(3);
     expect(sanitized.properties.enabled).toBe(true);
+  });
+
+  it("removes secrets from URL fragments, query-relative values and malformed parameter-like strings", () => {
+    const secrets = ["secret_hash_query", "secret_hash_route", "secret_relative_query", "secret_relative_hash", "secret_encoded", "secret_malformed"];
+    const event = {
+      uuid: "event-fragments",
+      event: "$pageview",
+      properties: {
+        values: [
+          "https://x.example/#?payment_id=secret_hash_query&safe=1",
+          "https://x.example/#/route?payment_id=secret_hash_route&tab=gsc",
+          "?payment_id=secret_relative_query&safe=1",
+          "#?payment_id=secret_relative_hash&safe=1",
+          "?%70ayment_id=secret_encoded&safe=1",
+          "broken::?PAYMENT-ID=secret_malformed&safe=1",
+          "ordinary prose mentioning payment_id without an equals sign stays intact",
+        ],
+      },
+    } as unknown as CaptureResult;
+    const sanitized = sanitizePostHogEvent(event)!;
+    const serialized = JSON.stringify(sanitized);
+    for (const secret of secrets) expect(serialized).not.toContain(secret);
+    expect(serialized).toContain("ordinary prose mentioning payment_id without an equals sign stays intact");
+    expect(serialized).toContain("safe=1");
+  });
+
+  it("clones Date values without changing their type or instant", () => {
+    const timestamp = new Date("2026-09-15T01:02:03.000Z");
+    const event = { uuid: "event-date", event: "$pageview", timestamp, properties: {} } as unknown as CaptureResult;
+    const sanitized = sanitizePostHogEvent(event)! as unknown as { timestamp: Date };
+    expect(sanitized.timestamp).toBeInstanceOf(Date);
+    expect(sanitized.timestamp).not.toBe(timestamp);
+    expect(sanitized.timestamp.toISOString()).toBe(timestamp.toISOString());
+    expect(timestamp.toISOString()).toBe("2026-09-15T01:02:03.000Z");
   });
 });
