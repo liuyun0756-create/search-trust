@@ -13,10 +13,10 @@ type JourneyFixtures = {
 export const test = base.extend<JourneyFixtures>({
   scenarioOptions: [{}, { option: true }],
   apiScenario: [
-    async ({ page, baseURL, scenarioOptions }, use) => {
+    async ({ context, baseURL, scenarioOptions }, use) => {
       if (!baseURL) throw new Error("The local journey requires a Playwright base URL.");
-      const guard = await installExternalRequestGuard(page, baseURL);
-      const scenario = await installLocalApiRouter(page, new LocalApiScenario(scenarioOptions));
+      const scenario = await installLocalApiRouter(context, new LocalApiScenario(scenarioOptions));
+      const guard = await installExternalRequestGuard(context, baseURL);
       await use(scenario);
       guard.assertClean();
     },

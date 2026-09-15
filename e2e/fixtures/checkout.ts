@@ -46,7 +46,7 @@ export const checkoutProviderErrorFixture = {
 } as const;
 
 export const VERIFIED_DODO_CHECKOUT_URL =
-  "https://checkout.dodopayments.com/session/searchtrust-e2e-verified-credit";
+  "http://127.0.0.1:3100/e2e/verified-credit-checkout";
 export const VERIFIED_PAYMENT_ID = "searchtrust_e2e_verified_payment";
 
 export const verifiedCreditCheckoutCreatedFixture = {

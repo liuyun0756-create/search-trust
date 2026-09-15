@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import prospectReport from "../../src/lib/report-v22/contracts/fixtures/prospect.json";
 import verifiedReport from "../../src/lib/report-v22/contracts/fixtures/verified.json";
 import type { SearchTrustReportV2_2 } from "../../src/lib/report-v22";
@@ -39,8 +41,98 @@ function reportFixture(source: unknown, type: "prospect" | "verified"): SearchTr
   return report;
 }
 
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).sort(([left], [right]) => left.localeCompare(right)).map(
+        ([key, child]) => [key, canonicalize(child)],
+      ),
+    );
+  }
+  return value;
+}
+
+export function findingFingerprint(finding: SearchTrustReportV2_2["findings"][number]): string {
+  const digest = createHash("sha256").update(JSON.stringify(canonicalize(finding))).digest("hex");
+  return `sha256:${digest}`;
+}
+
+export const VERIFIED_CHANGE_TYPES = Object.freeze({
+  fn_market_visibility_gap: "confirmed",
+  fn_service_page_gap: "reprioritized",
+  fn_public_gbp_service_gap: "refined",
+} as const);
+
+export function assertVerifiedChangesMatchProspect(
+  prospect: SearchTrustReportV2_2,
+  verified: SearchTrustReportV2_2,
+): void {
+  const parentReportId = prospect.report_version.report_id;
+  if (verified.report_version.parent_report_id !== parentReportId
+    || verified.version_diff.parent_report_id !== parentReportId) {
+    throw new Error("Verified report does not reference the exact original Prospect report.");
+  }
+
+  const parentFindings = new Map(prospect.findings.map((finding) => [finding.finding_id, finding]));
+  const currentFindings = new Map(verified.findings.map((finding) => [finding.finding_id, finding]));
+  const evidenceIds = new Set(verified.evidence_index.map((evidence) => evidence.evidence_id));
+  const referencedParents = new Set<string>();
+  const entries = verified.version_diff.entries ?? [];
+
+  for (const entry of entries) {
+    if (!entry.previous_finding) throw new Error("The Verified fixture contains an unbounded new change entry.");
+    const previous = entry.previous_finding;
+    const parent = parentFindings.get(previous.finding_id);
+    if (!parent || previous.report_id !== parentReportId) {
+      throw new Error("A change entry does not resolve to the original Prospect finding.");
+    }
+    if (referencedParents.has(previous.finding_id)) {
+      throw new Error("A Prospect finding is represented by more than one change entry.");
+    }
+    referencedParents.add(previous.finding_id);
+    if (previous.statement !== parent.statement || previous.fingerprint !== findingFingerprint(parent)) {
+      throw new Error("A previous finding statement or fingerprint differs from the original Prospect finding.");
+    }
+    const expectedType = VERIFIED_CHANGE_TYPES[previous.finding_id as keyof typeof VERIFIED_CHANGE_TYPES];
+    if (entry.change_type !== expectedType) {
+      throw new Error(`Change type ${entry.change_type} is inconsistent with ${previous.finding_id}.`);
+    }
+    if (entry.current_finding_ids.length !== 1) {
+      throw new Error("Each deterministic fixture change must identify exactly one current finding.");
+    }
+    const current = currentFindings.get(entry.current_finding_ids[0]);
+    if (!current || current.finding_id !== previous.finding_id) {
+      throw new Error("A change entry does not resolve to its current Verified finding.");
+    }
+    const addedEvidence = entry.evidence_ids.filter((id) => !parent.evidence_ids.includes(id));
+    if (current.statement === parent.statement || addedEvidence.length === 0) {
+      throw new Error("A change entry lacks a real semantic finding/evidence difference.");
+    }
+    for (const id of entry.evidence_ids) {
+      if (!evidenceIds.has(id) || !current.evidence_ids.includes(id)) {
+        throw new Error(`Change evidence ${id} is not present on the current Verified finding.`);
+      }
+    }
+  }
+
+  if (entries.length !== Object.keys(VERIFIED_CHANGE_TYPES).length) {
+    throw new Error("The Verified fixture change set differs from the independent expected change catalogue.");
+  }
+}
+
 export const prospectReportFixture = reportFixture(prospectReport, "prospect");
 export const verifiedReportFixture = reportFixture(verifiedReport, "verified");
+
+for (const entry of verifiedReportFixture.version_diff.entries ?? []) {
+  if (!entry.previous_finding) continue;
+  const parent = prospectReportFixture.findings.find(
+    (finding) => finding.finding_id === entry.previous_finding?.finding_id,
+  );
+  if (!parent) continue;
+  entry.previous_finding.statement = parent.statement;
+  entry.previous_finding.fingerprint = findingFingerprint(parent);
+}
 
 export function analysisStatusFixture(state: "queued" | "running" | "succeeded" | "failed"): TaskStatusResponse {
   const progress = state === "queued" ? 0 : state === "running" ? 55 : 100;

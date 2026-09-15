@@ -11,6 +11,7 @@ describe("E2E external request guard", () => {
     "about:blank",
     "data:text/plain,safe",
     "blob:http://127.0.0.1:3100/synthetic",
+    "ws://127.0.0.1:3100/socket",
   ])("allows browser-internal or local application URL %s", (url) => {
     expect(isAllowedE2ERequest(url, baseURL)).toBe(true);
   });
@@ -22,6 +23,7 @@ describe("E2E external request guard", () => {
     "https://accounts.google.com/o/oauth2/v2/auth",
     "https://us.i.posthog.com/e/",
     "https://example.com/",
+    "wss://example.com/socket",
   ])("blocks external URL %s", (url) => {
     expect(isAllowedE2ERequest(url, baseURL)).toBe(false);
   });

@@ -115,9 +115,18 @@ function safeCheckoutUrl(value: unknown): string | null {
   if (typeof value !== "string") return null;
   try {
     const url = new URL(value);
-    return url.protocol === "https:"
-      && (url.hostname === "dodopayments.com" || url.hostname.endsWith(".dodopayments.com"))
-      ? url.toString() : null;
+    if (url.protocol === "https:"
+      && (url.hostname === "dodopayments.com" || url.hostname.endsWith(".dodopayments.com"))) {
+      return url.toString();
+    }
+    if (process.env.NEXT_PUBLIC_E2E_TEST_MODE === "true"
+      && process.env.NEXT_PUBLIC_E2E_BASE_URL) {
+      const e2eBase = new URL(process.env.NEXT_PUBLIC_E2E_BASE_URL);
+      if (url.origin === e2eBase.origin && url.pathname === "/e2e/verified-credit-checkout") {
+        return url.toString();
+      }
+    }
+    return null;
   } catch { return null; }
 }
 

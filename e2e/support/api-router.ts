@@ -1,4 +1,4 @@
-import type { Page, Route } from "@playwright/test";
+import type { BrowserContext, Route } from "@playwright/test";
 
 import { parseAnalyzeRequest } from "../../src/lib/analysis-v22/validate";
 import { validateCreateCaseRequest } from "../../src/lib/cases/contracts";
@@ -350,8 +350,8 @@ async function requestBody(route: Route): Promise<unknown> {
   try { return JSON.parse(raw); } catch { return raw; }
 }
 
-export async function installLocalApiRouter(page: Page, scenario = new LocalApiScenario()): Promise<LocalApiScenario> {
-  await page.route("**/*", async (route) => {
+export async function installLocalApiRouter(context: BrowserContext, scenario = new LocalApiScenario()): Promise<LocalApiScenario> {
+  await context.route("**/*", async (route) => {
     const request = route.request();
     const requestUrl = new URL(request.url());
     const pathname = requestUrl.pathname;
@@ -362,10 +362,6 @@ export async function installLocalApiRouter(page: Page, scenario = new LocalApiS
         body: verifiedDodoCheckoutFixture(returnUrl),
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
       });
-      return;
-    }
-    if (requestUrl.hostname.includes("posthog")) {
-      await route.fulfill({ status: 204, body: "", headers: { "cache-control": "no-store" } });
       return;
     }
     if (!pathname.startsWith("/api/") || pathname === "/api/user/credits") {

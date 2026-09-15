@@ -27,6 +27,7 @@ import {
 } from "../../../e2e/fixtures/preflight";
 import {
   analysisStatusFixture,
+  assertVerifiedChangesMatchProspect,
   prospectReportFixture,
   verifiedAnalysisStatusFixture,
   verifiedReportFixture,
@@ -228,11 +229,28 @@ describe("V22-090 browser fixtures", () => {
       E2E_IDS.siteUrl,
       E2E_IDS.gbpUrl,
     ]) expect(() => assertSyntheticFixtureValue(id)).not.toThrow();
-    expect(new URL(VERIFIED_DODO_CHECKOUT_URL).hostname).toBe("checkout.dodopayments.com");
+    expect(new URL(VERIFIED_DODO_CHECKOUT_URL).origin).toBe("http://127.0.0.1:3100");
     const html = verifiedDodoCheckoutFixture(
       `http://127.0.0.1:3100/cases/${E2E_IDS.caseId}/connections?payment=return&payment_id=${VERIFIED_PAYMENT_ID}`,
     );
     expect(html).not.toMatch(/<script|<iframe|fetch\(|XMLHttpRequest/i);
     expect(html).toContain("synthetic $19 purchase");
+  });
+
+  it("cross-checks every displayed Verified change against the original Prospect truth", () => {
+    expect(() => assertVerifiedChangesMatchProspect(prospectReportFixture, verifiedReportFixture)).not.toThrow();
+  });
+
+  it("rejects an injected unchanged entry even when it has a valid report shape", () => {
+    const injected = structuredClone(verifiedReportFixture);
+    const parent = prospectReportFixture.findings[0];
+    const currentIndex = injected.findings.findIndex((finding) => finding.finding_id === parent.finding_id);
+    injected.findings[currentIndex] = structuredClone(parent);
+    injected.version_diff.entries = [
+      ...(injected.version_diff.entries ?? []),
+      structuredClone((injected.version_diff.entries ?? [])[0]),
+    ];
+    expect(() => assertVerifiedChangesMatchProspect(prospectReportFixture, injected))
+      .toThrow(/real semantic finding\/evidence difference/);
   });
 });

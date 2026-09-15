@@ -1,5 +1,9 @@
 import { E2E_IDS } from "./fixtures/ids";
-import { verifiedReportFixture } from "./fixtures/report";
+import {
+  assertVerifiedChangesMatchProspect,
+  prospectReportFixture,
+  verifiedReportFixture,
+} from "./fixtures/report";
 import { expect, test } from "./support/journey-test";
 
 test.describe("Verified Generation", () => {
@@ -11,6 +15,7 @@ test.describe("Verified Generation", () => {
         Object.defineProperty(globalThis.crypto, "randomUUID", { value: () => jobId });
       }, { jobId: E2E_IDS.verifiedJobId });
       page.on("dialog", (dialog) => void dialog.accept());
+      assertVerifiedChangesMatchProspect(prospectReportFixture, verifiedReportFixture);
 
       await page.goto(`/cases/${E2E_IDS.caseId}/connections`);
       await expect(page.getByText("All required evidence is healthy and matched to this Case.")).toBeVisible();
@@ -34,7 +39,13 @@ test.describe("Verified Generation", () => {
       await expect(page.getByRole("heading", { name: "What changed since the previous report." })).toBeVisible();
       await expect(page.locator("section#changes article"))
         .toHaveCount(verifiedReportFixture.version_diff.entries?.length ?? 0);
-      await expect(page.locator("section#changes")).not.toContainText(/unchanged/i);
+      for (const [index, change] of (verifiedReportFixture.version_diff.entries ?? []).entries()) {
+        const article = page.locator("section#changes article").nth(index);
+        await expect(article).toContainText(change.change_type);
+        await expect(article).toContainText(change.reason);
+        await expect(article).toContainText(`Previously: ${change.previous_finding?.statement}`);
+        await expect(article.getByRole("button", { name: `${change.evidence_ids.length} source` })).toBeVisible();
+      }
     });
   });
 
