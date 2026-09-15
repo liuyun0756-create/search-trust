@@ -6,8 +6,10 @@ import { CTABanner } from "@/components/home/CTABanner";
 import { AuditModalProvider } from "@/components/common/AuditModalProvider";
 import { FooterPreCTA } from "@/components/layout/FooterPreCTA";
 import { AnalyticsIdentify } from "@/components/common/AnalyticsIdentify";
+import { SearchTrustGoogleAnalytics } from "@/components/common/SearchTrustGoogleAnalytics";
 import { siteUrl, ogImage } from "@/lib/seo";
 import { AppAuthProvider } from "@/lib/client-auth";
+import { parseGoogleAnalyticsMeasurementId } from "@/lib/google-analytics";
 
 
 export const metadata: Metadata = {
@@ -62,6 +64,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const googleAnalyticsMeasurementId = parseGoogleAnalyticsMeasurementId(
+    process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID,
+  );
+
   return (
     <html lang="en">
       <body className="antialiased">
@@ -75,6 +81,9 @@ export default function RootLayout({
           <CTABanner />
           </AuditModalProvider>
         </AppAuthProvider>
+        {googleAnalyticsMeasurementId ? (
+          <SearchTrustGoogleAnalytics measurementId={googleAnalyticsMeasurementId} />
+        ) : null}
       </body>
     </html>
   );
