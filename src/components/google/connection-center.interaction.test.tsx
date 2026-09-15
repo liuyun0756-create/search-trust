@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -11,6 +11,7 @@ import { ConnectionCenter } from "./connection-center";
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
   window.history.replaceState(null, "", "/");
 });
 
@@ -127,6 +128,65 @@ describe("ConnectionCenter interactions", () => {
     expect(screen.queryByText(/1 credit returned/)).not.toBeInTheDocument();
   });
 
+  it.each(["compensated", "consumed"] as const)("keeps a failed reserved job locked until DB settlement becomes %s", async (settledState) => {
+    vi.useFakeTimers();
+    const reserved = healthy();
+    reserved.billing.audit_credits = 0;
+    reserved.verified_job = { id: E2E_IDS.analysisJobId, status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
+    reserved.coverage.next_action = { code: "wait_for_verified_analysis", label: "Finalizing credit return", source_key: null };
+    const settled = structuredClone(reserved);
+    settled.verified_job!.charge_state = settledState;
+    settled.billing.audit_credits = settledState === "compensated" ? 1 : 0;
+    settled.coverage.next_action = settledState === "compensated"
+      ? { code: "generate_verified_plan", label: "Generate Verified Action Plan · uses 1 credit", source_key: null }
+      : { code: "buy_verified_credit", label: "Buy 1 credit · $19", source_key: null };
+    let releaseSettlement = false;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("connection-center")) return new Response(JSON.stringify(releaseSettlement ? settled : reserved), { status: 200 });
+      throw new Error(`Unexpected request: ${url}`);
+    }));
+    render(<ConnectionCenter caseId={E2E_IDS.caseId} businessName="SearchTrust E2E Plumbing" siteUrl={E2E_IDS.siteUrl} initialData={reserved} />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(screen.getByRole("button", { name: /Generating Verified Action Plan/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Buy 1 credit/ })).not.toBeInTheDocument();
+    releaseSettlement = true;
+    await act(async () => { await vi.advanceTimersByTimeAsync(4000); });
+    if (settledState === "compensated") {
+      expect(screen.getByText(/1 credit returned/)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Generate Verified Action Plan/ })).toBeEnabled();
+    } else {
+      expect(screen.queryByText(/1 credit returned/)).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Buy 1 credit/ })).toBeEnabled();
+    }
+  });
+
+  it("falls back from a task 404 to DB recovery polling and unlocks only after compensation", async () => {
+    vi.useFakeTimers();
+    const running = healthy();
+    running.billing.audit_credits = 0;
+    running.verified_job = { id: E2E_IDS.analysisJobId, status: "running", report_id: null, charge_state: "reserved", error_code: null };
+    running.coverage.next_action = { code: "wait_for_verified_analysis", label: "Verified Action Plan in progress", source_key: null };
+    const recovered = structuredClone(running);
+    recovered.billing.audit_credits = 1;
+    recovered.verified_job = { id: E2E_IDS.analysisJobId, status: "failed", report_id: null, charge_state: "compensated", error_code: "V22_VERIFIED_ENQUEUE_TIMEOUT" };
+    recovered.coverage.next_action = { code: "generate_verified_plan", label: "Generate Verified Action Plan · uses 1 credit", source_key: null };
+    let recoveredInDb = false;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v2/tasks/")) return new Response(JSON.stringify({ error: { code: "ANALYSIS_NOT_FOUND" } }), { status: 404 });
+      if (url.includes("connection-center")) return new Response(JSON.stringify(recoveredInDb ? recovered : running), { status: 200 });
+      throw new Error(`Unexpected request: ${url}`);
+    }));
+    render(<ConnectionCenter caseId={E2E_IDS.caseId} businessName="SearchTrust E2E Plumbing" siteUrl={E2E_IDS.siteUrl} initialData={running} />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(screen.getByRole("button", { name: /Generating Verified Action Plan/ })).toBeDisabled();
+    recoveredInDb = true;
+    await act(async () => { await vi.advanceTimersByTimeAsync(4000); });
+    expect(screen.getByText(/1 credit returned/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Generate Verified Action Plan/ })).toBeEnabled();
+  });
+
   it("confirms a returned payment, refreshes balance and never auto-generates", async () => {
     window.history.replaceState(null, "", "/connections?payment=return&payment_id=pay_123");
     const current = healthy();
@@ -144,7 +204,65 @@ describe("ConnectionCenter interactions", () => {
       throw new Error(`Unexpected request: ${url}`);
     }));
     render(<ConnectionCenter caseId={E2E_IDS.caseId} businessName="SearchTrust E2E Plumbing" siteUrl={E2E_IDS.siteUrl} initialData={current} />);
+    expect(window.location.search).toBe("");
     expect(await screen.findByText("1 credit added. You can generate when you are ready.")).toBeInTheDocument();
     expect(generated).toBe(0);
+  });
+
+  it.each([
+    ["pending", () => new Response(JSON.stringify({ error: { code: "PAYMENT_NOT_COMPLETED" } }), { status: 409, headers: { "retry-after": "2" } }), 2000],
+    ["rate limited", () => new Response(null, { status: 429, headers: { "retry-after": "1" } }), 1000],
+    ["unavailable", () => new Response(null, { status: 503 }), 2000],
+    ["network failure", () => Promise.reject(new TypeError("offline")), 2000],
+  ])("keeps the scrubbed payment ID in memory and retries after %s", async (_scenario, firstFailure, retryDelay) => {
+    vi.useFakeTimers();
+    window.history.replaceState(null, "", "/connections?payment=return&payment_id=pay_private&order_id=order_private");
+    const current = healthy();
+    current.billing.audit_credits = 0;
+    let confirms = 0;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("connection-center")) return new Response(JSON.stringify(current), { status: 200 });
+      if (url.endsWith("/verified-credit/checkout/confirm")) {
+        confirms += 1;
+        expect(init?.body).toBe(JSON.stringify({ payment_id: "pay_private" }));
+        if (confirms === 1) return firstFailure();
+        return new Response(JSON.stringify({ ok: true, audit_credits: 1 }), { status: 200 });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    }));
+    render(<ConnectionCenter caseId={E2E_IDS.caseId} businessName="SearchTrust E2E Plumbing" siteUrl={E2E_IDS.siteUrl} initialData={current} />);
+    expect(window.location.search).toBe("");
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    const retry = screen.getByRole("button", { name: "Retry payment confirmation" });
+    expect(retry).toBeDisabled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(retryDelay - 1); });
+    expect(retry).toBeDisabled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(retry).toBeEnabled();
+    retry.focus();
+    expect(document.activeElement).toBe(retry);
+    await act(async () => { retry.click(); await Promise.resolve(); await Promise.resolve(); });
+    expect(confirms).toBe(2);
+    expect(screen.getByText("1 credit added. You can generate when you are ready.")).toBeInTheDocument();
+  });
+
+  it("aborts an in-flight payment confirmation on unmount after scrubbing the URL", () => {
+    window.history.replaceState(null, "", "/connections?payment=return&payment_id=pay_private");
+    const current = healthy();
+    const observed: { signal?: AbortSignal } = {};
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("connection-center")) return Promise.resolve(new Response(JSON.stringify(current), { status: 200 }));
+      if (url.endsWith("/verified-credit/checkout/confirm")) {
+        observed.signal = init?.signal as AbortSignal;
+        return new Promise<Response>(() => undefined);
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    }));
+    const { unmount } = render(<ConnectionCenter caseId={E2E_IDS.caseId} businessName="SearchTrust E2E Plumbing" siteUrl={E2E_IDS.siteUrl} initialData={current} />);
+    expect(window.location.search).toBe("");
+    unmount();
+    expect(observed.signal?.aborted).toBe(true);
   });
 });

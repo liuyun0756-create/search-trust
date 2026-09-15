@@ -179,10 +179,21 @@ export function ConnectionCenter({
     const job = initialData?.verified_job;
     return job && ["queued", "running"].includes(job.status) ? job.id : null;
   });
+  const [settlingJobId, setSettlingJobId] = useState<string | null>(() => {
+    const job = initialData?.verified_job;
+    return job?.status === "failed" && job.charge_state === "reserved" ? job.id : null;
+  });
   const [taskMessage, setTaskMessage] = useState("");
+  const [paymentRetry, setPaymentRetry] = useState<"hidden" | "waiting" | "ready">("hidden");
   const actionLock = useRef(false);
-  const paymentHandled = useRef(false);
+  const paymentIdRef = useRef<string | null>(null);
+  const paymentAttemptRef = useRef(0);
+  const paymentConfirmFlight = useRef(false);
+  const paymentRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paymentAbort = useRef<AbortController | null>(null);
   const loadSequence = useRef(0);
+  const loadFlight = useRef<Promise<ConnectionCenterResponse | null> | null>(null);
+  const mounted = useRef(true);
   const go = useCallback((url: string) => {
     if (navigate) navigate(url);
     else window.location.assign(url);
@@ -191,20 +202,98 @@ export function ConnectionCenter({
   const activeSync = useMemo(() => Boolean(data && [...data.sources, ...data.optional_sources]
     .some((source) => source.technical_status.job && ["queued", "running"].includes(source.technical_status.job.status))), [data]);
 
-  const load = useCallback(async (signal?: AbortSignal) => {
+  const load = useCallback((signal?: AbortSignal, force = false): Promise<ConnectionCenterResponse | null> => {
+    if (loadFlight.current && !force) return loadFlight.current;
     const sequence = ++loadSequence.current;
-    const response = await fetch(endpoint, { cache: "no-store", signal });
-    let body: ConnectionCenterResponse | { error?: { code?: string; message?: string } };
-    try { body = await response.json(); }
-    catch { throw new Error("Connection status could not be loaded. Please sign in again."); }
-    if (!response.ok) {
-      const code = "error" in body ? body.error?.code : undefined;
-      throw new Error(code && ERROR_MESSAGES[code] ? ERROR_MESSAGES[code] : "Connection status could not be loaded. Please try again.");
-    }
-    if (sequence !== loadSequence.current) return;
-    setData(body as ConnectionCenterResponse);
-    setError("");
+    const request = (async () => {
+      const response = await fetch(endpoint, { cache: "no-store", signal });
+      let body: ConnectionCenterResponse | { error?: { code?: string; message?: string } };
+      try { body = await response.json(); }
+      catch {
+        if (sequence !== loadSequence.current) return null;
+        throw new Error("Connection status could not be loaded. Please sign in again.");
+      }
+      if (!response.ok) {
+        if (sequence !== loadSequence.current) return null;
+        const code = "error" in body ? body.error?.code : undefined;
+        throw new Error(code && ERROR_MESSAGES[code] ? ERROR_MESSAGES[code] : "Connection status could not be loaded. Please try again.");
+      }
+      if (sequence !== loadSequence.current) return null;
+      const next = body as ConnectionCenterResponse;
+      setData(next);
+      setError("");
+      return next;
+    })();
+    loadFlight.current = request;
+    const clear = () => { if (loadFlight.current === request) loadFlight.current = null; };
+    void request.then(clear, clear);
+    return request;
   }, [endpoint]);
+
+  const schedulePaymentRetry = useCallback((retryAfter: string | null) => {
+    if (paymentRetryTimer.current) clearTimeout(paymentRetryTimer.current);
+    const parsedDate = retryAfter && !/^\d+$/.test(retryAfter) ? Date.parse(retryAfter) : Number.NaN;
+    const retryAfterSeconds = retryAfter && /^\d+$/.test(retryAfter)
+      ? Number(retryAfter)
+      : Number.isFinite(parsedDate) ? Math.ceil((parsedDate - Date.now()) / 1000) : null;
+    const fallbackSeconds = Math.min(2 ** Math.min(paymentAttemptRef.current, 4), 30);
+    const delayMs = Math.min(Math.max(retryAfterSeconds ?? fallbackSeconds, 1), 60) * 1000;
+    setPaymentRetry("waiting");
+    paymentRetryTimer.current = setTimeout(() => {
+      paymentRetryTimer.current = null;
+      setPaymentRetry("ready");
+      setTaskMessage("Payment confirmation can be retried safely.");
+    }, delayMs);
+  }, []);
+
+  const confirmReturnedPayment = useCallback(async () => {
+    const paymentId = paymentIdRef.current;
+    if (!paymentId || paymentConfirmFlight.current || paymentRetry === "waiting") return;
+    paymentConfirmFlight.current = true;
+    actionLock.current = true;
+    paymentAttemptRef.current += 1;
+    setActionBusy("confirm");
+    setPaymentRetry("hidden");
+    setTaskMessage("Confirming your credit purchase…");
+    const controller = new AbortController();
+    paymentAbort.current = controller;
+    try {
+      const response = await fetch(`/api/v2/cases/${encodeURIComponent(caseId)}/verified-credit/checkout/confirm`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ payment_id: paymentId }),
+        signal: controller.signal,
+      });
+      if (!mounted.current) return;
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: { code?: unknown } } | null;
+        const code = typeof body?.error?.code === "string" ? body.error.code : "";
+        if ((response.status === 409 && code === "PAYMENT_NOT_COMPLETED") || response.status === 429 || response.status === 503) {
+          setTaskMessage("Payment is still processing. Wait briefly, then retry confirmation.");
+          schedulePaymentRetry(response.headers.get("retry-after"));
+        } else {
+          setTaskMessage("The payment could not be confirmed. Please contact support if this continues.");
+          setPaymentRetry("hidden");
+        }
+        return;
+      }
+      paymentIdRef.current = null;
+      setPaymentRetry("hidden");
+      setTaskMessage("1 credit added. You can generate when you are ready.");
+      await load(controller.signal, true);
+    } catch (value) {
+      if (value instanceof Error && value.name === "AbortError") return;
+      setTaskMessage("Payment confirmation is temporarily unavailable. Wait briefly, then retry.");
+      schedulePaymentRetry(null);
+    } finally {
+      if (paymentAbort.current === controller) {
+        paymentAbort.current = null;
+        paymentConfirmFlight.current = false;
+        actionLock.current = false;
+        if (mounted.current) setActionBusy(null);
+      }
+    }
+  }, [caseId, load, paymentRetry, schedulePaymentRetry]);
 
   useEffect(() => {
     const abort = new AbortController();
@@ -225,16 +314,18 @@ export function ConnectionCenter({
 
   useEffect(() => {
     const job = data?.verified_job;
-    if (job && ["queued", "running"].includes(job.status)) setActiveJobId((current) => current ?? job.id);
-  }, [data?.verified_job]);
+    if (job && ["queued", "running"].includes(job.status) && !settlingJobId) setActiveJobId((current) => current ?? job.id);
+    if (job?.status === "failed" && job.charge_state === "reserved") setSettlingJobId((current) => current ?? job.id);
+  }, [data?.verified_job, settlingJobId]);
 
   useEffect(() => {
     if (!activeJobId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const controller = new AbortController();
     const poll = async () => {
       try {
-        const response = await fetch(`/api/v2/tasks/${encodeURIComponent(activeJobId)}`, { cache: "no-store" });
+        const response = await fetch(`/api/v2/tasks/${encodeURIComponent(activeJobId)}`, { cache: "no-store", signal: controller.signal });
         if (!response.ok) throw new Error(await responseMessage(response, "The Verified Action Plan status could not be checked."));
         const body = await response.json() as TaskStatusPayload;
         if (body.job_id !== activeJobId || !["queued", "running", "succeeded", "failed"].includes(String(body.status))) {
@@ -253,52 +344,81 @@ export function ConnectionCenter({
         }
         if (body.status === "failed") {
           setActiveJobId(null);
-          setTaskMessage("Generation failed. Checking whether your credit was returned…");
-          await load();
+          setSettlingJobId(activeJobId);
+          setTaskMessage("Generation ended. Finalizing your credit status…");
           return;
         }
         timer = setTimeout(poll, 4000);
-      } catch (value) {
+      } catch {
         if (!cancelled) {
-          setTaskMessage(value instanceof Error ? value.message : "The Verified Action Plan status could not be checked.");
-          timer = setTimeout(poll, 4000);
+          setTaskMessage("The task service is reconnecting. Checking the saved job and credit status…");
+          setActiveJobId(null);
+          setSettlingJobId(activeJobId);
         }
       }
     };
     void poll();
-    return () => { cancelled = true; if (timer) clearTimeout(timer); };
+    return () => { cancelled = true; controller.abort(); if (timer) clearTimeout(timer); };
   }, [activeJobId, caseId, go, load]);
 
   useEffect(() => {
-    if (paymentHandled.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const paymentId = params.get("payment_id");
-    if (params.get("payment") !== "return" || !paymentId) return;
-    paymentHandled.current = true;
-    actionLock.current = true;
-    setActionBusy("confirm");
-    setTaskMessage("Confirming your credit purchase…");
-    void (async () => {
+    if (!settlingJobId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const controller = new AbortController();
+    const refreshSettlement = async () => {
       try {
-        const response = await fetch(`/api/v2/cases/${encodeURIComponent(caseId)}/verified-credit/checkout/confirm`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ payment_id: paymentId }),
-        });
-        if (!response.ok) throw new Error(await responseMessage(response, "The payment could not be confirmed yet."));
-        setTaskMessage("1 credit added. You can generate when you are ready.");
-        await load();
+        const latest = await load(controller.signal);
+        if (cancelled) return;
+        const job = latest?.verified_job;
+        if (job?.id === settlingJobId && job.charge_state !== "reserved") {
+          setSettlingJobId(null);
+          if (job.status === "succeeded" && job.report_id) {
+            go(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(job.report_id)}`);
+          } else if (job.charge_state === "compensated") {
+            setTaskMessage("Generation failed. 1 credit returned. You can try again when ready.");
+          } else {
+            setTaskMessage("The saved job has finished. Your current balance is shown above.");
+          }
+          return;
+        }
+        setTaskMessage("Finalizing the saved job and credit status. This can take a little longer…");
+      } catch {
+        if (!cancelled) setTaskMessage("The saved job is still being recovered. We will keep checking safely…");
+      }
+      if (!cancelled) timer = setTimeout(refreshSettlement, 4000);
+    };
+    void refreshSettlement();
+    return () => { cancelled = true; controller.abort(); if (timer) clearTimeout(timer); };
+  }, [caseId, go, load, settlingJobId]);
+
+  useEffect(() => {
+    mounted.current = true;
+    if (!paymentIdRef.current) {
+      const params = new URLSearchParams(window.location.search);
+      const paymentId = params.get("payment_id");
+      if (params.get("payment") === "return" && paymentId) {
+        paymentIdRef.current = paymentId;
         const cleanUrl = new URL(window.location.href);
         cleanUrl.search = "";
         window.history.replaceState(null, "", cleanUrl.pathname);
-      } catch (value) {
-        setTaskMessage(value instanceof Error ? value.message : "The payment could not be confirmed yet.");
-      } finally {
-        actionLock.current = false;
-        setActionBusy(null);
       }
-    })();
-  }, [caseId, load]);
+    }
+    if (paymentIdRef.current) void confirmReturnedPayment();
+    return () => {
+      mounted.current = false;
+      if (paymentRetryTimer.current) clearTimeout(paymentRetryTimer.current);
+      paymentRetryTimer.current = null;
+      const controller = paymentAbort.current;
+      paymentAbort.current = null;
+      paymentConfirmFlight.current = false;
+      actionLock.current = false;
+      controller?.abort();
+    };
+    // Payment return is a mount-time handoff. The ID is scrubbed once and kept
+    // only in refs so render changes cannot duplicate confirmation requests.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function refresh() {
     setLoading(true);
@@ -347,7 +467,7 @@ export function ConnectionCenter({
       if (body.job_id !== jobId) throw new Error("The Verified Action Plan returned an invalid task ID.");
       setTaskMessage("Verified Action Plan queued…");
       setActiveJobId(jobId);
-      await load();
+      await load(undefined, true);
     } catch (value) {
       setTaskMessage(value instanceof Error ? value.message : "The Verified Action Plan could not be started.");
     } finally {
@@ -384,7 +504,8 @@ export function ConnectionCenter({
   }
 
   const current = data?.case ?? { business_name: businessName, site_url: siteUrl };
-  const generationActive = Boolean(activeJobId || (data?.verified_job && ["queued", "running"].includes(data.verified_job.status)));
+  const generationActive = Boolean(activeJobId || settlingJobId || (data?.verified_job && (["queued", "running"].includes(data.verified_job.status)
+    || (data.verified_job.status === "failed" && data.verified_job.charge_state === "reserved"))));
   const primaryDisabled = loading || actionBusy !== null || generationActive || data?.coverage.next_action.code === "wait_for_verified_analysis";
   const returnedCredit = data?.verified_job?.status === "failed" && data.verified_job.charge_state === "compensated";
 
@@ -438,6 +559,9 @@ export function ConnectionCenter({
 
       <div aria-live="polite" aria-atomic="true" className="mt-4 min-h-6 text-sm text-[#53604f]">
         {returnedCredit ? "Generation failed. 1 credit returned. You can try again when ready." : taskMessage}
+        {paymentRetry !== "hidden" && <button type="button" disabled={paymentRetry === "waiting" || actionBusy === "confirm"} onClick={() => void confirmReturnedPayment()} className="ml-3 font-semibold underline underline-offset-4 disabled:cursor-wait disabled:opacity-60">
+          Retry payment confirmation
+        </button>}
       </div>
 
       {loading && !data && <div role="status" className="mt-8 grid min-h-64 place-items-center rounded-2xl border border-[#d9ded3] bg-white text-[#64705f]">

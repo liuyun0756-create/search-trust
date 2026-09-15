@@ -12,18 +12,28 @@ const userId = "00000000-0000-4000-8000-000000000003";
 class Query {
   private rows: Record<string, unknown>[];
   private take = Number.POSITIVE_INFINITY;
+  private readonly orders: Array<{ key: string; ascending: boolean }> = [];
   constructor(rows: Record<string, unknown>[]) { this.rows = [...rows]; }
   select() { return this; }
   eq(key: string, value: unknown) { this.rows = this.rows.filter((row) => row[key] === value); return this; }
   in(key: string, values: unknown[]) { this.rows = this.rows.filter((row) => values.includes(row[key])); return this; }
   order(key: string, options?: { ascending?: boolean }) {
-    this.rows.sort((left, right) => String(left[key]).localeCompare(String(right[key])) * (options?.ascending === false ? -1 : 1));
+    this.orders.push({ key, ascending: options?.ascending !== false });
     return this;
   }
   limit(value: number) { this.take = value; return this; }
-  maybeSingle() { return Promise.resolve({ data: this.rows.slice(0, this.take)[0] ?? null, error: null }); }
+  private result() {
+    return [...this.rows].sort((left, right) => {
+      for (const order of this.orders) {
+        const compared = String(left[order.key]).localeCompare(String(right[order.key]));
+        if (compared !== 0) return compared * (order.ascending ? 1 : -1);
+      }
+      return 0;
+    }).slice(0, this.take);
+  }
+  maybeSingle() { return Promise.resolve({ data: this.result()[0] ?? null, error: null }); }
   then(resolve: (value: { data: Record<string, unknown>[]; error: null }) => unknown) {
-    return Promise.resolve(resolve({ data: this.rows.slice(0, this.take), error: null }));
+    return Promise.resolve(resolve({ data: this.result(), error: null }));
   }
 }
 
@@ -50,6 +60,20 @@ function fixture() {
   return report;
 }
 
+function prospectRow(report = fixture(), overrides: Record<string, unknown> = {}) {
+  return {
+    id: reportId,
+    case_id: caseId,
+    status: "paid_full",
+    report_type: "prospect",
+    schema_version: "2.2.0",
+    version_number: report.report_version.version_number,
+    parent_report_id: null,
+    report_v2_2: report,
+    ...overrides,
+  };
+}
+
 describe("Connection Center parent report projection", () => {
   it("validates the full report before extracting public GBP evidence", () => {
     const report = fixture();
@@ -61,7 +85,7 @@ describe("Connection Center parent report projection", () => {
       latest_report_id: reportId,
       business_identity: report.identity.business,
     };
-    const result = parseConnectionCenterParentReport({ id: reportId, case_id: caseId, report_v2_2: report }, caseRow);
+    const result = parseConnectionCenterParentReport(prospectRow(report), caseRow);
     expect(result).toMatchObject({
       id: reportId,
       case_id: caseId,
@@ -81,7 +105,7 @@ describe("Connection Center parent report projection", () => {
     const parentReportId = "00000000-0000-4000-8000-000000000099";
     (report.report_version as { parent_report_id: string | null }).parent_report_id = parentReportId;
     const caseRow = { id: caseId, business_name: "Example", site_url: "https://example.test/", updated_at: "now", latest_report_id: reportId, business_identity: report.identity.business };
-    expect(parseConnectionCenterParentReport({ id: reportId, case_id: caseId, report_type: "verified_execution", parent_report_id: parentReportId, report_v2_2: report }, caseRow)).toBeNull();
+    expect(parseConnectionCenterParentReport(prospectRow(report, { report_type: "verified_execution", parent_report_id: parentReportId }), caseRow)).toBeNull();
   });
 
   it("marks changed Case identity as stale", () => {
@@ -94,14 +118,14 @@ describe("Connection Center parent report projection", () => {
       latest_report_id: reportId,
       business_identity: { ...report.identity.business, business_name: "Changed Business" },
     };
-    expect(parseConnectionCenterParentReport({ id: reportId, case_id: caseId, report_v2_2: report }, caseRow)?.identity_matches_case).toBe(false);
+    expect(parseConnectionCenterParentReport(prospectRow(report), caseRow)?.identity_matches_case).toBe(false);
   });
 
   it("rejects an invalid or cross-Case report", () => {
     const report = fixture();
     const caseRow = { id: caseId, business_name: "Example", site_url: "https://example.test/", updated_at: "now", latest_report_id: reportId, business_identity: {} };
-    expect(parseConnectionCenterParentReport({ id: reportId, case_id: "other", report_v2_2: report }, caseRow)).toBeNull();
-    expect(parseConnectionCenterParentReport({ id: reportId, case_id: caseId, report_v2_2: { private: "invalid" } }, caseRow)).toBeNull();
+    expect(parseConnectionCenterParentReport(prospectRow(report, { case_id: "other" }), caseRow)).toBeNull();
+    expect(parseConnectionCenterParentReport(prospectRow(report, { report_v2_2: { private: "invalid" } }), caseRow)).toBeNull();
   });
 
   it("traverses a current Verified report to its original Prospect and never projects the Verified payload", async () => {
@@ -133,8 +157,8 @@ describe("Connection Center parent report projection", () => {
       ],
       analysis_attempt_charges: [{ user_id: userId, case_id: caseId, job_id: latestJobId, state: "consumed" }],
       reports: [
-        { id: verifiedId, user_id: userId, case_id: caseId, report_type: "verified_execution", parent_report_id: reportId, report_v2_2: verified },
-        { id: reportId, user_id: userId, case_id: caseId, report_type: "prospect", parent_report_id: null, report_v2_2: prospect },
+        { id: verifiedId, user_id: userId, case_id: caseId, status: "paid_full", report_type: "verified_execution", schema_version: "2.2.0", version_number: 2, parent_report_id: reportId, report_v2_2: verified },
+        { ...prospectRow(prospect), user_id: userId },
       ],
     });
     const result = await new SupabaseConnectionCenterRepository(db as unknown as SupabaseClient).read(userId, caseId);
@@ -143,5 +167,58 @@ describe("Connection Center parent report projection", () => {
     expect(result?.data.audit_credits).toBe(2);
     expect(result?.data.verified_job).toEqual({ id: latestJobId, status: "succeeded", report_id: verifiedId, charge_state: "consumed", error_code: null });
     expect(db.queriedReports[1]).toContainEqual(["report_type", "prospect"]);
+  });
+
+  it.each([
+    ["status", "free_preview"],
+    ["schema_version", "2.1.0"],
+    ["version_number", 99],
+    ["report_type", "verified_execution"],
+    ["parent_report_id", "00000000-0000-4000-8000-000000000099"],
+  ])("rejects parent row drift in %s", (field, value) => {
+    const report = fixture();
+    const caseRow = { id: caseId, business_name: report.identity.business.business_name, site_url: report.identity.business.site_url, updated_at: "now", latest_report_id: reportId, business_identity: report.identity.business };
+    expect(parseConnectionCenterParentReport(prospectRow(report, { [field]: value }), caseRow)).toBeNull();
+  });
+
+  it("uses UUID descending order as a deterministic tie-break for equal job timestamps", async () => {
+    const report = fixture();
+    const low = "00000000-0000-4000-8000-000000000010";
+    const high = "00000000-0000-4000-8000-000000000020";
+    const caseRow = { id: caseId, user_id: userId, status: "active", business_name: report.identity.business.business_name, site_url: report.identity.business.site_url, business_identity: report.identity.business, latest_report_id: reportId, updated_at: "2026-09-15T00:00:00.000Z" };
+    const createdAt = "2026-09-15T00:00:00.000Z";
+    const db = new FakeDb({
+      client_cases: [caseRow], users: [{ id: userId, audit_credits: 1 }], google_connections: [], case_source_bindings: [],
+      reports: [{ ...prospectRow(report), user_id: userId }],
+      analysis_jobs: [
+        { id: low, case_id: caseId, job_type: "verified_report", status: "failed", report_id: null, error_code: "LOW", created_at: createdAt },
+        { id: high, case_id: caseId, job_type: "verified_report", status: "failed", report_id: null, error_code: "HIGH", created_at: createdAt },
+      ],
+      analysis_attempt_charges: [{ user_id: userId, case_id: caseId, job_id: high, state: "compensated" }],
+    });
+    const result = await new SupabaseConnectionCenterRepository(db as unknown as SupabaseClient).read(userId, caseId);
+    expect(result?.data.verified_job?.id).toBe(high);
+  });
+
+  it("blocks readiness when the latest Verified row drifts from its validated payload", async () => {
+    const prospect = fixture();
+    const verified = structuredClone(verifiedFixture);
+    const verifiedId = "00000000-0000-4000-8000-000000000030";
+    verified.identity.case_id = caseId;
+    verified.identity.business = structuredClone(prospect.identity.business);
+    verified.report_version.report_id = verifiedId;
+    verified.report_version.parent_report_id = reportId;
+    verified.version_diff.parent_report_id = reportId;
+    for (const entry of verified.version_diff.entries) entry.previous_finding.report_id = reportId;
+    const caseRow = { id: caseId, user_id: userId, status: "active", business_name: prospect.identity.business.business_name, site_url: prospect.identity.business.site_url, business_identity: prospect.identity.business, latest_report_id: verifiedId, updated_at: "2026-09-15T00:00:00.000Z" };
+    const db = new FakeDb({
+      client_cases: [caseRow], users: [{ id: userId, audit_credits: 1 }], google_connections: [], case_source_bindings: [], analysis_jobs: [], analysis_attempt_charges: [],
+      reports: [
+        { id: verifiedId, user_id: userId, case_id: caseId, status: "paid_full", report_type: "verified_execution", schema_version: "2.1.0", version_number: 2, parent_report_id: reportId, report_v2_2: verified },
+        { ...prospectRow(prospect), user_id: userId },
+      ],
+    });
+    const result = await new SupabaseConnectionCenterRepository(db as unknown as SupabaseClient).read(userId, caseId);
+    expect(result?.data.parent_report).toBeNull();
   });
 });

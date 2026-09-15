@@ -1,5 +1,6 @@
 import posthog from "posthog-js";
 import { shouldInitializeBrowserAnalytics } from "@/lib/security-v22/browser-analytics";
+import { sanitizePostHogEvent } from "@/lib/security-v22/analytics-url-sanitizer";
 
 const posthogToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
 
@@ -13,6 +14,7 @@ if (typeof window !== "undefined" && posthogToken &&
     capture_pageview: true,
     capture_pageleave: true,
     disable_session_recording: true,
+    before_send: sanitizePostHogEvent,
     defaults: "2026-01-30",
   });
 }

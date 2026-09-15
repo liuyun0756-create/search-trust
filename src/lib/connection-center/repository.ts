@@ -51,8 +51,11 @@ type BindingRow = ConnectionCenterBindingInput & { updated_at: string };
 type ReportRow = {
   id: string;
   case_id: string | null;
-  report_type?: string | null;
-  parent_report_id?: string | null;
+  status: string | null;
+  report_type: string | null;
+  schema_version: string | null;
+  version_number: number | null;
+  parent_report_id: string | null;
   report_v2_2: unknown;
 };
 type VerifiedJobRow = {
@@ -69,7 +72,7 @@ const CONNECTION_FIELDS = "id,status,granted_scopes";
 const BINDING_FIELDS = "id,source_type,connection_id,external_resource_id,external_resource_name,identity_match_status,confirmed_at,updated_at";
 const JOB_FIELDS = "id,binding_id,source_type,status,attempt_count,error_code,created_at,completed_at";
 const SNAPSHOT_FIELDS = "id,binding_id,source_type,health_status,health_reasons,fetched_at,expires_at,coverage_start,coverage_end,raw_content_deleted_at";
-const REPORT_FIELDS = "id,case_id,report_type,parent_report_id,report_v2_2";
+const REPORT_FIELDS = "id,case_id,status,report_type,schema_version,version_number,parent_report_id,report_v2_2";
 const VERIFIED_JOB_FIELDS = "id,status,report_id,error_code,created_at";
 
 function fail(error: unknown): void {
@@ -110,10 +113,13 @@ export function parseConnectionCenterParentReport(
   if (!validated.ok || validated.report.identity.case_id !== caseRow.id) return null;
   const report = validated.report;
   if (report.report_version.report_id !== row.id
+    || row.status !== "paid_full"
+    || row.schema_version !== "2.2.0"
+    || row.version_number !== report.report_version.version_number
     || report.report_version.report_type !== "prospect"
     || report.report_version.parent_report_id !== null
-    || (row.report_type != null && row.report_type !== "prospect")
-    || (row.parent_report_id != null && row.parent_report_id !== report.report_version.parent_report_id)) return null;
+    || row.report_type !== "prospect"
+    || row.parent_report_id !== null) return null;
   const reportUrl = report.identity.business.public_gbp_url ?? null;
   const coverage = report.data_coverage.sources.find((source) => source.source_type === "gbp");
   const publicEvidence = report.evidence_index.find((item) =>
@@ -182,7 +188,7 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
   private async latestVerifiedJob(userId: string, caseId: string): Promise<{ job: VerifiedJobRow | null; charge: ChargeRow | null }> {
     const jobResult = await this.db.from("analysis_jobs").select(VERIFIED_JOB_FIELDS)
       .eq("case_id", caseId).eq("job_type", "verified_report")
-      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(1).maybeSingle();
     fail(jobResult.error);
     const job = jobResult.data as VerifiedJobRow | null;
     if (!job) return { job: null, charge: null };
@@ -204,11 +210,15 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
     }
     if (reportVersion.report_type !== "verified_execution"
       || !reportVersion.parent_report_id
+      || latest.status !== "paid_full"
       || latest.report_type !== "verified_execution"
+      || latest.schema_version !== "2.2.0"
+      || latest.version_number !== reportVersion.version_number
       || latest.parent_report_id !== reportVersion.parent_report_id) return null;
     const parentResult = await this.db.from("reports").select(REPORT_FIELDS)
       .eq("id", reportVersion.parent_report_id).eq("user_id", userId)
-      .eq("case_id", ownedCase.id).eq("report_type", "prospect").maybeSingle();
+      .eq("case_id", ownedCase.id).eq("status", "paid_full")
+      .eq("schema_version", "2.2.0").eq("report_type", "prospect").maybeSingle();
     fail(parentResult.error);
     return parseConnectionCenterParentReport(parentResult.data as ReportRow | null, ownedCase, true);
   }

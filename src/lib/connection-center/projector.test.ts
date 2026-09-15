@@ -230,6 +230,12 @@ describe("Connection Center projector", () => {
     value.verified_job = { id: "job-1", status: "running", report_id: null, charge_state: "reserved", error_code: null };
     expect(projectConnectionCenter(value, now).coverage.next_action.code).toBe("wait_for_verified_analysis");
 
+    value.verified_job = { id: "job-1", status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
+    expect(projectConnectionCenter(value, now).coverage.next_action).toMatchObject({
+      code: "wait_for_verified_analysis",
+      label: "Finalizing credit return",
+    });
+
     value.verified_job = { id: "job-1", status: "failed", report_id: null, charge_state: "compensated", error_code: "V22_PROVIDER_FAILED" };
     value.audit_credits = 1;
     const failed = projectConnectionCenter(value, now);

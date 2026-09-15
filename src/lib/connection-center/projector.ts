@@ -391,6 +391,8 @@ export function projectConnectionCenter(input: ConnectionCenterProjectionInput, 
   if (blockers.length === 0 && input.flags.verified_generation_enabled) {
     if (latestVerifiedJob?.status === "queued" || latestVerifiedJob?.status === "running") {
       nextAction = action("wait_for_verified_analysis", "Verified Action Plan in progress", null);
+    } else if (latestVerifiedJob?.status === "failed" && latestVerifiedJob.charge_state === "reserved") {
+      nextAction = action("wait_for_verified_analysis", "Finalizing credit return", null);
     } else if (latestVerifiedJob?.status === "succeeded" && latestVerifiedJob.report_id) {
       nextAction = action("open_verified_report", "Open Verified Action Plan", null);
     } else if (input.audit_credits > 0) {
