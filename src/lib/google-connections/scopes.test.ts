@@ -4,6 +4,7 @@ import {
   GOOGLE_IDENTITY_SCOPES,
   GoogleSourceInputError,
   coveredGoogleSources,
+  normalizeGrantedScopes,
   parseGoogleSources,
   requiredGoogleScopes,
   sourceHasRequiredScopes,
@@ -46,5 +47,22 @@ describe("Google connection scope catalog", () => {
       "email",
       "https://www.googleapis.com/auth/analytics.readonly",
     ])).toEqual([]);
+  });
+
+  it("canonicalizes the identity scope URIs returned by Google's token endpoint", () => {
+    const granted = normalizeGrantedScopes([
+      "openid",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/webmasters.readonly",
+    ]);
+
+    expect(granted).toEqual([
+      "email",
+      "openid",
+      "profile",
+      "https://www.googleapis.com/auth/webmasters.readonly",
+    ].sort());
+    expect(sourceHasRequiredScopes("gsc", granted)).toBe(true);
   });
 });

@@ -3,6 +3,11 @@ export type GoogleSource = (typeof GOOGLE_SOURCES)[number];
 
 export const GOOGLE_IDENTITY_SCOPES = ["openid", "email", "profile"] as const;
 
+const GOOGLE_SCOPE_ALIASES: Readonly<Record<string, string>> = {
+  "https://www.googleapis.com/auth/userinfo.email": "email",
+  "https://www.googleapis.com/auth/userinfo.profile": "profile",
+};
+
 const SOURCE_SCOPES: Readonly<Record<GoogleSource, readonly string[]>> = {
   gsc: ["https://www.googleapis.com/auth/webmasters.readonly"],
   ga4: ["https://www.googleapis.com/auth/analytics.readonly"],
@@ -48,5 +53,8 @@ export function coveredGoogleSources(scopes: readonly string[]): GoogleSource[] 
 
 export function normalizeGrantedScopes(value: string | readonly string[]): string[] {
   const items = typeof value === "string" ? value.split(/\s+/) : value;
-  return [...new Set(items.map((item) => item.trim()).filter(Boolean))].sort();
+  return [...new Set(items
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => GOOGLE_SCOPE_ALIASES[item] ?? item))].sort();
 }
