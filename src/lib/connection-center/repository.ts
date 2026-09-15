@@ -27,8 +27,8 @@ export interface ConnectionCenterRead {
 }
 
 export interface ConnectionCenterRepository {
-  read(userId: string, caseId: string): Promise<ConnectionCenterRead | null>;
-  isCurrent(userId: string, caseId: string, revision: ConnectionCenterRevision): Promise<boolean>;
+  read(userId: string, caseId: string, trackedJobId?: string): Promise<ConnectionCenterRead | null>;
+  isCurrent(userId: string, caseId: string, revision: ConnectionCenterRevision, trackedJobId?: string): Promise<boolean>;
 }
 
 export class ConnectionCenterRepositoryError extends Error {
@@ -185,10 +185,12 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
     return (result.data ?? []) as BindingRow[];
   }
 
-  private async latestVerifiedJob(userId: string, caseId: string): Promise<{ job: VerifiedJobRow | null; charge: ChargeRow | null }> {
-    const jobResult = await this.db.from("analysis_jobs").select(VERIFIED_JOB_FIELDS)
-      .eq("case_id", caseId).eq("job_type", "verified_report")
-      .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(1).maybeSingle();
+  private async verifiedJob(userId: string, caseId: string, trackedJobId?: string): Promise<{ job: VerifiedJobRow | null; charge: ChargeRow | null }> {
+    let jobQuery = this.db.from("analysis_jobs").select(VERIFIED_JOB_FIELDS)
+      .eq("case_id", caseId).eq("job_type", "verified_report");
+    if (trackedJobId) jobQuery = jobQuery.eq("id", trackedJobId);
+    else jobQuery = jobQuery.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(1);
+    const jobResult = await jobQuery.maybeSingle();
     fail(jobResult.error);
     const job = jobResult.data as VerifiedJobRow | null;
     if (!job) return { job: null, charge: null };
@@ -223,7 +225,7 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
     return parseConnectionCenterParentReport(parentResult.data as ReportRow | null, ownedCase, true);
   }
 
-  async read(userId: string, caseId: string): Promise<ConnectionCenterRead | null> {
+  async read(userId: string, caseId: string, trackedJobId?: string): Promise<ConnectionCenterRead | null> {
     const ownedCase = await this.activeCase(userId, caseId);
     if (!ownedCase) return null;
 
@@ -236,7 +238,7 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
           .eq("user_id", userId).eq("case_id", caseId).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
       this.db.from("users").select("audit_credits").eq("id", userId).maybeSingle(),
-      this.latestVerifiedJob(userId, caseId),
+      this.verifiedJob(userId, caseId, trackedJobId),
     ]);
     fail(connectionsResult.error);
     fail(reportResult.error);
@@ -282,13 +284,13 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
     };
   }
 
-  async isCurrent(userId: string, caseId: string, revision: ConnectionCenterRevision): Promise<boolean> {
+  async isCurrent(userId: string, caseId: string, revision: ConnectionCenterRevision, trackedJobId?: string): Promise<boolean> {
     const ownedCase = await this.activeCase(userId, caseId);
     if (!ownedCase || ownedCase.updated_at !== revision.case_updated_at) return false;
     const [bindings, balanceResult, verifiedRead] = await Promise.all([
       this.activeBindings(caseId),
       this.db.from("users").select("audit_credits").eq("id", userId).maybeSingle(),
-      this.latestVerifiedJob(userId, caseId),
+      this.verifiedJob(userId, caseId, trackedJobId),
     ]);
     fail(balanceResult.error);
     const auditCredits = (balanceResult.data as { audit_credits?: unknown } | null)?.audit_credits;

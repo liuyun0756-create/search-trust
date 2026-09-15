@@ -200,6 +200,42 @@ describe("Connection Center parent report projection", () => {
     expect(result?.data.verified_job?.id).toBe(high);
   });
 
+  it("reads the requested older job settlement even when a newer verified job exists", async () => {
+    const report = fixture();
+    const tracked = "00000000-0000-4000-8000-000000000010";
+    const newer = "00000000-0000-4000-8000-000000000020";
+    const caseRow = { id: caseId, user_id: userId, status: "active", business_name: report.identity.business.business_name, site_url: report.identity.business.site_url, business_identity: report.identity.business, latest_report_id: reportId, updated_at: "2026-09-15T00:00:00.000Z" };
+    const db = new FakeDb({
+      client_cases: [caseRow], users: [{ id: userId, audit_credits: 1 }], google_connections: [], case_source_bindings: [],
+      reports: [{ ...prospectRow(report), user_id: userId }],
+      analysis_jobs: [
+        { id: tracked, case_id: caseId, job_type: "verified_report", status: "failed", report_id: null, error_code: "OLD", created_at: "2026-09-15T00:00:00.000Z" },
+        { id: newer, case_id: caseId, job_type: "verified_report", status: "running", report_id: null, error_code: null, created_at: "2026-09-15T00:01:00.000Z" },
+      ],
+      analysis_attempt_charges: [
+        { user_id: userId, case_id: caseId, job_id: tracked, state: "compensated" },
+        { user_id: userId, case_id: caseId, job_id: newer, state: "reserved" },
+      ],
+    });
+    const result = await new SupabaseConnectionCenterRepository(db as unknown as SupabaseClient).read(userId, caseId, tracked);
+    expect(result?.data.verified_job).toMatchObject({ id: tracked, status: "failed", charge_state: "compensated" });
+  });
+
+  it("does not return a tracked job from another Case", async () => {
+    const report = fixture();
+    const foreignCaseId = "00000000-0000-4000-8000-000000000088";
+    const foreignJobId = "00000000-0000-4000-8000-000000000089";
+    const caseRow = { id: caseId, user_id: userId, status: "active", business_name: report.identity.business.business_name, site_url: report.identity.business.site_url, business_identity: report.identity.business, latest_report_id: reportId, updated_at: "2026-09-15T00:00:00.000Z" };
+    const db = new FakeDb({
+      client_cases: [caseRow], users: [{ id: userId, audit_credits: 0 }], google_connections: [], case_source_bindings: [],
+      reports: [{ ...prospectRow(report), user_id: userId }],
+      analysis_jobs: [{ id: foreignJobId, case_id: foreignCaseId, job_type: "verified_report", status: "failed", report_id: null, error_code: "FOREIGN", created_at: "2026-09-15T00:00:00.000Z" }],
+      analysis_attempt_charges: [{ user_id: userId, case_id: foreignCaseId, job_id: foreignJobId, state: "compensated" }],
+    });
+    const result = await new SupabaseConnectionCenterRepository(db as unknown as SupabaseClient).read(userId, caseId, foreignJobId);
+    expect(result?.data.verified_job).toBeNull();
+  });
+
   it("blocks readiness when the latest Verified row drifts from its validated payload", async () => {
     const prospect = fixture();
     const verified = structuredClone(verifiedFixture);

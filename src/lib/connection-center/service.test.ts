@@ -40,6 +40,14 @@ describe("Connection Center service", () => {
     expect(repository.isCurrent).toHaveBeenCalledWith(userId, caseId, read().revision);
   });
 
+  it("keeps an exact tracked job query through both repository consistency reads", async () => {
+    const trackedJobId = "00000000-0000-4000-8000-000000000099";
+    const repository = { read: vi.fn(async () => read()), isCurrent: vi.fn(async () => true) };
+    await service(repository).get(userId, caseId, trackedJobId);
+    expect(repository.read).toHaveBeenCalledWith(userId, caseId, trackedJobId);
+    expect(repository.isCurrent).toHaveBeenCalledWith(userId, caseId, read().revision, trackedJobId);
+  });
+
   it("rereads once when a Case or binding changes concurrently", async () => {
     const repository = { read: vi.fn(async () => read()), isCurrent: vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true) };
     await service(repository).get(userId, caseId);

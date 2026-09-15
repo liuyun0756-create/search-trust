@@ -24,12 +24,17 @@ export function createConnectionCenterService(deps: {
   now?: () => Date;
 }) {
   return {
-    async get(userId: string, caseId: string): Promise<ConnectionCenterResponse> {
+    async get(userId: string, caseId: string, trackedJobId?: string): Promise<ConnectionCenterResponse> {
       try {
         for (let attempt = 0; attempt < 2; attempt += 1) {
-          const value = await deps.repository.read(userId, caseId);
+          const value = trackedJobId
+            ? await deps.repository.read(userId, caseId, trackedJobId)
+            : await deps.repository.read(userId, caseId);
           if (!value) throw new ConnectionCenterError("CONNECTION_CENTER_NOT_FOUND", 404);
-          if (await deps.repository.isCurrent(userId, caseId, value.revision)) {
+          const current = trackedJobId
+            ? await deps.repository.isCurrent(userId, caseId, value.revision, trackedJobId)
+            : await deps.repository.isCurrent(userId, caseId, value.revision);
+          if (current) {
             return projectConnectionCenter({ ...value.data, flags: deps.flags }, deps.now?.() ?? new Date());
           }
         }

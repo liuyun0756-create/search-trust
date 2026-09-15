@@ -34,4 +34,44 @@ describe("PostHog URL privacy sanitizer", () => {
     expect(sanitizeAnalyticsUrl("ordinary text")).toBe("ordinary text");
     expect(sanitizePostHogEvent(null)).toBeNull();
   });
+
+  it("recursively sanitizes nested arrays, sets and direct sensitive keys without mutating the event", () => {
+    const nested = {
+      safe: "kept",
+      payment_id: "pay_direct",
+      items: [{ target: "https://searchtrust.example/return?payment_id=pay_nested&tab=ga4" }],
+    };
+    const event = {
+      uuid: "event-nested",
+      event: "$pageview",
+      properties: { nested },
+      $set: { profile: { referrer_url: "/return?order_id=order_nested&safe=1" } },
+    } as unknown as CaptureResult;
+
+    const sanitized = sanitizePostHogEvent(event)! as unknown as {
+      properties: { nested: { safe: string; payment_id?: string; items: Array<{ target: string }> } };
+      $set: { profile: { referrer_url: string } };
+    };
+    expect(sanitized.properties.nested.payment_id).toBeUndefined();
+    expect(sanitized.properties.nested.items[0].target).toBe("https://searchtrust.example/return?tab=ga4");
+    expect(sanitized.$set.profile.referrer_url).toBe("/return?safe=1");
+    expect(nested.payment_id).toBe("pay_direct");
+    expect(nested.items[0].target).toContain("pay_nested");
+  });
+
+  it("handles circular and excessively deep values within a bounded privacy scan", () => {
+    const circular: Record<string, unknown> = { current_url: "/return?payment_id=pay_cycle" };
+    circular.self = circular;
+    let deep: Record<string, unknown> = { payment_id: "pay_too_deep" };
+    for (let index = 0; index < 80; index += 1) deep = { child: deep };
+    const event = { uuid: "event-bounded", event: "$pageview", properties: { circular, deep, count: 3, enabled: true } } as unknown as CaptureResult;
+
+    const sanitized = sanitizePostHogEvent(event)! as unknown as { properties: { circular: Record<string, unknown>; deep: unknown; count: number; enabled: boolean } };
+    expect(sanitized.properties.circular.current_url).toBe("/return");
+    expect(sanitized.properties.circular.self).toMatch(/Redacted/);
+    expect(() => JSON.stringify(sanitized)).not.toThrow();
+    expect(JSON.stringify(sanitized.properties.deep)).not.toContain("pay_too_deep");
+    expect(sanitized.properties.count).toBe(3);
+    expect(sanitized.properties.enabled).toBe(true);
+  });
 });

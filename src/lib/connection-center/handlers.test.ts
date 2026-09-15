@@ -51,6 +51,19 @@ describe("private Connection Center handler", () => {
     expect(value.get).toHaveBeenCalledWith(id, id);
   });
 
+  it("accepts one UUID tracked_job_id and rejects malformed or duplicate tracking input", async () => {
+    const value = setup();
+    const trackedJobId = "00000000-0000-4000-8000-000000000099";
+    const accepted = await value.handlers.GET(new NextRequest(`https://example.test/api/v2/cases/${id}/connection-center?tracked_job_id=${trackedJobId}`), context);
+    expect(accepted.status).toBe(200);
+    expect(value.get).toHaveBeenLastCalledWith(id, id, trackedJobId);
+
+    for (const query of ["tracked_job_id=nope", `tracked_job_id=${trackedJobId}&tracked_job_id=${trackedJobId}`, `tracked_job_id=${trackedJobId}&raw=true`]) {
+      const response = await value.handlers.GET(new NextRequest(`https://example.test/api/v2/cases/${id}/connection-center?${query}`), context);
+      expect(response.status).toBe(400);
+    }
+  });
+
   it("does not expose unknown failures", async () => {
     const value = setup();
     value.get.mockRejectedValueOnce(new Error("select secret_table using private credential"));

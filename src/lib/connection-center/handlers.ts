@@ -16,13 +16,25 @@ export function createConnectionCenterHandlers(deps: {
         if (!deps.enabled()) throw new ConnectionCenterError("CONNECTION_CENTER_DISABLED", 404);
         const user = await deps.getCurrentUser();
         if (!user) throw new ConnectionCenterError("CONNECTION_CENTER_FORBIDDEN", 401);
-        if ([...request.nextUrl.searchParams].length > 0) {
+        const queryEntries = [...request.nextUrl.searchParams];
+        if (queryEntries.some(([key]) => key !== "tracked_job_id")
+          || request.nextUrl.searchParams.getAll("tracked_job_id").length > 1) {
           throw new ConnectionCenterError("CONNECTION_CENTER_INVALID_REQUEST", 400);
+        }
+        let trackedJobId: string | undefined;
+        const trackedValue = request.nextUrl.searchParams.get("tracked_job_id");
+        if (trackedValue !== null) {
+          try { trackedJobId = parseUuid(trackedValue); }
+          catch { throw new ConnectionCenterError("CONNECTION_CENTER_INVALID_REQUEST", 400); }
         }
         let caseId: string;
         try { caseId = parseUuid((await context.params).id); }
         catch { throw new ConnectionCenterError("CONNECTION_CENTER_INVALID_REQUEST", 400); }
-        return NextResponse.json(await deps.createService().get(user.userId, caseId), { headers });
+        const service = deps.createService();
+        const response = trackedJobId
+          ? await service.get(user.userId, caseId, trackedJobId)
+          : await service.get(user.userId, caseId);
+        return NextResponse.json(response, { headers });
       } catch (error) {
         const safe = error instanceof ConnectionCenterError
           ? error
