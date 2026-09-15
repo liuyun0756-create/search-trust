@@ -17,6 +17,7 @@ import { createServerClient } from "@/lib/supabase";
 import {
   CASE_VERIFIED_CREDIT_PURCHASE,
   fulfillVerifiedCreditPayment,
+  isExactVerifiedCreditPayment,
   parseVerifiedCreditPaymentMetadata,
   refundVerifiedCreditPayment,
   SupabaseVerifiedCreditRepository,
@@ -32,7 +33,6 @@ export interface DodoWebhookDependencies {
   createCaseRepository(): CasePaymentRepository;
   createVerifiedCreditRepository(): VerifiedCreditRepository;
   createDodoClient(): DodoClient;
-  getVerifiedProductId(): string;
 }
 
 function normalizeWebhookSecret(secret: string) {
@@ -56,6 +56,16 @@ function eventDetails(value: unknown) {
 
 function failure(message: string) {
   return NextResponse.json({ error: message }, { status: 500 });
+}
+
+function verifiedRefundReviewReason(
+  refund: { is_partial: boolean; amount: number | null; currency: string | null },
+  payment: { total_amount: number; currency: string; refund_status: "partial" | "full" | null },
+) {
+  if (refund.is_partial) return "partial_refund" as const;
+  if (refund.amount !== payment.total_amount) return "amount_mismatch" as const;
+  if (refund.currency !== payment.currency) return "currency_mismatch" as const;
+  return "payment_refund_status_mismatch" as const;
 }
 
 export function createDodoWebhookHandler(dependencies: DodoWebhookDependencies) {
@@ -111,11 +121,58 @@ export function createDodoWebhookHandler(dependencies: DodoWebhookDependencies) 
         console.info("[DodoWebhook] Ignored unsupported purchase", { event_type: eventType });
         return NextResponse.json({ received: true, ignored: true });
       }
+      const verifiedMetadata = trustedKind === CASE_VERIFIED_CREDIT_PURCHASE
+        ? parseVerifiedCreditPaymentMetadata(payment.metadata)
+        : null;
+      if (trustedKind === CASE_VERIFIED_CREDIT_PURCHASE && (!verifiedMetadata || !isExactVerifiedCreditPayment(payment))) {
+        return NextResponse.json({ error: "Invalid refund payment binding" }, { status: 400 });
+      }
       const fullRefund = !refund.is_partial
         && refund.amount === payment.total_amount
         && refund.currency === payment.currency
         && payment.refund_status === "full";
       if (!fullRefund) {
+        if (trustedKind === CASE_VERIFIED_CREDIT_PURCHASE) {
+          const reason = verifiedRefundReviewReason(refund, payment);
+          try {
+            const result = await dependencies.createVerifiedCreditRepository().recordRefundReview({
+              providerRefundId: refund.refund_id,
+              localOrderId: verifiedMetadata!.order_id,
+              paymentId: payment.payment_id,
+              clerkUserId: verifiedMetadata!.clerk_user_id,
+              caseId: verifiedMetadata!.case_id,
+              paymentAmount: payment.total_amount,
+              paymentCurrency: payment.currency,
+              checkoutSessionId: payment.checkout_session_id!,
+              productId: payment.product_cart![0].product_id,
+              reason,
+              refundAmount: refund.amount,
+              refundCurrency: refund.currency,
+              isPartial: refund.is_partial,
+              paymentRefundStatus: payment.refund_status,
+            });
+            console.warn("[DodoWebhook] Payment refund requires manual review", {
+              event_type: eventType,
+              purchase_kind: trustedKind,
+              review_id: result.review_id,
+              reason: result.reason,
+              already_processed: result.idempotent,
+            });
+            return NextResponse.json({
+              received: true,
+              manual_review: true,
+              review_id: result.review_id,
+              already_processed: result.idempotent,
+            });
+          } catch (error) {
+            console.error("[DodoWebhook] Refund review persistence failed", {
+              purchase_kind: trustedKind,
+              error_type: error instanceof Error ? error.name : "UnknownError",
+              error_code: "REFUND_REVIEW_PERSISTENCE_FAILED",
+            });
+            return failure("Refund review could not be persisted");
+          }
+        }
         console.warn("[DodoWebhook] Payment refund requires manual review", {
           event_type: eventType,
           purchase_kind: trustedKind,
@@ -128,7 +185,6 @@ export function createDodoWebhookHandler(dependencies: DodoWebhookDependencies) 
         if (trustedKind === CASE_VERIFIED_CREDIT_PURCHASE) {
           const result = await refundVerifiedCreditPayment({
             payment,
-            expectedProductId: dependencies.getVerifiedProductId(),
             repository: dependencies.createVerifiedCreditRepository(),
           });
           if (result.manual_review) {
@@ -178,7 +234,6 @@ export function createDodoWebhookHandler(dependencies: DodoWebhookDependencies) 
           ? await fulfillVerifiedCasePayment({ payment, repository: dependencies.createCaseRepository() })
           : await fulfillVerifiedCreditPayment({
             payment,
-            expectedProductId: dependencies.getVerifiedProductId(),
             repository: dependencies.createVerifiedCreditRepository(),
           });
         return NextResponse.json({ received: true, already_processed: result.idempotent });
@@ -222,5 +277,4 @@ export const POST = createDodoWebhookHandler({
   createCaseRepository: () => new SupabaseCasePaymentRepository(createServerClient()),
   createVerifiedCreditRepository: () => new SupabaseVerifiedCreditRepository(createServerClient()),
   createDodoClient: () => new DodoClient(process.env.DODO_BASE_URL || "", process.env.DODO_API_KEY || ""),
-  getVerifiedProductId: () => process.env.DODO_VERIFIED_CREDIT_PRODUCT_ID?.trim() || "",
 });

@@ -110,7 +110,16 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const args = [orderId, `pay_${suffix}`, `clerk_${suffix}`, caseId, 1900, "USD", checkoutSessionId, productId];
       const fulfill = (params: unknown[] = args) => db.query(`select * from public.fulfill_v22_verified_credit_payment($1,$2,$3,$4,$5,$6,$7,$8)`, params);
       const refund = (params: unknown[] = args) => db.query(`select * from public.refund_v22_verified_credit_payment($1,$2,$3,$4,$5,$6,$7,$8)`, params);
-      return {owner,caseId,orderId,args,checkoutSessionId,productId,fulfill,refund};
+      const reviewArgs = [
+        `ref_${suffix}`, orderId, args[1], args[2], caseId, 1900, "USD",
+        checkoutSessionId, productId, "partial_refund", 950, "USD", true, "partial",
+      ];
+      const review = (params: unknown[] = reviewArgs) => db.query<{
+        review_id:string; idempotent:boolean; status:string; reason:string;
+      }>(
+        `select * from public.record_v22_verified_credit_refund_review($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`, params,
+      );
+      return {owner,caseId,orderId,args,checkoutSessionId,productId,fulfill,refund,reviewArgs,review};
     }
 
     it("requires exactly one $19 USD credit and one pending checkout per Case", async () => {
@@ -236,6 +245,49 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         .toEqual([{kind:"payment_refund_manual_review",delta:0},{kind:"purchase_credit",delta:1}]);
     });
 
+    it("persists one partial-refund review and binds a pending order to the real payment", async () => {
+      const f = await fixture();
+      const first = (await f.review()).rows[0];
+      const second = (await f.review()).rows[0];
+      expect(first).toMatchObject({ idempotent:false, status:"manual_review", reason:"partial_refund" });
+      expect(second).toEqual({ ...first, idempotent:true });
+      expect((await db.query(`select provider_refund_id,order_id,payment_id,user_id,case_id,
+        checkout_session_id,provider_product_id,reason,refund_amount,refund_currency,is_partial,status
+        from public.verified_credit_refund_reviews where provider_refund_id=$1`,[f.reviewArgs[0]])).rows)
+        .toEqual([{provider_refund_id:f.reviewArgs[0],order_id:f.orderId,payment_id:f.args[1],user_id:f.owner,
+          case_id:f.caseId,checkout_session_id:f.checkoutSessionId,provider_product_id:f.productId,
+          reason:"partial_refund",refund_amount:950,refund_currency:"USD",is_partial:true,status:"manual_review"}]);
+      expect((await db.query(`select status,payment_id from public.orders where id=$1`,[f.orderId])).rows[0])
+        .toEqual({status:"pending",payment_id:f.args[1]});
+    });
+
+    it("rejects forged refund-review identity without creating a review", async () => {
+      const f = await fixture();
+      const otherCase = await insertCase(f.owner, randomUUID());
+      for (const [index,value] of [[1,randomUUID()],[3,"clerk_other"],[4,otherCase],
+        [5,1800],[6,"EUR"],[7,"cks_other"],[8,"prod_other"],[9,"unknown_reason"],[9,null],
+        [12,false],[13,"unexpected"]] as const) {
+        const params: unknown[] = [...f.reviewArgs]; params[index] = value;
+        await expect(f.review(params)).rejects.toThrow("V22_VERIFIED_REFUND_REVIEW");
+      }
+      expect((await db.query(`select id from public.verified_credit_refund_reviews where order_id=$1`,[f.orderId])).rows).toEqual([]);
+    });
+
+    it("rejects a refund review for a different payment after fulfillment", async () => {
+      const f = await fixture(); await f.fulfill();
+      const forged = [...f.reviewArgs]; forged[2] = "pay_other";
+      await expect(f.review(forged)).rejects.toThrow("V22_VERIFIED_REFUND_REVIEW");
+      expect((await db.query(`select id from public.verified_credit_refund_reviews where order_id=$1`,[f.orderId])).rows).toEqual([]);
+    });
+
+    it("rejects a conflicting replay of the same provider refund ID", async () => {
+      const f = await fixture(); await f.review();
+      const conflict = [...f.reviewArgs]; conflict[10] = 900;
+      await expect(f.review(conflict)).rejects.toThrow("V22_VERIFIED_REFUND_REVIEW");
+      expect((await db.query(`select count(*)::integer as count from public.verified_credit_refund_reviews where order_id=$1`,[f.orderId])).rows[0])
+        .toEqual({count:1});
+    });
+
     it("rejects refunded replay when reversal evidence contains conflicting tuples", async () => {
       const f = await fixture(); await f.fulfill(); await f.refund();
       await db.query(`insert into public.audit_credit_ledger
@@ -283,6 +335,18 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const userLock = /from public\.users\b[^;]*for update/i.exec(definition);
       expect(caseLock).not.toBeNull(); expect(orderLock).not.toBeNull(); expect(userLock).not.toBeNull();
       expect(caseLock!.index).toBeLessThan(orderLock!.index); expect(orderLock!.index).toBeLessThan(userLock!.index);
+    });
+
+    it("restricts refund reviews to service role", async () => {
+      const signature = "public.record_v22_verified_credit_refund_review(text,uuid,text,text,uuid,integer,text,text,text,text,integer,text,boolean,text)";
+      for (const role of ["anon","authenticated","service_role"]) {
+        expect((await db.query(`select has_function_privilege($1,$2,'EXECUTE') as allowed`,[role,signature])).rows[0])
+          .toEqual({allowed:role === "service_role"});
+      }
+      for (const role of ["anon","authenticated"]) {
+        expect((await db.query(`select has_table_privilege($1,'public.verified_credit_refund_reviews','SELECT') as allowed`,[role])).rows[0])
+          .toEqual({allowed:false});
+      }
     });
   });
 

@@ -5,8 +5,11 @@ import {
   CASE_VERIFIED_CREDIT_PURCHASE,
   parseVerifiedCreditFulfillmentResult,
   parseVerifiedCreditRefundResult,
+  parseVerifiedCreditRefundReviewResult,
   type VerifiedCreditFulfillmentResult,
   type VerifiedCreditRefundResult,
+  type VerifiedCreditRefundReviewReason,
+  type VerifiedCreditRefundReviewResult,
 } from "./contracts";
 
 export interface PendingVerifiedCreditOrder { id: string }
@@ -30,6 +33,23 @@ export interface VerifiedCreditPaymentInput {
   productId: string;
 }
 
+export interface VerifiedCreditRefundReviewInput {
+  providerRefundId: string;
+  localOrderId: string;
+  paymentId: string;
+  clerkUserId: string;
+  caseId: string;
+  paymentAmount: number;
+  paymentCurrency: string;
+  checkoutSessionId: string;
+  productId: string;
+  reason: VerifiedCreditRefundReviewReason;
+  refundAmount: number | null;
+  refundCurrency: string | null;
+  isPartial: boolean;
+  paymentRefundStatus: "partial" | "full" | null;
+}
+
 export interface VerifiedCreditRepository {
   getBalance(userId: string): Promise<number>;
   getPendingCheckout(userId: string, caseId: string): Promise<PendingVerifiedCreditCheckout | null>;
@@ -38,6 +58,7 @@ export interface VerifiedCreditRepository {
   markOrderFailed(orderId: string): Promise<void>;
   fulfill(input: VerifiedCreditPaymentInput): Promise<VerifiedCreditFulfillmentResult>;
   refund(input: VerifiedCreditPaymentInput): Promise<VerifiedCreditRefundResult>;
+  recordRefundReview(input: VerifiedCreditRefundReviewInput): Promise<VerifiedCreditRefundReviewResult>;
 }
 
 export class VerifiedCreditPersistenceError extends Error {
@@ -126,6 +147,28 @@ export class SupabaseVerifiedCreditRepository implements VerifiedCreditRepositor
       p_product_id: input.productId,
     }).single();
     const parsed = parseVerifiedCreditRefundResult(data);
+    if (error || !parsed) throw new VerifiedCreditPersistenceError();
+    return parsed;
+  }
+
+  async recordRefundReview(input: VerifiedCreditRefundReviewInput): Promise<VerifiedCreditRefundReviewResult> {
+    const { data, error } = await this.supabase.rpc("record_v22_verified_credit_refund_review", {
+      p_provider_refund_id: input.providerRefundId,
+      p_local_order_id: input.localOrderId,
+      p_payment_id: input.paymentId,
+      p_clerk_user_id: input.clerkUserId,
+      p_case_id: input.caseId,
+      p_payment_amount: input.paymentAmount,
+      p_payment_currency: input.paymentCurrency,
+      p_checkout_session_id: input.checkoutSessionId,
+      p_product_id: input.productId,
+      p_reason: input.reason,
+      p_refund_amount: input.refundAmount,
+      p_refund_currency: input.refundCurrency,
+      p_is_partial: input.isPartial,
+      p_payment_refund_status: input.paymentRefundStatus,
+    }).single();
+    const parsed = parseVerifiedCreditRefundReviewResult(data);
     if (error || !parsed) throw new VerifiedCreditPersistenceError();
     return parsed;
   }

@@ -66,4 +66,36 @@ describe("SupabaseVerifiedCreditRepository", () => {
       p_product_id: "prod_1",
     });
   });
+
+  it("persists a refund review through the dedicated idempotent RPC", async () => {
+    const reviewResult = {
+      review_id: "44444444-4444-4444-8444-444444444444",
+      idempotent: false,
+      status: "manual_review",
+      reason: "partial_refund",
+    };
+    const rpcChain = { single: vi.fn(async () => ({ data: reviewResult, error: null })) };
+    const db = { from: vi.fn(), rpc: vi.fn(() => rpcChain) } as never;
+    const repo = new SupabaseVerifiedCreditRepository(db);
+    await expect(repo.recordRefundReview({
+      providerRefundId: "ref_1",
+      localOrderId: orderId,
+      paymentId: "pay_1",
+      clerkUserId: "user_123",
+      caseId,
+      paymentAmount: 1900,
+      paymentCurrency: "USD",
+      checkoutSessionId: "cks_1",
+      productId: "prod_1",
+      reason: "partial_refund",
+      refundAmount: 950,
+      refundCurrency: "USD",
+      isPartial: true,
+      paymentRefundStatus: "partial",
+    })).resolves.toEqual(reviewResult);
+    expect((db as { rpc: ReturnType<typeof vi.fn> }).rpc).toHaveBeenCalledWith(
+      "record_v22_verified_credit_refund_review",
+      expect.objectContaining({ p_provider_refund_id: "ref_1", p_product_id: "prod_1" }),
+    );
+  });
 });

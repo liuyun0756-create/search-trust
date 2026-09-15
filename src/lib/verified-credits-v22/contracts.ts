@@ -24,6 +24,19 @@ export interface VerifiedCreditRefundResult {
   audit_credits: number;
 }
 
+export type VerifiedCreditRefundReviewReason =
+  | "partial_refund"
+  | "amount_mismatch"
+  | "currency_mismatch"
+  | "payment_refund_status_mismatch";
+
+export interface VerifiedCreditRefundReviewResult {
+  review_id: string;
+  idempotent: boolean;
+  status: "manual_review";
+  reason: VerifiedCreditRefundReviewReason;
+}
+
 export function parseVerifiedCreditPaymentMetadata(value: unknown): VerifiedCreditPaymentMetadata | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const metadata = value as Record<string, unknown>;
@@ -41,15 +54,14 @@ export function parseVerifiedCreditPaymentMetadata(value: unknown): VerifiedCred
   };
 }
 
-export function isExactVerifiedCreditPayment(payment: DodoPayment, productId: string): payment is DodoPayment & {
+export function isExactVerifiedCreditPayment(payment: DodoPayment): payment is DodoPayment & {
   checkout_session_id: string;
   product_cart: [{ product_id: string; quantity: 1 }];
 } {
-  return Boolean(productId)
-    && typeof payment.checkout_session_id === "string"
+  return typeof payment.checkout_session_id === "string"
     && payment.checkout_session_id.length > 0
     && payment.product_cart?.length === 1
-    && payment.product_cart[0].product_id === productId
+    && payment.product_cart[0].product_id.length > 0
     && payment.product_cart[0].quantity === 1;
 }
 
@@ -78,4 +90,14 @@ export function parseVerifiedCreditRefundResult(value: unknown): VerifiedCreditR
     result.reversal_applied === result.manual_review || !isBalance(result.audit_credits)
   ) return null;
   return result as unknown as VerifiedCreditRefundResult;
+}
+
+export function parseVerifiedCreditRefundReviewResult(value: unknown): VerifiedCreditRefundReviewResult | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const result = value as Record<string, unknown>;
+  if (!isUuid(result.review_id) || typeof result.idempotent !== "boolean" || result.status !== "manual_review"
+    || !["partial_refund", "amount_mismatch", "currency_mismatch", "payment_refund_status_mismatch"].includes(String(result.reason))) {
+    return null;
+  }
+  return result as unknown as VerifiedCreditRefundReviewResult;
 }

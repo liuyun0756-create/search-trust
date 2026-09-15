@@ -4,7 +4,7 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(105);
+select plan(109);
 
 select has_column('public','audit_credit_ledger','order_id','Payment ledger retains order identity');
 select col_is_fk('public','audit_credit_ledger','order_id','Payment ledger order has FK');
@@ -22,6 +22,10 @@ select ok((select bool_and(has_function_privilege('service_role',signature,'EXEC
   'public.fulfill_v22_verified_credit_payment(uuid,text,text,uuid,integer,text,text,text)',
   'public.refund_v22_verified_credit_payment(uuid,text,text,uuid,integer,text,text,text)'
 ]) as signatures(signature)), 'Verified payment RPCs are service-role-only');
+select has_table('public','verified_credit_refund_reviews','Verified refund reviews are persisted');
+select ok((select relrowsecurity from pg_class where oid='public.verified_credit_refund_reviews'::regclass),'Verified refund reviews have RLS');
+select ok(not has_table_privilege('anon','public.verified_credit_refund_reviews','SELECT') and not has_table_privilege('authenticated','public.verified_credit_refund_reviews','SELECT'),'Browsers cannot read Verified refund reviews');
+select ok(has_function_privilege('service_role','public.record_v22_verified_credit_refund_review(text,uuid,text,text,uuid,integer,text,text,text,text,integer,text,boolean,text)','EXECUTE') and not has_function_privilege('anon','public.record_v22_verified_credit_refund_review(text,uuid,text,text,uuid,integer,text,text,text,text,integer,text,boolean,text)','EXECUTE') and not has_function_privilege('authenticated','public.record_v22_verified_credit_refund_review(text,uuid,text,text,uuid,integer,text,text,text,text,integer,text,boolean,text)','EXECUTE'),'Verified refund review RPC is service-role-only');
 
 select has_table('public', 'verified_analysis_inputs', 'Verified inputs exist');
 select has_column('public', 'client_cases', 'latest_verified_report_id', 'Case retains latest Verified');

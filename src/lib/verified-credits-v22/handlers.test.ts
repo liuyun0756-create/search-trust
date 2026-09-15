@@ -27,6 +27,12 @@ function repository(overrides: Partial<VerifiedCreditRepository> = {}): Verified
     markOrderFailed: vi.fn(async () => undefined),
     fulfill: vi.fn(async () => ({ fulfilled: true, idempotent: false, credits_added: 1, audit_credits: 3 })),
     refund: vi.fn(async () => ({ refunded: true, idempotent: false, reversal_applied: true, manual_review: false, audit_credits: 2 })),
+    recordRefundReview: vi.fn(async input => ({
+      review_id: "44444444-4444-4444-8444-444444444444",
+      idempotent: false,
+      status: "manual_review" as const,
+      reason: input.reason,
+    })),
     ...overrides,
   };
 }
@@ -162,6 +168,17 @@ describe("Verified credit handlers", () => {
     });
   });
 
+  it.each(["prod_rotated", ""])("settles an existing checkout after the configured product changes to %j", async configuredProductId => {
+    const repo = repository();
+    const deps = dependencies(repo, { getProductId: () => configuredProductId });
+    const response = await createVerifiedCreditConfirmHandler(deps).POST(new NextRequest(
+      `https://searchtrust.example/api/v2/cases/${caseId}/verified-credit/checkout/confirm`,
+      { method: "POST", body: JSON.stringify({ payment_id: "pay_verified" }) },
+    ), context);
+    expect(response.status).toBe(200);
+    expect(repo.fulfill).toHaveBeenCalledWith(expect.objectContaining({ productId: "prod_verified_credit" }));
+  });
+
   it("maps a Dodo deadline to a safe 504 response", async () => {
     const repo = repository();
     const deps = dependencies(repo);
@@ -202,9 +219,9 @@ describe("Verified credit handlers", () => {
   });
 
   it.each([
-    { product_cart: [{ product_id: "prod_other", quantity: 1 }] },
     { product_cart: [{ product_id: "prod_verified_credit", quantity: 2 }] },
     { product_cart: [{ product_id: "prod_verified_credit", quantity: 1 }, { product_id: "prod_extra", quantity: 1 }] },
+    { checkout_session_id: null },
   ])("rejects a payment that does not match the exact Verified product/session: %o", async patch => {
     const repo = repository();
     const deps = dependencies(repo);
@@ -233,7 +250,6 @@ describe("Verified credit handlers", () => {
         refund_status: "full",
         metadata: { clerk_user_id: user.clerkUserId, case_id: caseId, order_id: orderId, purchase_kind: "case_verified_credit" },
       },
-      expectedProductId: "prod_verified_credit",
       repository: repo,
     });
     expect(result).toMatchObject({ manual_review: true, reversal_applied: false, audit_credits: 0 });

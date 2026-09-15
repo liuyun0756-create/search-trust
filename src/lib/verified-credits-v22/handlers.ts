@@ -173,9 +173,9 @@ export function createVerifiedCreditHandlers(dependencies: VerifiedCreditHandler
   };
 }
 
-function verifiedPaymentInput(payment: DodoPayment, expectedProductId: string) {
+function verifiedPaymentInput(payment: DodoPayment) {
   const metadata = parseVerifiedCreditPaymentMetadata(payment.metadata);
-  if (!metadata || !isExactVerifiedCreditPayment(payment, expectedProductId)) {
+  if (!metadata || !isExactVerifiedCreditPayment(payment)) {
     throw CasePaymentError.invalid("Payment settlement is invalid.");
   }
   return { metadata, payment: {
@@ -186,7 +186,7 @@ function verifiedPaymentInput(payment: DodoPayment, expectedProductId: string) {
     amount: payment.total_amount,
     currency: payment.currency,
     checkoutSessionId: payment.checkout_session_id,
-    productId: expectedProductId,
+    productId: payment.product_cart[0].product_id,
   } };
 }
 
@@ -194,10 +194,9 @@ export async function fulfillVerifiedCreditPayment(input: {
   payment: DodoPayment;
   expectedClerkUserId?: string;
   expectedCaseId?: string;
-  expectedProductId: string;
   repository: VerifiedCreditRepository;
 }) {
-  const parsed = verifiedPaymentInput(input.payment, input.expectedProductId);
+  const parsed = verifiedPaymentInput(input.payment);
   if (input.expectedClerkUserId && parsed.metadata.clerk_user_id !== input.expectedClerkUserId) {
     throw new CasePaymentError("PAYMENT_OWNER_MISMATCH", "Payment does not belong to the current user.", 403);
   }
@@ -210,10 +209,9 @@ export async function fulfillVerifiedCreditPayment(input: {
 
 export async function refundVerifiedCreditPayment(input: {
   payment: DodoPayment;
-  expectedProductId: string;
   repository: VerifiedCreditRepository;
 }) {
-  const parsed = verifiedPaymentInput(input.payment, input.expectedProductId);
+  const parsed = verifiedPaymentInput(input.payment);
   return input.repository.refund(parsed.payment);
 }
 
@@ -226,8 +224,7 @@ export function createVerifiedCreditConfirmHandler(dependencies: VerifiedCreditH
         const user = await requireUser(dependencies);
         const caseId = (await context.params).id;
         await requireOwnedCase(dependencies, user.userId, caseId);
-        const productId = dependencies.getProductId();
-        if (!dependencies.isDodoConfigured() || !productId) throw CasePaymentError.unavailable();
+        if (!dependencies.isDodoConfigured()) throw CasePaymentError.unavailable();
         const body = await request.json().catch(() => null) as { payment_id?: unknown } | null;
         if (!body || typeof body.payment_id !== "string" || !body.payment_id) {
           throw CasePaymentError.invalid("payment_id is required.");
@@ -235,7 +232,6 @@ export function createVerifiedCreditConfirmHandler(dependencies: VerifiedCreditH
         const payment = await dependencies.createDodoClient().getPayment(body.payment_id);
         const result = await fulfillVerifiedCreditPayment({
           payment,
-          expectedProductId: productId,
           expectedClerkUserId: user.clerkUserId,
           expectedCaseId: caseId,
           repository: dependencies.createRepository(),

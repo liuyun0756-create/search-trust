@@ -426,6 +426,51 @@ export interface RefundV22VerifiedCreditPaymentResult {
   audit_credits: number;
 }
 
+export interface RecordV22VerifiedCreditRefundReviewArgs {
+  p_provider_refund_id: string;
+  p_local_order_id: string;
+  p_payment_id: string;
+  p_clerk_user_id: string;
+  p_case_id: string;
+  p_payment_amount: number;
+  p_payment_currency: string;
+  p_checkout_session_id: string;
+  p_product_id: string;
+  p_reason: "partial_refund" | "amount_mismatch" | "currency_mismatch" | "payment_refund_status_mismatch";
+  p_refund_amount: number | null;
+  p_refund_currency: string | null;
+  p_is_partial: boolean;
+  p_payment_refund_status: "partial" | "full" | null;
+}
+
+export interface RecordV22VerifiedCreditRefundReviewResult {
+  review_id: string;
+  idempotent: boolean;
+  status: "manual_review";
+  reason: RecordV22VerifiedCreditRefundReviewArgs["p_reason"];
+}
+
+export interface VerifiedCreditRefundReview {
+  id: string;
+  provider_refund_id: string;
+  order_id: string;
+  payment_id: string;
+  user_id: string;
+  case_id: string;
+  checkout_session_id: string;
+  provider_product_id: string;
+  payment_amount: number;
+  payment_currency: string;
+  payment_refund_status: "partial" | "full" | null;
+  reason: RecordV22VerifiedCreditRefundReviewArgs["p_reason"];
+  refund_amount: number | null;
+  refund_currency: string | null;
+  is_partial: boolean;
+  status: "manual_review";
+  created_at: string;
+  updated_at: string;
+}
+
 export interface VerifiedCreditPaymentDatabaseFunctions {
   fulfill_v22_verified_credit_payment: {
     Args: FulfillV22VerifiedCreditPaymentArgs;
@@ -434,6 +479,10 @@ export interface VerifiedCreditPaymentDatabaseFunctions {
   refund_v22_verified_credit_payment: {
     Args: RefundV22VerifiedCreditPaymentArgs;
     Returns: RefundV22VerifiedCreditPaymentResult[];
+  };
+  record_v22_verified_credit_refund_review: {
+    Args: RecordV22VerifiedCreditRefundReviewArgs;
+    Returns: RecordV22VerifiedCreditRefundReviewResult[];
   };
 }
 

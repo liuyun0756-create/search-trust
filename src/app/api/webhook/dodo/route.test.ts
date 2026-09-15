@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { DodoClient, CasePaymentRepository } from "@/lib/payments-v22";
+import type { DodoClient, DodoPayment, CasePaymentRepository } from "@/lib/payments-v22";
 import type { VerifiedCreditRepository } from "@/lib/verified-credits-v22";
 import { createDodoWebhookHandler, type DodoWebhookDependencies } from "./route";
 
@@ -25,11 +25,17 @@ function verifiedRepository(overrides: Partial<VerifiedCreditRepository> = {}): 
     attachCheckoutSession: vi.fn(), markOrderFailed: vi.fn(),
     fulfill: vi.fn(async () => ({ fulfilled: true, idempotent: false, credits_added: 1, audit_credits: 1 })),
     refund: vi.fn(async () => ({ refunded: true, idempotent: false, reversal_applied: true, manual_review: false, audit_credits: 0 })),
+    recordRefundReview: vi.fn(async input => ({
+      review_id: "44444444-4444-4444-8444-444444444444",
+      idempotent: false,
+      status: "manual_review" as const,
+      reason: input.reason,
+    })),
     ...overrides,
   } as VerifiedCreditRepository;
 }
 
-function payment(kind: string, status = "succeeded") {
+function payment(kind: string, status = "succeeded"): DodoPayment {
   return {
     payment_id: "pay_secret_reference",
     status,
@@ -74,7 +80,6 @@ function dependencies(
     createCaseRepository: () => prospect,
     createVerifiedCreditRepository: () => verified,
     createDodoClient: () => dodo as unknown as DodoClient,
-    getVerifiedProductId: () => productId,
     dodo,
   };
 }
@@ -119,6 +124,16 @@ describe("Dodo purchase-kind webhook dispatch", () => {
     }));
   });
 
+  it("settles the frozen Payment product without consulting current product configuration", async () => {
+    const verified = verifiedRepository();
+    const deps = dependencies({ type: "payment.succeeded", data: payment("case_verified_credit") }, prospectRepository(), verified);
+    const response = await createDodoWebhookHandler(deps)(new Request(
+      "https://searchtrust.example", { method: "POST", body: "signed body" },
+    ));
+    expect(response.status).toBe(200);
+    expect(verified.fulfill).toHaveBeenCalledWith(expect.objectContaining({ productId }));
+  });
+
   it.each([
     ["partial", { is_partial: true, amount: 950 }],
     ["amount mismatch", { amount: 1800 }],
@@ -132,9 +147,68 @@ describe("Dodo purchase-kind webhook dispatch", () => {
     ));
     expect(await response.json()).toMatchObject({ received: true, manual_review: true });
     expect(verified.refund).not.toHaveBeenCalled();
+    expect(verified.recordRefundReview).toHaveBeenCalledWith(expect.objectContaining({
+      providerRefundId: "ref_secret_reference",
+      paymentId: "pay_secret_reference",
+      checkoutSessionId: "cks_verified",
+      productId,
+      reason: _label === "partial" ? "partial_refund" : _label === "amount mismatch" ? "amount_mismatch" : "currency_mismatch",
+    }));
     expect(JSON.stringify(warning.mock.calls)).not.toContain("4242424242424242");
     expect(JSON.stringify(warning.mock.calls)).not.toContain("pay_secret_reference");
     warning.mockRestore();
+  });
+
+  it("persists one review across a repeated refund webhook", async () => {
+    const reviewId = "44444444-4444-4444-8444-444444444444";
+    const verified = verifiedRepository({
+      recordRefundReview: vi.fn()
+        .mockResolvedValueOnce({ review_id: reviewId, idempotent: false, status: "manual_review", reason: "partial_refund" })
+        .mockResolvedValueOnce({ review_id: reviewId, idempotent: true, status: "manual_review", reason: "partial_refund" }),
+    });
+    const deps = dependencies({ type: "refund.succeeded", data: refund({ is_partial: true, amount: 950 }) }, prospectRepository(), verified);
+    const handler = createDodoWebhookHandler(deps);
+    const first = await handler(new Request("https://searchtrust.example", { method: "POST", body: "signed refund" }));
+    const second = await handler(new Request("https://searchtrust.example", { method: "POST", body: "signed refund" }));
+    expect(await first.json()).toMatchObject({ manual_review: true, review_id: reviewId, already_processed: false });
+    expect(await second.json()).toMatchObject({ manual_review: true, review_id: reviewId, already_processed: true });
+    expect(verified.recordRefundReview).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns 500 so Dodo retries when a refund review cannot be persisted", async () => {
+    const verified = verifiedRepository({ recordRefundReview: vi.fn(async () => { throw new Error("database unavailable"); }) });
+    const response = await createDodoWebhookHandler(dependencies(
+      { type: "refund.succeeded", data: refund({ is_partial: true, amount: 950 }) }, prospectRepository(), verified,
+    ))(new Request("https://searchtrust.example", { method: "POST", body: "signed refund" }));
+    expect(response.status).toBe(500);
+    expect(verified.refund).not.toHaveBeenCalled();
+  });
+
+  it("persists an exact-value refund whose Payment refund status is not full", async () => {
+    const verified = verifiedRepository();
+    const trustedPayment = { ...payment("case_verified_credit"), refund_status: "partial" as const };
+    const response = await createDodoWebhookHandler(dependencies(
+      { type: "refund.succeeded", data: refund() }, prospectRepository(), verified, trustedPayment,
+    ))(new Request("https://searchtrust.example", { method: "POST", body: "signed refund" }));
+    expect(response.status).toBe(200);
+    expect(verified.recordRefundReview).toHaveBeenCalledWith(expect.objectContaining({
+      reason: "payment_refund_status_mismatch",
+      paymentRefundStatus: "partial",
+    }));
+  });
+
+  it("rejects a refund Payment with an extra product before recording review", async () => {
+    const verified = verifiedRepository();
+    const trustedPayment = {
+      ...payment("case_verified_credit"),
+      product_cart: [{ product_id: productId, quantity: 1 }, { product_id: "prod_extra", quantity: 1 }],
+    };
+    const response = await createDodoWebhookHandler(dependencies(
+      { type: "refund.succeeded", data: refund({ is_partial: true, amount: 950 }) },
+      prospectRepository(), verified, trustedPayment,
+    ))(new Request("https://searchtrust.example", { method: "POST", body: "signed refund" }));
+    expect(response.status).toBe(400);
+    expect(verified.recordRefundReview).not.toHaveBeenCalled();
   });
 
   it("records a structured redacted warning when the full-refund RPC needs manual review", async () => {
