@@ -8,6 +8,7 @@ import type { BusinessConfirmation, IdentityComparisonStatus, PreflightResponse 
 
 interface BusinessMatchStepProps {
   preflight: PreflightResponse;
+  submittedGbpUrl: string | null;
   onConfirm(value: BusinessConfirmation): void;
   onEditSource(): void;
 }
@@ -25,7 +26,7 @@ function normalizedDomain(url: string) {
   try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; }
 }
 
-export function BusinessMatchStep({ preflight, onConfirm, onEditSource }: BusinessMatchStepProps) {
+export function BusinessMatchStep({ preflight, submittedGbpUrl, onConfirm, onEditSource }: BusinessMatchStepProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const candidate = preflight.identity_candidates[selectedIndex];
   const initialMarket = candidate?.business.primary_location ?? preflight.market_candidates[0]?.market;
@@ -34,6 +35,12 @@ export function BusinessMatchStep({ preflight, onConfirm, onEditSource }: Busine
   const [service, setService] = useState(preflight.service_candidates[0]?.value ?? "");
   const [location, setLocation] = useState(initialMarket?.display_name ?? "");
   const [marketName, setMarketName] = useState(preflight.market_candidates[0]?.market.display_name ?? initialMarket?.display_name ?? "");
+  const confirmedGbpUrl = candidate?.business.public_gbp_url ?? submittedGbpUrl;
+  const gbpStatus = candidate?.business.public_gbp_url
+    ? "Profile identified"
+    : submittedGbpUrl
+      ? "Profile link provided — verification pending"
+      : "Not identified — coverage limited";
 
   const baseMarket = useMemo(() => preflight.market_candidates[0]?.market ?? initialMarket, [initialMarket, preflight.market_candidates]);
 
@@ -69,7 +76,7 @@ export function BusinessMatchStep({ preflight, onConfirm, onEditSource }: Busine
         normalized_domain: normalizedDomain(preflight.normalized_site_url),
         operating_model: operatingModel,
         primary_location: primaryLocation,
-        public_gbp_url: candidate?.business.public_gbp_url ?? null,
+        public_gbp_url: confirmedGbpUrl,
       },
       primary_service: service.trim(),
       target_market: market(marketName),
@@ -133,7 +140,7 @@ export function BusinessMatchStep({ preflight, onConfirm, onEditSource }: Busine
           <Field label="Primary service"><input required value={service} onChange={(event) => setService(event.target.value)} className="field-input" /></Field>
           <Field label="Primary location"><div className="relative"><MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929b92]" size={16} /><input required value={location} onChange={(event) => setLocation(event.target.value)} className="field-input pl-10" /></div></Field>
           <Field label="Target market"><input required value={marketName} onChange={(event) => setMarketName(event.target.value)} className="field-input" /></Field>
-          <Field label="Public GBP"><div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#d5dcd0] bg-[#f8faf6] px-3 text-sm text-[#637063]"><Phone size={15} />{candidate?.business.public_gbp_url ? "Profile identified" : "Not identified — coverage limited"}</div></Field>
+          <Field label="Public GBP"><div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#d5dcd0] bg-[#f8faf6] px-3 text-sm text-[#637063]"><Phone size={15} />{gbpStatus}</div></Field>
         </div>
         <div className="mt-6 flex justify-end"><button type="submit" className="min-h-12 rounded-xl bg-[#1a211a] px-6 text-sm font-bold text-white outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/40">Confirm & find competitors <span aria-hidden="true">→</span></button></div>
       </form>
