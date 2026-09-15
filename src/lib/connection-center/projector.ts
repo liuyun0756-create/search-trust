@@ -29,6 +29,15 @@ export interface ConnectionCenterParentReportInput {
   public_gbp_fetched_at: string | null;
   public_gbp_health_status: string;
   public_gbp_identity_match_status: string;
+  current_lineage: boolean;
+}
+
+export interface ConnectionCenterVerifiedJobInput {
+  id: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  report_id: string | null;
+  charge_state: "reserved" | "consumed" | "compensated";
+  error_code: string | null;
 }
 
 export interface ConnectionCenterConnectionInput {
@@ -78,6 +87,8 @@ export interface ConnectionCenterProjectionInput {
   bindings: ConnectionCenterBindingInput[];
   jobs: ConnectionCenterJobInput[];
   snapshots: ConnectionCenterSnapshotInput[];
+  audit_credits: number;
+  verified_job: ConnectionCenterVerifiedJobInput | null;
   flags: {
     gsc_sync_enabled: boolean;
     ga4_sync_enabled: boolean;
@@ -143,7 +154,7 @@ function publicGbpSource(input: ConnectionCenterProjectionInput): ConnectionCent
   const hasUrl = Boolean(input.case.public_gbp_url);
   const sameIdentity = Boolean(
     report &&
-    input.case.latest_report_id === report.id &&
+    report.current_lineage &&
     report.case_id === input.case.id &&
     report.identity_matches_case &&
     report.public_gbp_url === input.case.public_gbp_url,
@@ -347,7 +358,7 @@ export function projectConnectionCenter(input: ConnectionCenterProjectionInput, 
   const officialGbp = optionalGbpSource(input, now);
   const blockers: ConnectionCenterBlocker[] = [];
 
-  if (!input.parent_report || input.case.latest_report_id !== input.parent_report.id || input.parent_report.case_id !== input.case.id) {
+  if (!input.parent_report || !input.parent_report.current_lineage || input.parent_report.case_id !== input.case.id) {
     blockers.push({
       code: "PARENT_REPORT_MISSING",
       message: "Create a current prospect report for this Case before verified analysis.",
@@ -375,11 +386,19 @@ export function projectConnectionCenter(input: ConnectionCenterProjectionInput, 
   const readySourceCount = required.filter((source) => source.ready).length;
   const verifiedCoreReady = blockers.length === 0 && readySourceCount === 3;
   const fullEvidenceReady = verifiedCoreReady && officialGbp.ready;
-  const nextAction = blockers[0]?.action ?? (
-    input.flags.verified_generation_enabled
-      ? action("generate_verified_plan", "Generate Verified Client Action Plan", null)
-      : action("wait_for_verified_analysis", "Ready for verified analysis", null)
-  );
+  const latestVerifiedJob = input.verified_job;
+  let nextAction = blockers[0]?.action ?? action("wait_for_verified_analysis", "Ready for verified analysis", null);
+  if (blockers.length === 0 && input.flags.verified_generation_enabled) {
+    if (latestVerifiedJob?.status === "queued" || latestVerifiedJob?.status === "running") {
+      nextAction = action("wait_for_verified_analysis", "Verified Action Plan in progress", null);
+    } else if (latestVerifiedJob?.status === "succeeded" && latestVerifiedJob.report_id) {
+      nextAction = action("open_verified_report", "Open Verified Action Plan", null);
+    } else if (input.audit_credits > 0) {
+      nextAction = action("generate_verified_plan", "Generate Verified Action Plan · uses 1 credit", null);
+    } else {
+      nextAction = action("buy_verified_credit", "Buy 1 credit · $19", null);
+    }
+  }
 
   return {
     schema_version: CONNECTION_CENTER_SCHEMA_VERSION,
@@ -389,6 +408,8 @@ export function projectConnectionCenter(input: ConnectionCenterProjectionInput, 
       site_url: input.case.site_url,
       updated_at: input.case.updated_at,
     },
+    billing: { audit_credits: input.audit_credits },
+    verified_job: latestVerifiedJob,
     coverage: {
       verified_core_ready: verifiedCoreReady,
       full_evidence_ready: fullEvidenceReady,

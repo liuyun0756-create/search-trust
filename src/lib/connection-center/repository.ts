@@ -9,6 +9,7 @@ import type {
   ConnectionCenterParentReportInput,
   ConnectionCenterProjectionInput,
   ConnectionCenterSnapshotInput,
+  ConnectionCenterVerifiedJobInput,
 } from "./projector";
 
 type ProjectionData = Omit<ConnectionCenterProjectionInput, "flags">;
@@ -16,6 +17,8 @@ type ProjectionData = Omit<ConnectionCenterProjectionInput, "flags">;
 export interface ConnectionCenterRevision {
   case_updated_at: string;
   binding_signature: string;
+  audit_credits: number;
+  verified_job_signature: string;
 }
 
 export interface ConnectionCenterRead {
@@ -45,13 +48,29 @@ type CaseRow = {
 };
 
 type BindingRow = ConnectionCenterBindingInput & { updated_at: string };
-type ReportRow = { id: string; case_id: string | null; report_v2_2: unknown };
+type ReportRow = {
+  id: string;
+  case_id: string | null;
+  report_type?: string | null;
+  parent_report_id?: string | null;
+  report_v2_2: unknown;
+};
+type VerifiedJobRow = {
+  id: string;
+  status: string;
+  report_id: string | null;
+  error_code: string | null;
+  created_at: string;
+};
+type ChargeRow = { state: string };
 
 const CASE_FIELDS = "id,business_name,site_url,business_identity,latest_report_id,updated_at";
 const CONNECTION_FIELDS = "id,status,granted_scopes";
 const BINDING_FIELDS = "id,source_type,connection_id,external_resource_id,external_resource_name,identity_match_status,confirmed_at,updated_at";
 const JOB_FIELDS = "id,binding_id,source_type,status,attempt_count,error_code,created_at,completed_at";
 const SNAPSHOT_FIELDS = "id,binding_id,source_type,health_status,health_reasons,fetched_at,expires_at,coverage_start,coverage_end,raw_content_deleted_at";
+const REPORT_FIELDS = "id,case_id,report_type,parent_report_id,report_v2_2";
+const VERIFIED_JOB_FIELDS = "id,status,report_id,error_code,created_at";
 
 function fail(error: unknown): void {
   if (error) throw new ConnectionCenterRepositoryError();
@@ -81,11 +100,20 @@ function publicGbpUrl(row: CaseRow): string | null {
   return text(row.business_identity.public_gbp_url);
 }
 
-export function parseConnectionCenterParentReport(row: ReportRow | null, caseRow: CaseRow): ConnectionCenterParentReportInput | null {
+export function parseConnectionCenterParentReport(
+  row: ReportRow | null,
+  caseRow: CaseRow,
+  currentLineage = true,
+): ConnectionCenterParentReportInput | null {
   if (!row || row.case_id !== caseRow.id) return null;
   const validated = validateReportV22(row.report_v2_2);
   if (!validated.ok || validated.report.identity.case_id !== caseRow.id) return null;
   const report = validated.report;
+  if (report.report_version.report_id !== row.id
+    || report.report_version.report_type !== "prospect"
+    || report.report_version.parent_report_id !== null
+    || (row.report_type != null && row.report_type !== "prospect")
+    || (row.parent_report_id != null && row.parent_report_id !== report.report_version.parent_report_id)) return null;
   const reportUrl = report.identity.business.public_gbp_url ?? null;
   const coverage = report.data_coverage.sources.find((source) => source.source_type === "gbp");
   const publicEvidence = report.evidence_index.find((item) =>
@@ -100,7 +128,27 @@ export function parseConnectionCenterParentReport(row: ReportRow | null, caseRow
     public_gbp_fetched_at: publicEvidence?.collected_at ?? report.report_version.generated_at,
     public_gbp_health_status: coverage?.health_status ?? "not_checked",
     public_gbp_identity_match_status: coverage?.identity_match_status ?? "not_checked",
+    current_lineage: currentLineage,
   };
+}
+
+export function verifiedJobProjection(job: VerifiedJobRow | null, charge: ChargeRow | null): ConnectionCenterVerifiedJobInput | null {
+  if (!job) return null;
+  if (!["queued", "running", "succeeded", "failed"].includes(job.status)
+    || !charge || !["reserved", "consumed", "compensated"].includes(charge.state)) {
+    throw new ConnectionCenterRepositoryError();
+  }
+  return {
+    id: job.id,
+    status: job.status as ConnectionCenterVerifiedJobInput["status"],
+    report_id: job.report_id,
+    charge_state: charge.state as ConnectionCenterVerifiedJobInput["charge_state"],
+    error_code: text(job.error_code),
+  };
+}
+
+function verifiedJobSignature(job: ConnectionCenterVerifiedJobInput | null): string {
+  return job ? `${job.id}:${job.status}:${job.report_id ?? ""}:${job.charge_state}:${job.error_code ?? ""}` : "";
 }
 
 function caseInput(row: CaseRow): ConnectionCenterCaseInput {
@@ -131,21 +179,62 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
     return (result.data ?? []) as BindingRow[];
   }
 
+  private async latestVerifiedJob(userId: string, caseId: string): Promise<{ job: VerifiedJobRow | null; charge: ChargeRow | null }> {
+    const jobResult = await this.db.from("analysis_jobs").select(VERIFIED_JOB_FIELDS)
+      .eq("case_id", caseId).eq("job_type", "verified_report")
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    fail(jobResult.error);
+    const job = jobResult.data as VerifiedJobRow | null;
+    if (!job) return { job: null, charge: null };
+    const chargeResult = await this.db.from("analysis_attempt_charges").select("state")
+      .eq("user_id", userId).eq("case_id", caseId).eq("job_id", job.id).maybeSingle();
+    fail(chargeResult.error);
+    return { job, charge: chargeResult.data as ChargeRow | null };
+  }
+
+  private async parentReport(userId: string, ownedCase: CaseRow, latest: ReportRow | null): Promise<ConnectionCenterParentReportInput | null> {
+    if (!latest || latest.case_id !== ownedCase.id) return null;
+    const validated = validateReportV22(latest.report_v2_2);
+    if (!validated.ok
+      || validated.report.identity.case_id !== ownedCase.id
+      || validated.report.report_version.report_id !== latest.id) return null;
+    const reportVersion = validated.report.report_version;
+    if (reportVersion.report_type === "prospect" && reportVersion.parent_report_id === null) {
+      return parseConnectionCenterParentReport(latest, ownedCase, true);
+    }
+    if (reportVersion.report_type !== "verified_execution"
+      || !reportVersion.parent_report_id
+      || latest.report_type !== "verified_execution"
+      || latest.parent_report_id !== reportVersion.parent_report_id) return null;
+    const parentResult = await this.db.from("reports").select(REPORT_FIELDS)
+      .eq("id", reportVersion.parent_report_id).eq("user_id", userId)
+      .eq("case_id", ownedCase.id).eq("report_type", "prospect").maybeSingle();
+    fail(parentResult.error);
+    return parseConnectionCenterParentReport(parentResult.data as ReportRow | null, ownedCase, true);
+  }
+
   async read(userId: string, caseId: string): Promise<ConnectionCenterRead | null> {
     const ownedCase = await this.activeCase(userId, caseId);
     if (!ownedCase) return null;
 
-    const [connectionsResult, bindings, reportResult] = await Promise.all([
+    const [connectionsResult, bindings, reportResult, balanceResult, verifiedRead] = await Promise.all([
       this.db.from("google_connections").select(CONNECTION_FIELDS).eq("user_id", userId)
         .in("status", ["active", "error", "reauth_required"]),
       this.activeBindings(caseId),
       ownedCase.latest_report_id
-        ? this.db.from("reports").select("id,case_id,report_v2_2").eq("id", ownedCase.latest_report_id)
+        ? this.db.from("reports").select(REPORT_FIELDS).eq("id", ownedCase.latest_report_id)
           .eq("user_id", userId).eq("case_id", caseId).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      this.db.from("users").select("audit_credits").eq("id", userId).maybeSingle(),
+      this.latestVerifiedJob(userId, caseId),
     ]);
     fail(connectionsResult.error);
     fail(reportResult.error);
+    fail(balanceResult.error);
+    const auditCredits = (balanceResult.data as { audit_credits?: unknown } | null)?.audit_credits;
+    if (!Number.isSafeInteger(auditCredits) || (auditCredits as number) < 0) throw new ConnectionCenterRepositoryError();
+    const verifiedJob = verifiedJobProjection(verifiedRead.job, verifiedRead.charge);
+    const parentReport = await this.parentReport(userId, ownedCase, reportResult.data as ReportRow | null);
 
     const bindingIds = bindings.map((binding) => binding.id);
     let jobs: ConnectionCenterJobInput[] = [];
@@ -166,20 +255,37 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
     return {
       data: {
         case: caseInput(ownedCase),
-        parent_report: parseConnectionCenterParentReport(reportResult.data as ReportRow | null, ownedCase),
+        parent_report: parentReport,
         connections: (connectionsResult.data ?? []) as ConnectionCenterConnectionInput[],
         bindings,
         jobs,
         snapshots,
+        audit_credits: auditCredits as number,
+        verified_job: verifiedJob,
       },
-      revision: { case_updated_at: ownedCase.updated_at, binding_signature: bindingSignature(bindings) },
+      revision: {
+        case_updated_at: ownedCase.updated_at,
+        binding_signature: bindingSignature(bindings),
+        audit_credits: auditCredits as number,
+        verified_job_signature: verifiedJobSignature(verifiedJob),
+      },
     };
   }
 
   async isCurrent(userId: string, caseId: string, revision: ConnectionCenterRevision): Promise<boolean> {
     const ownedCase = await this.activeCase(userId, caseId);
     if (!ownedCase || ownedCase.updated_at !== revision.case_updated_at) return false;
-    const bindings = await this.activeBindings(caseId);
-    return bindingSignature(bindings) === revision.binding_signature;
+    const [bindings, balanceResult, verifiedRead] = await Promise.all([
+      this.activeBindings(caseId),
+      this.db.from("users").select("audit_credits").eq("id", userId).maybeSingle(),
+      this.latestVerifiedJob(userId, caseId),
+    ]);
+    fail(balanceResult.error);
+    const auditCredits = (balanceResult.data as { audit_credits?: unknown } | null)?.audit_credits;
+    if (!Number.isSafeInteger(auditCredits) || (auditCredits as number) < 0) throw new ConnectionCenterRepositoryError();
+    const verifiedJob = verifiedJobProjection(verifiedRead.job, verifiedRead.charge);
+    return bindingSignature(bindings) === revision.binding_signature
+      && auditCredits === revision.audit_credits
+      && verifiedJobSignature(verifiedJob) === revision.verified_job_signature;
   }
 }

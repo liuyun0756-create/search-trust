@@ -9,8 +9,7 @@ export function createServerConnectionCenterService() {
       gsc_sync_enabled: process.env.GOOGLE_GSC_SYNC_ENABLED === "true",
       ga4_sync_enabled: process.env.GOOGLE_GA4_SYNC_ENABLED === "true",
       official_gbp_sync_enabled: process.env.GOOGLE_GBP_SYNC_ENABLED === "true",
-      // V22-063 must not submit verified jobs. M7 will replace this with dual-sided enforcement.
-      verified_generation_enabled: false,
+      verified_generation_enabled: process.env.GOOGLE_VERIFIED_ANALYSIS_ENABLED === "true",
     },
   });
 }

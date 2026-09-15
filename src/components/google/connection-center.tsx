@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -10,7 +10,8 @@ import {
   ExternalLink,
   Globe2,
   LoaderCircle,
-  LockKeyhole,
+  CreditCard,
+  FileCheck2,
   RefreshCw,
   Search,
   Settings2,
@@ -54,6 +55,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   CONNECTION_CENTER_STORAGE_UNAVAILABLE: "Connection status is temporarily unavailable. Please try again.",
 };
 
+type TaskStatusPayload = {
+  job_id?: unknown;
+  status?: unknown;
+  message?: unknown;
+  database_report_id?: unknown;
+  report?: { report_version?: { report_id?: unknown } } | null;
+};
+
 type Props = {
   caseId: string;
   businessName: string;
@@ -62,6 +71,7 @@ type Props = {
   ga4SyncEnabled?: boolean;
   gbpSyncEnabled?: boolean;
   initialData?: ConnectionCenterResponse;
+  navigate?: (url: string) => void;
 };
 
 function sourceIcon(source: ConnectionCenterSource) {
@@ -94,6 +104,21 @@ function displayDate(value: string): string {
 function technicalLabel(value: string | null): string {
   if (!value) return "Not connected";
   return HEALTH_LABELS[value] ?? value.replaceAll("_", " ");
+}
+
+async function responseMessage(response: Response, fallback: string): Promise<string> {
+  const body = await response.json().catch(() => null) as { error?: { message?: unknown } } | null;
+  return typeof body?.error?.message === "string" ? body.error.message : fallback;
+}
+
+function safeCheckoutUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && (url.hostname === "dodopayments.com" || url.hostname.endsWith(".dodopayments.com"))
+      ? url.toString() : null;
+  } catch { return null; }
 }
 
 function SourceCard({ source, onAction }: { source: ConnectionCenterSource; onAction: (action: ConnectionCenterAction) => void }) {
@@ -141,6 +166,7 @@ export function ConnectionCenter({
   ga4SyncEnabled = false,
   gbpSyncEnabled = false,
   initialData,
+  navigate,
 }: Props) {
   const endpoint = `/api/v2/cases/${caseId}/connection-center`;
   const [data, setData] = useState<ConnectionCenterResponse | null>(initialData ?? null);
@@ -148,11 +174,25 @@ export function ConnectionCenter({
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   const [manageOpen, setManageOpen] = useState(false);
+  const [actionBusy, setActionBusy] = useState<"generate" | "checkout" | "confirm" | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(() => {
+    const job = initialData?.verified_job;
+    return job && ["queued", "running"].includes(job.status) ? job.id : null;
+  });
+  const [taskMessage, setTaskMessage] = useState("");
+  const actionLock = useRef(false);
+  const paymentHandled = useRef(false);
+  const loadSequence = useRef(0);
+  const go = useCallback((url: string) => {
+    if (navigate) navigate(url);
+    else window.location.assign(url);
+  }, [navigate]);
 
   const activeSync = useMemo(() => Boolean(data && [...data.sources, ...data.optional_sources]
     .some((source) => source.technical_status.job && ["queued", "running"].includes(source.technical_status.job.status))), [data]);
 
   const load = useCallback(async (signal?: AbortSignal) => {
+    const sequence = ++loadSequence.current;
     const response = await fetch(endpoint, { cache: "no-store", signal });
     let body: ConnectionCenterResponse | { error?: { code?: string; message?: string } };
     try { body = await response.json(); }
@@ -161,6 +201,7 @@ export function ConnectionCenter({
       const code = "error" in body ? body.error?.code : undefined;
       throw new Error(code && ERROR_MESSAGES[code] ? ERROR_MESSAGES[code] : "Connection status could not be loaded. Please try again.");
     }
+    if (sequence !== loadSequence.current) return;
     setData(body as ConnectionCenterResponse);
     setError("");
   }, [endpoint]);
@@ -182,6 +223,83 @@ export function ConnectionCenter({
     return () => { abort.abort(); if (timer) clearTimeout(timer); };
   }, [load, revision, activeSync]);
 
+  useEffect(() => {
+    const job = data?.verified_job;
+    if (job && ["queued", "running"].includes(job.status)) setActiveJobId((current) => current ?? job.id);
+  }, [data?.verified_job]);
+
+  useEffect(() => {
+    if (!activeJobId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/v2/tasks/${encodeURIComponent(activeJobId)}`, { cache: "no-store" });
+        if (!response.ok) throw new Error(await responseMessage(response, "The Verified Action Plan status could not be checked."));
+        const body = await response.json() as TaskStatusPayload;
+        if (body.job_id !== activeJobId || !["queued", "running", "succeeded", "failed"].includes(String(body.status))) {
+          throw new Error("The Verified Action Plan returned an invalid status.");
+        }
+        if (cancelled) return;
+        setTaskMessage(typeof body.message === "string" && body.message ? body.message : "Generating your Verified Action Plan…");
+        if (body.status === "succeeded") {
+          const reportId = typeof body.database_report_id === "string"
+            ? body.database_report_id
+            : typeof body.report?.report_version?.report_id === "string" ? body.report.report_version.report_id : null;
+          if (!reportId) throw new Error("The report finished but its saved report ID is unavailable.");
+          setActiveJobId(null);
+          go(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(reportId)}`);
+          return;
+        }
+        if (body.status === "failed") {
+          setActiveJobId(null);
+          setTaskMessage("Generation failed. Checking whether your credit was returned…");
+          await load();
+          return;
+        }
+        timer = setTimeout(poll, 4000);
+      } catch (value) {
+        if (!cancelled) {
+          setTaskMessage(value instanceof Error ? value.message : "The Verified Action Plan status could not be checked.");
+          timer = setTimeout(poll, 4000);
+        }
+      }
+    };
+    void poll();
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
+  }, [activeJobId, caseId, go, load]);
+
+  useEffect(() => {
+    if (paymentHandled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const paymentId = params.get("payment_id");
+    if (params.get("payment") !== "return" || !paymentId) return;
+    paymentHandled.current = true;
+    actionLock.current = true;
+    setActionBusy("confirm");
+    setTaskMessage("Confirming your credit purchase…");
+    void (async () => {
+      try {
+        const response = await fetch(`/api/v2/cases/${encodeURIComponent(caseId)}/verified-credit/checkout/confirm`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ payment_id: paymentId }),
+        });
+        if (!response.ok) throw new Error(await responseMessage(response, "The payment could not be confirmed yet."));
+        setTaskMessage("1 credit added. You can generate when you are ready.");
+        await load();
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.search = "";
+        window.history.replaceState(null, "", cleanUrl.pathname);
+      } catch (value) {
+        setTaskMessage(value instanceof Error ? value.message : "The payment could not be confirmed yet.");
+      } finally {
+        actionLock.current = false;
+        setActionBusy(null);
+      }
+    })();
+  }, [caseId, load]);
+
   function refresh() {
     setLoading(true);
     setRevision((value) => value + 1);
@@ -194,18 +312,81 @@ export function ConnectionCenter({
 
   function handleAction(next: ConnectionCenterAction) {
     if (next.code === "create_prospect_report" || next.code === "confirm_public_gbp") {
-      window.location.assign("/cases/new");
+      go("/cases/new");
       return;
     }
     if (next.code === "view_evidence" && data?.coverage.parent_report_id) {
-      window.location.assign(`/cases/${caseId}/reports/${data.coverage.parent_report_id}`);
+      go(`/cases/${caseId}/reports/${data.coverage.parent_report_id}`);
+      return;
+    }
+    if (next.code === "open_verified_report" && data?.verified_job?.report_id) {
+      go(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(data.verified_job.report_id)}`);
       return;
     }
     openManager();
   }
 
+  async function generateVerified() {
+    if (actionLock.current || !data || !window.confirm("Generate a Verified Action Plan now? This uses 1 credit.")) return;
+    actionLock.current = true;
+    setActionBusy("generate");
+    setTaskMessage("");
+    try {
+      const jobId = crypto.randomUUID();
+      const headers: Record<string, string> = {
+        "content-type": "application/json",
+        "x-searchtrust-job-id": jobId,
+        "idempotency-key": `verified:${caseId}:${jobId}`,
+      };
+      if (data.verified_job?.status === "failed") headers["x-searchtrust-previous-job-id"] = data.verified_job.id;
+      const response = await fetch(`/api/v2/cases/${encodeURIComponent(caseId)}/verified-analysis`, {
+        method: "POST", headers, body: "{}",
+      });
+      if (!response.ok) throw new Error(await responseMessage(response, "The Verified Action Plan could not be started."));
+      const body = await response.json() as { job_id?: unknown };
+      if (body.job_id !== jobId) throw new Error("The Verified Action Plan returned an invalid task ID.");
+      setTaskMessage("Verified Action Plan queued…");
+      setActiveJobId(jobId);
+      await load();
+    } catch (value) {
+      setTaskMessage(value instanceof Error ? value.message : "The Verified Action Plan could not be started.");
+    } finally {
+      actionLock.current = false;
+      setActionBusy(null);
+    }
+  }
+
+  async function buyCredit() {
+    if (actionLock.current) return;
+    actionLock.current = true;
+    setActionBusy("checkout");
+    setTaskMessage("");
+    try {
+      const response = await fetch(`/api/v2/cases/${encodeURIComponent(caseId)}/verified-credit/checkout`, { method: "POST" });
+      if (!response.ok) throw new Error(await responseMessage(response, "Secure checkout could not be opened."));
+      const body = await response.json() as { checkout_url?: unknown };
+      const checkoutUrl = safeCheckoutUrl(body.checkout_url);
+      if (!checkoutUrl) throw new Error("Secure checkout returned an invalid address.");
+      go(checkoutUrl);
+    } catch (value) {
+      setTaskMessage(value instanceof Error ? value.message : "Secure checkout could not be opened.");
+      actionLock.current = false;
+      setActionBusy(null);
+    }
+  }
+
+  function primaryAction() {
+    const next = data?.coverage.next_action;
+    if (!next) return;
+    if (next.code === "generate_verified_plan") void generateVerified();
+    else if (next.code === "buy_verified_credit") void buyCredit();
+    else handleAction(next);
+  }
+
   const current = data?.case ?? { business_name: businessName, site_url: siteUrl };
-  const progress = data ? Math.round((data.coverage.ready_source_count / data.coverage.required_source_count) * 100) : 0;
+  const generationActive = Boolean(activeJobId || (data?.verified_job && ["queued", "running"].includes(data.verified_job.status)));
+  const primaryDisabled = loading || actionBusy !== null || generationActive || data?.coverage.next_action.code === "wait_for_verified_analysis";
+  const returnedCredit = data?.verified_job?.status === "failed" && data.verified_job.charge_state === "compensated";
 
   return <main className="min-h-screen bg-[#f3f4ed] px-4 py-8 text-[#1c251b] sm:px-6 sm:py-12">
     <div className="mx-auto max-w-7xl">
@@ -239,20 +420,25 @@ export function ConnectionCenter({
             </div>
             {data ? <>
               <p className="mt-3 text-[#c7d0c3]">{data.coverage.verified_core_ready
-                ? "All required evidence is healthy and matched to this Case."
-                : `${data.coverage.ready_source_count} of ${data.coverage.required_source_count} required sources are ready.`}</p>
-              <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={3} aria-valuenow={data.coverage.ready_source_count} aria-label="Verified Core sources ready">
-                <div className="h-full rounded-full bg-[#b8e626] transition-[width]" style={{ width: `${progress}%` }} />
-              </div>
+                ? "Ready to generate. All required evidence is healthy and matched to this Case."
+                : "Complete the required source shown below before generating."}</p>
               {!data.coverage.verified_core_ready && data.coverage.blockers[0] && <p className="mt-4 text-sm text-[#d6ddd3]">Next: {data.coverage.blockers[0].message}</p>}
             </> : <p className="mt-3 text-[#c7d0c3]">Loading the latest source status…</p>}
           </div>
-          <button type="button" disabled className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#b8e626] px-6 py-3 font-semibold text-[#182218] disabled:cursor-not-allowed disabled:opacity-60" title="Verified analysis generation is delivered in the next milestone">
-            <LockKeyhole className="h-4 w-4" aria-hidden="true" />
-            {data?.coverage.verified_core_ready ? "Ready — generation coming next" : "Generate Verified Action Plan"}
+          <button type="button" onClick={primaryAction} disabled={primaryDisabled} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#b8e626] px-6 py-3 font-semibold text-[#182218] transition hover:bg-[#c8ef4a] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#b8e626]/30 disabled:cursor-not-allowed disabled:opacity-60">
+            {data?.coverage.next_action.code === "buy_verified_credit" ? <CreditCard className="h-4 w-4" aria-hidden="true" /> : <FileCheck2 className="h-4 w-4" aria-hidden="true" />}
+            {actionBusy === "checkout" ? "Opening secure checkout…"
+              : actionBusy === "generate" ? "Starting…"
+                : generationActive ? "Generating Verified Action Plan…"
+                  : data?.coverage.next_action.label ?? "Check readiness"}
           </button>
         </div>
+        {data && <p className="mt-5 text-sm text-[#c7d0c3]">Account balance: <span className="font-semibold text-white">{data.billing.audit_credits} {data.billing.audit_credits === 1 ? "credit" : "credits"}</span></p>}
       </section>
+
+      <div aria-live="polite" aria-atomic="true" className="mt-4 min-h-6 text-sm text-[#53604f]">
+        {returnedCredit ? "Generation failed. 1 credit returned. You can try again when ready." : taskMessage}
+      </div>
 
       {loading && !data && <div role="status" className="mt-8 grid min-h-64 place-items-center rounded-2xl border border-[#d9ded3] bg-white text-[#64705f]">
         <span className="inline-flex items-center gap-3"><LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" /> Loading connection status…</span>
@@ -263,21 +449,13 @@ export function ConnectionCenter({
           {data.sources.map((source) => <SourceCard key={source.source_key} source={source} onAction={handleAction} />)}
         </section>
 
-        <details className="group mt-6 rounded-2xl border border-[#d9ded3] bg-white p-5">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-            <div><p className="font-semibold">Official GBP Performance</p><p className="mt-1 text-sm text-[#687362]">Optional owner-only data for Full Evidence. It never blocks Verified Core.</p></div>
-            <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(data.optional_sources[0])}`}>{STATUS_LABELS[data.optional_sources[0].user_status]}</span>
-          </summary>
-          <div className="mt-5 border-t border-[#e8ebe4] pt-5"><SourceCard source={data.optional_sources[0]} onAction={handleAction} /></div>
-        </details>
-
         <section className="mt-7 rounded-2xl border border-[#d9ded3] bg-white p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold">Next required action</h2>
-              <p className="mt-2 text-sm leading-6 text-[#687362]">{data.coverage.verified_core_ready
-                ? "Verified Core is ready. Generation remains safely locked until the verified-analysis milestone is released."
-                : data.coverage.blockers[0]?.message}</p>
+              <p className="mt-2 text-sm leading-6 text-[#687362]">{generationActive
+                ? taskMessage || "Your Verified Action Plan is being generated. You can safely leave and return to this page."
+                : data.coverage.verified_core_ready ? data.coverage.next_action.label : data.coverage.blockers[0]?.message}</p>
             </div>
             {!data.coverage.verified_core_ready && <button type="button" onClick={() => handleAction(data.coverage.next_action)} className="min-h-11 rounded-xl bg-[#182218] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#283627] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#b8e626]/30">
               {data.coverage.next_action.label}

@@ -40,6 +40,7 @@ function input(): ConnectionCenterProjectionInput {
       public_gbp_fetched_at: "2026-09-07T09:30:00.000Z",
       public_gbp_health_status: "healthy",
       public_gbp_identity_match_status: "matched",
+      current_lineage: true,
     },
     connections: [
       { id: ids.gscConnection, status: "active", granted_scopes: sourceScopes.gsc },
@@ -54,6 +55,8 @@ function input(): ConnectionCenterProjectionInput {
       { id: "00000000-0000-4000-8000-000000000011", binding_id: ids.gscBinding, source_type: "gsc", health_status: "healthy", health_reasons: [], fetched_at: "2026-09-07T11:00:00.000Z", expires_at: "2026-10-07T11:00:00.000Z", coverage_start: "2026-03-10", coverage_end: "2026-09-05", raw_content_deleted_at: null },
       { id: "00000000-0000-4000-8000-000000000012", binding_id: ids.ga4Binding, source_type: "ga4", health_status: "healthy", health_reasons: [], fetched_at: "2026-09-07T11:00:00.000Z", expires_at: "2026-10-07T11:00:00.000Z", coverage_start: "2026-03-10", coverage_end: "2026-09-05", raw_content_deleted_at: null },
     ],
+    audit_credits: 1,
+    verified_job: null,
     flags: { gsc_sync_enabled: true, ga4_sync_enabled: true, official_gbp_sync_enabled: false, verified_generation_enabled: false },
   };
 }
@@ -198,6 +201,50 @@ describe("Connection Center projector", () => {
     value.flags.verified_generation_enabled = true;
     expect(projectConnectionCenter(value, now).coverage.next_action.code).toBe("generate_verified_plan");
 
+    value.snapshots = value.snapshots.filter((item) => item.source_type !== "ga4");
+    expect(projectConnectionCenter(value, now).coverage.next_action.code).toBe("sync_source");
+  });
+
+  it("uses current lineage instead of requiring the Prospect to remain the latest report", () => {
+    const value = input();
+    value.case.latest_report_id = "00000000-0000-4000-8000-000000000099";
+    expect(projectConnectionCenter(value, now).coverage.verified_core_ready).toBe(true);
+    value.parent_report!.current_lineage = false;
+    expect(projectConnectionCenter(value, now).coverage.blockers[0].code).toBe("PARENT_REPORT_MISSING");
+  });
+
+  it("projects credit, purchase, active, compensated retry and completed report actions", () => {
+    const value = input();
+    value.flags.verified_generation_enabled = true;
+    expect(projectConnectionCenter(value, now).coverage.next_action).toMatchObject({
+      code: "generate_verified_plan",
+      label: "Generate Verified Action Plan · uses 1 credit",
+    });
+
+    value.audit_credits = 0;
+    expect(projectConnectionCenter(value, now).coverage.next_action).toMatchObject({
+      code: "buy_verified_credit",
+      label: "Buy 1 credit · $19",
+    });
+
+    value.verified_job = { id: "job-1", status: "running", report_id: null, charge_state: "reserved", error_code: null };
+    expect(projectConnectionCenter(value, now).coverage.next_action.code).toBe("wait_for_verified_analysis");
+
+    value.verified_job = { id: "job-1", status: "failed", report_id: null, charge_state: "compensated", error_code: "V22_PROVIDER_FAILED" };
+    value.audit_credits = 1;
+    const failed = projectConnectionCenter(value, now);
+    expect(failed.verified_job?.charge_state).toBe("compensated");
+    expect(failed.coverage.next_action.code).toBe("generate_verified_plan");
+
+    value.verified_job = { id: "job-1", status: "succeeded", report_id: "report-2", charge_state: "consumed", error_code: null };
+    expect(projectConnectionCenter(value, now).coverage.next_action.code).toBe("open_verified_report");
+  });
+
+  it("keeps source blockers ahead of billing and prior verified jobs", () => {
+    const value = input();
+    value.flags.verified_generation_enabled = true;
+    value.audit_credits = 0;
+    value.verified_job = { id: "job-1", status: "succeeded", report_id: "report-2", charge_state: "consumed", error_code: null };
     value.snapshots = value.snapshots.filter((item) => item.source_type !== "ga4");
     expect(projectConnectionCenter(value, now).coverage.next_action.code).toBe("sync_source");
   });

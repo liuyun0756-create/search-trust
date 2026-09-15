@@ -65,6 +65,8 @@ function response(ready = false): ConnectionCenterResponse {
   return {
     schema_version: "connection_center_v1",
     case: { id: "case-1", business_name: "Example Plumbing", site_url: "https://example.test", updated_at: "2026-09-07T10:00:00.000Z" },
+    billing: { audit_credits: ready ? 1 : 0 },
+    verified_job: null,
     coverage: {
       verified_core_ready: ready,
       full_evidence_ready: false,
@@ -84,22 +86,27 @@ function response(ready = false): ConnectionCenterResponse {
 }
 
 describe("Connection Center", () => {
-  it("renders the approved source order, progress, next action and optional fold", () => {
+  it("renders the approved source order and next blocker without a coverage score", () => {
     const html = renderToStaticMarkup(<ConnectionCenter caseId="case-1" businessName="Example Plumbing" siteUrl="https://example.test" initialData={response()} />);
     expect(html.indexOf('data-source-key="public_gbp"')).toBeLessThan(html.indexOf('data-source-key="gsc"'));
     expect(html.indexOf('data-source-key="gsc"')).toBeLessThan(html.indexOf('data-source-key="ga4"'));
-    expect(html).toContain("1 of 3 required sources are ready");
+    expect(html).toContain("Complete the required source shown below before generating");
     expect(html).toContain("Choose Search Console resource");
-    expect(html).toContain("Official GBP Performance");
-    expect(html).toContain("Optional owner-only data for Full Evidence");
+    expect(html).not.toContain("Official GBP Performance");
+    expect(html).not.toContain("progressbar");
     expect(html).toContain("Technical details");
   });
 
-  it("shows a safely disabled generation state when the three-source gate is ready", () => {
-    const html = renderToStaticMarkup(<ConnectionCenter caseId="case-1" businessName="Example Plumbing" siteUrl="https://example.test" initialData={response(true)} />);
-    expect(html).toContain("All required evidence is healthy and matched to this Case");
-    expect(html).toContain("Ready — generation coming next");
-    expect(html).toContain('disabled=""');
+  it("shows the enabled one-credit generation action when the three-source gate is ready", () => {
+    const value = response(true);
+    value.coverage.verified_generation_enabled = true;
+    value.coverage.next_action = { code: "generate_verified_plan", label: "Generate Verified Action Plan · uses 1 credit", source_key: null };
+    const html = renderToStaticMarkup(<ConnectionCenter caseId="case-1" businessName="Example Plumbing" siteUrl="https://example.test" initialData={value} />);
+    expect(html).toContain("Ready to generate. All required evidence is healthy and matched to this Case");
+    expect(html).toContain("Generate Verified Action Plan · uses 1 credit");
+    const labelAt = html.indexOf("Generate Verified Action Plan · uses 1 credit");
+    const cta = html.slice(html.lastIndexOf("<button", labelAt), html.indexOf("</button>", labelAt));
+    expect(cta).not.toContain('disabled=""');
     expect(html).not.toContain("Choose Search Console resource");
   });
 });

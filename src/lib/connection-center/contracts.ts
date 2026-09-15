@@ -25,6 +25,8 @@ export type ConnectionCenterActionCode =
   | "retry_sync"
   | "review_health"
   | "view_evidence"
+  | "open_verified_report"
+  | "buy_verified_credit"
   | "wait_for_sync"
   | "wait_for_verified_analysis"
   | "generate_verified_plan";
@@ -91,6 +93,16 @@ export interface ConnectionCenterResponse {
     site_url: string;
     updated_at: string;
   };
+  billing: {
+    audit_credits: number;
+  };
+  verified_job: {
+    id: string;
+    status: "queued" | "running" | "succeeded" | "failed";
+    report_id: string | null;
+    charge_state: "reserved" | "consumed" | "compensated";
+    error_code: string | null;
+  } | null;
   coverage: {
     verified_core_ready: boolean;
     full_evidence_ready: boolean;

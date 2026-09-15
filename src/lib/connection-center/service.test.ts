@@ -14,10 +14,12 @@ function read(): ConnectionCenterRead {
       parent_report: null,
       connections: [],
       bindings: [],
-      jobs: [],
-      snapshots: [],
+    jobs: [],
+    snapshots: [],
+    audit_credits: 0,
+    verified_job: null,
     },
-    revision: { case_updated_at: "2026-09-07T10:00:00Z", binding_signature: "" },
+    revision: { case_updated_at: "2026-09-07T10:00:00Z", binding_signature: "", audit_credits: 0, verified_job_signature: "" },
   };
 }
 

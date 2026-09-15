@@ -76,6 +76,8 @@ export function connectionCenterFixture(state: "needs_resources" | "healthy" | "
   return {
     schema_version: "connection_center_v1",
     case: { id: E2E_IDS.caseId, business_name: "SearchTrust E2E Plumbing", site_url: E2E_IDS.siteUrl, updated_at: E2E_NOW },
+    billing: { audit_credits: ready ? 1 : 0 },
+    verified_job: null,
     coverage: {
       verified_core_ready: ready,
       full_evidence_ready: false,
