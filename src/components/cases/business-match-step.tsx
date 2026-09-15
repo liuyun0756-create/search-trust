@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, HelpCircle, MapPin, MinusCircle, Phone, Store } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 import type { BusinessIdentity, TargetMarket } from "@/lib/report-v22/generated/types";
 import type { BusinessConfirmation, IdentityComparisonStatus, PreflightResponse } from "@/lib/preflight-v22";
@@ -9,6 +9,7 @@ import type { BusinessConfirmation, IdentityComparisonStatus, PreflightResponse 
 interface BusinessMatchStepProps {
   preflight: PreflightResponse;
   submittedGbpUrl: string | null;
+  initialConfirmation?: BusinessConfirmation | null;
   onConfirm(value: BusinessConfirmation): void;
   onEditSource(): void;
 }
@@ -26,23 +27,26 @@ function normalizedDomain(url: string) {
   try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; }
 }
 
-export function BusinessMatchStep({ preflight, submittedGbpUrl, onConfirm, onEditSource }: BusinessMatchStepProps) {
+export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmation, onConfirm, onEditSource }: BusinessMatchStepProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const candidate = preflight.identity_candidates[selectedIndex];
-  const initialMarket = candidate?.business.primary_location ?? preflight.market_candidates[0]?.market;
-  const [businessName, setBusinessName] = useState(candidate?.business.business_name ?? "");
-  const [operatingModel, setOperatingModel] = useState<BusinessIdentity["operating_model"]>(candidate?.business.operating_model ?? "storefront");
-  const [service, setService] = useState(preflight.service_candidates[0]?.value ?? "");
-  const [location, setLocation] = useState(initialMarket?.display_name ?? "");
-  const [marketName, setMarketName] = useState(preflight.market_candidates[0]?.market.display_name ?? initialMarket?.display_name ?? "");
-  const confirmedGbpUrl = candidate?.business.public_gbp_url ?? submittedGbpUrl;
+  const discoveredMarket = preflight.market_candidates[0]?.market ?? candidate?.business.primary_location;
+  const initialPrimaryLocation = initialConfirmation?.business_identity.primary_location ?? candidate?.business.primary_location ?? discoveredMarket;
+  const initialTargetMarket = initialConfirmation?.target_market ?? discoveredMarket ?? initialPrimaryLocation;
+  const [businessName, setBusinessName] = useState(initialConfirmation?.business_identity.business_name ?? candidate?.business.business_name ?? "");
+  const [operatingModel, setOperatingModel] = useState<BusinessIdentity["operating_model"]>(initialConfirmation?.business_identity.operating_model ?? candidate?.business.operating_model ?? "storefront");
+  const [service, setService] = useState(initialConfirmation?.primary_service ?? preflight.service_candidates[0]?.value ?? "");
+  const [location, setLocation] = useState(initialPrimaryLocation?.display_name ?? "");
+  const [marketName, setMarketName] = useState(initialTargetMarket?.display_name ?? "");
+  const confirmedGbpUrl = initialConfirmation?.business_identity.public_gbp_url ?? candidate?.business.public_gbp_url ?? submittedGbpUrl;
   const gbpStatus = candidate?.business.public_gbp_url
     ? "Profile identified"
     : submittedGbpUrl
       ? "Profile link provided — verification pending"
       : "Not identified — coverage limited";
 
-  const baseMarket = useMemo(() => preflight.market_candidates[0]?.market ?? initialMarket, [initialMarket, preflight.market_candidates]);
+  const primaryLocationBase = initialPrimaryLocation;
+  const targetMarketBase = initialTargetMarket;
 
   function choose(index: number) {
     const next = preflight.identity_candidates[index];
@@ -54,21 +58,25 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, onConfirm, onEdi
     setMarketName(preflight.market_candidates[0]?.market.display_name ?? next.business.primary_location.display_name);
   }
 
-  function market(displayName: string): TargetMarket {
+  function market(displayName: string, baseMarket: TargetMarket | undefined): TargetMarket {
+    const normalizedDisplayName = displayName.trim();
+    if (baseMarket && normalizedDisplayName === baseMarket.display_name.trim()) {
+      return { ...baseMarket, display_name: normalizedDisplayName };
+    }
     return {
-      display_name: displayName.trim(),
+      display_name: normalizedDisplayName,
       country_code: baseMarket?.country_code ?? "US",
-      region: baseMarket?.region ?? null,
-      city: baseMarket?.city ?? null,
-      postal_code: baseMarket?.postal_code ?? null,
-      latitude: baseMarket?.latitude ?? null,
-      longitude: baseMarket?.longitude ?? null,
+      region: null,
+      city: null,
+      postal_code: null,
+      latitude: null,
+      longitude: null,
     };
   }
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    const primaryLocation = market(location);
+    const primaryLocation = market(location, primaryLocationBase);
     onConfirm({
       business_identity: {
         business_name: businessName.trim(),
@@ -79,7 +87,7 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, onConfirm, onEdi
         public_gbp_url: confirmedGbpUrl,
       },
       primary_service: service.trim(),
-      target_market: market(marketName),
+      target_market: market(marketName, targetMarketBase),
     });
   }
 

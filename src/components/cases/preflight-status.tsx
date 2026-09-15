@@ -6,9 +6,11 @@ interface PreflightStatusProps {
   message: string;
   progress?: number;
   onRetry?: () => void;
+  onEdit?: () => void;
+  editLabel?: string;
 }
 
-export function PreflightStatus({ kind, title, message, progress, onRetry }: PreflightStatusProps) {
+export function PreflightStatus({ kind, title, message, progress, onRetry, onEdit, editLabel = "Edit details" }: PreflightStatusProps) {
   return (
     <section aria-live="polite" className="rounded-2xl border border-[#dfe4d5] bg-white p-6 shadow-[0_18px_55px_rgba(31,39,27,0.06)] sm:p-8">
       <div className="flex items-start gap-4">
@@ -26,10 +28,19 @@ export function PreflightStatus({ kind, title, message, progress, onRetry }: Pre
               <p className="mt-2 text-xs font-semibold text-[#778177]">{progress}% complete</p>
             </div>
           )}
-          {onRetry && (
-            <button type="button" onClick={onRetry} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1c241c] px-4 py-2.5 text-sm font-bold text-white outline-none transition hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/35">
-              <RotateCcw size={15} /> Try again
-            </button>
+          {(onRetry || onEdit) && (
+            <div className="mt-5 flex flex-wrap gap-3">
+              {onRetry && (
+                <button type="button" onClick={onRetry} className="inline-flex items-center gap-2 rounded-xl bg-[#1c241c] px-4 py-2.5 text-sm font-bold text-white outline-none transition hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/35">
+                  <RotateCcw size={15} /> Try again
+                </button>
+              )}
+              {onEdit && (
+                <button type="button" onClick={onEdit} className="rounded-xl border border-[#cad2c5] bg-white px-4 py-2.5 text-sm font-bold text-[#334033] outline-none transition hover:border-[#9aaa92] focus-visible:ring-4 focus-visible:ring-[#A5D020]/35">
+                  {editLabel}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

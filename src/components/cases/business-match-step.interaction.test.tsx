@@ -50,4 +50,43 @@ describe("BusinessMatchStep interactions", () => {
       business_identity: expect.objectContaining({ public_gbp_url: E2E_IDS.gbpUrl }),
     }));
   });
+
+  it("restores the last confirmed scope and clears stale coordinates when the market label changes", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <BusinessMatchStep
+        preflight={preflightFixture}
+        submittedGbpUrl={E2E_IDS.gbpUrl}
+        initialConfirmation={{
+          business_identity: {
+            ...preflightFixture.identity_candidates[0].business,
+            business_name: "SearchTrust",
+          },
+          primary_service: "Local SEO audit software",
+          target_market: E2E_MARKET,
+        }}
+        onConfirm={onConfirm}
+        onEditSource={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Business name")).toHaveValue("SearchTrust");
+    expect(screen.getByLabelText("Primary service")).toHaveValue("Local SEO audit software");
+    await user.clear(screen.getByLabelText("Target market"));
+    await user.type(screen.getByLabelText("Target market"), "Brooklyn, NY");
+    await user.click(screen.getByRole("button", { name: /Confirm & find competitors/ }));
+
+    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
+      target_market: {
+        display_name: "Brooklyn, NY",
+        country_code: "US",
+        region: null,
+        city: null,
+        postal_code: null,
+        latitude: null,
+        longitude: null,
+      },
+    }));
+  });
 });
