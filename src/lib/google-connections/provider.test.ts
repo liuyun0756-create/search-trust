@@ -104,6 +104,7 @@ describe("Google OAuth HTTP provider", () => {
   });
 
   it("maps invalid_grant separately and never includes raw provider content", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const fetcher = vi.fn(async () => jsonResponse({
       error: "invalid_grant",
       error_description: "authorization code fake-code access_token=secret",
@@ -117,6 +118,10 @@ describe("Google OAuth HTTP provider", () => {
       expect((error as Error).message).not.toContain("fake-code");
       expect((error as Error).message).not.toContain("secret");
     }
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('"provider_code":"invalid_grant"'));
+    expect(log.mock.calls.flat().join(" ")).not.toContain("fake-code");
+    expect(log.mock.calls.flat().join(" ")).not.toContain("secret");
+    log.mockRestore();
   });
 
   it("uses a stable safe error for malformed success responses and network failures", async () => {

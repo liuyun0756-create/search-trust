@@ -87,7 +87,21 @@ async function limitedJson(response: Response): Promise<Record<string, unknown>>
   return {};
 }
 
-function providerFailure(body: Record<string, unknown>): GoogleProviderFailure {
+function providerFailure(
+  body: Record<string, unknown>,
+  context: "token" | "userinfo" | "revoke",
+  status: number,
+): GoogleProviderFailure {
+  const providerCode = typeof body.error === "string"
+    ? body.error.replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 80) || "unknown"
+    : "unknown";
+  console.error(JSON.stringify({
+    level: "error",
+    message: "Google OAuth provider request failed",
+    context,
+    status,
+    provider_code: providerCode,
+  }));
   if (body.error === "access_denied") return new GoogleProviderFailure("access_denied");
   if (body.error === "invalid_grant") return new GoogleProviderFailure("invalid_grant");
   return new GoogleProviderFailure("provider_error");
@@ -174,7 +188,7 @@ export class GoogleOAuthHttpProvider implements GoogleOAuthProvider {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
       const body = await limitedJson(response);
-      if (!response.ok) throw providerFailure(body);
+      if (!response.ok) throw providerFailure(body, "userinfo", response.status);
       if (typeof body.sub !== "string" || !body.sub.trim()) throw unavailable();
       return {
         subject: body.sub,
@@ -199,7 +213,7 @@ export class GoogleOAuthHttpProvider implements GoogleOAuthProvider {
       if (response.ok) return;
       const body = await limitedJson(response);
       if (response.status === 400 && body.error === "invalid_token") return;
-      throw providerFailure(body);
+      throw providerFailure(body, "revoke", response.status);
     } catch (error) {
       if (error instanceof GoogleConnectionError) throw error;
       throw unavailable();
@@ -216,7 +230,7 @@ export class GoogleOAuthHttpProvider implements GoogleOAuthProvider {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
       const payload = await limitedJson(response);
-      if (!response.ok) throw providerFailure(payload);
+      if (!response.ok) throw providerFailure(payload, "token", response.status);
       return normalizeTokenSet(payload, fallbackScopes);
     } catch (error) {
       if (error instanceof GoogleConnectionError) throw error;
@@ -243,7 +257,7 @@ export class GoogleOAuthHttpTokenRevoker implements GoogleTokenRevoker {
       if (response.ok) return;
       const body = await limitedJson(response);
       if (response.status === 400 && body.error === "invalid_token") return;
-      throw providerFailure(body);
+      throw providerFailure(body, "revoke", response.status);
     } catch (error) {
       if (error instanceof GoogleConnectionError) throw error;
       throw unavailable();

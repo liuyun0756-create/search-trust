@@ -177,6 +177,7 @@ describe("Google connection HTTP handlers", () => {
       { headers: { cookie: `${GOOGLE_OAUTH_COOKIE_NAME}=signed-binding` } },
     ));
     const location = response.headers.get("location")!;
+    expect(new URL(location).pathname).toBe("/reports");
     expect(location).toContain("code=GOOGLE_OAUTH_ACCESS_DENIED");
     expect(location).not.toContain("secret-state");
     expect(location).not.toContain("private");

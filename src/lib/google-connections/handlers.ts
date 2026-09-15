@@ -209,7 +209,7 @@ export function createGoogleOAuthCallbackHandler(dependencies: GoogleConnectionH
       try {
         response = NextResponse.redirect(redirectResult(
           safeBaseUrl(dependencies),
-          "/cases",
+          "/reports",
           "error",
           safe.code,
         ), { headers: noStoreHeaders(requestId) });
