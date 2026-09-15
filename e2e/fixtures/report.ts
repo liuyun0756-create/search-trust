@@ -28,7 +28,14 @@ function reportFixture(source: unknown, type: "prospect" | "verified"): SearchTr
     normalized_domain: "searchtrust-e2e.example.invalid",
     public_gbp_url: E2E_IDS.gbpUrl,
   };
-  report.report_version.report_id = type === "prospect" ? E2E_IDS.reportId : "e2000000-0000-4000-8000-000000000016";
+  report.report_version.report_id = type === "prospect" ? E2E_IDS.reportId : E2E_IDS.verifiedReportId;
+  if (type === "verified") {
+    report.report_version.parent_report_id = E2E_IDS.reportId;
+    report.version_diff.parent_report_id = E2E_IDS.reportId;
+    for (const entry of report.version_diff.entries ?? []) {
+      if (entry.previous_finding) entry.previous_finding.report_id = E2E_IDS.reportId;
+    }
+  }
   return report;
 }
 
@@ -56,5 +63,31 @@ export function analysisStatusFixture(state: "queued" | "running" | "succeeded" 
     created_at: E2E_NOW,
     deadline_at: "2099-09-10T08:15:00.000Z",
     updated_at: E2E_NOW,
+  };
+}
+
+export function verifiedAnalysisStatusFixture(
+  jobId: string,
+  state: "queued" | "running" | "succeeded" | "failed",
+) {
+  const fixture = analysisStatusFixture(state);
+  return {
+    ...fixture,
+    job_id: jobId,
+    message: state === "queued" ? "Verified Action Plan queued…"
+      : state === "running" ? "Generating your Verified Action Plan…"
+        : state === "succeeded" ? "Verified Action Plan ready."
+          : "The Verified generation stopped safely.",
+    report: null,
+    ...(state === "succeeded" ? { database_report_id: E2E_IDS.verifiedReportId } : {}),
+    ...(state === "failed" ? {
+      error: {
+        error_code: "V22_PROVIDER_FAILED",
+        user_message: "The Verified generation stopped safely.",
+        retryable: true,
+        stage: "failed",
+        diagnostic_id: E2E_IDS.marketSnapshotId,
+      },
+    } : {}),
   };
 }

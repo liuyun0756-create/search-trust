@@ -63,7 +63,15 @@ const optionalGbp: ConnectionCenterSource = {
   technical_status: { connection_status: null, binding_id: null, resource_id: null, resource_name: null, identity_match_status: "not_checked", job: null, snapshot: null, warnings: [] },
 };
 
-export function connectionCenterFixture(state: "needs_resources" | "healthy" | "mismatch" = "healthy"): ConnectionCenterResponse {
+export type VerifiedConnectionFixtureState = {
+  balance?: number;
+  job?: ConnectionCenterResponse["verified_job"];
+};
+
+export function connectionCenterFixture(
+  state: "needs_resources" | "healthy" | "mismatch" = "healthy",
+  verified: VerifiedConnectionFixtureState = {},
+): ConnectionCenterResponse {
   const gsc = googleSource("gsc", state !== "needs_resources");
   const ga4 = googleSource("ga4", state === "healthy");
   if (state === "mismatch") {
@@ -73,11 +81,26 @@ export function connectionCenterFixture(state: "needs_resources" | "healthy" | "
     ga4.technical_status.identity_match_status = "needs_confirmation";
   }
   const ready = state === "healthy";
+  const balance = verified.balance ?? (ready ? 1 : 0);
+  const verifiedJob = verified.job ?? null;
+  const jobActive = verifiedJob?.status === "queued" || verifiedJob?.status === "running"
+    || (verifiedJob?.status === "failed" && verifiedJob.charge_state === "reserved");
+  const nextAction = !ready
+    ? state === "mismatch"
+      ? { code: "confirm_identity" as const, label: "Review identity", source_key: "ga4" as const }
+      : { code: "select_resource" as const, label: "Select resource", source_key: "gsc" as const }
+    : jobActive
+      ? { code: "wait_for_verified_analysis" as const, label: "Verified Action Plan in progress", source_key: null }
+      : verifiedJob?.status === "succeeded" && verifiedJob.report_id
+        ? { code: "open_verified_report" as const, label: "Open latest Verified Action Plan", source_key: null }
+        : balance > 0
+          ? { code: "generate_verified_plan" as const, label: "Generate Verified Action Plan · uses 1 credit", source_key: null }
+          : { code: "buy_verified_credit" as const, label: "Buy 1 credit · $19", source_key: null };
   return {
     schema_version: "connection_center_v1",
     case: { id: E2E_IDS.caseId, business_name: "SearchTrust E2E Plumbing", site_url: E2E_IDS.siteUrl, updated_at: E2E_NOW },
-    billing: { audit_credits: ready ? 1 : 0 },
-    verified_job: null,
+    billing: { audit_credits: balance },
+    verified_job: verifiedJob,
     coverage: {
       verified_core_ready: ready,
       full_evidence_ready: false,
@@ -94,11 +117,7 @@ export function connectionCenterFixture(state: "needs_resources" | "healthy" | "
           ? { code: "confirm_identity", label: "Review identity", source_key: "ga4" }
           : { code: "select_resource", label: "Select resource", source_key: "gsc" },
       }],
-      next_action: ready
-        ? { code: "generate_verified_plan", label: "Generate verified plan", source_key: null }
-        : state === "mismatch"
-          ? { code: "confirm_identity", label: "Review identity", source_key: "ga4" }
-          : { code: "select_resource", label: "Select resource", source_key: "gsc" },
+      next_action: nextAction,
     },
     sources: [publicGbp, gsc, ga4],
     optional_sources: [optionalGbp],

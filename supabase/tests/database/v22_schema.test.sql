@@ -61,7 +61,7 @@ select ok((select bool_and(has_function_privilege('service_role',signature,'EXEC
   'public.persist_v22_verified_result(uuid,uuid,jsonb,integer)',
   'public.expire_v22_stale_verified_jobs(timestamptz,integer)'
 ]) as signatures(signature)), 'All Verified RPCs are service-role-only');
-select ok((select count(*)=5 from pg_constraint where conrelid='public.verified_analysis_inputs'::regclass and contype='f'), 'Verified input has job, Case, parent and two snapshot FKs');
+select ok((select count(*)=6 from pg_constraint where conrelid='public.verified_analysis_inputs'::regclass and contype='f'), 'Verified input has job, Case, parent and three snapshot FKs');
 
 select has_table('public', 'client_cases', 'v2.2 client_cases exists');
 select has_table('public', 'google_connections', 'v2.2 google_connections exists');

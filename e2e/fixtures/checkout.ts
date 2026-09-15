@@ -44,3 +44,29 @@ export const checkoutConfirmedFixture = {
 export const checkoutProviderErrorFixture = {
   error: { code: "CHECKOUT_UNAVAILABLE", message: "Secure checkout is temporarily unavailable." },
 } as const;
+
+export const VERIFIED_DODO_CHECKOUT_URL =
+  "https://checkout.dodopayments.com/session/searchtrust-e2e-verified-credit";
+export const VERIFIED_PAYMENT_ID = "searchtrust_e2e_verified_payment";
+
+export const verifiedCreditCheckoutCreatedFixture = {
+  order_id: E2E_IDS.orderId,
+  checkout_session_id: "searchtrust_e2e_verified_checkout_session",
+  checkout_url: VERIFIED_DODO_CHECKOUT_URL,
+} as const;
+
+export const verifiedCreditCheckoutConfirmedFixture = {
+  ok: true,
+  payment_id: VERIFIED_PAYMENT_ID,
+  credits_added: 1,
+  audit_credits: 1,
+  already_confirmed: false,
+} as const;
+
+export function verifiedDodoCheckoutFixture(returnUrl: string): string {
+  const safeReturnUrl = JSON.stringify(returnUrl).slice(1, -1);
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Local Dodo checkout fixture</title></head>
+    <body><main><h1>Local Dodo checkout fixture</h1>
+    <p>This deterministic fixture performs no payment or external request.</p>
+    <a href="${safeReturnUrl}">Complete synthetic $19 purchase</a></main></body></html>`;
+}

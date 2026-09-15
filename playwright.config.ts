@@ -45,6 +45,7 @@ export default defineConfig({
       GOOGLE_GSC_SYNC_ENABLED: "true",
       GOOGLE_GA4_SYNC_ENABLED: "true",
       GOOGLE_GBP_SYNC_ENABLED: "true",
+      GOOGLE_VERIFIED_ANALYSIS_ENABLED: "true",
     },
   },
 });

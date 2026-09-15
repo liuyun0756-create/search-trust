@@ -14,7 +14,9 @@ test.describe("Google authorization and identity", () => {
     await expect(page.getByRole("heading", { name: "Simulated Google consent" })).toBeVisible();
     await page.getByRole("link", { name: "Authorize" }).click();
     await expect(page).toHaveURL(/google_connection=success&code=AUTHORIZED/);
-    await expect(page.getByRole("progressbar", { name: "Verified Core sources ready" })).toHaveAttribute("aria-valuenow", "3");
+    await expect(page.getByText("All required evidence is healthy and matched to this Case.")).toBeVisible();
+    await expect(page.locator('[data-source-key="public_gbp"], [data-source-key="gsc"], [data-source-key="ga4"]'))
+      .toHaveCount(3);
   });
 
   test("models user denial without sending a Google request", async ({ page }) => {

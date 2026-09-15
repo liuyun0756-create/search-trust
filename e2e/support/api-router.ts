@@ -3,14 +3,19 @@ import type { Page, Route } from "@playwright/test";
 import { parseAnalyzeRequest } from "../../src/lib/analysis-v22/validate";
 import { validateCreateCaseRequest } from "../../src/lib/cases/contracts";
 import { parseDiscoveryRequest, parsePreflightRequest } from "../../src/lib/preflight-v22/validate";
-import { E2E_IDS } from "../fixtures/ids";
-import { analysisStatusFixture, prospectReportFixture, verifiedReportFixture } from "../fixtures/report";
+import { assertSyntheticFixtureValue, E2E_IDS } from "../fixtures/ids";
+import { analysisStatusFixture, prospectReportFixture, verifiedAnalysisStatusFixture, verifiedReportFixture } from "../fixtures/report";
 import {
   caseFixture,
   checkoutConfirmedFixture,
   checkoutCreatedFixture,
   checkoutProviderErrorFixture,
   checkoutStateFixture,
+  VERIFIED_DODO_CHECKOUT_URL,
+  VERIFIED_PAYMENT_ID,
+  verifiedCreditCheckoutConfirmedFixture,
+  verifiedCreditCheckoutCreatedFixture,
+  verifiedDodoCheckoutFixture,
 } from "../fixtures/checkout";
 import {
   competitorCandidates,
@@ -38,6 +43,7 @@ export type CheckoutScenario = "success" | "cancelled" | "provider_error";
 export type AnalysisScenario = "success" | "failure" | "interrupted";
 export type GoogleScenario = "success" | "denied" | "mismatch" | "revoked";
 export type ShareScenario = "active" | "revoked";
+export type VerifiedScenario = "success" | "first_failure";
 
 export interface LocalApiScenarioOptions {
   competitors?: CompetitorScenario;
@@ -45,6 +51,8 @@ export interface LocalApiScenarioOptions {
   analysis?: AnalysisScenario;
   google?: GoogleScenario;
   share?: ShareScenario;
+  verified?: VerifiedScenario;
+  verifiedBalance?: number;
 }
 
 export interface FixtureRequest {
@@ -84,6 +92,15 @@ export class LocalApiScenario {
   private caseId: string = E2E_IDS.caseId;
   private discoveryJobId: string = E2E_IDS.discoveryJobId;
   private analysisJobId: string = E2E_IDS.analysisJobId;
+  private verifiedBalance: number;
+  private verifiedCheckoutPaid = false;
+  private verifiedAttempt = 0;
+  private verifiedFailureCompensated = false;
+  private verifiedPoll = 0;
+  private verifiedJobIds: string[] = [];
+  private verifiedPreviousJobId: string | null = null;
+  private verifiedJobStatus: "queued" | "running" | "succeeded" | "failed" | null = null;
+  private verifiedChargeState: "reserved" | "consumed" | "compensated" | null = null;
 
   constructor(options: LocalApiScenarioOptions = {}) {
     this.options = {
@@ -92,8 +109,11 @@ export class LocalApiScenario {
       analysis: options.analysis ?? "success",
       google: options.google ?? "success",
       share: options.share ?? "active",
+      verified: options.verified ?? "success",
+      verifiedBalance: options.verifiedBalance ?? 1,
     };
     this.shareRevoked = this.options.share === "revoked";
+    this.verifiedBalance = this.options.verifiedBalance;
   }
 
   snapshot() {
@@ -106,6 +126,13 @@ export class LocalApiScenario {
       caseId: this.caseId,
       discoveryJobId: this.discoveryJobId,
       analysisJobId: this.analysisJobId,
+      verifiedBalance: this.verifiedBalance,
+      verifiedCheckoutPaid: this.verifiedCheckoutPaid,
+      verifiedAttempt: this.verifiedAttempt,
+      verifiedFailureCompensated: this.verifiedFailureCompensated,
+      verifiedJobIds: Object.freeze([...this.verifiedJobIds]),
+      verifiedPreviousJobId: this.verifiedPreviousJobId,
+      verifiedJobStatus: this.verifiedJobStatus,
     });
   }
 
@@ -186,12 +213,84 @@ export class LocalApiScenario {
     if (key === `GET /api/v2/cases/${E2E_IDS.caseId}/reports/${E2E_IDS.reportId}`) {
       return { status: 200, body: prospectReportFixture };
     }
-    if (key === `GET /api/v2/cases/${E2E_IDS.caseId}/reports/e2000000-0000-4000-8000-000000000016`) {
+    if (key === `GET /api/v2/cases/${E2E_IDS.caseId}/reports/${E2E_IDS.verifiedReportId}`) {
       return { status: 200, body: verifiedReportFixture };
     }
     if (key === `GET /api/v2/cases/${E2E_IDS.caseId}/connection-center`) {
       const state = this.options.google === "mismatch" ? "mismatch" : this.options.google === "success" ? "healthy" : "needs_resources";
-      return { status: 200, body: connectionCenterFixture(state) };
+      if (url.searchParams.has("tracked_job_id") && this.verifiedJobStatus === "failed") {
+        this.verifiedFailureCompensated = true;
+        this.verifiedChargeState = "compensated";
+        this.verifiedBalance = 1;
+      }
+      const latestJobId = this.verifiedJobIds.at(-1) ?? null;
+      const verifiedJob = latestJobId && this.verifiedJobStatus && this.verifiedChargeState
+        ? {
+          id: latestJobId,
+          status: this.verifiedJobStatus,
+          report_id: this.verifiedJobStatus === "succeeded" ? E2E_IDS.verifiedReportId : null,
+          charge_state: this.verifiedChargeState,
+          error_code: this.verifiedJobStatus === "failed" ? "V22_PROVIDER_FAILED" : null,
+        }
+        : null;
+      return { status: 200, body: connectionCenterFixture(state, { balance: this.verifiedBalance, job: verifiedJob }) };
+    }
+    if (key === `POST /api/v2/cases/${E2E_IDS.caseId}/verified-credit/checkout`) {
+      return { status: 201, body: verifiedCreditCheckoutCreatedFixture };
+    }
+    if (key === `POST /api/v2/cases/${E2E_IDS.caseId}/verified-credit/checkout/confirm`) {
+      const input = jsonBody(request) as { payment_id?: unknown };
+      if (input.payment_id !== VERIFIED_PAYMENT_ID) throw new Error("Local fixture rejected invalid Verified payment confirmation.");
+      const alreadyConfirmed = this.verifiedCheckoutPaid;
+      this.verifiedCheckoutPaid = true;
+      if (!alreadyConfirmed) this.verifiedBalance += 1;
+      return {
+        status: 200,
+        body: {
+          ...verifiedCreditCheckoutConfirmedFixture,
+          audit_credits: this.verifiedBalance,
+          credits_added: alreadyConfirmed ? 0 : 1,
+          already_confirmed: alreadyConfirmed,
+        },
+      };
+    }
+    if (key === `POST /api/v2/cases/${E2E_IDS.caseId}/verified-analysis`) {
+      const input = jsonBody(request);
+      if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).length !== 0) {
+        throw new Error("Local fixture rejected invalid Verified analysis request.");
+      }
+      const jobId = request.headers?.["x-searchtrust-job-id"] ?? "";
+      assertSyntheticFixtureValue(jobId);
+      if (request.headers?.["idempotency-key"] !== `verified:${this.caseId}:${jobId}`) {
+        throw new Error("Local fixture rejected an invalid Verified idempotency key.");
+      }
+      if (this.verifiedJobIds.includes(jobId)) {
+        return { status: 202, body: { job_id: jobId, status: this.verifiedJobStatus ?? "queued", estimated_seconds: 3 } };
+      }
+      if (this.verifiedBalance < 1) return { status: 409, body: { error: { code: "VERIFIED_ANALYSIS_UNAVAILABLE", message: "No credit is available." } } };
+      const expectedPrevious = this.verifiedJobIds.at(-1) ?? null;
+      const previousJobId = request.headers?.["x-searchtrust-previous-job-id"] ?? null;
+      if (this.verifiedAttempt > 0 && previousJobId !== expectedPrevious) {
+        throw new Error("Local fixture rejected a Verified retry without its previous job.");
+      }
+      this.verifiedPreviousJobId = previousJobId;
+      this.verifiedAttempt += 1;
+      this.verifiedBalance -= 1;
+      this.verifiedPoll = 0;
+      this.verifiedFailureCompensated = false;
+      this.verifiedJobIds.push(jobId);
+      this.verifiedJobStatus = "queued";
+      this.verifiedChargeState = "reserved";
+      return { status: 202, body: { job_id: jobId, status: "queued", estimated_seconds: 3 } };
+    }
+    if (key.startsWith("GET /api/v2/tasks/") && this.verifiedJobIds.includes(key.slice("GET /api/v2/tasks/".length))) {
+      const jobId = key.slice("GET /api/v2/tasks/".length);
+      const poll = this.verifiedPoll++;
+      const shouldFail = this.options.verified === "first_failure" && this.verifiedAttempt === 1;
+      const state = poll === 0 ? "queued" : poll === 1 ? "running" : shouldFail ? "failed" : "succeeded";
+      this.verifiedJobStatus = state;
+      if (state === "succeeded") this.verifiedChargeState = "consumed";
+      return { status: 200, body: verifiedAnalysisStatusFixture(jobId, state) };
     }
     if (key === "GET /api/v2/google/connections") {
       if (this.options.google === "revoked") return { status: 200, body: { connections: [{ ...googleConnectionFixture, status: "revoked" }] } };
@@ -254,7 +353,21 @@ async function requestBody(route: Route): Promise<unknown> {
 export async function installLocalApiRouter(page: Page, scenario = new LocalApiScenario()): Promise<LocalApiScenario> {
   await page.route("**/*", async (route) => {
     const request = route.request();
-    const pathname = new URL(request.url()).pathname;
+    const requestUrl = new URL(request.url());
+    const pathname = requestUrl.pathname;
+    if (request.url() === VERIFIED_DODO_CHECKOUT_URL) {
+      const returnUrl = `http://127.0.0.1:3100/cases/${E2E_IDS.caseId}/connections?payment=return&payment_id=${VERIFIED_PAYMENT_ID}`;
+      await route.fulfill({
+        status: 200,
+        body: verifiedDodoCheckoutFixture(returnUrl),
+        headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+      });
+      return;
+    }
+    if (requestUrl.hostname.includes("posthog")) {
+      await route.fulfill({ status: 204, body: "", headers: { "cache-control": "no-store" } });
+      return;
+    }
     if (!pathname.startsWith("/api/") || pathname === "/api/user/credits") {
       await route.fallback();
       return;

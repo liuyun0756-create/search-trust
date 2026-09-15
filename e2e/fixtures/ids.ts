@@ -19,6 +19,10 @@ export const E2E_IDS = Object.freeze({
   ga4SnapshotId: "e2000000-0000-4000-8000-000000000010",
   gbpSnapshotId: "e2000000-0000-4000-8000-000000000011",
   syncJobId: "e2000000-0000-4000-8000-000000000012",
+  verifiedJobId: "e2000000-0000-4000-8000-000000000013",
+  verifiedFailedJobId: "e2000000-0000-4000-8000-000000000014",
+  verifiedRetryJobId: "e2000000-0000-4000-8000-000000000015",
+  verifiedReportId: "e2000000-0000-4000-8000-000000000016",
   competitorIds: [
     "cp_searchtrust_e2e_1",
     "cp_searchtrust_e2e_2",
