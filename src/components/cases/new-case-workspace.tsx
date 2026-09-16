@@ -12,6 +12,7 @@ import {
   clearDraft,
   createNewCaseDraft,
   getCompetitorDiscovery,
+  isMissingDiscoveryTaskError,
   loadDraft,
   PreflightApiError,
   reduceWorkspaceState,
@@ -472,7 +473,11 @@ export function NewCaseWorkspace() {
   }
 
   async function retryDiscovery() {
-    if (!draft.discovery_job_id || !draft.business_confirmation) return;
+    if (!draft.business_confirmation) return;
+    if (!draft.discovery_job_id) {
+      await startDiscovery(draft.business_confirmation, draft.supplemental_website_urls);
+      return;
+    }
     try {
       const latest = await getCompetitorDiscovery(draft.discovery_job_id);
       if (latest.status !== "failed") {
@@ -486,6 +491,10 @@ export function NewCaseWorkspace() {
       }
       setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_UPDATED", status: latest }));
     } catch (error) {
+      if (isMissingDiscoveryTaskError(error)) {
+        await startDiscovery(draft.business_confirmation, draft.supplemental_website_urls);
+        return;
+      }
       const safe = apiError(error);
       setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
     }

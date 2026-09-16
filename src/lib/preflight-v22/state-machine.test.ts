@@ -97,6 +97,27 @@ describe("new Case workspace state machine", () => {
     expect(state.discovery_job_id).toBe(jobId);
   });
 
+  it("replaces a missing discovery task with a fresh task", () => {
+    const freshJobId = "66666666-6666-4666-8666-666666666666";
+    let state = reduceWorkspaceState(readyState(), {
+      type: "DISCOVERY_REQUEST_FAILED",
+      code: "JOB_NOT_FOUND",
+      message: "The competitor discovery task was not found.",
+    });
+
+    state = reduceWorkspaceState(state, {
+      type: "START_DISCOVERY",
+      job_id: freshJobId,
+      idempotency_key: `discover:${freshJobId}`,
+      supplemental_website_urls: [],
+    });
+
+    expect(state.stage).toBe("competitor_discovery_running");
+    expect(state.discovery_job_id).toBe(freshJobId);
+    expect(state.discovery_error).toBeNull();
+    expect(state.discovery_status).toBeNull();
+  });
+
   it("invalidates an expired discovery and returns to business confirmation", () => {
     const state = reduceWorkspaceState(readyState(), { type: "DISCOVERY_EXPIRED" });
     expect(state.stage).toBe("business_confirmation");
