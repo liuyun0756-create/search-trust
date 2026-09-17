@@ -2426,6 +2426,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       request_target:{public_gbp_url:publicGbpUrl,entity_keys:publicGbpReference.entity_keys},
       started_at:"2026-09-04T07:30:00Z",completed_at:now,expires_at:publicGbpExpires,
       health_status:"healthy",identity_match_status:"matched",subject_reference_checksum:checksum,
+      record:{observed_entity_keys:publicGbpReference.entity_keys,observed_public_gbp_url:null},
       limitations:[]};
     const reportPayload = {
       identity: {
@@ -2445,7 +2446,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       data_coverage: { sources: [{source_type:"gbp",health_status:"healthy",
         identity_match_status:"matched",snapshot_ids:[publicGbpId]}] },
       evidence_index: [{ snapshot_id: siteId },{snapshot_id:publicGbpId,source_type:"gbp",
-        health_status:"healthy",source_locator:{url:publicGbpUrl}}],
+        health_status:"healthy",source_locator:{url:null,external_resource_id:"cid:123456789"}}],
       version_diff: { kind: "initial", parent_report_id: null, entries: [] },
     };
     const persistArgs = [
