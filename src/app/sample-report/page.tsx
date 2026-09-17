@@ -7,7 +7,7 @@ import { FAQAccordion } from "@/components/common/FAQAccordion";
 const sampleReportFAQData = [
   {
     question: "What does SearchTrust analyze?",
-    answer: "SearchTrust analyzes one submitted local page URL through an evidence-backed 8-layer trust model to identify where structural trust breaks down and what to fix first.",
+    answer: "A Prospect workflow combines the confirmed business, its public site and at least one real competitor with the SearchTrust L1-L8 evidence model. A Verified workflow adds connected GSC and GA4 performance data after engagement.",
   },
   {
     question: "What kinds of pages is it best for?",
@@ -18,12 +18,12 @@ const sampleReportFAQData = [
     answer: "No. SearchTrust is not a full technical SEO audit, rank tracker, or GBP management tool. It focuses on page-level trust qualification, structural credibility, and local competitiveness.",
   },
   {
-    question: "What do I receive after purchase?",
-    answer: "You receive one structured web report for one Case. It includes an executive decision, market comparison, confirmed findings, the complete L1-L8 trust breakdown, traceable evidence, three prioritized actions, a 30/60/90 roadmap, and PDF export.",
+    question: "What does one Case include?",
+    answer: "A Case keeps the confirmed business, competitors, source evidence and generated report together. Prospect produces an evidence-backed sales report; Verified can later produce an action plan using connected GSC and GA4 data.",
   },
   {
-    question: "How is the report delivered?",
-    answer: "After payment, you submit the URL you want reviewed. The report is generated and saved as a web report after processing. Timing varies with page availability, public data coverage, and workflow load.",
+    question: "When is a credit used?",
+    answer: "Entering a website and confirming the business is free. One credit is used when provider-backed Prospect discovery starts or when a Verified Action Plan is generated. Technical generation failures return the credit.",
   },
   {
     question: "Is the report automated?",
@@ -43,7 +43,7 @@ const sampleReportFAQData = [
   },
   {
     question: "Can I get a refund?",
-    answer: "Refunds may be available before processing begins. Once report processing has started or the report has been delivered, purchases are generally non-refundable. Please see our Refund Policy for full details.",
+    answer: "An unspent credit purchase may be refunded through the payment provider. If a purchased credit has already been used, the request needs manual review. Please see our Refund Policy for full details.",
   },
 ];
 import {SampleReportInfo} from "@/components/sampleReport/SampleReportInfo";

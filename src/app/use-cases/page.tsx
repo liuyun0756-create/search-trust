@@ -10,7 +10,7 @@ import { FAQAccordion } from "@/components/common/FAQAccordion";
 const useCasesFAQData = [
   {
     question: 'Which use case is best for agencies?',
-    answer: 'Start with a one-time client Case and proposal. The Advisor view supports internal diagnosis and scoping, while the Client view and client-ready PDF explain the problem, priority, and recommended work without exposing internal evidence detail.',
+    answer: 'Use Prospect before the engagement to build a defensible client case from public evidence. After the client connects GSC and GA4, use Verified to turn observed performance into a prioritized action plan.',
   },
   {
     question: 'Can I use SearchTrust before publishing pages?',
@@ -30,11 +30,11 @@ const useCasesFAQData = [
   },
   {
     question: 'Can multi-location brands use it?',
-    answer: 'Yes. The current product audits one priority URL at a time, so multi-location teams can sample high-value or underperforming pages before applying the findings more broadly.',
+    answer: 'Yes. Create a Case for each priority business or location so its identity, competitors, evidence and connected performance data stay correctly separated.',
   },
   {
     question: 'Does SearchTrust manage or monitor GBP?',
-    answer: 'No. When public GBP data is available, Business Presence Audit adds a one-time, non-scoring review of page alignment, profile activity, and a recent review sample. It is not an ongoing GBP management or monitoring service.',
+    answer: 'No. SearchTrust observes public GBP information through search data and compares it with the site and Case identity. It does not edit, manage or continuously monitor the profile.',
   },
 ];
 import {WorkflowIntegrations} from "@/components/useCase/WorkflowIntegrations";

@@ -60,9 +60,9 @@ export function createPageMetadata({
 
 export const pageSeo = {
   home: {
-    title: "SearchTrust | Evidence-Backed Local Page Trust Audit",
+    title: "SearchTrust | Win Clients With Evidence. Improve With Verified Data.",
     description:
-      "Audit one local Case with an evidence-backed L1-L8 model, traceable findings, executable actions, a 30/60/90 roadmap, and client-ready PDF delivery.",
+      "Build evidence-backed local SEO Prospect reports, then connect GSC and GA4 to generate Verified Action Plans. New accounts receive 5 permanent credits.",
     path: "/",
   },
   framework: {
@@ -72,21 +72,21 @@ export const pageSeo = {
     path: "/framework",
   },
   sampleReport: {
-    title: "Sample Local SEO Trust Audit Report | SearchTrust",
+    title: "Sample Prospect & Verified Reports | SearchTrust",
     description:
-      "Explore the SearchTrust V2.2 report structure with L1-L8 findings, source evidence, prioritized actions, a 30/60/90 roadmap, data coverage, and Advisor and Client delivery formats.",
+      "Explore how SearchTrust turns public evidence into a Prospect report and connected GSC and GA4 data into a Verified Action Plan.",
     path: "/sample-report",
   },
   useCases: {
-    title: "Use Cases | SearchTrust for SEO Agencies and Local SEO",
+    title: "Local SEO Prospect & Verified Use Cases | SearchTrust",
     description:
-      "Use SearchTrust for agency client audits, proposal scoping, stuck-page diagnosis, pre-publish reviews, staged remediation, and priority-page sampling.",
+      "Use SearchTrust to win local SEO clients with public evidence, then improve their businesses with verified first-party performance data.",
     path: "/use-cases",
   },
   pricing: {
-    title: "Pricing | SearchTrust Local Page Trust Audit",
+    title: "Pricing | Permanent SearchTrust Credits",
     description:
-      "Get a one-time SearchTrust report for one local page URL. Diagnose trust issues, entity consistency, local grounding, and prioritized fixes.",
+      "Every new SearchTrust account receives 5 permanent credits. Additional credits are $19 each, with no subscription and no expiration.",
     path: "/pricing",
   },
   terms: {

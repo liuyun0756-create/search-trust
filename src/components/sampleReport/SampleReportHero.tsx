@@ -27,19 +27,19 @@ export function SampleReportHero() {
           <div className="flex-1 max-w-2xl">
             <div className="mb-6 pt-3">
               <span className="inline-block px-3 py-1 text-[12px] tracking-[0.2em] font-bold text-[#4A4A5A] border border-gray-200 rounded bg-white/50 backdrop-blur-sm uppercase">
-                Diagnostic Sample
+                Prospect + Verified Samples
               </span>
             </div>
 
             <h1 className="text-[44px] md:text-[52px] font-[800] leading-[1.15] text-[#1D2531] tracking-tight">
-              See what a
-              <span className="text-[#A5D020]"> SearchTrust </span>
-              report looks like
+              See how evidence changes
+              <span className="text-[#A5D020]"> before and after </span>
+              the engagement
             </h1>
 
             <div className="mt-8 space-y-4 w-full">
               <p className="text-[#657083] text-[16px] leading-relaxed">
-                Follow a local-page diagnosis from evidence-backed findings to prioritized actions, a phased implementation roadmap, and a client-ready report.
+                Prospect turns public business and competitor evidence into a client-ready case. Verified adds connected GSC and GA4 data to produce a grounded action plan.
               </p>
               <div className="flex max-w-full items-start gap-3 rounded-2xl border border-[#A5D020]/20 bg-[#F4F7E9] px-4 py-3">
                 <div className="mt-1 flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#A5D020]" />
@@ -65,20 +65,20 @@ export function SampleReportHero() {
             <div className="w-full max-w-[600px] overflow-hidden rounded-2xl border border-white/70 bg-white/90 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.10)] backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                 <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8BAF18]">Sample V2.2 report</p>
-                  <h2 className="mt-1 text-[19px] font-extrabold text-[#1A1F2B]">Trust Audit Report</h2>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8BAF18]">Sample V2.2 Case</p>
+                  <h2 className="mt-1 text-[19px] font-extrabold text-[#1A1F2B]">Prospect Evidence Report</h2>
                 </div>
                 <span className="bg-[#1A1F2B] px-3 py-2 text-[10px] font-bold text-white">Export PDF</span>
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-1.5 text-center sm:grid-cols-6">
                 {[
-                  ["Decision", true],
+                  ["Identity", true],
                   ["Market", false],
-                  ["Findings", false],
+                  ["Evidence", false],
                   ["Actions", false],
-                  ["30/60/90", false],
-                  ["Layers", false],
+                  ["Roadmap", false],
+                  ["Verified", false],
                 ].map(([label, active]) => (
                   <span
                     key={String(label)}
@@ -118,8 +118,8 @@ export function SampleReportHero() {
               </div>
 
               <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-4">
-                <p className="text-[10px] font-semibold text-[#657083]">Advisor and Client views</p>
-                <p className="text-[10px] font-semibold text-[#657083]">Client Report Preview</p>
+                <p className="text-[10px] font-semibold text-[#657083]">Prospect + Verified views</p>
+                <p className="text-[10px] font-semibold text-[#657083]">Source-linked evidence</p>
               </div>
             </div>
           </div>

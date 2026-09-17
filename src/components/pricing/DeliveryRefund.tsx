@@ -22,12 +22,11 @@ export function DeliveryRefund() {
             </h2>
             <div className="space-y-4 max-w-lg">
               <p className="text-[18px] text-[#1A212B] font-bold leading-relaxed">
-                After payment, submit the URL you want reviewed.
-                Your report becomes available after the audit workflow and structured checks are complete.
+                Purchased credits are added to your account balance. Choose a Case and use a credit when you start a Prospect analysis or generate a Verified Action Plan.
 
               </p>
               <p className="text-[16px] text-[#6B7280] font-medium leading-relaxed">
-                Delivery times are estimates and may vary slightly based on demand or technical processing requirements.
+                Each workflow keeps its own status. If generation fails for a technical reason, one credit is returned automatically and the Case remains available to try again.
               </p>
             </div>
           </motion.div>
@@ -57,10 +56,10 @@ export function DeliveryRefund() {
             </h2>
             <div className="space-y-6 max-w-lg">
               <p className="text-[18px] text-[#1A212B] font-bold leading-relaxed">
-                Refunds may be available before processing begins.
+                An unspent credit purchase can be reversed when the payment provider confirms a full refund.
               </p>
               <p className="text-[16px] text-[#6B7280] font-medium leading-relaxed">
-                Once report processing has started or the report has been delivered, purchases are generally non-refundable.
+                If the purchased credit has already been used, the refund is held for manual review so the balance can never become negative or be credited twice.
               </p>
               <a
                 href="/refund-policy"

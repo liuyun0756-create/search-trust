@@ -8,7 +8,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.json({ credits: user.auditCredits });
+    return NextResponse.json({ credits: user.creditBalance });
   } catch (error) {
     console.error("Fetch credits error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -1,54 +1,33 @@
-import { HeroSection } from "@/components/home/HeroSection";
-import { InsightEngine } from "@/components/home/InsightEngine";
-import { LocalPage } from "@/components/home/LocalPage";
-import { HowItWorks } from "@/components/home/HowItWorks";
-import { ProductDemo } from "@/components/home/ProductDemo";
-import { HowItWorksSteps } from "@/components/home/HowItWorksSteps";
-import {ReportPreview} from "@/components/home/ReportPreview";
-import { Diagnosis } from "@/components/home/Diagnosis";
-import {AuditSection} from "@/components/home/AuditSection";
-import {CommonWaysSection} from "@/components/home/CommonWaysSection";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
-import {AuditForm} from "@/components/common/AuditForm";
-import {WhatYouGet} from "@/components/home/WhatYouGet";
-import { ProductDefinition } from "@/components/home/ProductDefinition";
+import { HomepageV22 } from "@/components/home/HomepageV22";
 import { createPageMetadata, pageSeo, siteUrl } from "@/lib/seo";
 
 const homeFAQData = [
   {
-    question: "How is SearchTrust different from a standard SEO audit tool?",
-    answer: "Standard SEO tools measure performance signals: backlinks, traffic, content length, and technical errors. SearchTrust diagnoses page and entity trust structure: what evidence is present, which trust layer is weak, and what to fix first."
+    question: "What does one credit cover?",
+    answer: "One credit starts one provider-backed Prospect workflow or one Verified Action Plan generation. Entering the website and confirming the business happens before the charge. A technical generation failure returns exactly one credit.",
   },
   {
-    question: "What is the SearchTrust 8-layer trust model?",
-    answer: "It is a structured local trust diagnosis model covering foundation, entity presence, entity consistency, specificity, real-world connection, accountability, page unique value, and algorithm fit."
+    question: "What is the difference between Prospect and Verified?",
+    answer: "Prospect uses public website, business profile, and competitor evidence to help you explain an opportunity before an engagement. Verified adds connected Search Console and Google Analytics data after the engagement so the action plan reflects owned performance evidence.",
   },
   {
-    question: "Does SearchTrust work for any type of local page?",
-    answer: "SearchTrust is designed for publicly accessible local service pages, city pages, service-area pages, and location landing pages. The current product audits one priority URL at a time."
+    question: "Do I need access to a Google Business Profile account?",
+    answer: "No. SearchTrust checks the confirmed public Business Profile through SerpAPI. Verified generation requires Search Console and Google Analytics connections, but not an official GBP owner connection.",
   },
   {
-    question: "Is this a replacement for my existing SEO tools?",
-    answer: "No. It complements technical SEO, analytics, and rank tracking by showing which checked trust signals need attention, the evidence behind each finding, and the order in which to address them."
+    question: "What happens if SearchTrust cannot find a competitor?",
+    answer: "The workflow asks you to provide at least one real competitor before continuing. That correction remains part of the same charged workflow and does not consume a second credit.",
   },
   {
-    question: "How long does a trust audit take?",
-    answer: "A single-page audit usually generates a web report shortly after processing. Delivery timing may vary by page availability, data coverage, and workflow load."
+    question: "Do the five signup credits expire?",
+    answer: "No. Every new authenticated account receives five permanent credits once. Purchased credits also do not expire.",
   },
   {
-    question: "Can I run trust audits in bulk?",
-    answer: "The current checkout analyzes one URL at a time. Agencies and multi-location teams can start with priority pages first; broader batch workflows are not part of the current $19 one-time report."
+    question: "Is SearchTrust a rank tracker or a promise of rankings?",
+    answer: "No. SearchTrust organizes available evidence into defensible findings and actions. It does not guarantee rankings, traffic, leads, or business outcomes.",
   },
-  {
-    question: "What can an agency deliver to a client?",
-    answer: "Agencies receive an Advisor report with evidence and implementation detail, plus a focused Client report. Both views can be exported as PDFs."
-  },
-  {
-    question: "What is included in Business Presence Audit?",
-    answer: "When public GBP data is available, SearchTrust adds a supplemental, non-scoring review of GBP-to-page alignment, profile activity, and a recent review sample. Missing public data is shown as not verified rather than treated as a confirmed failure."
-  }
 ];
-// import { CTABanner } from "@/components/home/CTABanner";
 
 export const metadata = createPageMetadata(pageSeo.home);
 
@@ -58,8 +37,7 @@ const homeJsonLd = [
     "@type": "Organization",
     name: "SearchTrust",
     url: siteUrl,
-    description:
-      "SearchTrust helps diagnose local page and entity trust structure with evidence-backed 8-layer reports.",
+    description: "SearchTrust helps local SEO consultants win client work with public evidence and improve the business with verified first-party data.",
   },
   {
     "@context": "https://schema.org",
@@ -67,11 +45,7 @@ const homeJsonLd = [
     name: "SearchTrust",
     applicationCategory: "SEO Software",
     operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: "19",
-      priceCurrency: "USD",
-    },
+    offers: { "@type": "Offer", price: "19", priceCurrency: "USD", description: "One permanent SearchTrust credit" },
   },
   {
     "@context": "https://schema.org",
@@ -79,10 +53,7 @@ const homeJsonLd = [
     mainEntity: homeFAQData.map((item) => ({
       "@type": "Question",
       name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-      },
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
     })),
   },
 ];
@@ -90,25 +61,9 @@ const homeJsonLd = [
 export default function Home() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
-      />
-      <HeroSection />
-      {/* <AuditForm /> */}
-      <WhatYouGet />
-      <InsightEngine />
-      <LocalPage />
-      <ProductDefinition />
-      <HowItWorks />
-      <ProductDemo />
-      <HowItWorksSteps />
-      <ReportPreview />
-      <Diagnosis />
-      <AuditSection />
-      <CommonWaysSection />
-      <FAQAccordion tag="FAQ" title="Frequently asked questions" items={homeFAQData} />
-      {/* <CTABanner /> */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }} />
+      <HomepageV22 />
+      <FAQAccordion tag="FAQ" title="Straight answers before you spend a credit" items={homeFAQData} />
     </>
   );
 }

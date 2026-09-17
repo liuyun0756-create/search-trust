@@ -9,7 +9,6 @@ export async function getCurrentUser() {
     return {
       userId: E2E_IDENTITY.internalUserId,
       clerkUserId: E2E_IDENTITY.clerkUserId,
-      auditCredits: 1,
       creditBalance: 5,
     };
   }
@@ -27,14 +26,13 @@ export async function getCurrentUser() {
 
   const { data, error } = await supabase
     .from("users")
-    .select("id, audit_credits, credit_balance")
+    .select("id, credit_balance")
     .eq("clerk_user_id", clerkUserId)
     .single();
 
   if (data) return {
     userId: data.id,
     clerkUserId,
-    auditCredits: data.audit_credits,
     creditBalance: data.credit_balance,
   };
   if (error?.code && error.code !== "PGRST116") {
@@ -77,13 +75,12 @@ export async function getCurrentUser() {
 
   const { data: newUser } = await supabase
     .from("users")
-    .select("id, audit_credits, credit_balance")
+    .select("id, credit_balance")
     .eq("clerk_user_id", clerkUserId)
     .maybeSingle();
   return newUser ? {
     userId: newUser.id,
     clerkUserId,
-    auditCredits: newUser.audit_credits,
     creditBalance: newUser.credit_balance,
   } : null;
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
 
-const visiblePaths = new Set(["/", "/framework", "/sample-report", "/use-cases", "/pricing"]);
+const visiblePaths = new Set(["/framework", "/sample-report", "/use-cases"]);
 
 export function FooterPreCTA() {
   const pathname = usePathname();
@@ -21,17 +21,17 @@ export function FooterPreCTA() {
           <div className="max-w-3xl lg:min-w-[680px]">
             <div className="mb-5 h-1.5 w-20 rounded-full bg-[#A5D020]" />
             <h2 className="text-[34px] font-bold leading-[1.18] tracking-tight text-[#1A1F2B] md:text-[42px]">
-              <span className="block lg:whitespace-nowrap">Stop guessing why pages don&apos;t rank</span>
-              <span className="block lg:whitespace-nowrap">See where trust breaks.</span>
+              <span className="block lg:whitespace-nowrap">Build the case. Win the work.</span>
+              <span className="block lg:whitespace-nowrap">Verify what changes.</span>
             </h2>
             <p className="mt-6 max-w-3xl text-[18px] font-medium leading-relaxed tracking-normal text-[#4B5563] md:text-[20px]">
-              Run a trust audit to see which signals are supported by evidence, where trust needs attention, and what to fix first.
+              Start with public evidence before the sale, then add verified first-party data when the client work begins.
             </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
             <RunAuditButton className="rounded-xl bg-[#1A1F2B] px-8 py-4 text-[16px] font-bold tracking-normal text-white shadow-[0_12px_26px_rgba(26,31,43,0.18)] transition-colors hover:bg-black">
-              Start free preflight
+              Start with 5 free credits
             </RunAuditButton>
             <Link
               href="/sample-report"

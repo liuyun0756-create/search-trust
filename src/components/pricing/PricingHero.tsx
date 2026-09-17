@@ -1,137 +1,59 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { CreditPurchaseButton } from './CreditPurchaseButton';
+import { motion } from "framer-motion";
+import { ArrowRight, Check, Coins, Gift, RefreshCw, ShieldCheck } from "lucide-react";
 
-function ComingSoonPattern({ variant = "layers" }: { variant?: "layers" | "agency" }) {
-  const accents =
-    variant === "layers"
-      ? ["left-10 top-12 h-12 w-12", "right-10 bottom-12 h-16 w-16", "left-1/2 bottom-20 h-10 w-10"]
-      : ["right-12 top-10 h-12 w-12", "left-10 bottom-14 h-16 w-16", "right-1/3 bottom-24 h-10 w-10"];
-
-  return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(165,208,32,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(26,31,43,0.04)_1px,transparent_1px)] bg-[size:42px_42px]" />
-      <div className="absolute left-1/2 top-8 h-44 w-44 -translate-x-1/2 rounded-full bg-[#A5D020]/18 blur-[70px]" />
-      <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full border border-[#A5D020]/20" />
-      <div className="absolute -left-10 bottom-10 h-32 w-32 rounded-full border border-[#1A212B]/10" />
-      {accents.map((item, index) => (
-        <div
-          key={item}
-          className={`absolute ${item} rounded-2xl border border-[#A5D020]/20 bg-white/55 shadow-[0_14px_34px_rgba(15,23,42,0.05)]`}
-        >
-          <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#A5D020]" />
-          {index === 1 && (
-            <div className="absolute inset-3 rounded-xl border border-dashed border-[#A5D020]/30" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+import { CreditPurchaseButton } from "./CreditPurchaseButton";
 
 export function PricingHero() {
   return (
-    <section className="pt-20 pb-24 px-6 text-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto mb-8"
-      >
-        <h1 className="text-[26px] md:text-[40px] font-bold tracking-tighter leading-[1.1] mb-7 ">
-          One credit. Any SearchTrust workflow.
-        </h1>
-        <p className="text-[20px] text-[#6B7280] font-medium">
-          Every new account receives 5 permanent credits. Buy additional credits one at a time—no subscription and no expiry.
-        </p>
-      </motion.div>
+    <section className="relative overflow-hidden bg-[#f3f4ed] px-4 pb-24 pt-16 sm:px-6 sm:pb-32 sm:pt-24 lg:px-8">
+      <div aria-hidden="true" className="absolute inset-0 opacity-55 [background-image:linear-gradient(rgba(24,32,24,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(24,32,24,0.045)_1px,transparent_1px)] [background-size:54px_54px]" />
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative mx-auto max-w-7xl">
+        <div className="max-w-4xl">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-[#718d18]">Simple, permanent credits</p>
+          <h1 className="mt-5 font-[family-name:Georgia] text-5xl leading-[0.98] tracking-[-0.055em] text-[#182018] sm:text-7xl">Use a credit when SearchTrust does the valuable work.</h1>
+          <p className="mt-7 max-w-3xl text-lg leading-8 text-[#667064]">Every new authenticated account receives five credits once. They never expire. Use the same balance for Prospect analysis, Verified generation, and future Cases.</p>
+        </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
-        {/* Standard plan */}
-        <motion.div
-          whileHover={{ y: -10 }}
-          className="relative overflow-hidden rounded-[32px] border border-[#A5D020]/30 bg-white p-10 shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition-all duration-500 hover:border-[#A5D020]/60 hover:shadow-[0_28px_90px_rgba(15,23,42,0.12)] flex flex-col justify-between"
-        >
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-[#A5D020]" />
-          <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#A5D020]/16 blur-[70px]" />
-          <div className="absolute bottom-24 right-8 h-24 w-24 rounded-full border border-[#A5D020]/20" />
-          <div className="relative z-10">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#A5D020]/25 bg-[#F7F9F2] px-3 py-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-[#6E9800]">
-                <ShieldCheck className="h-4 w-4" />
-                One permanent credit
-              </span>
-              <span className="rounded-full bg-[#1A212B] px-3 py-1.5 text-[12px] font-bold text-white">
-                One-time
-              </span>
+        <div className="mt-14 grid overflow-hidden rounded-[2.2rem] border border-[#d4dacb] bg-white shadow-[0_28px_90px_rgba(24,32,24,0.1)] lg:grid-cols-[0.82fr_1.18fr]">
+          <div className="flex flex-col justify-between bg-[#172018] p-8 text-white sm:p-12 lg:p-14">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#b8e626]/25 bg-[#b8e626]/10 px-3 py-1.5 text-xs font-black text-[#d8ff66]"><Coins className="h-4 w-4" /> One permanent credit</span>
+              <div className="mt-9 flex items-end gap-3"><span className="font-[family-name:Georgia] text-7xl leading-none tracking-[-0.06em]">$19</span><span className="pb-2 text-sm font-black text-white/55">USD</span></div>
+              <p className="mt-6 max-w-md leading-7 text-white/58">Buy exactly what you need. No subscription, bundle, minimum commitment, or expiration date.</p>
             </div>
-
-            <div className="mb-6">
-              <div className="flex items-end gap-2">
-                <span className="text-[52px] font-black leading-none tracking-tight text-[#111827]">$19</span>
-                <span className="pb-2 text-[16px] font-bold text-[#6B7280]">/ credit</span>
-              </div>
-              <p className="mt-4 text-[15px] leading-relaxed text-[#55616F]">
-                Use one credit for a complete Prospect analysis or one Verified generation. Your balance belongs to the account, not to a specific Case.
-              </p>
-            </div>
-
-            <CreditPurchaseButton trackingSource="pricing_primary" className="group w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 border border-[#1A212B] shadow-[0_14px_30px_rgba(26,33,43,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-black hover:shadow-[0_18px_36px_rgba(165,208,32,0.28)] disabled:opacity-60">
-              Buy 1 credit · $19 <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            <CreditPurchaseButton trackingSource="pricing_primary" className="group mt-10 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#b8e626] px-6 py-4 text-sm font-black text-[#142013] transition hover:bg-[#d1f75d] disabled:opacity-60">
+              Buy 1 credit · $19 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </CreditPurchaseButton>
+          </div>
 
-            <div className="my-6 rounded-[24px] border border-[#EDF0E3] bg-[#F8FAF3] p-5">
-              <p className="mb-4 text-[12px] font-black uppercase tracking-[0.14em] text-[#7FA40F]">
-                What's included
-              </p>
-              <ul className="space-y-3 text-[14px] font-medium text-[#3E4651]">
-              {[
-                'Use for Prospect or Verified generation',
-                'One credit per generation attempt',
-                'Technical failures return one credit',
-                'Credits never expire',
-                'Credits are shared across your Cases',
-              ].map((item, i) => (
-                <li key={i} className="flex items-center gap-3">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-[#86B800]" />
-                    <span>{item}</span>
-                </li>
-              ))}
-              </ul>
+          <div className="p-8 sm:p-12 lg:p-14">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#b8e626] text-[#172018]"><Gift className="h-5 w-5" /></span>
+              <div><p className="text-xs font-black uppercase tracking-[0.18em] text-[#718d18]">Included when you join</p><h2 className="mt-1 font-[family-name:Georgia] text-3xl">5 free credits. Permanently yours.</h2></div>
             </div>
-          </div>
-          <div className="relative z-10 rounded-2xl border border-gray-100 bg-white px-4 py-3 text-center shadow-sm">
-            <p className="text-[12px] font-semibold text-[#6B7280]">One-time payment. No recurring billing. No expiry.</p>
-            <p className="text-[11px] text-[#A0A7B1]">Taxes may be added at checkout.</p>
-          </div>
-        </motion.div>
 
-        {/* Team packs */}
-        <div className="relative overflow-hidden rounded-[32px] border border-dashed border-[#A5D020]/35 bg-[#F7F9F2] p-10 shadow-sm flex flex-col items-center justify-center text-center">
-          <ComingSoonPattern variant="layers" />
-          <div className="relative z-10 flex w-full flex-col items-center">
-            <h3 className="text-[28px] font-bold mb-2">Team packs</h3>
-            <p className="text-[14px] text-[#64707D] font-medium mb-8">For teams reviewing multiple pages.</p>
-            <button className="w-full bg-white/75 text-[#3E4651] py-4 rounded-[16px] font-medium text-[15px] border border-[#A5D020]/20 shadow-sm">
-            Coming soon.
-            </button>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2">
+              {[
+                [ShieldCheck, "Prospect analysis", "Starts the provider-backed competitor discovery and evidence report for one Case."],
+                [RefreshCw, "Verified generation", "Builds or regenerates one action plan from the Case's verified source graph."],
+                [Check, "Same-Case corrections", "If no competitor is found, add one manually and continue without a second charge."],
+                [Check, "Technical failure return", "A technical generation failure restores exactly one credit to the account."],
+              ].map(([Icon, title, body]) => {
+                const Glyph = Icon as typeof Check;
+                return <article key={String(title)} className="rounded-2xl border border-[#dde2d6] bg-[#f8f9f4] p-5">
+                  <Glyph className="h-5 w-5 text-[#7f9f1c]" />
+                  <h3 className="mt-4 text-sm font-black text-[#182018]">{String(title)}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#667064]">{String(body)}</p>
+                </article>;
+              })}
+            </div>
+
+            <p className="mt-7 text-xs leading-5 text-[#7b8578]">Entering a website and confirming the business does not consume a credit. The charge happens only when the provider-backed workflow starts.</p>
           </div>
         </div>
-
-        {/* Agency / team access */}
-        <div className="relative overflow-hidden rounded-[32px] border border-dashed border-[#1A212B]/15 bg-white p-10 shadow-sm flex flex-col items-center justify-center text-center">
-          <ComingSoonPattern variant="agency" />
-          <div className="relative z-10 flex w-full flex-col items-center">
-            <h3 className="text-[28px] font-bold mb-2">Agency / team access</h3>
-            <p className="text-[14px] text-[#64707D] font-medium mb-8">For higher-volume workflows and broader rollout.</p>
-            <button className="w-full bg-[#F7F9F2]/90 text-[#3E4651] py-4 rounded-[16px] font-medium text-[15px] border border-[#A5D020]/20 shadow-sm">
-            Coming soon.
-            </button>
-          </div>
-        </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

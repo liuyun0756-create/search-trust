@@ -7,23 +7,23 @@ import { motion } from 'framer-motion';
 const audiences = [
   {
     icon: Users,
-    role: 'SEO Agencies',
-    desc: 'Use the Full Audit to scope work and the Client PDF to support proposal approval.',
+    role: 'Independent SEO Consultants',
+    desc: 'Use Prospect evidence to make a sharper pitch without spending hours assembling a speculative audit.',
   },
   {
     icon: Search,
-    role: 'Local SEO Specialists',
-    desc: 'Use it to diagnose why a page looks relevant but still isn\'t competitive enough.',
+    role: 'Small Local SEO Agencies',
+    desc: 'Give sales and delivery teams one Case that carries evidence from proposal through implementation.',
   },
   {
     icon: DollarSign,
-    role: 'Affiliate Marketers',
-    desc: 'Use it to sample priority local pages for generic, templated, or weakly grounded signals.',
+    role: 'Client Strategy Leads',
+    desc: 'Separate public observations from verified first-party performance before setting priorities.',
   },
   {
     icon: Building2,
-    role: 'Multi-location Businesses',
-    desc: 'Use it to evaluate one priority location page before applying a remediation pattern more broadly.',
+    role: 'Delivery Specialists',
+    desc: 'Connect GSC and GA4 after engagement and regenerate the plan when the underlying evidence changes.',
   },
 ];
 

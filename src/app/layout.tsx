@@ -15,11 +15,11 @@ import { parseGoogleAnalyticsMeasurementId } from "@/lib/google-analytics";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "SearchTrust | Evidence-Backed Local Page Trust Audit",
+    default: "SearchTrust | Win Clients With Evidence",
     template: "%s",
   },
   description:
-    "SearchTrust gives agencies an evidence-backed L1-L8 trust audit, prioritized implementation roadmap, and client-ready report for one local page.",
+    "Win local SEO clients with public evidence, then improve the business with verified Search Console and Analytics data.",
   keywords: [
     "local SEO",
     "trust diagnosis",
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
     canonical: siteUrl,
   },
   openGraph: {
-    title: "SearchTrust | Evidence-Backed Local Page Trust Audit",
+    title: "SearchTrust | Win Clients With Evidence",
     description:
-      "SearchTrust gives agencies an evidence-backed L1-L8 trust audit, prioritized implementation roadmap, and client-ready report for one local page.",
+      "Win local SEO clients with public evidence, then improve the business with verified Search Console and Analytics data.",
     url: siteUrl,
     siteName: "SearchTrust",
     type: "website",
@@ -52,9 +52,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "SearchTrust | Evidence-Backed Local Page Trust Audit",
+    title: "SearchTrust | Win Clients With Evidence",
     description:
-      "SearchTrust gives agencies an evidence-backed L1-L8 trust audit, prioritized implementation roadmap, and client-ready report for one local page.",
+      "Win local SEO clients with public evidence, then improve the business with verified Search Console and Analytics data.",
     images: [`${siteUrl}${ogImage}`],
   },
 };

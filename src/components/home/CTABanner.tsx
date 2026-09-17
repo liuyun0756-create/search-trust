@@ -37,7 +37,7 @@ export function CTABanner() {
               </div>
             </div>
             <p className="text-[#657083] text-sm mb-8 max-w-[240px] leading-relaxed">
-              Trust intelligence for local pages. Diagnose. Fix. Rank.
+              Win client work with evidence. Improve it with verified data.
             </p>
           </div>
 

@@ -1,34 +1,34 @@
 "use client";
 
 import React from 'react';
-import { MapPin, Building2, Layers, Users } from 'lucide-react';
+import { BriefcaseBusiness, Building2, FileSearch, LineChart } from 'lucide-react';
 
 const userTypes = [
   {
-    title: 'Local SEO teams',
-    desc: 'Reviewing important local pages before publishing or revising them.',
-    icon: MapPin,
+    title: 'Independent SEO consultants',
+    desc: 'Build a defensible opportunity story before asking a prospect to hire you.',
+    icon: BriefcaseBusiness,
   },
   {
-    title: 'Agencies',
-    desc: 'Explaining page–level trust weaknesses to clients more clearly.',
+    title: 'Small local SEO agencies',
+    desc: 'Give sales and delivery teams one evidence chain they can both explain.',
     icon: Building2,
   },
   {
-    title: 'Operators reviewing scaled pages',
-    desc: 'Checking AI-assisted, templated, or programmatic local pages before rollout',
-    icon: Layers,
+    title: 'Prospect research',
+    desc: 'Compare a real business with real local competitors and turn the gaps into a client-ready case.',
+    icon: FileSearch,
   },
   {
-    title: 'Multi-location teams',
-    desc: 'Validating whether local pages are grounded enough to compete independently.',
-    icon: Users,
+    title: 'Verified client delivery',
+    desc: 'Connect owned performance data and generate the next action plan from observed evidence.',
+    icon: LineChart,
   },
 ];
 
 export function WhoThisIsFor() {
   return (
-    <section className="pt-20 bg-white rounded-t-[80px]">
+    <section className="pt-20 bg-white">
       <div className="max-w-7xl mx-auto px-8">
         <h2 className="text-[48px] font-bold text-center mb-16">Who this is for</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -19,13 +19,13 @@ const policyContent: Record<TabId, { title: string; effective: string; intro?: s
     effective: 'April 14, 2026',
     intro: `These Terms of Service ("Terms") govern your access to and use of trysearchtrust.com and the products and services provided by SearchTrust ("we", "us", or "our"), including SearchTrust.
 
-By accessing our website, purchasing a report, or using our services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use the website or purchase our services.`,
+By accessing our website, purchasing credits, or using our services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use the website or purchase our services.`,
     sections: [
       {
         heading: '1. Our service',
         body: `SearchTrust provides digital analysis and reporting services for submitted web pages or URLs. Our service is designed to evaluate a submitted page and provide a structured report, which may include observations, scoring, diagnostic output, findings, and recommended actions.
 
-Each purchase covers the specific service described at checkout or on the pricing page. Unless otherwise stated, a one-time purchase covers one report for one submitted URL.
+SearchTrust uses permanent account credits. One credit starts one eligible Prospect analysis or one Verified generation, as described on the pricing page. Credits are shared across the account and do not expire.
 
 We may update, improve, modify, suspend, or discontinue parts of the service at any time.`,
       },
@@ -41,7 +41,7 @@ If you are using the service on behalf of a company, agency, or other organizati
 
 Payments on this website are processed by Dodo Payments. Your payment may be subject to Dodo Payments' terms, policies, and checkout processes.
 
-Unless expressly stated otherwise: purchases are one-time payments, each purchase applies to the specific report or service selected, there is no recurring subscription or automatic renewal.
+Unless expressly stated otherwise: purchases are one-time payments for account credits, there is no recurring subscription or automatic renewal, and purchased credits do not expire.
 
 We reserve the right to change pricing at any time, but any pricing changes will not affect orders already completed.`,
       },
@@ -51,7 +51,7 @@ We reserve the right to change pricing at any time, but any pricing changes will
 
 You are responsible for ensuring that submitted information is accurate and that you have the right to submit the page or material for analysis.
 
-After purchase and required submission, your report will be made available after the audit workflow and structured checks are complete. Processing times vary based on demand, page availability, public data coverage, technical issues, review requirements, or other operational factors.
+After a credit is applied to an eligible workflow, the resulting report or action plan will be made available after the automated analysis and structured checks are complete. Processing times vary based on demand, page availability, public data coverage, connected-source availability, technical issues, review requirements, or other operational factors.
 
 We are not responsible for delays caused by incorrect information provided by you, unavailable websites, inaccessible pages, third-party failures, or events outside our reasonable control.`,
       },
@@ -275,20 +275,21 @@ Website: trysearchtrust.com`,
     sections: [
       {
         heading: '1. Scope',
-        body: `This policy applies to one-time purchases of digital reports, analyses, or related services sold through our website.`,
+        body: `This policy applies to one-time purchases of permanent account credits and the digital analysis services started with those credits.`,
       },
       {
         heading: '2. General refund rule',
         body: `Because SearchTrust is a digital analysis and reporting service, refunds are generally available only in limited circumstances.
 
 As a general rule:
-• before processing begins: a refund request may be eligible for approval
-• after processing has begun: the purchase is generally non-refundable
-• after the report has been delivered: the purchase is non-refundable except where required by law`,
+• an unused purchased credit may be eligible for reversal after a confirmed full payment refund
+• if the purchased credit has already been used, the request may require manual review
+• a technical generation failure returns one credit automatically; this is separate from a payment refund
+• completed digital analysis is generally non-refundable except where required by law`,
       },
       {
         heading: '3. What counts as processing',
-        body: `For the purposes of this policy, processing begins once we start work on your order, which may include any of the following:
+        body: `For the purposes of this policy, processing begins once a credit starts an eligible workflow, which may include any of the following:
 
 • your submitted URL or page enters our analysis workflow
 • automated report generation begins
@@ -301,17 +302,17 @@ Once processing has started, we typically cannot offer a refund because the digi
         heading: '4. Situations where a refund may be available',
         body: `We may approve a refund in situations such as:
 
-• you contact us before processing begins
+• a purchased credit remains unused and the payment provider confirms a full refund
 • you were charged more than once for the same order
 • a duplicate order was placed by mistake
-• we are unable to deliver the service due to a technical failure on our side
+• payment completed but the purchased credit was not delivered and cannot be restored
 • or where a refund is otherwise required by applicable law`,
       },
       {
         heading: '5. Situations where a refund is generally not available',
         body: `Refunds are generally not available in the following situations:
 
-• processing has already started
+• the purchased credit has already started a workflow, subject to manual review and applicable law
 • the report has already been delivered
 • you changed your mind after purchase
 • you no longer need the report

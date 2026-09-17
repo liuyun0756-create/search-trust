@@ -8,23 +8,23 @@ export function UseCasesByTeam() {
   const cases = [
     {
       icon: Building2,
-      title: "SEO Agencies",
-      items: ["one-time client audits", "proposal scoping", "client-ready PDF delivery"]
+      title: "Independent Consultants",
+      items: ["evidence-led prospecting", "clear proposal scope", "verified delivery plans"]
     },
     {
       icon: MapPin,
-      title: "Local SEO Specialists",
-      items: ["priority-page diagnosis", "L1-L8 remediation", "re-audit planning"]
+      title: "Small SEO Agencies",
+      items: ["repeatable sales workflow", "Case-level evidence", "client-ready reporting"]
     },
     {
       icon: Link2,
-      title: "Affiliate Marketers",
-      items: ["priority-page sampling", "template risk review", "pre-rollout quality gates"]
+      title: "Sales & Strategy",
+      items: ["business confirmation", "real competitor context", "defensible recommendations"]
     },
     {
       icon: Globe,
-      title: "Multi–location Businesses",
-      items: ["representative page sampling", "local entity alignment", "standalone value checks"]
+      title: "Client Delivery",
+      items: ["GSC and GA4 health", "90-day comparison", "evidence-change review"]
     }
   ];
 
@@ -35,7 +35,7 @@ export function UseCasesByTeam() {
           Use cases by team type
         </h2>
         <p className="text-center text-[16px] md:text-[18px] text-[#6B7280] mb-16 leading-[1.2]">
-          How different teams use SearchTrust in a one-time audit and remediation workflow
+          How a small local SEO practice carries evidence from the first conversation into verified delivery
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
