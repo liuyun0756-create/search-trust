@@ -82,6 +82,10 @@ function jsonBody(request: FixtureRequest): unknown {
   throw new Error(`Local fixture expected a JSON body for ${routeKey(request)}.`);
 }
 
+function validUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export class LocalApiScenario {
   readonly options: Required<LocalApiScenarioOptions>;
   private discoveryPoll = 0;
@@ -91,6 +95,7 @@ export class LocalApiScenario {
   private shareRevoked: boolean;
   private caseId: string = E2E_IDS.caseId;
   private discoveryJobId: string = E2E_IDS.discoveryJobId;
+  private prospectWorkflowId: string | null = null;
   private analysisJobId: string = E2E_IDS.analysisJobId;
   private verifiedBalance: number;
   private verifiedCheckoutPaid = false;
@@ -125,6 +130,7 @@ export class LocalApiScenario {
       shareRevoked: this.shareRevoked,
       caseId: this.caseId,
       discoveryJobId: this.discoveryJobId,
+      prospectWorkflowId: this.prospectWorkflowId,
       analysisJobId: this.analysisJobId,
       verifiedBalance: this.verifiedBalance,
       verifiedCheckoutPaid: this.verifiedCheckoutPaid,
@@ -140,7 +146,10 @@ export class LocalApiScenario {
     const key = routeKey(request);
     const url = new URL(request.url, "http://127.0.0.1:3100");
 
-    if (key === "GET /api/user/credits") return { status: 200, body: { credits: 3 } };
+    if (key === "GET /api/user/credits") return { status: 200, body: { credits: this.verifiedBalance } };
+    if (key === "GET /api/v2/credits") {
+      return { status: 200, body: { credit_balance: this.verifiedBalance, transactions: [] } };
+    }
     if (key === "POST /api/v2/preflight") {
       valid(parsePreflightRequest(jsonBody(request)), "preflight");
       return { status: 200, body: preflightFixture };
@@ -151,6 +160,36 @@ export class LocalApiScenario {
       this.caseId = input.case_id!;
       this.discoveryJobId = request.headers?.["x-searchtrust-discovery-job-id"] ?? E2E_IDS.discoveryJobId;
       return { status: 202, body: { discovery_job_id: this.discoveryJobId, status: "queued", estimated_seconds: 2 } };
+    }
+    if (key === `POST /api/v2/cases/${this.caseId}/prospect-workflow`) {
+      const input = jsonBody(request) as { case_id?: string };
+      valid(parseDiscoveryRequest(input), "charged competitor discovery");
+      const workflowId = request.headers?.["x-searchtrust-workflow-id"] ?? "";
+      const discoveryJobId = request.headers?.["x-searchtrust-discovery-job-id"] ?? "";
+      if (!validUuid(workflowId) || !validUuid(discoveryJobId)) {
+        throw new Error("Local fixture rejected invalid Prospect workflow identifiers.");
+      }
+      if (input.case_id !== this.caseId) throw new Error("Local fixture rejected a Prospect workflow for another Case.");
+      if (this.prospectWorkflowId && workflowId !== this.prospectWorkflowId) {
+        throw new Error("Local fixture rejected a second Prospect workflow for the same Case.");
+      }
+      if (!this.prospectWorkflowId && this.verifiedBalance < 1) {
+        return { status: 409, body: { error: { code: "INSUFFICIENT_CREDITS", message: "Buy 1 credit to start this Prospect workflow." } } };
+      }
+      if (!this.prospectWorkflowId) {
+        this.prospectWorkflowId = workflowId;
+        this.verifiedBalance -= 1;
+      }
+      this.discoveryJobId = discoveryJobId;
+      this.discoveryPoll = 0;
+      return {
+        status: 202,
+        body: { discovery_job_id: this.discoveryJobId, status: "queued", estimated_seconds: 2 },
+        headers: {
+          "x-searchtrust-workflow-id": this.prospectWorkflowId,
+          "x-searchtrust-credit-balance": String(this.verifiedBalance),
+        },
+      };
     }
     if (key === `GET /api/v2/competitors/tasks/${this.discoveryJobId}`) {
       const poll = this.discoveryPoll++;

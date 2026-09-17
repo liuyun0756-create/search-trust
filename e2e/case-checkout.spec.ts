@@ -1,40 +1,42 @@
-import type { Page } from "@playwright/test";
+import { expect, openProspectStart, test } from "./support/journey-test";
 
-import { expect, seedCoverageDraft, test } from "./support/journey-test";
+test.describe("Prospect credit boundary", () => {
+  test("reserves exactly one account credit before provider-backed discovery", async ({ page, apiScenario }) => {
+    await openProspectStart(page);
+    const start = page.getByRole("button", { name: "Start analysis · uses 1 credit" });
+    await expect(start).toBeEnabled();
+    await start.click();
 
-async function openReadyCheckout(page: Page) {
-  await seedCoverageDraft(page);
-  await page.goto("/cases/new");
-  await expect(page.getByRole("heading", { name: "Your evidence coverage is ready." })).toBeVisible();
-  await page.getByRole("button", { name: /Sign in & continue/ }).click();
-  await expect(page.getByRole("button", { name: "Continue to secure checkout" })).toBeEnabled();
-}
-
-test.describe("Case checkout", () => {
-  test("confirms a Case-scoped local payment without leaving the loopback origin", async ({ page, apiScenario }) => {
-    await openReadyCheckout(page);
-    await page.getByRole("button", { name: "Continue to secure checkout" }).click();
-    await expect.poll(() => apiScenario.snapshot().checkoutUnlocked).toBe(true);
-    expect(new URL(page.url()).origin).toBe("http://127.0.0.1:3100");
-  });
-
-  test.describe("cancelled provider handoff", () => {
-    test.use({ scenarioOptions: { checkout: "cancelled" } });
-    test("returns to the saved Case without charging", async ({ page }) => {
-      await openReadyCheckout(page);
-      await page.getByRole("button", { name: "Continue to secure checkout" }).click();
-      await expect(page.getByText("Checkout was cancelled. Your Case is still saved and nothing was charged.")).toBeVisible();
-      await expect(page.getByRole("button", { name: "Continue to secure checkout" })).toBeEnabled();
+    await expect(page.getByRole("heading", { name: "Choose the real competitive set." })).toBeVisible({ timeout: 12_000 });
+    expect(apiScenario.snapshot()).toMatchObject({
+      prospectWorkflowId: expect.any(String),
+      verifiedBalance: 0,
     });
   });
 
-  test.describe("provider failure", () => {
-    test.use({ scenarioOptions: { checkout: "provider_error" } });
-    test("keeps the retry action available", async ({ page }) => {
-      await openReadyCheckout(page);
-      await page.getByRole("button", { name: "Continue to secure checkout" }).click();
-      await expect(page.getByText("Secure checkout is temporarily unavailable.")).toBeVisible();
-      await expect(page.getByRole("button", { name: "Continue to secure checkout" })).toBeEnabled();
+  test.describe("without an available credit", () => {
+    test.use({ scenarioOptions: { verifiedBalance: 0 } });
+
+    test("blocks provider discovery and offers a one-credit purchase", async ({ page, apiScenario }) => {
+      await openProspectStart(page);
+      await expect(page.getByRole("link", { name: "Buy 1 credit · $19" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Start analysis · uses 1 credit" })).toHaveCount(0);
+      expect(apiScenario.snapshot()).toMatchObject({ prospectWorkflowId: null, discoveryPoll: 0, verifiedBalance: 0 });
+    });
+  });
+
+  test.describe("when the discovery provider fails", () => {
+    test.use({ scenarioOptions: { competitors: "failure" } });
+
+    test("keeps a retry path without charging a second credit", async ({ page, apiScenario }) => {
+      await openProspectStart(page);
+      const start = page.getByRole("button", { name: "Start analysis · uses 1 credit" });
+      await expect(start).toBeEnabled();
+      await start.click();
+
+      await expect(page.getByRole("heading", { name: "Competitor discovery needs attention" })).toBeVisible({ timeout: 12_000 });
+      await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+      expect(apiScenario.snapshot().verifiedBalance).toBe(0);
     });
   });
 });

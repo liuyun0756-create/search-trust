@@ -284,14 +284,14 @@ export function NewCaseWorkspace() {
   }, [authenticatedFetch, draft.analysis_job_id, draft.goal, paymentHandoff.caseId]);
 
   useEffect(() => {
-    if (paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client" || !latestAnalysisChecked) return;
+    if (draft.stage !== "auth_handoff" || paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client" || !latestAnalysisChecked) return;
     if (!draft.analysis_job_id) {
       const jobId = crypto.randomUUID();
       setDraft((current) => reduceWorkspaceState(current, { type: "START_ANALYSIS", job_id: jobId, idempotency_key: `analyze:${current.draft_case_id}:${jobId}` }));
       return;
     }
     void submitAnalysis();
-  }, [draft.analysis_job_id, draft.goal, latestAnalysisChecked, paymentHandoff.status, submitAnalysis]);
+  }, [draft.analysis_job_id, draft.goal, draft.stage, latestAnalysisChecked, paymentHandoff.status, submitAnalysis]);
 
   useEffect(() => {
     const jobId = draft.analysis_job_id;
