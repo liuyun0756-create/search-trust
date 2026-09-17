@@ -6,7 +6,7 @@ import type {
   WorkGoal,
 } from "./contracts";
 
-export const DRAFT_SCHEMA_VERSION = "2.2-new-case-v1" as const;
+export const DRAFT_SCHEMA_VERSION = "2.2-new-case-v2" as const;
 export const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 
 export type WorkspaceStage =
@@ -14,6 +14,7 @@ export type WorkspaceStage =
   | "preflight_running"
   | "preflight_failed"
   | "business_confirmation"
+  | "prospect_start"
   | "competitor_discovery_running"
   | "competitor_confirmation"
   | "competitor_discovery_failed"
@@ -39,6 +40,7 @@ export interface NewCaseDraft {
   preflight: PreflightResponse | null;
   preflight_error: { code: string; message: string } | null;
   business_confirmation: BusinessConfirmation | null;
+  prospect_workflow_id: string | null;
   discovery_job_id: string | null;
   discovery_idempotency_key: string | null;
   discovery_status: CompetitorDiscoveryStatusResponse | null;
@@ -56,9 +58,10 @@ export type WorkspaceEvent =
   | { type: "PREFLIGHT_SUCCEEDED"; response: PreflightResponse }
   | { type: "PREFLIGHT_FAILED"; code: string; message: string }
   | { type: "CONFIRM_BUSINESS"; confirmation: BusinessConfirmation }
-  | { type: "START_DISCOVERY"; job_id: string; idempotency_key: string; supplemental_website_urls?: string[] }
+  | { type: "START_DISCOVERY"; workflow_id: string; job_id: string; idempotency_key: string; supplemental_website_urls?: string[] }
   | { type: "DISCOVERY_UPDATED"; status: CompetitorDiscoveryStatusResponse }
   | { type: "DISCOVERY_REQUEST_FAILED"; code: string; message: string; retryable?: boolean }
+  | { type: "PROSPECT_START_REJECTED" }
   | { type: "SELECT_COMPETITORS"; competitor_ids: string[] }
   | { type: "CONFIRM_COMPETITORS" }
   | { type: "DISCOVERY_EXPIRED" }
@@ -68,6 +71,7 @@ export type WorkspaceEvent =
   | { type: "BEGIN_AUTH_HANDOFF" }
   | { type: "START_ANALYSIS"; job_id: string; idempotency_key: string }
   | { type: "RESET_ANALYSIS" }
+  | { type: "RESTART_PROSPECT" }
   | { type: "CLEAR" };
 
 function iso(now: Date) { return now.toISOString(); }
@@ -90,6 +94,7 @@ export function createNewCaseDraft(
     preflight: null,
     preflight_error: null,
     business_confirmation: null,
+    prospect_workflow_id: null,
     discovery_job_id: null,
     discovery_idempotency_key: null,
     discovery_status: null,
@@ -108,6 +113,7 @@ function touch(state: NewCaseDraft, update: Partial<NewCaseDraft>, now: Date): N
 
 function clearDiscovery() {
   return {
+    prospect_workflow_id: null,
     discovery_job_id: null,
     discovery_idempotency_key: null,
     discovery_status: null,
@@ -153,11 +159,17 @@ export function reduceWorkspaceState(
     case "PREFLIGHT_FAILED":
       return touch(state, { stage: "preflight_failed", preflight_error: { code: event.code, message: event.message } }, now);
     case "CONFIRM_BUSINESS":
-      return touch(state, { stage: "business_confirmation", business_confirmation: event.confirmation, ...clearDiscovery() }, now);
+      return touch(state, {
+        stage: "prospect_start",
+        business_confirmation: event.confirmation,
+        ...clearDiscovery(),
+        prospect_workflow_id: state.prospect_workflow_id,
+      }, now);
     case "START_DISCOVERY":
       if (state.discovery_job_id && state.stage === "competitor_discovery_running") return state;
       return touch(state, {
         stage: "competitor_discovery_running",
+        prospect_workflow_id: event.workflow_id,
         discovery_job_id: event.job_id,
         discovery_idempotency_key: event.idempotency_key,
         discovery_status: null,
@@ -183,6 +195,8 @@ export function reduceWorkspaceState(
     }
     case "DISCOVERY_REQUEST_FAILED":
       return touch(state, { stage: "competitor_discovery_failed", discovery_error: { code: event.code, message: event.message, retryable: event.retryable ?? true }, selected_competitor_ids: [] }, now);
+    case "PROSPECT_START_REJECTED":
+      return touch(state, { stage: "prospect_start", ...clearDiscovery() }, now);
     case "SELECT_COMPETITORS": {
       const result = state.discovery_status?.result;
       if (!result || event.competitor_ids.length > 3) return state;
@@ -193,7 +207,11 @@ export function reduceWorkspaceState(
     case "CONFIRM_COMPETITORS":
       return canConfirmCompetitors(state) ? touch(state, { stage: "coverage" }, now) : state;
     case "DISCOVERY_EXPIRED":
-      return touch(state, { stage: "business_confirmation", ...clearDiscovery() }, now);
+      return touch(state, {
+        stage: "prospect_start",
+        ...clearDiscovery(),
+        prospect_workflow_id: state.prospect_workflow_id,
+      }, now);
     case "EDIT_BUSINESS":
       return touch(state, { stage: "business_confirmation" }, now);
     case "EDIT_COMPETITORS":
@@ -212,6 +230,8 @@ export function reduceWorkspaceState(
         analysis_job_id: null,
         analysis_idempotency_key: null,
       }, now);
+    case "RESTART_PROSPECT":
+      return touch(state, { stage: "prospect_start", ...clearDiscovery() }, now);
     case "CLEAR":
       return createNewCaseDraft(now);
   }

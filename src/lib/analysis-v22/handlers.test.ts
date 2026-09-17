@@ -8,6 +8,7 @@ const userId = "00000000-0000-4000-8000-000000000001";
 const caseId = "11111111-1111-4111-8111-111111111111";
 const jobId = "22222222-2222-4222-8222-222222222222";
 const discoveryId = "33333333-3333-4333-8333-333333333333";
+const workflowId = "44444444-4444-4444-8444-444444444444";
 const market = { display_name: "Austin, TX", country_code: "US", region: "TX", city: "Austin", postal_code: null, latitude: null, longitude: null };
 const business = { business_name: "Acme Plumbing", site_url: "https://example.com/", normalized_domain: "example.com", operating_model: "hybrid", primary_location: market, public_gbp_url: null };
 const body = {
@@ -50,18 +51,19 @@ describe("v2.2 analysis handlers", () => {
     const response = await createAnalysisSubmitHandler(deps(repo, fetcher))(
       request("/api/v2/analyze", {
         method: "POST",
-        headers: { "x-searchtrust-job-id": jobId, "x-searchtrust-discovery-id": discoveryId, "idempotency-key": `analyze:${jobId}` },
+        headers: { "x-searchtrust-job-id": jobId, "x-searchtrust-discovery-id": discoveryId, "x-searchtrust-workflow-id": workflowId, "idempotency-key": `analyze:${jobId}` },
         body: JSON.stringify(body),
       }),
     );
 
     expect(response.status).toBe(202);
-    expect(repo.start).toHaveBeenCalledWith(userId, caseId, jobId, `analyze:${jobId}`, null);
+    expect(repo.start).toHaveBeenCalledWith(userId, caseId, workflowId, jobId, `analyze:${jobId}`, null);
     const [url, init] = fetcher.mock.calls[0];
     expect(url).toBe("https://internal.example/api/v2/analyze");
     const headers = new Headers(init?.headers);
     expect(headers.get("authorization")).toBe("Bearer server-secret");
     expect(headers.get("x-searchtrust-discovery-id")).toBe(discoveryId);
+    expect(headers.get("x-searchtrust-workflow-id")).toBe(workflowId);
     expect(JSON.parse(String(init?.body))).toEqual(body);
   });
 

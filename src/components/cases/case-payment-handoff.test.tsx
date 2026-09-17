@@ -16,18 +16,18 @@ function render(status: Parameters<typeof CasePaymentHandoff>[0]["status"]) {
 }
 
 describe("CasePaymentHandoff", () => {
-  it("shows a Case-scoped one-time checkout before payment", () => {
+  it("shows the one-credit Prospect workflow before reservation", () => {
     const html = render("ready");
-    expect(html).toContain("Continue to secure checkout");
-    expect(html).toContain("Unlocks only this Case");
-    expect(html).toContain("$19");
+    expect(html).toContain("Start analysis · uses 1 credit");
+    expect(html).toContain("Discovery and report included");
+    expect(html).toContain("1 credit");
     expect(html).not.toContain("disabled=\"\"");
   });
 
-  it("locks the checkout action while preparing and shows the paid entitlement", () => {
+  it("locks the start action while preparing and shows charged recovery", () => {
     expect(render("creating_checkout")).toContain("disabled=\"\"");
     const unlocked = render("unlocked");
-    expect(unlocked).toContain("1 prospect report available");
-    expect(unlocked).not.toContain("Continue to secure checkout");
+    expect(unlocked).toContain("Already covered · no second charge");
+    expect(unlocked).not.toContain("Start analysis · uses 1 credit");
   });
 });

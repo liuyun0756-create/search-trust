@@ -23,7 +23,7 @@ describe("BusinessMatchStep interactions", () => {
 
     expect(screen.getByText("Profile link provided — verification pending")).toBeInTheDocument();
     await user.type(screen.getByLabelText("Business name"), "SearchTrust E2E Plumbing");
-    await user.click(screen.getByRole("button", { name: /Confirm & find competitors/ }));
+    await user.click(screen.getByRole("button", { name: /Confirm business scope/ }));
 
     expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
       business_identity: expect.objectContaining({
@@ -45,7 +45,7 @@ describe("BusinessMatchStep interactions", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Confirm & find competitors/ }));
+    await user.click(screen.getByRole("button", { name: /Confirm business scope/ }));
     expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
       business_identity: expect.objectContaining({ public_gbp_url: E2E_IDS.gbpUrl }),
     }));
@@ -75,7 +75,7 @@ describe("BusinessMatchStep interactions", () => {
     expect(screen.getByLabelText("Primary service")).toHaveValue("Local SEO audit software");
     await user.clear(screen.getByLabelText("Target market"));
     await user.type(screen.getByLabelText("Target market"), "Brooklyn, NY");
-    await user.click(screen.getByRole("button", { name: /Confirm & find competitors/ }));
+    await user.click(screen.getByRole("button", { name: /Confirm business scope/ }));
 
     expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
       target_market: {

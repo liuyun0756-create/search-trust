@@ -20,12 +20,14 @@ export interface DraftStorage {
 const goals = new Set<WorkGoal>(["win_new_client", "work_existing_client"]);
 const stages = new Set<WorkspaceStage>([
   "goal_website", "preflight_running", "preflight_failed", "business_confirmation",
+  "prospect_start",
   "competitor_discovery_running", "competitor_confirmation", "competitor_discovery_failed", "coverage", "auth_handoff",
 ]);
 const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const topLevelKeys = new Set([
   "schema_version", "created_at", "updated_at", "expires_at", "stage", "goal", "draft_case_id", "site_url", "gbp_url",
   "preflight", "preflight_error", "business_confirmation", "discovery_job_id", "discovery_idempotency_key", "discovery_status",
+  "prospect_workflow_id",
   "discovery_error", "supplemental_website_urls", "selected_competitor_ids",
   "analysis_job_id", "analysis_idempotency_key", "previous_analysis_job_id",
 ]);
@@ -80,6 +82,7 @@ export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | nul
     && Object.keys(value.discovery_error).every((key) => ["code", "message", "retryable"].includes(key))
     && typeof value.discovery_error.code === "string" && typeof value.discovery_error.message === "string" && typeof value.discovery_error.retryable === "boolean"))) return null;
   if (value.business_confirmation !== null && !validBusinessConfirmation(value.business_confirmation)) return null;
+  if (!(value.prospect_workflow_id === null || (typeof value.prospect_workflow_id === "string" && uuidV4.test(value.prospect_workflow_id)))) return null;
   if (!(value.discovery_job_id === null || (typeof value.discovery_job_id === "string" && uuidV4.test(value.discovery_job_id)))) return null;
   if (!(value.discovery_idempotency_key === null || (typeof value.discovery_idempotency_key === "string" && /^[A-Za-z0-9._:-]{8,200}$/.test(value.discovery_idempotency_key)))) return null;
   if (!(value.analysis_job_id === undefined || value.analysis_job_id === null || (typeof value.analysis_job_id === "string" && uuidV4.test(value.analysis_job_id)))) return null;

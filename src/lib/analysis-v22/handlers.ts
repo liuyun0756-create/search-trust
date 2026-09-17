@@ -53,9 +53,10 @@ export function createAnalysisSubmitHandler(deps: Dependencies) {
     if (!user) return jsonError("UNAUTHORIZED", "Sign in to start this analysis.", 401);
     const jobId = request.headers.get("x-searchtrust-job-id") ?? "";
     const discoveryId = request.headers.get("x-searchtrust-discovery-id") ?? "";
+    const workflowId = request.headers.get("x-searchtrust-workflow-id") ?? "";
     const idempotencyKey = request.headers.get("idempotency-key") ?? "";
     const previousJobId = request.headers.get("x-searchtrust-previous-job-id");
-    if (!UUID_PATTERN.test(jobId) || !UUID_PATTERN.test(discoveryId) || !IDEMPOTENCY_PATTERN.test(idempotencyKey)
+    if (!UUID_PATTERN.test(jobId) || !UUID_PATTERN.test(discoveryId) || !UUID_PATTERN.test(workflowId) || !IDEMPOTENCY_PATTERN.test(idempotencyKey)
       || (previousJobId !== null && !UUID_PATTERN.test(previousJobId))) {
       return jsonError("INVALID_REQUEST", "The analysis identifiers are invalid.", 400);
     }
@@ -70,14 +71,14 @@ export function createAnalysisSubmitHandler(deps: Dependencies) {
     const parsed = parseAnalyzeRequest(body);
     if (!parsed.ok) return jsonError("INVALID_REQUEST", "The analysis request is invalid.", 400);
     try {
-      await deps.createRepository().start(user.userId, parsed.value.case_id, jobId, idempotencyKey, previousJobId);
+      await deps.createRepository().start(user.userId, parsed.value.case_id, workflowId, jobId, idempotencyKey, previousJobId);
     } catch {
       return jsonError("ANALYSIS_ENTITLEMENT_UNAVAILABLE", "This Case does not have an available prospect report entitlement.", 409);
     }
     const result = await upstream(deps, "/api/v2/analyze", {
       method: "POST",
       body: JSON.stringify(parsed.value),
-      headers: { "X-SearchTrust-Job-ID": jobId, "X-SearchTrust-Discovery-ID": discoveryId, "Idempotency-Key": idempotencyKey },
+      headers: { "X-SearchTrust-Job-ID": jobId, "X-SearchTrust-Discovery-ID": discoveryId, "X-SearchTrust-Workflow-ID": workflowId, "Idempotency-Key": idempotencyKey },
     });
     if (result.error) return result.error;
     const validated = parseTaskCreateResponse(result.response!.payload);

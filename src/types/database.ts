@@ -69,10 +69,46 @@ export interface ReserveV22ProspectWorkflowResult {
   credit_balance: number;
 }
 
+export interface StartV22ProspectDiscoveryArgs {
+  p_user_id: string;
+  p_case_id: string;
+  p_workflow_id: string;
+  p_discovery_job_id: string;
+  p_workflow_idempotency_key: string;
+  p_task_idempotency_key: string;
+}
+
+export type StartV22ProspectDiscoveryResult = ReserveV22ProspectWorkflowResult;
+
+export interface BindV22ProspectAnalysisArgs {
+  p_user_id: string;
+  p_case_id: string;
+  p_workflow_id: string;
+  p_job_id: string;
+  p_idempotency_key: string;
+  p_previous_job_id?: string | null;
+}
+
+export interface BindV22ProspectAnalysisResult {
+  job_id: string;
+  workflow_id: string;
+  created: boolean;
+  idempotent: boolean;
+  credit_balance: number;
+}
+
 export interface UnifiedCreditDatabaseFunctions {
   reserve_v22_prospect_workflow: {
     Args: ReserveV22ProspectWorkflowArgs;
     Returns: ReserveV22ProspectWorkflowResult[];
+  };
+  start_v22_prospect_discovery: {
+    Args: StartV22ProspectDiscoveryArgs;
+    Returns: StartV22ProspectDiscoveryResult[];
+  };
+  bind_v22_prospect_analysis: {
+    Args: BindV22ProspectAnalysisArgs;
+    Returns: BindV22ProspectAnalysisResult[];
   };
 }
 

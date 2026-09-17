@@ -12,7 +12,7 @@ const steps = [
 function activeIndex(stage: WorkspaceStage) {
   if (["goal_website", "preflight_running", "preflight_failed"].includes(stage)) return 0;
   if (stage === "business_confirmation") return 1;
-  if (["competitor_discovery_running", "competitor_confirmation", "competitor_discovery_failed"].includes(stage)) return 2;
+  if (["prospect_start", "competitor_discovery_running", "competitor_confirmation", "competitor_discovery_failed"].includes(stage)) return 2;
   return 3;
 }
 
@@ -20,7 +20,7 @@ export function NewCaseStepper({ stage }: { stage: WorkspaceStage }) {
   const current = activeIndex(stage);
   return (
     <nav aria-label="New Case progress" className="border-b border-white/10 px-5 py-5 lg:border-b-0 lg:px-0 lg:py-0">
-      <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white/40 lg:mb-8">Free preflight</p>
+      <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white/40 lg:mb-8">Prospect workflow</p>
       <ol className="grid grid-cols-4 gap-2 lg:block lg:space-y-2">
         {steps.map((step, index) => {
           const complete = index < current;

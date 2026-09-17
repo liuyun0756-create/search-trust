@@ -150,7 +150,7 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
           <Field label="Target market"><input required value={marketName} onChange={(event) => setMarketName(event.target.value)} className="field-input" /></Field>
           <Field label="Public GBP"><div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#d5dcd0] bg-[#f8faf6] px-3 text-sm text-[#637063]"><Phone size={15} />{gbpStatus}</div></Field>
         </div>
-        <div className="mt-6 flex justify-end"><button type="submit" className="min-h-12 rounded-xl bg-[#1a211a] px-6 text-sm font-bold text-white outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/40">Confirm & find competitors <span aria-hidden="true">→</span></button></div>
+        <div className="mt-6 flex justify-end"><button type="submit" className="min-h-12 rounded-xl bg-[#1a211a] px-6 text-sm font-bold text-white outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/40">Confirm business scope <span aria-hidden="true">→</span></button></div>
       </form>
     </section>
   );

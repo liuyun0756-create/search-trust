@@ -1,6 +1,6 @@
 "use client";
 
-import { LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
+import { Coins, LockKeyhole, LoaderCircle, RotateCcw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -19,7 +19,6 @@ import {
   retryCompetitorDiscovery,
   runPreflight,
   saveDraft,
-  submitCompetitorDiscovery,
   type BusinessConfirmation,
   type NewCaseDraft,
 } from "@/lib/preflight-v22";
@@ -69,6 +68,7 @@ export function NewCaseWorkspace() {
   const authenticatedFetch = useAuthenticatedFetch();
   const [analysisStatus, setAnalysisStatus] = useState<TaskStatusResponse | null>(null);
   const [latestAnalysisChecked, setLatestAnalysisChecked] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
   useEffect(() => {
     setDraft(loadDraft(sessionStorage));
@@ -83,6 +83,15 @@ export function NewCaseWorkspace() {
     }
     saveDraft(sessionStorage, draft);
   }, [draft, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || !draft.prospect_workflow_id || paymentHandoff.caseId) return;
+    setPaymentHandoff({
+      status: "unlocked",
+      caseId: draft.draft_case_id,
+      message: "This Prospect Case is already covered. Refreshing or resuming will not use another credit.",
+    });
+  }, [draft.draft_case_id, draft.prospect_workflow_id, hydrated, paymentHandoff.caseId]);
 
   useEffect(() => {
     if (!hydrated || draft.stage !== "competitor_discovery_running" || !draft.discovery_job_id) return;
@@ -111,8 +120,7 @@ export function NewCaseWorkspace() {
   const saveCase = useCallback(async (): Promise<string | null> => {
     if (savingCase.current || !draft.business_confirmation) return null;
     savingCase.current = true;
-    if (draft.goal === "work_existing_client") setHandoffMessage("Saving the verified client Case…");
-    else setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving the verified Case before checkout…" });
+    setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving this confirmed Case before analysis…" });
     try {
       const scope = draft.business_confirmation;
       const response = await authenticatedFetch("/api/v2/cases", {
@@ -132,40 +140,28 @@ export function NewCaseWorkspace() {
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         if (payload?.error?.code === "CASE_ALREADY_EXISTS" && payload?.error?.case_id === draft.draft_case_id) {
-          if (draft.goal === "work_existing_client") {
-            clearDraft(sessionStorage);
-            setHandoffMessage("Client Case is already saved. Connection preparation will continue from this verified scope.");
-          } else {
-            setPaymentHandoff({
-              status: "ready",
-              caseId: draft.draft_case_id,
-              message: "Your verified Case is saved. Payment status is being checked before another checkout can be opened.",
-            });
-          }
+          setPaymentHandoff({
+            status: "ready",
+            caseId: draft.draft_case_id,
+            message: "This Case is saved. Starting provider-backed discovery uses 1 credit.",
+          });
           return draft.draft_case_id;
         }
         const message = payload?.error?.code === "CASE_ALREADY_EXISTS"
           ? "This client already has a Case. Open the existing Case instead of creating a duplicate."
           : payload?.error?.message || "The Case could not be saved yet.";
-        if (draft.goal === "work_existing_client") setHandoffMessage(message);
-        else setPaymentHandoff({ status: "error", caseId: payload?.error?.case_id ?? null, message });
+        setPaymentHandoff({ status: "error", caseId: payload?.error?.case_id ?? null, message });
         return null;
       }
-      if (draft.goal === "work_existing_client") {
-        clearDraft(sessionStorage);
-        setHandoffMessage("Client Case saved. Connection preparation will continue from this verified scope.");
-      } else {
-        setPaymentHandoff({
-          status: "ready",
-          caseId: payload.id,
-          message: "Your verified business and competitor scope is now attached to this Case. Continue when you are ready to pay.",
-        });
-      }
+      setPaymentHandoff({
+        status: "ready",
+        caseId: payload.id,
+        message: "This Case is saved. Starting provider-backed discovery uses 1 credit.",
+      });
       return payload.id as string;
     } catch {
       const message = "The Case could not be saved yet. Your session draft is still safe.";
-      if (draft.goal === "work_existing_client") setHandoffMessage(message);
-      else setPaymentHandoff({ status: "error", caseId: null, message });
+      setPaymentHandoff({ status: "error", caseId: null, message });
       return null;
     } finally {
       savingCase.current = false;
@@ -173,70 +169,30 @@ export function NewCaseWorkspace() {
   }, [authenticatedFetch, draft.business_confirmation, draft.draft_case_id, draft.goal]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || draft.stage !== "auth_handoff") return;
-    if (draft.goal === "work_existing_client") void saveCase();
-    else if (!paymentHandoff.caseId && paymentHandoff.status === "saving_case") void saveCase();
-  }, [draft.goal, draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId, paymentHandoff.status, saveCase]);
+    if (!isLoaded || !isSignedIn || draft.stage !== "prospect_start") return;
+    if (!paymentHandoff.caseId && paymentHandoff.status === "saving_case") void saveCase();
+  }, [draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId, paymentHandoff.status, saveCase]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || draft.stage !== "auth_handoff" || draft.goal !== "win_new_client" || !paymentHandoff.caseId) return;
-    const params = new URLSearchParams(window.location.search);
-    const paymentReturn = params.get("payment");
-    const returnedCaseId = params.get("case_id");
-    const matchesReturn = returnedCaseId === paymentHandoff.caseId;
-
-    if (paymentReturn === "cancelled" && matchesReturn) {
-      setPaymentHandoff((current) => ({ ...current, status: "ready", message: "Checkout was cancelled. Your Case is still saved and nothing was charged." }));
-      window.history.replaceState(null, "", "/cases/new");
-      return;
-    }
-    if (paymentReturn && (!matchesReturn || paymentReturn !== "return")) return;
-
+    if (!isLoaded || !isSignedIn || draft.stage !== "prospect_start") return;
     const controller = new AbortController();
-    void (async () => {
-      if (paymentReturn === "return") {
-        setPaymentHandoff((current) => ({ ...current, status: "confirming_payment", message: "Confirming payment and securing this Case entitlement…" }));
-      }
-      try {
-        const statusResponse = await authenticatedFetch(`/api/v2/cases/${paymentHandoff.caseId}/checkout`, { signal: controller.signal });
-        const statusPayload = await statusResponse.json().catch(() => null);
-        if (statusResponse.ok && statusPayload?.unlocked) {
-          setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "Payment is confirmed. This entitlement can be used only for the first prospect report on this Case." }));
-          window.history.replaceState(null, "", "/cases/new");
-          return;
+    void authenticatedFetch("/api/v2/credits", { signal: controller.signal })
+      .then(async (response) => ({ response, payload: await response.json().catch(() => null) }))
+      .then(({ response, payload }) => {
+        if (!controller.signal.aborted && response.ok && Number.isSafeInteger(payload?.credit_balance)) {
+          setCreditBalance(payload.credit_balance);
         }
-
-        if (paymentReturn !== "return") return;
-
-        const paymentId = params.get("payment_id");
-        if (!paymentId) {
-          setPaymentHandoff((current) => ({ ...current, status: "error", message: "Payment confirmation is still arriving. Refresh this page in a moment; you will not be charged twice." }));
-          return;
-        }
-        const confirmResponse = await authenticatedFetch(`/api/v2/cases/${paymentHandoff.caseId}/checkout/confirm`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ payment_id: paymentId }),
-          signal: controller.signal,
-        });
-        const confirmPayload = await confirmResponse.json().catch(() => null);
-        if (!confirmResponse.ok) throw new Error(confirmPayload?.error?.message || "Payment confirmation failed.");
-        setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "Payment is confirmed. This entitlement can be used only for the first prospect report on this Case." }));
-        window.history.replaceState(null, "", "/cases/new");
-      } catch (error) {
-        if (controller.signal.aborted) return;
-        setPaymentHandoff((current) => ({ ...current, status: "error", message: error instanceof Error ? error.message : "Payment confirmation could not be completed yet." }));
-      }
-    })();
+      })
+      .catch(() => undefined);
     return () => controller.abort();
-  }, [authenticatedFetch, draft.goal, draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId]);
+  }, [authenticatedFetch, draft.stage, isLoaded, isSignedIn]);
 
   const submitAnalysis = useCallback(async () => {
     const discovery = draft.discovery_status?.result;
     const confirmation = draft.business_confirmation;
     const jobId = draft.analysis_job_id;
     const idempotencyKey = draft.analysis_idempotency_key;
-    if (submittingAnalysis.current || !paymentHandoff.caseId || !discovery || !confirmation || !jobId || !idempotencyKey) return;
+    if (submittingAnalysis.current || !paymentHandoff.caseId || !draft.prospect_workflow_id || !discovery || !confirmation || !jobId || !idempotencyKey) return;
     const selected = new Set(draft.selected_competitor_ids);
     const competitors = discovery.candidates
       .filter((candidate) => selected.has(candidate.competitor_id))
@@ -256,6 +212,7 @@ export function NewCaseWorkspace() {
           "content-type": "application/json",
           "x-searchtrust-job-id": jobId,
           "x-searchtrust-discovery-id": discovery.discovery_id,
+          "x-searchtrust-workflow-id": draft.prospect_workflow_id,
           "idempotency-key": idempotencyKey,
           ...(draft.previous_analysis_job_id
             ? { "x-searchtrust-previous-job-id": draft.previous_analysis_job_id }
@@ -290,7 +247,7 @@ export function NewCaseWorkspace() {
     } finally {
       submittingAnalysis.current = false;
     }
-  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.selected_competitor_ids, paymentHandoff.caseId]);
+  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId]);
 
   useEffect(() => {
     const caseId = paymentHandoff.caseId;
@@ -414,9 +371,9 @@ export function NewCaseWorkspace() {
   function retryAnalysis() {
     if (analysisStatus?.status === "failed") {
       setAnalysisStatus(null);
-      setDraft((current) => reduceWorkspaceState(current, { type: "RESET_ANALYSIS" }));
+      setDraft((current) => reduceWorkspaceState(current, { type: "RESTART_PROSPECT" }));
     }
-    setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "Starting a new report attempt with one returned account credit…" }));
+    setPaymentHandoff((current) => ({ ...current, status: "ready", message: "1 credit was returned. Start a new Prospect analysis when you are ready; it will use 1 credit." }));
   }
 
   async function startPreflight(input: { goal: NewCaseDraft["goal"]; site_url: string; gbp_url: string | null }) {
@@ -440,6 +397,14 @@ export function NewCaseWorkspace() {
   }
 
   async function startDiscovery(confirmation: BusinessConfirmation, supplements: string[] = []) {
+    if (!isSignedIn) {
+      openLogin();
+      return;
+    }
+    if (!paymentHandoff.caseId) {
+      await saveCase();
+      return;
+    }
     const normalizedSupplements: string[] = [];
     try {
       for (const value of supplements) normalizedSupplements.push(normalizeWebInput(value));
@@ -447,29 +412,53 @@ export function NewCaseWorkspace() {
       setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", code: "INVALID_COMPETITOR_URL", message: "Enter valid public competitor website addresses." }));
       return;
     }
+    const workflowId = draft.prospect_workflow_id ?? crypto.randomUUID();
     const jobId = crypto.randomUUID();
     const idempotencyKey = `discover:${draft.draft_case_id}:${jobId}`;
-    setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", job_id: jobId, idempotency_key: idempotencyKey, supplemental_website_urls: normalizedSupplements }));
+    const workflowIdempotencyKey = `prospect:${draft.draft_case_id}:${workflowId}`;
+    setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", workflow_id: workflowId, job_id: jobId, idempotency_key: idempotencyKey, supplemental_website_urls: normalizedSupplements }));
+    setPaymentHandoff((current) => ({ ...current, status: "starting_analysis", message: "Reserving 1 credit and starting provider-backed discovery…" }));
     try {
-      await submitCompetitorDiscovery({
-        case_id: draft.draft_case_id,
-        business_identity: confirmation.business_identity,
-        primary_service: confirmation.primary_service,
-        target_market: confirmation.target_market,
-        queries: discoveryQueries(confirmation),
-        search_language: "en",
-        search_device: "mobile",
-        supplemental_website_urls: normalizedSupplements,
-      }, jobId, idempotencyKey);
+      const response = await authenticatedFetch(`/api/v2/cases/${encodeURIComponent(paymentHandoff.caseId)}/prospect-workflow`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-searchtrust-workflow-id": workflowId,
+          "x-searchtrust-workflow-idempotency-key": workflowIdempotencyKey,
+          "x-searchtrust-discovery-job-id": jobId,
+          "idempotency-key": idempotencyKey,
+        },
+        body: JSON.stringify({
+          case_id: paymentHandoff.caseId,
+          business_identity: confirmation.business_identity,
+          primary_service: confirmation.primary_service,
+          target_market: confirmation.target_market,
+          queries: discoveryQueries(confirmation),
+          search_language: "en",
+          search_device: "mobile",
+          supplemental_website_urls: normalizedSupplements,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new PreflightApiError(payload?.error?.code ?? "PROSPECT_WORKFLOW_UNAVAILABLE", payload?.error?.message ?? "The Prospect workflow could not be started.", response.status);
+      const balance = Number(response.headers.get("x-searchtrust-credit-balance"));
+      if (Number.isSafeInteger(balance) && balance >= 0) setCreditBalance(balance);
+      setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "This Prospect Case is already covered. Refreshing or resuming will not use another credit." }));
     } catch (error) {
       const safe = apiError(error);
-      setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
+      if (safe.code === "INSUFFICIENT_CREDITS") {
+        setCreditBalance(0);
+        setDraft((current) => reduceWorkspaceState(current, { type: "PROSPECT_START_REJECTED" }));
+      } else {
+        setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
+      }
+      setPaymentHandoff((current) => ({ ...current, status: "error", message: safe.message }));
     }
   }
 
   function confirmBusiness(confirmation: BusinessConfirmation) {
     setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_BUSINESS", confirmation }));
-    void startDiscovery(confirmation);
+    if (!isSignedIn) openLogin();
   }
 
   async function retryDiscovery() {
@@ -486,7 +475,7 @@ export function NewCaseWorkspace() {
       }
       if (latest.error?.retryable) {
         await retryCompetitorDiscovery(draft.discovery_job_id);
-        setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", job_id: draft.discovery_job_id!, idempotency_key: draft.discovery_idempotency_key ?? `retry:${draft.discovery_job_id}` }));
+        setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", workflow_id: draft.prospect_workflow_id!, job_id: draft.discovery_job_id!, idempotency_key: draft.discovery_idempotency_key ?? `retry:${draft.discovery_job_id}` }));
         return;
       }
       setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_UPDATED", status: latest }));
@@ -501,27 +490,13 @@ export function NewCaseWorkspace() {
   }
 
   function continueAfterCoverage() {
+    setPaymentHandoff((current) => ({
+      ...current,
+      status: "unlocked",
+      message: "Your Prospect workflow is covered. Generating its report will not use another credit.",
+    }));
     setDraft((current) => reduceWorkspaceState(current, { type: "BEGIN_AUTH_HANDOFF" }));
     if (!isSignedIn) openLogin();
-  }
-
-  async function startCaseCheckout() {
-    if (!paymentHandoff.caseId) {
-      setPaymentHandoff((current) => ({ ...current, status: "saving_case", message: "Saving the verified Case before checkout…" }));
-      await saveCase();
-      return;
-    }
-    setPaymentHandoff((current) => ({ ...current, status: "creating_checkout", message: "Preparing a secure checkout for this Case…" }));
-    try {
-      const response = await authenticatedFetch(`/api/v2/cases/${paymentHandoff.caseId}/checkout`, { method: "POST" });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || typeof payload?.checkout_url !== "string") {
-        throw new Error(payload?.error?.message || "Secure checkout could not be opened.");
-      }
-      window.location.assign(payload.checkout_url);
-    } catch (error) {
-      setPaymentHandoff((current) => ({ ...current, status: "error", message: error instanceof Error ? error.message : "Secure checkout could not be opened." }));
-    }
   }
 
   function reset() {
@@ -532,7 +507,8 @@ export function NewCaseWorkspace() {
     setLatestAnalysisChecked(false);
     latestLookupCase.current = null;
     setHandoffMessage(null);
-    setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving the verified Case before checkout…" });
+    setCreditBalance(null);
+    setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving this confirmed Case before analysis…" });
   }
 
   if (!hydrated) return <div className="min-h-screen bg-[#171d17]" />;
@@ -554,17 +530,52 @@ export function NewCaseWorkspace() {
             {draft.stage === "preflight_running" && <PreflightStatus kind="loading" title="Checking the public evidence surface" message="We’re resolving the business website, public profile, service, market, and available analysis modules." />}
             {draft.stage === "preflight_failed" && <PreflightStatus kind="error" title="Preflight needs attention" message={draft.preflight_error?.message ?? "The public data check could not be completed."} onRetry={() => void startPreflight({ goal: draft.goal, site_url: draft.site_url, gbp_url: draft.gbp_url })} />}
             {draft.stage === "business_confirmation" && draft.preflight && <BusinessMatchStep key={draft.preflight.preflight_id} preflight={draft.preflight} submittedGbpUrl={draft.gbp_url} initialConfirmation={draft.business_confirmation} onConfirm={confirmBusiness} onEditSource={() => setDraft((current) => reduceWorkspaceState(current, { type: "CHANGE_SOURCE", goal: current.goal, site_url: current.site_url, gbp_url: current.gbp_url }))} />}
+            {draft.stage === "prospect_start" && draft.business_confirmation && (
+              <section className="overflow-hidden rounded-2xl border border-[#d9dfd3] bg-white shadow-[0_18px_55px_rgba(31,39,27,0.07)]">
+                <div className="grid gap-8 p-7 sm:p-9 lg:grid-cols-[1fr_270px] lg:items-center">
+                  <div>
+                    <span className="grid h-12 w-12 place-items-center rounded-full bg-[#1a211a] text-[#b7dc3f]">
+                      {paymentHandoff.status === "saving_case" ? <LoaderCircle className="animate-spin" size={23} /> : <Coins size={23} />}
+                    </span>
+                    <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-[#718218]">Prospect Opportunity Report</p>
+                    <h1 className="mt-2 max-w-xl text-3xl font-bold tracking-[-0.035em] text-[#172017]">Start the complete prospect analysis.</h1>
+                    <p className="mt-4 max-w-xl text-sm leading-6 text-[#667266]">{draft.prospect_workflow_id ? "This Prospect Case is already covered. Resume competitor discovery without another charge." : "Your site and business scope are confirmed. Starting now reserves 1 credit before competitor and market providers are called. This same Case can be refreshed and resumed without another charge."}</p>
+                    {!isSignedIn && <p className="mt-4 text-sm font-semibold text-[#7a5b14]">Sign in first to receive and use your permanent credits.</p>}
+                    <p aria-live="polite" className="mt-4 text-sm text-[#667266]">{paymentHandoff.message}</p>
+                  </div>
+                  <div className="rounded-2xl border border-[#dfe5d8] bg-[#f7f9f3] p-5">
+                    <div className="flex items-center justify-between border-b border-[#dfe5d8] pb-4">
+                      <span className="text-xs font-bold text-[#657065]">This workflow</span>
+                      <span className="text-xl font-bold text-[#1a231a]">{draft.prospect_workflow_id ? "Covered" : "1 credit"}</span>
+                    </div>
+                    <p className="mt-4 text-xs leading-5 text-[#667266]">{creditBalance === null ? "Loading your balance…" : `${creditBalance} ${creditBalance === 1 ? "credit" : "credits"} available`}</p>
+                    {isSignedIn ? (
+                      creditBalance === 0 ? (
+                        <Link href="/pricing" className="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-[#1a211a] px-5 text-sm font-bold text-white">Buy 1 credit · $19</Link>
+                      ) : (
+                        <button type="button" onClick={() => void startDiscovery(draft.business_confirmation!)} disabled={!paymentHandoff.caseId || paymentHandoff.status === "saving_case" || paymentHandoff.status === "starting_analysis" || creditBalance === null} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1a211a] px-5 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-55">
+                          {paymentHandoff.status === "saving_case" || paymentHandoff.status === "starting_analysis" ? <LoaderCircle className="animate-spin" size={17} /> : <Coins size={17} />}
+                          {draft.prospect_workflow_id ? "Resume discovery · no extra credit" : "Start analysis · uses 1 credit"}
+                        </button>
+                      )
+                    ) : (
+                      <button type="button" onClick={openLogin} className="mt-5 min-h-12 w-full rounded-xl bg-[#1a211a] px-5 text-sm font-bold text-white">Sign in & continue</button>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
             {draft.stage === "competitor_discovery_running" && <PreflightStatus kind="loading" title="Finding qualified local competitors" message={draft.discovery_status?.message ?? "The durable discovery task is checking market results and validating candidate websites."} progress={draft.discovery_status?.progress} />}
             {draft.stage === "competitor_discovery_failed" && <PreflightStatus kind="error" title="Competitor discovery needs attention" message={draft.discovery_error?.message ?? "The competitor search could not be completed."} onRetry={draft.discovery_error?.retryable === false ? undefined : () => void retryDiscovery()} onEdit={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} editLabel="Edit business scope" />}
             {draft.stage === "competitor_confirmation" && draft.discovery_status?.result && <CompetitorConfirmationStep status={draft.discovery_status} selectedIds={draft.selected_competitor_ids} onSelectionChange={(competitor_ids) => setDraft((current) => reduceWorkspaceState(current, { type: "SELECT_COMPETITORS", competitor_ids }))} onConfirm={() => setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_COMPETITORS" }))} onRerun={(urls) => draft.business_confirmation && void startDiscovery(draft.business_confirmation, urls)} onEditScope={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} />}
             {draft.stage === "coverage" && <CoverageStep draft={draft} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
             {draft.stage === "auth_handoff" && (
-              draft.goal === "win_new_client" && isSignedIn ? (
+              isSignedIn ? (
                 <CasePaymentHandoff
                   status={paymentHandoff.status}
                   message={paymentHandoff.message}
                   caseId={paymentHandoff.caseId}
-                  onCheckout={() => void startCaseCheckout()}
+                  onCheckout={() => undefined}
                   onRetryAnalysis={retryAnalysis}
                   onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }))}
                 />

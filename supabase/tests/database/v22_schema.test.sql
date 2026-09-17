@@ -4,7 +4,7 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(128);
+select plan(134);
 
 select has_column('public','users','credit_balance','Unified permanent credit balance exists');
 select col_not_null('public','users','credit_balance','Unified credit balance is required');
@@ -25,6 +25,16 @@ select ok(has_function_privilege('service_role','public.reserve_v22_prospect_wor
   and not has_function_privilege('anon','public.reserve_v22_prospect_workflow(uuid,uuid,uuid,uuid,text)','EXECUTE')
   and not has_function_privilege('authenticated','public.reserve_v22_prospect_workflow(uuid,uuid,uuid,uuid,text)','EXECUTE'),
   'Prospect workflow reservation is service-role-only');
+select has_table('public','prospect_discovery_tasks','Charged Prospect discovery tasks exist');
+select has_pk('public','prospect_discovery_tasks','Discovery task identity is unique');
+select has_function('public','start_v22_prospect_discovery',array['uuid','uuid','uuid','uuid','text','text'],'Charged discovery start RPC exists');
+select has_function('public','bind_v22_prospect_analysis',array['uuid','uuid','uuid','uuid','text','uuid'],'Prospect report binds to an existing workflow charge');
+select has_trigger('public','analysis_jobs','settle_v22_workflow_charge_on_job_terminal','Unified charges settle on job terminal state');
+select ok(has_function_privilege('service_role','public.start_v22_prospect_discovery(uuid,uuid,uuid,uuid,text,text)','EXECUTE')
+  and has_function_privilege('service_role','public.bind_v22_prospect_analysis(uuid,uuid,uuid,uuid,text,uuid)','EXECUTE')
+  and not has_function_privilege('anon','public.start_v22_prospect_discovery(uuid,uuid,uuid,uuid,text,text)','EXECUTE')
+  and not has_function_privilege('authenticated','public.bind_v22_prospect_analysis(uuid,uuid,uuid,uuid,text,uuid)','EXECUTE'),
+  'Charged Prospect RPCs are service-role-only');
 
 select has_column('public','audit_credit_ledger','order_id','Payment ledger retains order identity');
 select col_is_fk('public','audit_credit_ledger','order_id','Payment ledger order has FK');

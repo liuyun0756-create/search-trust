@@ -2529,5 +2529,124 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         [workflowId],
       )).rows[0]).toEqual({ count: 0 });
     });
+
+    it("binds the reserved Prospect workflow to report generation without a second debit", async () => {
+      const suffix = randomUUID();
+      const clerkUserId = `clerk_bind_${suffix}`;
+      await db.query(
+        `select public.register_v22_clerk_user($1, decode($2, 'hex'), $3, null)`,
+        [clerkUserId, "ef".repeat(32), `${suffix}@example.com`],
+      );
+      const owner = (await db.query<{ id: string }>(
+        `select id from public.users where clerk_user_id = $1`, [clerkUserId],
+      )).rows[0].id;
+      const caseId = await insertCase(owner, suffix);
+      const workflowId = randomUUID();
+      const discoveryJobId = randomUUID();
+      await db.query(
+        `select * from public.reserve_v22_prospect_workflow($1,$2,$3,$4,$5)`,
+        [owner, caseId, workflowId, discoveryJobId, `prospect:${caseId}:bind`],
+      );
+      const analysisJobId = randomUUID();
+      const bind = () => db.query<{
+        job_id: string; workflow_id: string; created: boolean; idempotent: boolean; credit_balance: number;
+      }>(
+        `select * from public.bind_v22_prospect_analysis($1,$2,$3,$4,$5,null)`,
+        [owner, caseId, workflowId, analysisJobId, `analysis:${analysisJobId}`],
+      );
+      expect((await bind()).rows[0]).toEqual({
+        job_id: analysisJobId,
+        workflow_id: workflowId,
+        created: true,
+        idempotent: false,
+        credit_balance: 4,
+      });
+      expect((await bind()).rows[0]).toEqual({
+        job_id: analysisJobId,
+        workflow_id: workflowId,
+        created: false,
+        idempotent: true,
+        credit_balance: 4,
+      });
+      expect((await db.query<{ count: number }>(
+        `select count(*)::int as count from public.credit_ledger where user_id=$1 and delta=-1`, [owner],
+      )).rows[0]).toEqual({ count: 1 });
+    });
+
+    it("allows follow-up competitor discovery under the same charged Prospect workflow", async () => {
+      const suffix = randomUUID();
+      const clerkUserId = `clerk_followup_${suffix}`;
+      await db.query(
+        `select public.register_v22_clerk_user($1, decode($2, 'hex'), $3, null)`,
+        [clerkUserId, "34".repeat(32), `${suffix}@example.com`],
+      );
+      const owner = (await db.query<{ id: string }>(
+        `select id from public.users where clerk_user_id = $1`, [clerkUserId],
+      )).rows[0].id;
+      const caseId = await insertCase(owner, suffix);
+      const workflowId = randomUUID();
+      const firstTask = randomUUID();
+      const secondTask = randomUUID();
+      const workflowKey = `prospect:${caseId}:${workflowId}`;
+      const start = (taskId: string) => db.query<{
+        created: boolean; idempotent: boolean; credit_balance: number;
+      }>(
+        `select created,idempotent,credit_balance from public.start_v22_prospect_discovery($1,$2,$3,$4,$5,$6)`,
+        [owner, caseId, workflowId, taskId, workflowKey, `discover:${taskId}`],
+      );
+      expect((await start(firstTask)).rows[0]).toEqual({ created: true, idempotent: false, credit_balance: 4 });
+      expect((await start(firstTask)).rows[0]).toEqual({ created: false, idempotent: true, credit_balance: 4 });
+      expect((await start(secondTask)).rows[0]).toEqual({ created: true, idempotent: false, credit_balance: 4 });
+      expect((await db.query<{ count: number }>(
+        `select count(*)::int as count from public.prospect_discovery_tasks where workflow_charge_id=$1`, [workflowId],
+      )).rows[0]).toEqual({ count: 2 });
+      expect((await db.query<{ count: number }>(
+        `select count(*)::int as count from public.credit_ledger where workflow_charge_id=$1 and kind='prospect_debit'`, [workflowId],
+      )).rows[0]).toEqual({ count: 1 });
+    });
+
+    it("returns one credit exactly once when a bound Prospect job fails", async () => {
+      const suffix = randomUUID();
+      const clerkUserId = `clerk_compensate_${suffix}`;
+      await db.query(
+        `select public.register_v22_clerk_user($1, decode($2, 'hex'), $3, null)`,
+        [clerkUserId, "12".repeat(32), `${suffix}@example.com`],
+      );
+      const owner = (await db.query<{ id: string }>(
+        `select id from public.users where clerk_user_id = $1`, [clerkUserId],
+      )).rows[0].id;
+      const caseId = await insertCase(owner, suffix);
+      const workflowId = randomUUID();
+      const analysisJobId = randomUUID();
+      await db.query(
+        `select * from public.reserve_v22_prospect_workflow($1,$2,$3,$4,$5)`,
+        [owner, caseId, workflowId, randomUUID(), `prospect:${caseId}:failure`],
+      );
+      await db.query(
+        `select * from public.bind_v22_prospect_analysis($1,$2,$3,$4,$5,null)`,
+        [owner, caseId, workflowId, analysisJobId, `analysis:${analysisJobId}`],
+      );
+      const settle = (revision: number) => db.query(
+        `select * from public.apply_analysis_job_event(
+          $1,$2,$3,'failed','failed',50::smallint,1,'PROVIDER_TIMEOUT','Try again',
+          '{}'::jsonb,now(),now(),1,null)`,
+        [analysisJobId, caseId, revision],
+      );
+      await settle(1);
+      await settle(2);
+      expect((await db.query(
+        `select state from public.workflow_charges where id=$1`, [workflowId],
+      )).rows).toEqual([{ state: "compensated" }]);
+      expect((await db.query(
+        `select credit_balance from public.users where id=$1`, [owner],
+      )).rows).toEqual([{ credit_balance: 5 }]);
+      expect((await db.query(
+        `select kind,delta,balance_after from public.credit_ledger
+         where workflow_charge_id=$1 order by created_at`, [workflowId],
+      )).rows).toEqual([
+        { kind: "prospect_debit", delta: -1, balance_after: 4 },
+        { kind: "technical_failure_credit", delta: 1, balance_after: 5 },
+      ]);
+    });
   });
 });

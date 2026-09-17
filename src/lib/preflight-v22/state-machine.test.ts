@@ -7,6 +7,7 @@ const draftId = "11111111-1111-4111-8111-111111111111";
 const jobId = "22222222-2222-4222-8222-222222222222";
 const discoveryId = "33333333-3333-4333-8333-333333333333";
 const snapshotId = "44444444-4444-4444-8444-444444444444";
+const workflowId = "77777777-7777-4777-8777-777777777777";
 const market = { display_name: "Austin, TX, US", country_code: "US", region: "TX", city: "Austin", postal_code: null, latitude: null, longitude: null };
 const business = { business_name: "Acme Plumbing", site_url: "https://example.com/", normalized_domain: "example.com", operating_model: "hybrid" as const, primary_location: market, public_gbp_url: null };
 const confirmation = { business_identity: business, primary_service: "Plumbing", target_market: market };
@@ -43,7 +44,7 @@ function readyState() {
   state = reduceWorkspaceState(state, { type: "START_PREFLIGHT" });
   state = reduceWorkspaceState(state, { type: "PREFLIGHT_SUCCEEDED", response: preflight });
   state = reduceWorkspaceState(state, { type: "CONFIRM_BUSINESS", confirmation });
-  state = reduceWorkspaceState(state, { type: "START_DISCOVERY", job_id: jobId, idempotency_key: `discover:${jobId}` });
+  state = reduceWorkspaceState(state, { type: "START_DISCOVERY", workflow_id: workflowId, job_id: jobId, idempotency_key: `discover:${jobId}` });
   return reduceWorkspaceState(state, { type: "DISCOVERY_UPDATED", status: succeeded() });
 }
 
@@ -69,6 +70,7 @@ describe("new Case workspace state machine", () => {
     expect(state.site_url).toBe(before.site_url);
     expect(state.preflight).toBe(preflight);
     expect(state.discovery_job_id).toBeNull();
+    expect(state.prospect_workflow_id).toBe(workflowId);
     expect(state.selected_competitor_ids).toEqual([]);
   });
 
@@ -92,7 +94,7 @@ describe("new Case workspace state machine", () => {
   it("does not create a second task while the current discovery is active", () => {
     let initial = readyState();
     initial = { ...initial, stage: "competitor_discovery_running" };
-    const state = reduceWorkspaceState(initial, { type: "START_DISCOVERY", job_id: crypto.randomUUID(), idempotency_key: "different-key" });
+    const state = reduceWorkspaceState(initial, { type: "START_DISCOVERY", workflow_id: workflowId, job_id: crypto.randomUUID(), idempotency_key: "different-key" });
     expect(state).toBe(initial);
     expect(state.discovery_job_id).toBe(jobId);
   });
@@ -107,6 +109,7 @@ describe("new Case workspace state machine", () => {
 
     state = reduceWorkspaceState(state, {
       type: "START_DISCOVERY",
+      workflow_id: workflowId,
       job_id: freshJobId,
       idempotency_key: `discover:${freshJobId}`,
       supplemental_website_urls: [],
@@ -118,10 +121,23 @@ describe("new Case workspace state machine", () => {
     expect(state.discovery_status).toBeNull();
   });
 
-  it("invalidates an expired discovery and returns to business confirmation", () => {
+  it("invalidates an expired discovery but preserves the paid workflow", () => {
     const state = reduceWorkspaceState(readyState(), { type: "DISCOVERY_EXPIRED" });
-    expect(state.stage).toBe("business_confirmation");
+    expect(state.stage).toBe("prospect_start");
+    expect(state.prospect_workflow_id).toBe(workflowId);
     expect(state.discovery_status).toBeNull();
     expect(state.selected_competitor_ids).toEqual([]);
+  });
+
+  it("returns an insufficient-credit attempt to the purchase boundary without a phantom charge", () => {
+    let state = readyState();
+    state = { ...state, stage: "competitor_discovery_running" };
+
+    state = reduceWorkspaceState(state, { type: "PROSPECT_START_REJECTED" });
+
+    expect(state.stage).toBe("prospect_start");
+    expect(state.prospect_workflow_id).toBeNull();
+    expect(state.discovery_job_id).toBeNull();
+    expect(state.discovery_status).toBeNull();
   });
 });
