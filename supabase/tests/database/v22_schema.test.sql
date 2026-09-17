@@ -4,7 +4,27 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(114);
+select plan(128);
+
+select has_column('public','users','credit_balance','Unified permanent credit balance exists');
+select col_not_null('public','users','credit_balance','Unified credit balance is required');
+select has_table('public','workflow_charges','Unified workflow charges exist');
+select has_table('public','credit_ledger','Unified immutable credit ledger exists');
+select has_pk('public','workflow_charges','Workflow charges have a primary key');
+select has_pk('public','credit_ledger','Credit ledger has a primary key');
+select has_index('public','workflow_charges','workflow_charges_user_idempotency_unique','Workflow reservation is idempotent per user');
+select has_index('public','workflow_charges','uq_workflow_charges_discovery_job','Discovery identity is unique');
+select has_index('public','credit_ledger','credit_ledger_idempotency_key_key','Ledger idempotency is globally unique');
+select has_index('public','credit_ledger','uq_credit_ledger_welcome_grant','Welcome grant is unique per account');
+select has_function('public','reserve_v22_prospect_workflow',array['uuid','uuid','uuid','uuid','text'],'Prospect workflow reservation RPC exists');
+select has_trigger('public','credit_ledger','prevent_v22_credit_ledger_mutation','Unified credit ledger is immutable');
+select ok((select relrowsecurity from pg_class where oid='public.workflow_charges'::regclass)
+  and (select relrowsecurity from pg_class where oid='public.credit_ledger'::regclass),
+  'Unified financial tables have RLS');
+select ok(has_function_privilege('service_role','public.reserve_v22_prospect_workflow(uuid,uuid,uuid,uuid,text)','EXECUTE')
+  and not has_function_privilege('anon','public.reserve_v22_prospect_workflow(uuid,uuid,uuid,uuid,text)','EXECUTE')
+  and not has_function_privilege('authenticated','public.reserve_v22_prospect_workflow(uuid,uuid,uuid,uuid,text)','EXECUTE'),
+  'Prospect workflow reservation is service-role-only');
 
 select has_column('public','audit_credit_ledger','order_id','Payment ledger retains order identity');
 select col_is_fk('public','audit_credit_ledger','order_id','Payment ledger order has FK');

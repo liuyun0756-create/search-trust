@@ -10,8 +10,70 @@ export interface User {
   email: string;
   name: string | null;
   audit_credits: number;
+  credit_balance: number;
   created_at: string;
   updated_at: string;
+}
+
+export type UnifiedCreditKind =
+  | "welcome_grant"
+  | "credit_purchase"
+  | "prospect_debit"
+  | "verified_debit"
+  | "technical_failure_credit"
+  | "purchase_refund_debit";
+
+export interface WorkflowCharge {
+  id: string;
+  user_id: string;
+  case_id: string;
+  workflow_kind: "prospect" | "verified";
+  state: "reserved" | "consumed" | "compensated";
+  amount: 1;
+  idempotency_key: string;
+  discovery_job_id: string | null;
+  analysis_job_id: string | null;
+  final_report_id: string | null;
+  settled_at: string | null;
+  created_at: string;
+}
+
+export interface CreditLedgerEntry {
+  id: string;
+  user_id: string;
+  case_id: string | null;
+  workflow_charge_id: string | null;
+  analysis_job_id: string | null;
+  order_id: string | null;
+  kind: UnifiedCreditKind;
+  delta: -1 | 1 | 5;
+  balance_after: number;
+  idempotency_key: string;
+  created_at: string;
+}
+
+export interface ReserveV22ProspectWorkflowArgs {
+  p_user_id: string;
+  p_case_id: string;
+  p_workflow_id: string;
+  p_discovery_job_id: string;
+  p_idempotency_key: string;
+}
+
+export interface ReserveV22ProspectWorkflowResult {
+  workflow_id: string;
+  discovery_job_id: string;
+  charge_state: "reserved" | "consumed" | "compensated";
+  created: boolean;
+  idempotent: boolean;
+  credit_balance: number;
+}
+
+export interface UnifiedCreditDatabaseFunctions {
+  reserve_v22_prospect_workflow: {
+    Args: ReserveV22ProspectWorkflowArgs;
+    Returns: ReserveV22ProspectWorkflowResult[];
+  };
 }
 
 export interface ClientCase {

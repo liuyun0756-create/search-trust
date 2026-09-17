@@ -2419,4 +2419,115 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       }
     }
   });
+
+  describe("unified credit economy", () => {
+    it("provisions five permanent credits exactly once with immutable ledger evidence", async () => {
+      const suffix = randomUUID();
+      const clerkUserId = `clerk_unified_${suffix}`;
+      const subjectDigest = "ab".repeat(32);
+
+      const first = await db.query<{ outcome: string }>(
+        `select public.register_v22_clerk_user($1, decode($2, 'hex'), $3, $4) as outcome`,
+        [clerkUserId, subjectDigest, `${suffix}@example.com`, "Unified Owner"],
+      );
+      const replay = await db.query<{ outcome: string }>(
+        `select public.register_v22_clerk_user($1, decode($2, 'hex'), $3, $4) as outcome`,
+        [clerkUserId, subjectDigest, `${suffix}@example.com`, "Unified Owner"],
+      );
+
+      expect(first.rows[0]).toEqual({ outcome: "created" });
+      expect(replay.rows[0]).toEqual({ outcome: "existing" });
+      const account = (await db.query<{ id: string; credit_balance: number }>(
+        `select id, credit_balance from public.users where clerk_user_id = $1`,
+        [clerkUserId],
+      )).rows[0];
+      expect(account.credit_balance).toBe(5);
+      expect((await db.query(
+        `select kind, delta, balance_after from public.credit_ledger where user_id = $1`,
+        [account.id],
+      )).rows).toEqual([{ kind: "welcome_grant", delta: 5, balance_after: 5 }]);
+      await expectSqlError(
+        `update public.credit_ledger set balance_after = 4 where user_id = $1`,
+        [account.id],
+        "credit ledger is immutable",
+      );
+      await expectSqlError(
+        `delete from public.credit_ledger where user_id = $1`,
+        [account.id],
+        "credit ledger is immutable",
+      );
+    });
+
+    it("reserves one Prospect workflow before discovery and replays without another debit", async () => {
+      const suffix = randomUUID();
+      const clerkUserId = `clerk_workflow_${suffix}`;
+      await db.query(
+        `select public.register_v22_clerk_user($1, decode($2, 'hex'), $3, null)`,
+        [clerkUserId, "cd".repeat(32), `${suffix}@example.com`],
+      );
+      const owner = (await db.query<{ id: string }>(
+        `select id from public.users where clerk_user_id = $1`, [clerkUserId],
+      )).rows[0].id;
+      const caseId = await insertCase(owner, suffix);
+      const workflowId = randomUUID();
+      const discoveryJobId = randomUUID();
+      const key = `prospect:${caseId}:1`;
+
+      const reserve = () => db.query<{
+        workflow_id: string; discovery_job_id: string; charge_state: string;
+        created: boolean; idempotent: boolean; credit_balance: number;
+      }>(
+        `select * from public.reserve_v22_prospect_workflow($1,$2,$3,$4,$5)`,
+        [owner, caseId, workflowId, discoveryJobId, key],
+      );
+      expect((await reserve()).rows[0]).toEqual({
+        workflow_id: workflowId,
+        discovery_job_id: discoveryJobId,
+        charge_state: "reserved",
+        created: true,
+        idempotent: false,
+        credit_balance: 4,
+      });
+      expect((await reserve()).rows[0]).toEqual({
+        workflow_id: workflowId,
+        discovery_job_id: discoveryJobId,
+        charge_state: "reserved",
+        created: false,
+        idempotent: true,
+        credit_balance: 4,
+      });
+      expect((await db.query(
+        `select workflow_kind, state, amount from public.workflow_charges where id = $1`,
+        [workflowId],
+      )).rows).toEqual([{ workflow_kind: "prospect", state: "reserved", amount: 1 }]);
+      expect((await db.query(
+        `select kind, delta, balance_after from public.credit_ledger
+         where workflow_charge_id = $1`, [workflowId],
+      )).rows).toEqual([{ kind: "prospect_debit", delta: -1, balance_after: 4 }]);
+      await expectSqlError(
+        `select * from public.reserve_v22_prospect_workflow($1,$2,$3,$4,$5)`,
+        [owner, caseId, randomUUID(), randomUUID(), key],
+        "PROSPECT_WORKFLOW_IDENTITY_CONFLICT",
+      );
+    });
+
+    it("rejects a Prospect workflow without balance and leaves no charge", async () => {
+      const suffix = randomUUID();
+      const owner = await insertId(
+        `insert into public.users (clerk_user_id,email,audit_credits) values ($1,$2,0) returning id`,
+        [`clerk_empty_${suffix}`, `${suffix}@example.com`],
+      );
+      const caseId = await insertCase(owner, suffix);
+      const workflowId = randomUUID();
+      await expectSqlError(
+        `select * from public.reserve_v22_prospect_workflow($1,$2,$3,$4,$5)`,
+        [owner, caseId, workflowId, randomUUID(), `prospect:${caseId}:empty`],
+        "INSUFFICIENT_CREDITS",
+      );
+      expect((await db.query<{ count: number }>(
+        `select count(*)::int as count from public.workflow_charges where id = $1`,
+        [workflowId],
+      )).rows[0]).toEqual({ count: 0 });
+    });
+  });
 });
