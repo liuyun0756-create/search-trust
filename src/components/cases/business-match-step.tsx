@@ -3,6 +3,7 @@
 import { AlertCircle, CheckCircle2, HelpCircle, MapPin, MinusCircle, Phone, Store } from "lucide-react";
 import { FormEvent, useState } from "react";
 
+import { isLocalE2ETestMode } from "@/lib/e2e-v22/config";
 import type { BusinessIdentity, TargetMarket } from "@/lib/report-v22/generated/types";
 import type { BusinessConfirmation, IdentityComparisonStatus, PreflightResponse } from "@/lib/preflight-v22";
 
@@ -38,12 +39,8 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
   const [service, setService] = useState(initialConfirmation?.primary_service ?? preflight.service_candidates[0]?.value ?? "");
   const [location, setLocation] = useState(initialPrimaryLocation?.display_name ?? "");
   const [marketName, setMarketName] = useState(initialTargetMarket?.display_name ?? "");
-  const confirmedGbpUrl = initialConfirmation?.business_identity.public_gbp_url ?? candidate?.business.public_gbp_url ?? submittedGbpUrl;
-  const gbpStatus = candidate?.business.public_gbp_url
-    ? "Profile identified"
-    : submittedGbpUrl
-      ? "Profile link provided — verification pending"
-      : "Not identified — coverage limited";
+  const [gbpUrl, setGbpUrl] = useState(initialConfirmation?.business_identity.public_gbp_url ?? candidate?.business.public_gbp_url ?? submittedGbpUrl ?? "");
+  const [gbpError, setGbpError] = useState<string | null>(null);
 
   const primaryLocationBase = initialPrimaryLocation;
   const targetMarketBase = initialTargetMarket;
@@ -56,6 +53,8 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
     setOperatingModel(next.business.operating_model);
     setLocation(next.business.primary_location.display_name);
     setMarketName(preflight.market_candidates[0]?.market.display_name ?? next.business.primary_location.display_name);
+    setGbpUrl(next.business.public_gbp_url ?? submittedGbpUrl ?? "");
+    setGbpError(null);
   }
 
   function market(displayName: string, baseMarket: TargetMarket | undefined): TargetMarket {
@@ -76,6 +75,12 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
 
   function submit(event: FormEvent) {
     event.preventDefault();
+    const confirmedGbpUrl = traceableGoogleMapsUrl(gbpUrl);
+    if (!confirmedGbpUrl) {
+      setGbpError("A full Google Maps business link with a place ID or cid is required before analysis.");
+      return;
+    }
+    setGbpError(null);
     const primaryLocation = market(location, primaryLocationBase);
     onConfirm({
       business_identity: {
@@ -148,12 +153,54 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
           <Field label="Primary service"><input required value={service} onChange={(event) => setService(event.target.value)} className="field-input" /></Field>
           <Field label="Primary location"><div className="relative"><MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929b92]" size={16} /><input required value={location} onChange={(event) => setLocation(event.target.value)} className="field-input pl-10" /></div></Field>
           <Field label="Target market"><input required value={marketName} onChange={(event) => setMarketName(event.target.value)} className="field-input" /></Field>
-          <Field label="Public GBP"><div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#d5dcd0] bg-[#f8faf6] px-3 text-sm text-[#637063]"><Phone size={15} />{gbpStatus}</div></Field>
+          <Field label="Public GBP">
+            <div className="relative">
+              <Phone aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929b92]" size={15} />
+              <input
+                required
+                type="url"
+                aria-label="Public GBP"
+                autoComplete="url"
+                inputMode="url"
+                value={gbpUrl}
+                onChange={(event) => { setGbpUrl(event.target.value); setGbpError(null); }}
+                aria-describedby={gbpError ? "business-gbp-error" : "business-gbp-help"}
+                placeholder="https://www.google.com/maps?cid=..."
+                className="field-input pl-9"
+              />
+            </div>
+            {gbpError
+              ? <p id="business-gbp-error" role="alert" className="mt-2 text-xs font-semibold leading-5 text-[#a3412c]">{gbpError}</p>
+              : <p id="business-gbp-help" className="mt-2 text-xs leading-5 text-[#798479]">Required for a trustworthy report. Use the full public listing URL, not a short share link.</p>}
+          </Field>
         </div>
         <div className="mt-6 flex justify-end"><button type="submit" className="min-h-12 rounded-xl bg-[#1a211a] px-6 text-sm font-bold text-white outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/40">Confirm business scope <span aria-hidden="true">→</span></button></div>
       </form>
     </section>
   );
+}
+
+function traceableGoogleMapsUrl(value: string): string | null {
+  const raw = value.trim();
+  try {
+    const parsed = new URL(raw);
+    const host = parsed.hostname.toLowerCase();
+    if (isLocalE2ETestMode() && host.endsWith(".invalid")) return raw;
+    const supportedHost = host === "google.com" || host === "www.google.com" || host === "maps.google.com" || host === "search.google.com";
+    const supportedPath = (host === "google.com" || host === "www.google.com")
+      ? parsed.pathname.startsWith("/maps")
+      : host === "search.google.com"
+        ? parsed.pathname.startsWith("/local/")
+        : true;
+    if (parsed.protocol !== "https:" || !supportedHost || !supportedPath) return null;
+    const hasCid = Boolean(parsed.searchParams.get("cid"));
+    const hasPlaceId = ["destination_place_id", "query_place_id", "place_id", "placeid"]
+      .some((key) => Boolean(parsed.searchParams.get(key)?.trim()));
+    const hasDataId = /0x[0-9a-f]+:0x[0-9a-f]+/i.test(decodeURIComponent(raw));
+    return hasCid || hasPlaceId || hasDataId ? raw : null;
+  } catch {
+    return null;
+  }
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

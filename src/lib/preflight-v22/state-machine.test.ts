@@ -74,6 +74,24 @@ describe("new Case workspace state machine", () => {
     expect(state.selected_competitor_ids).toEqual([]);
   });
 
+  it("returns a refunded GBP failure to business confirmation with a fresh workflow", () => {
+    let state = readyState();
+    state = {
+      ...state,
+      stage: "auth_handoff",
+      analysis_job_id: "99999999-9999-4999-8999-999999999999",
+      analysis_idempotency_key: "analysis-key",
+    };
+
+    const repaired = reduceWorkspaceState(state, { type: "REPAIR_BUSINESS" });
+
+    expect(repaired.stage).toBe("business_confirmation");
+    expect(repaired.business_confirmation).toEqual(state.business_confirmation);
+    expect(repaired.prospect_workflow_id).toBeNull();
+    expect(repaired.discovery_status).toBeNull();
+    expect(repaired.analysis_job_id).toBeNull();
+  });
+
   it("defaults to the top three and allows one to three from the same discovery", () => {
     let state = readyState();
     expect(state.selected_competitor_ids).toEqual(["cp_alpha", "cp_beta", "cp_gamma"]);

@@ -69,6 +69,8 @@ export function NewCaseWorkspace() {
   const [analysisStatus, setAnalysisStatus] = useState<TaskStatusResponse | null>(null);
   const [latestAnalysisChecked, setLatestAnalysisChecked] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const needsGbpRepair = analysisStatus?.status === "failed"
+    && analysisStatus.error?.error_code.startsWith("V22_CUSTOMER_PUBLIC_GBP_");
 
   useEffect(() => {
     setDraft(loadDraft(sessionStorage));
@@ -140,6 +142,23 @@ export function NewCaseWorkspace() {
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         if (payload?.error?.code === "CASE_ALREADY_EXISTS" && payload?.error?.case_id === draft.draft_case_id) {
+          const updateResponse = await authenticatedFetch(`/api/v2/cases/${encodeURIComponent(draft.draft_case_id)}`, {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              business_name: scope.business_identity.business_name,
+              operating_model: scope.business_identity.operating_model,
+              primary_service: scope.primary_service,
+              primary_location: scope.business_identity.primary_location,
+              target_market: scope.target_market,
+              public_gbp_url: scope.business_identity.public_gbp_url ?? null,
+            }),
+          });
+          const updatePayload = await updateResponse.json().catch(() => null);
+          if (!updateResponse.ok) {
+            setPaymentHandoff({ status: "error", caseId: draft.draft_case_id, message: updatePayload?.error?.message || "The confirmed Case could not be updated yet." });
+            return null;
+          }
           setPaymentHandoff({
             status: "ready",
             caseId: draft.draft_case_id,
@@ -369,6 +388,14 @@ export function NewCaseWorkspace() {
   }, [authenticatedFetch, draft.analysis_job_id, paymentHandoff.caseId, paymentHandoff.status]);
 
   function retryAnalysis() {
+    if (needsGbpRepair) {
+      setAnalysisStatus(null);
+      setLatestAnalysisChecked(false);
+      latestLookupCase.current = null;
+      setPaymentHandoff({ status: "saving_case", caseId: null, message: "Add and confirm the client’s public Google Business Profile before restarting analysis." });
+      setDraft((current) => reduceWorkspaceState(current, { type: "REPAIR_BUSINESS" }));
+      return;
+    }
     if (analysisStatus?.status === "failed") {
       setAnalysisStatus(null);
       setDraft((current) => reduceWorkspaceState(current, { type: "RESTART_PROSPECT" }));
@@ -577,6 +604,7 @@ export function NewCaseWorkspace() {
                   caseId={paymentHandoff.caseId}
                   onCheckout={() => undefined}
                   onRetryAnalysis={retryAnalysis}
+                  retryLabel={needsGbpRepair ? "Add confirmed GBP" : undefined}
                   onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }))}
                 />
               ) : (

@@ -72,6 +72,7 @@ export type WorkspaceEvent =
   | { type: "START_ANALYSIS"; job_id: string; idempotency_key: string }
   | { type: "RESET_ANALYSIS" }
   | { type: "RESTART_PROSPECT" }
+  | { type: "REPAIR_BUSINESS" }
   | { type: "CLEAR" };
 
 function iso(now: Date) { return now.toISOString(); }
@@ -248,6 +249,8 @@ export function reduceWorkspaceState(
       }, now);
     case "RESTART_PROSPECT":
       return touch(state, { stage: "prospect_start", ...clearDiscovery() }, now);
+    case "REPAIR_BUSINESS":
+      return touch(state, { stage: "business_confirmation", ...clearDiscovery() }, now);
     case "CLEAR":
       return createNewCaseDraft(now);
   }
