@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { DodoClient, DodoPayment, CasePaymentRepository } from "@/lib/payments-v22";
 import type { VerifiedCreditRepository } from "@/lib/verified-credits-v22";
+import type { CreditPaymentRepository } from "@/lib/credit-payments-v22";
 import { createDodoWebhookHandler, type DodoWebhookDependencies } from "./route";
 
 vi.mock("server-only", () => ({}));
@@ -35,6 +36,21 @@ function verifiedRepository(overrides: Partial<VerifiedCreditRepository> = {}): 
   } as VerifiedCreditRepository;
 }
 
+function creditRepository(overrides: Partial<CreditPaymentRepository> = {}): CreditPaymentRepository {
+  return {
+    claimCheckout: vi.fn(), attachCheckoutSession: vi.fn(), markOrderFailed: vi.fn(),
+    fulfill: vi.fn(async () => ({ fulfilled: true, idempotent: false, credits_added: 1, credit_balance: 6 })),
+    refund: vi.fn(async () => ({ refunded: true, idempotent: false, reversal_applied: true, manual_review: false, credit_balance: 5 })),
+    recordRefundReview: vi.fn(async input => ({
+      review_id: "55555555-5555-4555-8555-555555555555",
+      idempotent: false,
+      status: "manual_review" as const,
+      reason: input.reason,
+    })),
+    ...overrides,
+  } as CreditPaymentRepository;
+}
+
 function payment(kind: string, status = "succeeded"): DodoPayment {
   return {
     payment_id: "pay_secret_reference",
@@ -42,9 +58,11 @@ function payment(kind: string, status = "succeeded"): DodoPayment {
     total_amount: 1900,
     currency: "USD",
     checkout_session_id: "cks_verified",
-    product_cart: [{ product_id: kind === "case_verified_credit" ? productId : "prod_prospect", quantity: 1 }],
+    product_cart: [{ product_id: kind === "case_verified_credit" ? productId : kind === "credit_purchase" ? "prod_credit" : "prod_prospect", quantity: 1 }],
     refund_status: "full" as const,
-    metadata: { clerk_user_id: "user_123", case_id: caseId, order_id: orderId, purchase_kind: kind },
+    metadata: kind === "credit_purchase"
+      ? { clerk_user_id: "user_123", order_id: orderId, purchase_kind: kind }
+      : { clerk_user_id: "user_123", case_id: caseId, order_id: orderId, purchase_kind: kind },
   };
 }
 
@@ -69,6 +87,7 @@ function dependencies(
   prospect = prospectRepository(),
   verified = verifiedRepository(),
   trustedPayment = payment("case_verified_credit"),
+  credit = creditRepository(),
 ): DodoWebhookDependencies & { dodo: { getPayment: ReturnType<typeof vi.fn> } } {
   const dodo = { getPayment: vi.fn(async () => trustedPayment) };
   return {
@@ -79,6 +98,7 @@ function dependencies(
     verify: vi.fn(() => event),
     createCaseRepository: () => prospect,
     createVerifiedCreditRepository: () => verified,
+    createCreditPaymentRepository: () => credit,
     createDodoClient: () => dodo as unknown as DodoClient,
     dodo,
   };
@@ -88,15 +108,19 @@ describe("Dodo purchase-kind webhook dispatch", () => {
   it.each([
     ["case_prospect_report", "prospect"],
     ["case_verified_credit", "verified"],
+    ["credit_purchase", "credit"],
   ] as const)("dispatches succeeded %s payments only to the matching repository", async (kind, target) => {
     const prospect = prospectRepository();
     const verified = verifiedRepository();
+    const credit = creditRepository();
     const response = await createDodoWebhookHandler(dependencies(
-      { type: "payment.succeeded", data: payment(kind) }, prospect, verified,
+      { type: "payment.succeeded", data: payment(kind) }, prospect, verified, payment(kind), credit,
     ))(new Request("https://searchtrust.example/api/webhook/dodo", { method: "POST", body: "signed body" }));
     expect(response.status).toBe(200);
-    expect(target === "prospect" ? prospect.fulfill : verified.fulfill).toHaveBeenCalledOnce();
-    expect(target === "prospect" ? verified.fulfill : prospect.fulfill).not.toHaveBeenCalled();
+    expect(target === "prospect" ? prospect.fulfill : target === "verified" ? verified.fulfill : credit.fulfill).toHaveBeenCalledOnce();
+    if (target !== "prospect") expect(prospect.fulfill).not.toHaveBeenCalled();
+    if (target !== "verified") expect(verified.fulfill).not.toHaveBeenCalled();
+    if (target !== "credit") expect(credit.fulfill).not.toHaveBeenCalled();
   });
 
   it("safely ignores unknown payment purchase kinds", async () => {
@@ -121,6 +145,43 @@ describe("Dodo purchase-kind webhook dispatch", () => {
     expect(verified.refund).toHaveBeenCalledOnce();
     expect(verified.refund).toHaveBeenCalledWith(expect.objectContaining({
       paymentId: "pay_secret_reference", checkoutSessionId: "cks_verified", productId,
+    }));
+  });
+
+  it("reverses an exact unified credit refund through the unified repository", async () => {
+    const credit = creditRepository();
+    const trusted = payment("credit_purchase");
+    const deps = dependencies(
+      { type: "refund.succeeded", data: refund() },
+      prospectRepository(), verifiedRepository(), trusted, credit,
+    );
+    const response = await createDodoWebhookHandler(deps)(new Request(
+      "https://searchtrust.example", { method: "POST", body: "signed refund" },
+    ));
+    expect(response.status).toBe(200);
+    expect(credit.refund).toHaveBeenCalledWith(expect.objectContaining({
+      providerRefundId: "ref_secret_reference",
+      localOrderId: orderId,
+      productId: "prod_credit",
+    }));
+  });
+
+  it("persists a partial unified credit refund for manual review", async () => {
+    const credit = creditRepository();
+    const trusted = { ...payment("credit_purchase"), refund_status: "partial" as const };
+    const deps = dependencies(
+      { type: "refund.succeeded", data: refund({ is_partial: true, amount: 950 }) },
+      prospectRepository(), verifiedRepository(), trusted, credit,
+    );
+    const response = await createDodoWebhookHandler(deps)(new Request(
+      "https://searchtrust.example", { method: "POST", body: "signed refund" },
+    ));
+    expect(await response.json()).toMatchObject({ received: true, manual_review: true });
+    expect(credit.refund).not.toHaveBeenCalled();
+    expect(credit.recordRefundReview).toHaveBeenCalledWith(expect.objectContaining({
+      providerRefundId: "ref_secret_reference",
+      reason: "partial_refund",
+      refundAmount: 950,
     }));
   });
 

@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { createDiscoverySubmitProxy } from "@/lib/preflight-v22/proxy";
 import { createProspectWorkflowHandlers, SupabaseProspectWorkflowRepository } from "@/lib/prospect-workflow-v22";
+import { requireV22PublicEntry } from "@/lib/release-v22/public-entry";
 import { createServerClient } from "@/lib/supabase";
 
 const handlers = createProspectWorkflowHandlers({
@@ -12,4 +13,4 @@ const handlers = createProspectWorkflowHandlers({
 });
 
 export const dynamic = "force-dynamic";
-export const POST = handlers.POST;
+export const POST = requireV22PublicEntry(handlers.POST);

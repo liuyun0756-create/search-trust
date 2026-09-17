@@ -4,20 +4,21 @@ import { BillingDetails } from "@/components/pricing/BillingDetails";
 import { DeliveryRefund } from "@/components/pricing/DeliveryRefund";
 import { PricingCTA } from "@/components/pricing/PricingCTA";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
+import { CreditPaymentReturnStatus } from "@/components/pricing/CreditPurchaseButton";
 import { createPageMetadata, pageSeo } from "@/lib/seo";
 
 const pricingFAQData = [
   {
     question: 'Is this a recurring subscription?',
-    answer: 'No. This is a one-time purchase.',
+    answer: 'No. Credits are one-time purchases and never expire.',
   },
   {
-    question: 'Does one purchase include multiple pages?',
-    answer: 'No. Each purchase covers one single URL.',
+    question: 'What does one credit cover?',
+    answer: 'One credit starts one complete Prospect analysis or one Verified generation. Technical generation failures return the credit.',
   },
   {
-    question: 'Do I need a contract?',
-    answer: 'No contract is required for a single report purchase.',
+    question: 'Do free credits expire?',
+    answer: 'No. Every new account receives five permanent credits once.',
   },
   {
     question: 'Is payment handled securely?',
@@ -47,6 +48,7 @@ export default function PricingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
       />
+      <div className="px-6 pt-8"><CreditPaymentReturnStatus /></div>
       <PricingHero />
       <WhoThisIsFor />
       <BillingDetails />

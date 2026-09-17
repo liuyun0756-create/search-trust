@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { PurchaseReportButton } from '@/components/common/PurchaseReportButton';
+import { CreditPurchaseButton } from './CreditPurchaseButton';
 
 export function PricingCTA() {
   return (
@@ -25,18 +25,18 @@ export function PricingCTA() {
         >
           <div className="relative z-10 flex flex-col items-center text-center">
             <h2 className="mb-8 max-w-full text-[30px] font-bold leading-tight tracking-tight text-[#1A1F2B] md:text-[40px]">
-              Purchase your first report and see how
+              Turn evidence into your next client win—and
               <br className="hidden md:block" />
-              <span className="text-bar-highlight">SearchTrust diagnoses trust breakdown</span>
+              <span className="text-bar-highlight">keep improving with verified data.</span>
               <br className="hidden md:block" />
-              on a real page.
+              Start with 5 free permanent credits.
             </h2>
-            <PurchaseReportButton
+            <CreditPurchaseButton
               trackingSource="pricing_footer"
               className="inline-flex items-center justify-center rounded-xl bg-[#1A1F2B] px-8 py-4 font-bold text-white transition-colors hover:bg-black"
             >
-              Buy One Report
-            </PurchaseReportButton>
+              Buy 1 credit · $19
+            </CreditPurchaseButton>
           </div>
         </motion.div>
 

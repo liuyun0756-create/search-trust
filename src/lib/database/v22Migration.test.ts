@@ -96,6 +96,102 @@ async function insertCompleteCase(
 }
 
 describe.sequential("SearchTrust v2.2 Supabase migration", () => {
+  describe("unified credit purchase contract", () => {
+    async function fixture() {
+      const suffix = randomUUID();
+      const owner = await insertUser(suffix);
+      const clerkUserId = `clerk_${suffix}`;
+      const productId = `prod_credit_${suffix}`;
+      const claim = await db.query<{
+        action:string; order_id:string; initialization_token:string;
+      }>(`select * from public.claim_v22_credit_checkout($1,$2)`, [owner, productId]);
+      const orderId = claim.rows[0].order_id;
+      const sessionId = `cks_credit_${suffix}`;
+      const checkoutUrl = `https://test.checkout.dodopayments.com/session/${sessionId}`;
+      await db.query(
+        `select * from public.attach_v22_credit_checkout($1,$2,$3,$4,$5,$6)`,
+        [owner, orderId, claim.rows[0].initialization_token, productId, sessionId, checkoutUrl],
+      );
+      const paymentId = `pay_credit_${suffix}`;
+      const refundId = `ref_credit_${suffix}`;
+      const paymentArgs = [orderId, paymentId, clerkUserId, 1900, "USD", sessionId, productId];
+      const fulfill = () => db.query<{
+        fulfilled:boolean; idempotent:boolean; credits_added:number; credit_balance:number;
+      }>(`select * from public.fulfill_v22_credit_payment($1,$2,$3,$4,$5,$6,$7)`, paymentArgs);
+      const refund = (providerRefundId = refundId) => db.query<{
+        refunded:boolean; idempotent:boolean; reversal_applied:boolean;
+        manual_review:boolean; credit_balance:number;
+      }>(`select * from public.refund_v22_credit_payment($1,$2,$3,$4,$5,$6,$7,$8)`, [providerRefundId, ...paymentArgs]);
+      return { owner, clerkUserId, productId, orderId, sessionId, checkoutUrl, paymentId, refundId, fulfill, refund };
+    }
+
+    it("creates and reuses one account-level checkout without a Case", async () => {
+      const f = await fixture();
+      const replay = await db.query<{
+        action:string; order_id:string; checkout_session_id:string; checkout_url:string;
+      }>(`select * from public.claim_v22_credit_checkout($1,$2)`, [f.owner, "prod_rotated"]);
+      expect(replay.rows[0]).toMatchObject({
+        action: "reuse",
+        order_id: f.orderId,
+        checkout_session_id: f.sessionId,
+        checkout_url: f.checkoutUrl,
+      });
+      expect((await db.query(`select case_id,purchase_kind,credits_purchased,amount,currency
+        from public.orders where id=$1`, [f.orderId])).rows[0]).toEqual({
+        case_id: null, purchase_kind: "credit_purchase", credits_purchased: 1, amount: 1900, currency: "USD",
+      });
+    });
+
+    it("credits exactly one permanent balance once", async () => {
+      const f = await fixture();
+      expect((await f.fulfill()).rows[0]).toEqual({
+        fulfilled: true, idempotent: false, credits_added: 1, credit_balance: 1,
+      });
+      expect((await f.fulfill()).rows[0]).toEqual({
+        fulfilled: true, idempotent: true, credits_added: 0, credit_balance: 1,
+      });
+      expect((await db.query(`select kind,delta,balance_after from public.credit_ledger
+        where order_id=$1`, [f.orderId])).rows).toEqual([
+        { kind: "credit_purchase", delta: 1, balance_after: 1 },
+      ]);
+    });
+
+    it("reverses an available purchased credit exactly once", async () => {
+      const f = await fixture();
+      await f.fulfill();
+      expect((await f.refund()).rows[0]).toEqual({
+        refunded: true, idempotent: false, reversal_applied: true, manual_review: false, credit_balance: 0,
+      });
+      expect((await f.refund()).rows[0]).toEqual({
+        refunded: true, idempotent: true, reversal_applied: true, manual_review: false, credit_balance: 0,
+      });
+      await expect(f.refund(`different_${f.refundId}`)).rejects.toThrow("V22_CREDIT_REFUND_LEDGER_INVALID");
+    });
+
+    it("records manual review when the purchased credit was already spent", async () => {
+      const f = await fixture();
+      await f.fulfill();
+      await db.query(`update public.users set credit_balance=0 where id=$1`, [f.owner]);
+      expect((await f.refund()).rows[0]).toEqual({
+        refunded: true, idempotent: false, reversal_applied: false, manual_review: true, credit_balance: 0,
+      });
+      expect((await db.query(`select reason,status from public.credit_purchase_refund_reviews
+        where order_id=$1`, [f.orderId])).rows).toEqual([
+        { reason: "credit_already_spent", status: "manual_review" },
+      ]);
+    });
+
+    it("rejects payment settlement for a different Clerk identity", async () => {
+      const f = await fixture();
+      const args = [f.orderId, f.paymentId, "clerk_attacker", 1900, "USD", f.sessionId, f.productId];
+      await expect(db.query(
+        `select * from public.fulfill_v22_credit_payment($1,$2,$3,$4,$5,$6,$7)`, args,
+      )).rejects.toThrow("V22_CREDIT_PAYMENT_OWNER_MISMATCH");
+      expect((await db.query(`select credit_balance from public.users where id=$1`, [f.owner])).rows[0])
+        .toEqual({ credit_balance: 0 });
+    });
+  });
+
   describe("verified credit payment contract", () => {
     async function fixture() {
       const suffix = randomUUID();

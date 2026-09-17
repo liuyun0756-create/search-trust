@@ -470,12 +470,13 @@ export interface Order {
   payment_id?: string | null;
   order_id: string | null;
   case_id?: string | null;
-  purchase_kind?: "legacy_credit" | "case_prospect_report" | "case_verified_credit";
+  purchase_kind?: "legacy_credit" | "case_prospect_report" | "case_verified_credit" | "credit_purchase";
   checkout_session_id?: string | null;
   checkout_url?: string | null;
   provider_product_id?: string | null;
   checkout_initialization_token?: string | null;
   checkout_initialization_started_at?: string | null;
+  provider_refund_id?: string | null;
   amount: number;
   currency?: string | null;
   credits_purchased: number;
@@ -623,6 +624,54 @@ export interface VerifiedCreditPaymentDatabaseFunctions {
   record_v22_verified_credit_refund_review: {
     Args: RecordV22VerifiedCreditRefundReviewArgs;
     Returns: RecordV22VerifiedCreditRefundReviewResult[];
+  };
+}
+
+export interface FulfillV22CreditPaymentArgs {
+  p_local_order_id: string;
+  p_payment_id: string;
+  p_clerk_user_id: string;
+  p_amount: number;
+  p_currency: string;
+  p_checkout_session_id: string;
+  p_product_id: string;
+}
+
+export interface FulfillV22CreditPaymentResult {
+  fulfilled: boolean;
+  idempotent: boolean;
+  credits_added: number;
+  credit_balance: number;
+}
+
+export interface RefundV22CreditPaymentArgs extends FulfillV22CreditPaymentArgs {
+  p_provider_refund_id: string;
+}
+
+export interface RefundV22CreditPaymentResult {
+  refunded: boolean;
+  idempotent: boolean;
+  reversal_applied: boolean;
+  manual_review: boolean;
+  credit_balance: number;
+}
+
+export interface UnifiedCreditPaymentDatabaseFunctions {
+  claim_v22_credit_checkout: {
+    Args: { p_user_id: string; p_product_id: string };
+    Returns: ClaimV22VerifiedCreditCheckoutResult[];
+  };
+  attach_v22_credit_checkout: {
+    Args: Omit<AttachV22VerifiedCreditCheckoutArgs, "p_case_id">;
+    Returns: AttachV22VerifiedCreditCheckoutResult[];
+  };
+  fulfill_v22_credit_payment: {
+    Args: FulfillV22CreditPaymentArgs;
+    Returns: FulfillV22CreditPaymentResult[];
+  };
+  refund_v22_credit_payment: {
+    Args: RefundV22CreditPaymentArgs;
+    Returns: RefundV22CreditPaymentResult[];
   };
 }
 

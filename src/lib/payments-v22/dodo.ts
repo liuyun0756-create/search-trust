@@ -18,6 +18,10 @@ export interface CreateCheckoutInput {
     case_id: string;
     order_id: string;
     purchase_kind: typeof CASE_PROSPECT_PURCHASE | "case_verified_credit";
+  } | {
+    clerk_user_id: string;
+    order_id: string;
+    purchase_kind: "credit_purchase";
   };
 }
 

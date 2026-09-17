@@ -4,7 +4,7 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(134);
+select plan(142);
 
 select has_column('public','users','credit_balance','Unified permanent credit balance exists');
 select col_not_null('public','users','credit_balance','Unified credit balance is required');
@@ -35,6 +35,17 @@ select ok(has_function_privilege('service_role','public.start_v22_prospect_disco
   and not has_function_privilege('anon','public.start_v22_prospect_discovery(uuid,uuid,uuid,uuid,text,text)','EXECUTE')
   and not has_function_privilege('authenticated','public.bind_v22_prospect_analysis(uuid,uuid,uuid,uuid,text,uuid)','EXECUTE'),
   'Charged Prospect RPCs are service-role-only');
+
+select has_table('public','credit_purchase_refund_reviews','Unified credit refund review queue exists');
+select has_column('public','orders','provider_refund_id','Orders retain provider refund identity');
+select has_index('public','orders','uq_orders_pending_credit_purchase','Only one pending credit checkout exists per account');
+select has_function('public','claim_v22_credit_checkout',array['uuid','text'],'Unified credit checkout claim RPC exists');
+select has_function('public','attach_v22_credit_checkout',array['uuid','uuid','uuid','text','text','text'],'Unified credit checkout attach RPC exists');
+select has_function('public','fulfill_v22_credit_payment',array['uuid','text','text','integer','text','text','text'],'Unified credit fulfillment RPC exists');
+select has_function('public','refund_v22_credit_payment',array['text','uuid','text','text','integer','text','text','text'],'Unified credit refund RPC exists');
+select ok(has_function_privilege('service_role','public.fulfill_v22_credit_payment(uuid,text,text,integer,text,text,text)','EXECUTE')
+  and not has_function_privilege('anon','public.fulfill_v22_credit_payment(uuid,text,text,integer,text,text,text)','EXECUTE'),
+  'Only the service role can fulfill unified credit purchases');
 
 select has_column('public','audit_credit_ledger','order_id','Payment ledger retains order identity');
 select col_is_fk('public','audit_credit_ledger','order_id','Payment ledger order has FK');

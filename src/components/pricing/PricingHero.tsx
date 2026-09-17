@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { PurchaseReportButton } from '@/components/common/PurchaseReportButton';
+import { CreditPurchaseButton } from './CreditPurchaseButton';
 
 function ComingSoonPattern({ variant = "layers" }: { variant?: "layers" | "agency" }) {
   const accents =
@@ -41,11 +41,10 @@ export function PricingHero() {
         className="max-w-4xl mx-auto mb-8"
       >
         <h1 className="text-[26px] md:text-[40px] font-bold tracking-tighter leading-[1.1] mb-7 ">
-          Simple pricing for
-          <span className="text-[#A5D020] px-2">one</span>SearchTrust report
+          One credit. Any SearchTrust workflow.
         </h1>
         <p className="text-[20px] text-[#6B7280] font-medium">
-          Purchase a one-time trust audit for a single submitted URL. No subscription required.
+          Every new account receives 5 permanent credits. Buy additional credits one at a time—no subscription and no expiry.
         </p>
       </motion.div>
 
@@ -62,7 +61,7 @@ export function PricingHero() {
             <div className="mb-6 flex items-center justify-between gap-4">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#A5D020]/25 bg-[#F7F9F2] px-3 py-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-[#6E9800]">
                 <ShieldCheck className="h-4 w-4" />
-                Single report
+                One permanent credit
               </span>
               <span className="rounded-full bg-[#1A212B] px-3 py-1.5 text-[12px] font-bold text-white">
                 One-time
@@ -72,16 +71,16 @@ export function PricingHero() {
             <div className="mb-6">
               <div className="flex items-end gap-2">
                 <span className="text-[52px] font-black leading-none tracking-tight text-[#111827]">$19</span>
-                <span className="pb-2 text-[16px] font-bold text-[#6B7280]">/ submitted URL</span>
+                <span className="pb-2 text-[16px] font-bold text-[#6B7280]">/ credit</span>
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-[#55616F]">
-                An evidence-backed trust diagnosis for one submitted page, delivered as a web report with PDF export and a clear fix path.
+                Use one credit for a complete Prospect analysis or one Verified generation. Your balance belongs to the account, not to a specific Case.
               </p>
             </div>
 
-            <PurchaseReportButton trackingSource="pricing_primary" className="group w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 border border-[#1A212B] shadow-[0_14px_30px_rgba(26,33,43,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-black hover:shadow-[0_18px_36px_rgba(165,208,32,0.28)]">
-              Buy One Report <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </PurchaseReportButton>
+            <CreditPurchaseButton trackingSource="pricing_primary" className="group w-full bg-[#1A212B] text-white py-4 rounded-[16px] font-bold text-[15px] flex items-center justify-center gap-2 border border-[#1A212B] shadow-[0_14px_30px_rgba(26,33,43,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#A5D020] hover:bg-black hover:shadow-[0_18px_36px_rgba(165,208,32,0.28)] disabled:opacity-60">
+              Buy 1 credit · $19 <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </CreditPurchaseButton>
 
             <div className="my-6 rounded-[24px] border border-[#EDF0E3] bg-[#F8FAF3] p-5">
               <p className="mb-4 text-[12px] font-black uppercase tracking-[0.14em] text-[#7FA40F]">
@@ -89,13 +88,11 @@ export function PricingHero() {
               </p>
               <ul className="space-y-3 text-[14px] font-medium text-[#3E4651]">
               {[
-                '1 page / 1 submitted URL',
-                '8-layer trust model evaluation',
-                'Trust status, ranking potential, and risk level',
-                'Evidence-backed key issues',
-                'Data coverage and safe GBP alignment status',
-                'Client / Analyst report views and PDF export',
-                'Light agency-ready branding placeholders',
+                'Use for Prospect or Verified generation',
+                'One credit per generation attempt',
+                'Technical failures return one credit',
+                'Credits never expire',
+                'Credits are shared across your Cases',
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-[#86B800]" />
@@ -106,7 +103,7 @@ export function PricingHero() {
             </div>
           </div>
           <div className="relative z-10 rounded-2xl border border-gray-100 bg-white px-4 py-3 text-center shadow-sm">
-            <p className="text-[12px] font-semibold text-[#6B7280]">One-time payment. No recurring billing.</p>
+            <p className="text-[12px] font-semibold text-[#6B7280]">One-time payment. No recurring billing. No expiry.</p>
             <p className="text-[11px] text-[#A0A7B1]">Taxes may be added at checkout.</p>
           </div>
         </motion.div>

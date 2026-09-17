@@ -62,6 +62,8 @@ describe("V2.2 public entry boundary", () => {
       "src/app/api/v2/competitors/tasks/[id]/retry/route.ts",
       "src/app/api/v2/analyze/route.ts",
       "src/app/api/v2/cases/[id]/checkout/route.ts",
+      "src/app/api/v2/cases/[id]/prospect-workflow/route.ts",
+      "src/app/api/v2/credits/checkout/route.ts",
     ].map((file) => readFile(path.join(root, file), "utf8")));
     for (const file of files) expect(file).toContain("requireV22PublicEntry");
 
