@@ -59,7 +59,7 @@ export const verifiedCreditCheckoutConfirmedFixture = {
   ok: true,
   payment_id: VERIFIED_PAYMENT_ID,
   credits_added: 1,
-  audit_credits: 1,
+  credit_balance: 1,
   already_confirmed: false,
 } as const;
 

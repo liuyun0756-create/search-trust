@@ -589,7 +589,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const connection = await insertConnection(owner, randomUUID());
       const parentId = randomUUID();
       const url = "https://maps.google.com/?cid=123456789";
-      await db.query(`update public.users set audit_credits=5 where id=$1`, [owner]);
+      await db.query(`update public.users set credit_balance=5 where id=$1`, [owner]);
       await db.query(`update public.client_cases set business_identity=jsonb_build_object('public_gbp_url',$2::text) where id=$1`, [caseId, url]);
       const snapshots: Record<string, string> = {};
       const bindings: Record<string, string> = {};
@@ -654,8 +654,8 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
 
     it("atomically freezes inputs and debits one credit, with stable identity replay", async () => {
       const f = await fixture();
-      expect((await f.start()).rows[0]).toMatchObject({job_id:f.jobId,created:true,idempotent:false,parent_report_id:f.parentId,gsc_snapshot_id:f.snapshots.gsc,ga4_snapshot_id:f.snapshots.ga4,public_gbp_snapshot_id:f.publicGbp,audit_credits:4});
-      expect((await f.start()).rows[0]).toMatchObject({created:false,idempotent:true,audit_credits:4});
+      expect((await f.start()).rows[0]).toMatchObject({job_id:f.jobId,created:true,idempotent:false,parent_report_id:f.parentId,gsc_snapshot_id:f.snapshots.gsc,ga4_snapshot_id:f.snapshots.ga4,public_gbp_snapshot_id:f.publicGbp,credit_balance:4});
+      expect((await f.start()).rows[0]).toMatchObject({created:false,idempotent:true,credit_balance:4});
       await expect(f.start(randomUUID())).rejects.toThrow("V22_VERIFIED_IDENTITY_CONFLICT");
       await expect(f.start(f.jobId,f.key,f.owner,checksum)).rejects.toThrow("V22_VERIFIED_IDENTITY_CONFLICT");
       const input = (await db.query<{parent_payload: unknown}>(`select parent_payload from public.verified_analysis_inputs where job_id=$1`, [f.jobId])).rows[0];
@@ -666,10 +666,10 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     it.each(["mismatched", "missing"])("rejects a %s expected parent before creating any debit or job", async (reason) => {
       const f = await fixture();
       await expect(f.start(f.jobId, f.key, f.owner, digest(f.parent), null, reason === "missing" ? null : randomUUID())).rejects.toThrow("V22_VERIFIED_PARENT_CHANGED");
-      for (const table of ["analysis_jobs", "analysis_attempt_charges", "audit_credit_ledger", "verified_analysis_inputs"]) {
+      for (const table of ["analysis_jobs", "workflow_charges", "credit_ledger", "verified_analysis_inputs"]) {
         expect((await db.query(`select * from public.${table} where case_id=$1`, [f.caseId])).rows).toHaveLength(0);
       }
-      expect((await db.query(`select audit_credits from public.users where id=$1`, [f.owner])).rows[0]).toEqual({ audit_credits: 5 });
+      expect((await db.query(`select credit_balance from public.users where id=$1`, [f.owner])).rows[0]).toEqual({ credit_balance: 5 });
     });
 
     it("rejects an expected parent mismatch on idempotent replay without a second debit", async () => {
@@ -677,15 +677,15 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       await f.start();
       await expect(f.start(f.jobId, f.key, f.owner, digest(f.parent), null, randomUUID())).rejects.toThrow("V22_VERIFIED_IDENTITY_CONFLICT");
       expect((await db.query(`select * from public.analysis_jobs where case_id=$1`, [f.caseId])).rows).toHaveLength(1);
-      expect((await db.query(`select * from public.audit_credit_ledger where case_id=$1`, [f.caseId])).rows).toHaveLength(1);
-      expect((await db.query(`select audit_credits from public.users where id=$1`, [f.owner])).rows[0]).toEqual({ audit_credits: 4 });
+      expect((await db.query(`select * from public.credit_ledger where case_id=$1`, [f.caseId])).rows).toHaveLength(1);
+      expect((await db.query(`select credit_balance from public.users where id=$1`, [f.owner])).rows[0]).toEqual({ credit_balance: 4 });
     });
 
     it("locks Google connections in deterministic order before the Case and bindings", async () => {
       // PGlite serializes queries on one embedded PostgreSQL instance; this is an
       // explicit lock-order contract, not a claim to exercise concurrent sessions.
       const definition = (await db.query<{definition:string}>(`select pg_get_functiondef(
-        'public.start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)'::regprocedure) as definition`)).rows[0].definition
+        'public.start_v22_verified_analysis_legacy_financial_bridge(uuid,uuid,uuid,text,text,uuid,uuid)'::regprocedure) as definition`)).rows[0].definition
         .replace(/--[^\n]*/g, "").replace(/\s+/g, " ");
       const connectionLock = /from public\.google_connections\b[^;]*for (?:update|share)/i.exec(definition);
       const caseLock = /from public\.client_cases\b[^;]*for (?:no key )?update/i.exec(definition);
@@ -699,7 +699,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     });
 
     it.each([
-      "start_v22_verified_analysis(uuid,uuid,uuid,text,text,uuid,uuid)",
+      "start_v22_verified_analysis_legacy_financial_bridge(uuid,uuid,uuid,text,text,uuid,uuid)",
       "persist_v22_verified_result_strict_generation_v2(uuid,uuid,jsonb,integer)",
     ])("keeps %s Case serialization compatible with compensation FK checks", async signature => {
       // Compensation holds the job while its ledger INSERT requests Case KEY SHARE.
@@ -715,12 +715,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const f=await fixture();
       const second=await insertConnection(f.owner,randomUUID());
       await db.query(`update public.case_source_bindings set connection_id=$2 where id=$1`,[f.bindings.ga4,second]);
-      expect((await f.start()).rows[0]).toMatchObject({created:true,gsc_snapshot_id:f.snapshots.gsc,ga4_snapshot_id:f.snapshots.ga4,audit_credits:4});
+      expect((await f.start()).rows[0]).toMatchObject({created:true,gsc_snapshot_id:f.snapshots.gsc,ga4_snapshot_id:f.snapshots.ga4,credit_balance:4});
     });
 
     it.each(["cross-user", "zero-credit", "missing-gsc", "missing-ga4", "expired", "identity", "inactive", "missing-gbp", "no-parent", "previous", "checksum"])("rejects %s without a job, charge or debit", async (reason) => {
       const f = await fixture();
-      if (reason === "zero-credit") await db.query(`update public.users set audit_credits=0 where id=$1`, [f.owner]);
+      if (reason === "zero-credit") await db.query(`update public.users set credit_balance=0 where id=$1`, [f.owner]);
       if (reason === "missing-gsc" || reason === "missing-ga4") await db.query(`update public.case_source_bindings set is_active=false,disconnected_at=now() where id=$1`, [f.bindings[reason.slice(8)]]);
       if (reason === "identity") await db.query(`update public.case_source_bindings set identity_match_status='mismatch' where id=$1`, [f.bindings.gsc]);
       if (reason === "inactive") await db.query(`update public.google_connections set status='reauth_required',access_token_ciphertext=null,access_token_iv=null,access_token_auth_tag=null,refresh_token_ciphertext=null,refresh_token_iv=null,refresh_token_auth_tag=null,encryption_key_version=null,token_expires_at=null where id=$1`, [f.connection]);
@@ -731,11 +731,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         await db.query(`insert into public.data_snapshots (case_id,binding_id,source_type,schema_version,fetched_at,expires_at,sync_trigger,health_status,normalized_payload,payload_checksum)
           values ($1,$2,'gsc','gsc_sync_v1',now(),now()-interval '1 second','user_sync','healthy','{}',$3)`, [f.caseId,f.bindings.gsc,checksum]);
       }
-      await expect(f.start(f.jobId,f.key,reason === "cross-user" ? await insertUser(randomUUID()) : f.owner,reason === "checksum" ? "invalid" : digest(f.parent),reason === "previous" ? randomUUID() : null)).rejects.toThrow("V22_VERIFIED_");
+      await expect(f.start(f.jobId,f.key,reason === "cross-user" ? await insertUser(randomUUID()) : f.owner,reason === "checksum" ? "invalid" : digest(f.parent),reason === "previous" ? randomUUID() : null))
+        .rejects.toThrow(reason === "cross-user" || reason === "zero-credit" ? "INSUFFICIENT_CREDITS" : "V22_VERIFIED_");
       expect((await db.query(`select id from public.analysis_jobs where case_id=$1`,[f.caseId])).rows).toHaveLength(0);
-      expect((await db.query(`select id from public.analysis_attempt_charges where case_id=$1`,[f.caseId])).rows).toHaveLength(0);
-      expect((await db.query(`select id from public.audit_credit_ledger where case_id=$1`,[f.caseId])).rows).toHaveLength(0);
-      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:reason === "zero-credit" ? 0 : 5});
+      expect((await db.query(`select id from public.workflow_charges where case_id=$1`,[f.caseId])).rows).toHaveLength(0);
+      expect((await db.query(`select id from public.credit_ledger where case_id=$1`,[f.caseId])).rows).toHaveLength(0);
+      expect((await db.query(`select credit_balance from public.users where id=$1`,[f.owner])).rows[0]).toEqual({credit_balance:reason === "zero-credit" ? 0 : 5});
     });
 
     it.each(["unhealthy","reference","checksum","schema"] as const)(
@@ -743,9 +744,9 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         const f = await fixture(false, publicFault);
         await expect(f.start()).rejects.toThrow("V22_VERIFIED_PUBLIC_GBP_INVALID");
         expect((await db.query(`select id from public.analysis_jobs where case_id=$1`,[f.caseId])).rows).toEqual([]);
-        expect((await db.query(`select id from public.audit_credit_ledger where case_id=$1`,[f.caseId])).rows).toEqual([]);
-        expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0])
-          .toEqual({audit_credits:5});
+        expect((await db.query(`select id from public.credit_ledger where case_id=$1`,[f.caseId])).rows).toEqual([]);
+        expect((await db.query(`select credit_balance from public.users where id=$1`,[f.owner])).rows[0])
+          .toEqual({credit_balance:5});
       });
 
     it("resolves frozen inputs with generation fencing even after bindings change", async () => {
@@ -797,12 +798,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
           status:"succeeded",current_stage:"completed",progress:100,report_id:f.jobId,error_code:null,completed:true,
         });
       expect((await db.query(`select state,settled_at is not null as settled
-        from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0]).toEqual({state:"consumed",settled:true});
-      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
-      expect((await db.query(`select kind from public.audit_credit_ledger where job_id=$1 order by created_at`,[f.jobId])).rows)
-        .toEqual([{kind:"attempt_debit"}]);
-      await expect(db.query(`update public.analysis_attempt_charges set state='compensated',settled_at=now()
-        where job_id=$1`,[f.jobId])).rejects.toThrow("V22_REPORT_BACKED_JOB_CANNOT_BE_COMPENSATED");
+        from public.workflow_charges where analysis_job_id=$1`,[f.jobId])).rows[0]).toEqual({state:"consumed",settled:true});
+      expect((await db.query(`select credit_balance from public.users where id=$1`,[f.owner])).rows[0]).toEqual({credit_balance:4});
+      expect((await db.query(`select kind from public.credit_ledger where analysis_job_id=$1 order by created_at`,[f.jobId])).rows)
+        .toEqual([{kind:"verified_debit"}]);
+      await expect(db.query(`update public.workflow_charges set state='compensated',final_report_id=null,settled_at=now()
+        where analysis_job_id=$1`,[f.jobId])).rejects.toThrow("V22_REPORT_BACKED_JOB_CANNOT_BE_COMPENSATED");
       expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
     });
 
@@ -817,11 +818,11 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       expect((await db.query(`select id from public.reports where id=$1`,[f.jobId])).rows).toEqual([]);
       expect((await db.query(`select status,report_id from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
         .toEqual({status:"failed",report_id:null});
-      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+      expect((await db.query(`select state from public.workflow_charges where analysis_job_id=$1`,[f.jobId])).rows[0])
         .toEqual({state:"compensated"});
-      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:5});
-      expect((await db.query(`select kind from public.audit_credit_ledger where job_id=$1 order by delta`,[f.jobId])).rows)
-        .toEqual([{kind:"attempt_debit"},{kind:"technical_failure_credit"}]);
+      expect((await db.query(`select credit_balance from public.users where id=$1`,[f.owner])).rows[0]).toEqual({credit_balance:5});
+      expect((await db.query(`select kind from public.credit_ledger where analysis_job_id=$1 order by delta`,[f.jobId])).rows)
+        .toEqual([{kind:"verified_debit"},{kind:"technical_failure_credit"}]);
     });
 
     it("never refunds after persist commits even when its response is lost and a deadline failure arrives", async () => {
@@ -837,11 +838,11 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       expect(callback.rows[0]).toMatchObject({found:true,applied:false,terminal_effects_applied:false});
       expect((await db.query(`select status,report_id from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
         .toEqual({status:"succeeded",report_id:f.jobId});
-      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+      expect((await db.query(`select state from public.workflow_charges where analysis_job_id=$1`,[f.jobId])).rows[0])
         .toEqual({state:"consumed"});
-      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
-      expect((await db.query(`select kind from public.audit_credit_ledger where job_id=$1 order by created_at`,[f.jobId])).rows)
-        .toEqual([{kind:"attempt_debit"}]);
+      expect((await db.query(`select credit_balance from public.users where id=$1`,[f.owner])).rows[0]).toEqual({credit_balance:4});
+      expect((await db.query(`select kind from public.credit_ledger where analysis_job_id=$1 order by created_at`,[f.jobId])).rows)
+        .toEqual([{kind:"verified_debit"}]);
       expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
     });
 
@@ -858,9 +859,9 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       await expect(f.persist(f.result(),0)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
       expect((await db.query(`select status,report_id,run_generation from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
         .toEqual({status:"succeeded",report_id:f.jobId,run_generation:1});
-      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+      expect((await db.query(`select state from public.workflow_charges where analysis_job_id=$1`,[f.jobId])).rows[0])
         .toEqual({state:"consumed"});
-      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
+      expect((await db.query(`select credit_balance from public.users where id=$1`,[f.owner])).rows[0]).toEqual({credit_balance:4});
     });
 
     it("rejects lower generations before and after a generation-two success", async () => {
@@ -877,7 +878,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       await expect(f.persist(f.result(),1)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
       expect((await db.query(`select status,run_generation from public.analysis_jobs where id=$1`,[f.jobId])).rows[0])
         .toEqual({status:"succeeded",run_generation:2});
-      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+      expect((await db.query(`select state from public.workflow_charges where analysis_job_id=$1`,[f.jobId])).rows[0])
         .toEqual({state:"consumed"});
     });
 
@@ -889,19 +890,19 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         [f.jobId,f.caseId,state.state_revision+1]);
       await expect(db.query(`select public.resolve_v22_verified_analysis_input($1,$2,1)`,[f.jobId,f.caseId]))
         .rejects.toThrow("V22_VERIFIED_JOB_INVALID");
-      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0])
+      expect((await db.query(`select state from public.workflow_charges where analysis_job_id=$1`,[f.jobId])).rows[0])
         .toEqual({state:"compensated"});
     });
 
     it("rejects an impossible report-backed replay if its charge was tampered to compensated", async () => {
       const f=await fixture(); await f.start(); await f.persist();
-      await db.exec(`alter table public.analysis_attempt_charges disable trigger prevent_v22_report_backed_compensation`);
+      await db.exec(`alter table public.workflow_charges disable trigger prevent_v22_report_backed_workflow_compensation`);
       try {
-        await db.query(`update public.analysis_attempt_charges set state='compensated',settled_at=now() where job_id=$1`,[f.jobId]);
+        await db.query(`update public.workflow_charges set state='compensated',final_report_id=null,settled_at=now() where analysis_job_id=$1`,[f.jobId]);
         await expect(db.query(`select public.resolve_v22_verified_analysis_input($1,$2,1)`,[f.jobId,f.caseId]))
           .rejects.toThrow("V22_VERIFIED_JOB_INVALID");
       } finally {
-        await db.exec(`alter table public.analysis_attempt_charges enable trigger prevent_v22_report_backed_compensation`);
+        await db.exec(`alter table public.workflow_charges enable trigger prevent_v22_report_backed_workflow_compensation`);
       }
     });
 
@@ -911,12 +912,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const expire = () => db.query(`select * from public.expire_v22_stale_verified_jobs(now(),100)`);
       expect((await expire()).rows).toEqual([{job_id:f.jobId}]);
       expect((await expire()).rows).toEqual([]);
-      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:5});
-      expect((await db.query(`select state from public.analysis_attempt_charges where job_id=$1`,[f.jobId])).rows[0]).toEqual({state:"compensated"});
+      expect((await db.query(`select credit_balance from public.users where id=$1`,[f.owner])).rows[0]).toEqual({credit_balance:5});
+      expect((await db.query(`select state from public.workflow_charges where analysis_job_id=$1`,[f.jobId])).rows[0]).toEqual({state:"compensated"});
       expect((await db.query(`select error_code from public.analysis_jobs where id=$1`,[f.jobId])).rows[0]).toEqual({error_code:"V22_VERIFIED_ENQUEUE_TIMEOUT"});
-      expect((await db.query(`select kind from public.audit_credit_ledger where job_id=$1 order by delta`,[f.jobId])).rows).toEqual([{kind:"attempt_debit"},{kind:"technical_failure_credit"}]);
+      expect((await db.query(`select kind from public.credit_ledger where analysis_job_id=$1 order by delta`,[f.jobId])).rows).toEqual([{kind:"verified_debit"},{kind:"technical_failure_credit"}]);
       const retry = await f.start(randomUUID(),`${f.key}:retry`,f.owner,digest(f.parent),f.jobId);
-      expect(retry.rows[0]).toMatchObject({created:true,audit_credits:4,parent_report_id:f.parentId});
+      expect(retry.rows[0]).toMatchObject({created:true,credit_balance:4,parent_report_id:f.parentId});
     });
 
     it.each(["running","report-backed","terminal"])("does not compensate a %s job", async (state) => {
@@ -930,7 +931,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       }
       await db.query(`update public.analysis_jobs set created_at=now()-interval '2 hours',deadline_at=now()-interval '1 hour' where id=$1`,[f.jobId]);
       expect((await db.query(`select * from public.expire_v22_stale_verified_jobs(now(),100)`)).rows).toEqual([]);
-      expect((await db.query(`select audit_credits from public.users where id=$1`,[f.owner])).rows[0]).toEqual({audit_credits:4});
+      expect((await db.query(`select credit_balance from public.users where id=$1`,[f.owner])).rows[0]).toEqual({credit_balance:4});
     });
 
     it("rejects mismatched first-party coverage and evidence source identities", async () => {

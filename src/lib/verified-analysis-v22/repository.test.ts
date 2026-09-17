@@ -13,7 +13,7 @@ const latestId = "44444444-4444-4444-8444-444444444444";
 const gscId = "55555555-5555-4555-8555-555555555555";
 const ga4Id = "66666666-6666-4666-8666-666666666666";
 const publicGbpId = "77777777-7777-4777-8777-777777777777";
-const binding = { job_id: jobId, created: true, idempotent: false, parent_report_id: parentId, gsc_snapshot_id: gscId, ga4_snapshot_id: ga4Id, public_gbp_snapshot_id: publicGbpId, audit_credits: 3 };
+const binding = { job_id: jobId, created: true, idempotent: false, parent_report_id: parentId, gsc_snapshot_id: gscId, ga4_snapshot_id: ga4Id, public_gbp_snapshot_id: publicGbpId, credit_balance: 3 };
 const identity = { case_id: caseId, job_id: jobId, parent_report_id: parentId, gsc_snapshot_id: gscId, ga4_snapshot_id: ga4Id, public_gbp_snapshot_id: publicGbpId };
 const parent = { id: parentId, user_id: userId, case_id: caseId, report_type: "prospect", parent_report_id: null, status: "paid_full", schema_version: "2.2.0", version_number: 1, report_v2_2: prospect };
 
@@ -63,7 +63,7 @@ describe("Verified service-role repository", () => {
 
   it("keeps the checksum identical when replay metadata and account balance change", async () => {
     const fresh = await new SupabaseVerifiedAnalysisRepository(database().db).start(userId, caseId, jobId, "verified-attempt-1");
-    const replay = await new SupabaseVerifiedAnalysisRepository(database({ rpcData: { ...binding, created: false, idempotent: true, audit_credits: 0 } }).db).start(userId, caseId, jobId, "verified-attempt-1");
+    const replay = await new SupabaseVerifiedAnalysisRepository(database({ rpcData: { ...binding, created: false, idempotent: true, credit_balance: 0 } }).db).start(userId, caseId, jobId, "verified-attempt-1");
     expect(replay.request).toEqual(fresh.request);
     expect(replay.binding.idempotent).toBe(true);
   });
@@ -82,7 +82,7 @@ describe("Verified service-role repository", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  it.each([null, {}, [], { ...binding, job_id: latestId }, { ...binding, created: "true" }, { ...binding, idempotent: true }, { ...binding, gsc_snapshot_id: "browser-value" }, { ...binding, audit_credits: -1 }, { ...binding, audit_credits: 1.5 }, { ...binding, public_gbp_snapshot_id: null }])("rejects malformed RPC contracts: %s", async (rpcData) => {
+  it.each([null, {}, [], { ...binding, job_id: latestId }, { ...binding, created: "true" }, { ...binding, idempotent: true }, { ...binding, gsc_snapshot_id: "browser-value" }, { ...binding, credit_balance: -1 }, { ...binding, credit_balance: 1.5 }, { ...binding, public_gbp_snapshot_id: null }])("rejects malformed RPC contracts: %s", async (rpcData) => {
     await expect(new SupabaseVerifiedAnalysisRepository(database({ rpcData }).db).start(userId, caseId, jobId, "verified-attempt-1")).rejects.toThrow();
   });
 

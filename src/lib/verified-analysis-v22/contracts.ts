@@ -6,7 +6,7 @@ export interface VerifiedStartBinding {
   gsc_snapshot_id: string;
   ga4_snapshot_id: string;
   public_gbp_snapshot_id: string;
-  audit_credits: number;
+  credit_balance: number;
 }
 
 export interface VerifiedTaskRequest {
@@ -31,7 +31,7 @@ export function isUuid(value: unknown): value is string {
 
 const BINDING_KEYS = new Set([
   "job_id", "created", "idempotent", "parent_report_id", "gsc_snapshot_id",
-  "ga4_snapshot_id", "public_gbp_snapshot_id", "audit_credits",
+  "ga4_snapshot_id", "public_gbp_snapshot_id", "credit_balance",
 ]);
 
 export function parseVerifiedStartBinding(value: unknown): VerifiedStartBinding | null {
@@ -47,11 +47,11 @@ export function parseVerifiedStartBinding(value: unknown): VerifiedStartBinding 
   if (!isUuid(value.job_id) || !isUuid(value.parent_report_id)
     || !isUuid(value.gsc_snapshot_id) || !isUuid(value.ga4_snapshot_id) || !isUuid(value.public_gbp_snapshot_id)
     || typeof value.created !== "boolean" || typeof value.idempotent !== "boolean" || value.created === value.idempotent
-    || typeof value.audit_credits !== "number" || !Number.isSafeInteger(value.audit_credits) || value.audit_credits < 0) return null;
+    || typeof value.credit_balance !== "number" || !Number.isSafeInteger(value.credit_balance) || value.credit_balance < 0) return null;
   return {
     job_id: value.job_id, created: value.created, idempotent: value.idempotent,
     parent_report_id: value.parent_report_id, gsc_snapshot_id: value.gsc_snapshot_id,
     ga4_snapshot_id: value.ga4_snapshot_id, public_gbp_snapshot_id: value.public_gbp_snapshot_id,
-    audit_credits: value.audit_credits,
+    credit_balance: value.credit_balance,
   };
 }

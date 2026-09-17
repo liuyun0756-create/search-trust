@@ -70,7 +70,7 @@ export class SupabaseVerifiedAnalysisRepository implements VerifiedAnalysisRepos
     if (!binding || binding.job_id !== jobId || binding.parent_report_id !== parent.id) throw new VerifiedAnalysisContractError();
 
     // Exact checksum input: Case + RPC job/parent/GSC/GA4/public-GBP IDs below.
-    // Exclude created/idempotent/audit_credits: they can change on an identical replay.
+    // Exclude created/idempotent/credit_balance: they can change on an identical replay.
     const identity = {
       case_id: caseId, job_id: binding.job_id, parent_report_id: binding.parent_report_id,
       gsc_snapshot_id: binding.gsc_snapshot_id, ga4_snapshot_id: binding.ga4_snapshot_id,

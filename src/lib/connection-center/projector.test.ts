@@ -55,7 +55,7 @@ function input(): ConnectionCenterProjectionInput {
       { id: "00000000-0000-4000-8000-000000000011", binding_id: ids.gscBinding, source_type: "gsc", health_status: "healthy", health_reasons: [], fetched_at: "2026-09-07T11:00:00.000Z", expires_at: "2026-10-07T11:00:00.000Z", coverage_start: "2026-03-10", coverage_end: "2026-09-05", raw_content_deleted_at: null },
       { id: "00000000-0000-4000-8000-000000000012", binding_id: ids.ga4Binding, source_type: "ga4", health_status: "healthy", health_reasons: [], fetched_at: "2026-09-07T11:00:00.000Z", expires_at: "2026-10-07T11:00:00.000Z", coverage_start: "2026-03-10", coverage_end: "2026-09-05", raw_content_deleted_at: null },
     ],
-    audit_credits: 1,
+    credit_balance: 1,
     verified_job: null,
     flags: { gsc_sync_enabled: true, ga4_sync_enabled: true, official_gbp_sync_enabled: false, verified_generation_enabled: false },
   };
@@ -221,7 +221,7 @@ describe("Connection Center projector", () => {
       label: "Generate Verified Action Plan · uses 1 credit",
     });
 
-    value.audit_credits = 0;
+    value.credit_balance = 0;
     expect(projectConnectionCenter(value, now).coverage.next_action).toMatchObject({
       code: "buy_verified_credit",
       label: "Buy 1 credit · $19",
@@ -237,7 +237,7 @@ describe("Connection Center projector", () => {
     });
 
     value.verified_job = { id: "job-1", status: "failed", report_id: null, charge_state: "compensated", error_code: "V22_PROVIDER_FAILED" };
-    value.audit_credits = 1;
+    value.credit_balance = 1;
     const failed = projectConnectionCenter(value, now);
     expect(failed.verified_job?.charge_state).toBe("compensated");
     expect(failed.coverage.next_action.code).toBe("generate_verified_plan");
@@ -249,7 +249,7 @@ describe("Connection Center projector", () => {
   it("keeps source blockers ahead of billing and prior verified jobs", () => {
     const value = input();
     value.flags.verified_generation_enabled = true;
-    value.audit_credits = 0;
+    value.credit_balance = 0;
     value.verified_job = { id: "job-1", status: "succeeded", report_id: "report-2", charge_state: "consumed", error_code: null };
     value.snapshots = value.snapshots.filter((item) => item.source_type !== "ga4");
     expect(projectConnectionCenter(value, now).coverage.next_action.code).toBe("sync_source");

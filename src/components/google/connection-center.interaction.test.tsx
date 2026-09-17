@@ -17,7 +17,7 @@ afterEach(() => {
 
 function healthy() {
   const value = structuredClone(connectionCenterFixture("healthy"));
-  value.billing.audit_credits = 1;
+  value.billing.credit_balance = 1;
   value.verified_job = null;
   value.coverage.verified_generation_enabled = true;
   value.coverage.next_action = { code: "generate_verified_plan", label: "Generate Verified Action Plan · uses 1 credit", source_key: null };
@@ -79,14 +79,14 @@ describe("ConnectionCenter interactions", () => {
   it("turns a double click with zero balance into one checkout and navigates to Dodo", async () => {
     const user = userEvent.setup();
     const current = healthy();
-    current.billing.audit_credits = 0;
+    current.billing.credit_balance = 0;
     current.coverage.next_action = { code: "buy_verified_credit", label: "Buy 1 credit · $19", source_key: null };
     const navigate = vi.fn();
     let checkoutPosts = 0;
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("connection-center")) return new Response(JSON.stringify(current), { status: 200 });
-      if (url.endsWith("/verified-credit/checkout")) {
+      if (url.includes("/credits/checkout?return_to=")) {
         checkoutPosts += 1;
         return new Response(JSON.stringify({ checkout_url: "https://checkout.dodopayments.com/session/one" }), { status: 201 });
       }
@@ -131,12 +131,12 @@ describe("ConnectionCenter interactions", () => {
   it.each(["compensated", "consumed"] as const)("keeps a failed reserved job locked until DB settlement becomes %s", async (settledState) => {
     vi.useFakeTimers();
     const reserved = healthy();
-    reserved.billing.audit_credits = 0;
+    reserved.billing.credit_balance = 0;
     reserved.verified_job = { id: E2E_IDS.analysisJobId, status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
     reserved.coverage.next_action = { code: "wait_for_verified_analysis", label: "Finalizing credit return", source_key: null };
     const settled = structuredClone(reserved);
     settled.verified_job!.charge_state = settledState;
-    settled.billing.audit_credits = settledState === "compensated" ? 1 : 0;
+    settled.billing.credit_balance = settledState === "compensated" ? 1 : 0;
     settled.coverage.next_action = settledState === "compensated"
       ? { code: "generate_verified_plan", label: "Generate Verified Action Plan · uses 1 credit", source_key: null }
       : { code: "buy_verified_credit", label: "Buy 1 credit · $19", source_key: null };
@@ -164,11 +164,11 @@ describe("ConnectionCenter interactions", () => {
   it("falls back from a task 404 to DB recovery polling and unlocks only after compensation", async () => {
     vi.useFakeTimers();
     const running = healthy();
-    running.billing.audit_credits = 0;
+    running.billing.credit_balance = 0;
     running.verified_job = { id: E2E_IDS.analysisJobId, status: "running", report_id: null, charge_state: "reserved", error_code: null };
     running.coverage.next_action = { code: "wait_for_verified_analysis", label: "Verified Action Plan in progress", source_key: null };
     const recovered = structuredClone(running);
-    recovered.billing.audit_credits = 1;
+    recovered.billing.credit_balance = 1;
     recovered.verified_job = { id: E2E_IDS.analysisJobId, status: "failed", report_id: null, charge_state: "compensated", error_code: "V22_VERIFIED_ENQUEUE_TIMEOUT" };
     recovered.coverage.next_action = { code: "generate_verified_plan", label: "Generate Verified Action Plan · uses 1 credit", source_key: null };
     let recoveredInDb = false;
@@ -192,11 +192,11 @@ describe("ConnectionCenter interactions", () => {
     const j1 = E2E_IDS.analysisJobId;
     const j2 = "00000000-0000-4000-8000-000000000099";
     const reserved = healthy();
-    reserved.billing.audit_credits = 0;
+    reserved.billing.credit_balance = 0;
     reserved.verified_job = { id: j1, status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
     reserved.coverage.next_action = { code: "wait_for_verified_analysis", label: "Finalizing credit return", source_key: null };
     const compensated = structuredClone(reserved);
-    compensated.billing.audit_credits = 1;
+    compensated.billing.credit_balance = 1;
     compensated.verified_job!.charge_state = "compensated";
     const newer = structuredClone(reserved);
     newer.verified_job = { id: j2, status: "running", report_id: null, charge_state: "reserved", error_code: null };
@@ -226,11 +226,11 @@ describe("ConnectionCenter interactions", () => {
     const j1 = E2E_IDS.analysisJobId;
     const j2 = "00000000-0000-4000-8000-000000000099";
     const reserved = healthy();
-    reserved.billing.audit_credits = 0;
+    reserved.billing.credit_balance = 0;
     reserved.verified_job = { id: j1, status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
     reserved.coverage.next_action = { code: "wait_for_verified_analysis", label: "Finalizing credit return", source_key: null };
     const compensated = structuredClone(reserved);
-    compensated.billing.audit_credits = 1;
+    compensated.billing.credit_balance = 1;
     compensated.verified_job!.charge_state = "compensated";
     const j2Running = structuredClone(reserved);
     j2Running.verified_job = { id: j2, status: "running", report_id: null, charge_state: "reserved", error_code: null };
@@ -275,11 +275,11 @@ describe("ConnectionCenter interactions", () => {
   it("keeps a keyboard refresh available and never unlocks after bounded latest projection retries fail", async () => {
     vi.useFakeTimers();
     const reserved = healthy();
-    reserved.billing.audit_credits = 0;
+    reserved.billing.credit_balance = 0;
     reserved.verified_job = { id: E2E_IDS.analysisJobId, status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
     reserved.coverage.next_action = { code: "wait_for_verified_analysis", label: "Finalizing credit return", source_key: null };
     const compensated = structuredClone(reserved);
-    compensated.billing.audit_credits = 1;
+    compensated.billing.credit_balance = 1;
     compensated.verified_job!.charge_state = "compensated";
     let exactSeen = false;
     let exactReads = 0;
@@ -315,7 +315,7 @@ describe("ConnectionCenter interactions", () => {
   it("stops exact settlement polling after a tracked job is repeatedly missing and asks for a manual refresh", async () => {
     vi.useFakeTimers();
     const reserved = healthy();
-    reserved.billing.audit_credits = 0;
+    reserved.billing.credit_balance = 0;
     reserved.verified_job = { id: E2E_IDS.analysisJobId, status: "failed", report_id: null, charge_state: "reserved", error_code: "V22_PROVIDER_FAILED" };
     reserved.coverage.next_action = { code: "wait_for_verified_analysis", label: "Finalizing credit return", source_key: null };
     const latest = healthy();
@@ -342,14 +342,14 @@ describe("ConnectionCenter interactions", () => {
   it("confirms a returned payment, refreshes balance and never auto-generates", async () => {
     window.history.replaceState(null, "", "/connections?payment=return&payment_id=pay_123");
     const current = healthy();
-    current.billing.audit_credits = 0;
+    current.billing.credit_balance = 0;
     const refreshed = healthy();
     let generated = 0;
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.endsWith("/verified-credit/checkout/confirm")) {
+      if (url.endsWith("/credits/checkout/confirm")) {
         expect(init?.body).toBe(JSON.stringify({ payment_id: "pay_123" }));
-        return new Response(JSON.stringify({ ok: true, audit_credits: 1 }), { status: 200 });
+        return new Response(JSON.stringify({ ok: true, credit_balance: 1 }), { status: 200 });
       }
       if (url.includes("connection-center")) return new Response(JSON.stringify(refreshed), { status: 200 });
       if (url.endsWith("/verified-analysis")) { generated += 1; return new Response(null, { status: 500 }); }
@@ -364,18 +364,18 @@ describe("ConnectionCenter interactions", () => {
   it.each(["503", "network"] as const)("keeps confirmation final when the balance refresh fails with %s and retries only the GET", async (failure) => {
     window.history.replaceState(null, "", "/connections?payment=return&payment_id=pay_confirmed");
     const current = healthy();
-    current.billing.audit_credits = 0;
+    current.billing.credit_balance = 0;
     const refreshed = healthy();
     let confirmed = false;
     let confirmPosts = 0;
     let failedRefresh = false;
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.endsWith("/verified-credit/checkout/confirm")) {
+      if (url.endsWith("/credits/checkout/confirm")) {
         confirmPosts += 1;
         confirmed = true;
         expect(init?.body).toBe(JSON.stringify({ payment_id: "pay_confirmed" }));
-        return new Response(JSON.stringify({ ok: true, audit_credits: 1 }), { status: 200 });
+        return new Response(JSON.stringify({ ok: true, credit_balance: 1 }), { status: 200 });
       }
       if (url.includes("connection-center")) {
         if (!confirmed) return new Response(JSON.stringify(current), { status: 200 });
@@ -404,17 +404,17 @@ describe("ConnectionCenter interactions", () => {
     vi.useFakeTimers();
     window.history.replaceState(null, "", "/connections?payment=return&payment_id=pay_confirmed");
     const current = healthy();
-    current.billing.audit_credits = 0;
+    current.billing.credit_balance = 0;
     const refreshed = healthy();
     let confirmed = false;
     let refreshes = 0;
     let confirmPosts = 0;
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.endsWith("/verified-credit/checkout/confirm")) {
+      if (url.endsWith("/credits/checkout/confirm")) {
         confirmed = true;
         confirmPosts += 1;
-        return new Response(JSON.stringify({ ok: true, audit_credits: 1 }), { status: 200 });
+        return new Response(JSON.stringify({ ok: true, credit_balance: 1 }), { status: 200 });
       }
       if (url.includes("connection-center")) {
         if (!confirmed) return new Response(JSON.stringify(current), { status: 200 });
@@ -444,16 +444,16 @@ describe("ConnectionCenter interactions", () => {
     vi.useFakeTimers();
     window.history.replaceState(null, "", "/connections?payment=return&payment_id=pay_private&order_id=order_private");
     const current = healthy();
-    current.billing.audit_credits = 0;
+    current.billing.credit_balance = 0;
     let confirms = 0;
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("connection-center")) return new Response(JSON.stringify(current), { status: 200 });
-      if (url.endsWith("/verified-credit/checkout/confirm")) {
+      if (url.endsWith("/credits/checkout/confirm")) {
         confirms += 1;
         expect(init?.body).toBe(JSON.stringify({ payment_id: "pay_private" }));
         if (confirms === 1) return firstFailure();
-        return new Response(JSON.stringify({ ok: true, audit_credits: 1 }), { status: 200 });
+        return new Response(JSON.stringify({ ok: true, credit_balance: 1 }), { status: 200 });
       }
       throw new Error(`Unexpected request: ${url}`);
     }));
@@ -480,7 +480,7 @@ describe("ConnectionCenter interactions", () => {
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("connection-center")) return Promise.resolve(new Response(JSON.stringify(current), { status: 200 }));
-      if (url.endsWith("/verified-credit/checkout/confirm")) {
+      if (url.endsWith("/credits/checkout/confirm")) {
         observed.signal = init?.signal as AbortSignal;
         return new Promise<Response>(() => undefined);
       }

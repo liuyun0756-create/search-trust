@@ -121,10 +121,10 @@ select ok(
 
 select lives_ok(
   $$
-    insert into public.users (id, clerk_user_id, email, audit_credits)
+    insert into public.users (id, clerk_user_id, email, audit_credits, credit_balance)
     values
-      ('22092000-0000-4000-8000-000000000001', 'v22-release-validation-20260912-user-a', 'release-a@example.invalid', 5),
-      ('22092000-0000-4000-8000-000000000002', 'v22-release-validation-20260912-user-b', 'release-b@example.invalid', 5)
+      ('22092000-0000-4000-8000-000000000001', 'v22-release-validation-20260912-user-a', 'release-a@example.invalid', 5, 5),
+      ('22092000-0000-4000-8000-000000000002', 'v22-release-validation-20260912-user-b', 'release-b@example.invalid', 5, 5)
   $$,
   'synthetic users can be created inside the rollback transaction'
 );
@@ -703,9 +703,8 @@ select lives_ok(
 select lives_ok(
   $$
     create temp table searchtrust_release_validation_checkout as
-    select * from public.claim_v22_verified_credit_checkout(
+    select * from public.claim_v22_credit_checkout(
       '22092000-0000-4000-8000-000000000001',
-      '22092001-0000-4000-8000-000000000001',
       'searchtrust_release_validation_product'
     )
   $$,
@@ -714,9 +713,8 @@ select lives_ok(
 
 select lives_ok(
   $$
-    select * from public.attach_v22_verified_credit_checkout(
+    select * from public.attach_v22_credit_checkout(
       '22092000-0000-4000-8000-000000000001',
-      '22092001-0000-4000-8000-000000000001',
       (select order_id from searchtrust_release_validation_checkout),
       (select initialization_token from searchtrust_release_validation_checkout),
       'searchtrust_release_validation_product',
@@ -729,11 +727,11 @@ select lives_ok(
 
 select lives_ok(
   $$
-    select * from public.fulfill_v22_verified_credit_payment(
+    select * from public.fulfill_v22_credit_payment(
       (select order_id from searchtrust_release_validation_checkout),
       'searchtrust_release_validation_payment',
       'v22-release-validation-20260912-user-a',
-      '22092001-0000-4000-8000-000000000001', 1900, 'USD',
+      1900, 'USD',
       'searchtrust_release_validation_checkout',
       'searchtrust_release_validation_product'
     )
@@ -744,11 +742,11 @@ select lives_ok(
 select is(
   (
     select idempotent
-    from public.fulfill_v22_verified_credit_payment(
+    from public.fulfill_v22_credit_payment(
       (select order_id from searchtrust_release_validation_checkout),
       'searchtrust_release_validation_payment',
       'v22-release-validation-20260912-user-a',
-      '22092001-0000-4000-8000-000000000001', 1900, 'USD',
+      1900, 'USD',
       'searchtrust_release_validation_checkout',
       'searchtrust_release_validation_product'
     )
@@ -759,13 +757,13 @@ select is(
 
 select is(
   (
-    select u.audit_credits::text || ':' || count(j.id)::text
+    select u.credit_balance::text || ':' || count(j.id)::text
     from public.users u
     left join public.analysis_jobs j
       on j.case_id = '22092001-0000-4000-8000-000000000001'
       and j.job_type = 'verified_report'
     where u.id = '22092000-0000-4000-8000-000000000001'
-    group by u.audit_credits
+    group by u.credit_balance
   ),
   '6:0',
   'payment leaves one new credit and does not auto-generate'
@@ -847,9 +845,9 @@ select lives_ok(
 
 select is(
   (
-    select j.status || ':' || c.state || ':' || u.audit_credits::text
+    select j.status || ':' || c.state || ':' || u.credit_balance::text
     from public.analysis_jobs j
-    join public.analysis_attempt_charges c on c.job_id = j.id
+    join public.workflow_charges c on c.analysis_job_id = j.id
     join public.users u on u.id = c.user_id
     where j.id = '22092006-0000-4000-8000-000000000010'
   ),
@@ -886,12 +884,12 @@ select lives_ok(
 
 select is(
   (
-    select c.state || ':' || u.audit_credits::text || ':' || count(l.id)::text
-    from public.analysis_attempt_charges c
+    select c.state || ':' || u.credit_balance::text || ':' || count(l.id)::text
+    from public.workflow_charges c
     join public.users u on u.id = c.user_id
-    join public.audit_credit_ledger l on l.job_id = c.job_id
-    where c.job_id = '22092006-0000-4000-8000-000000000011'
-    group by c.state, u.audit_credits
+    join public.credit_ledger l on l.workflow_charge_id = c.id
+    where c.analysis_job_id = '22092006-0000-4000-8000-000000000011'
+    group by c.state, u.credit_balance
   ),
   'compensated:5:2',
   'technical failure restores exactly one credit with debit and refund ledger entries'
@@ -929,9 +927,9 @@ select lives_ok(
 
 select is(
   (
-    select j.previous_job_id::text || ':' || c.state || ':' || u.audit_credits::text
+    select j.previous_job_id::text || ':' || c.state || ':' || u.credit_balance::text
     from public.analysis_jobs j
-    join public.analysis_attempt_charges c on c.job_id = j.id
+    join public.workflow_charges c on c.analysis_job_id = j.id
     join public.users u on u.id = c.user_id
     where j.id = '22092006-0000-4000-8000-000000000012'
   ),

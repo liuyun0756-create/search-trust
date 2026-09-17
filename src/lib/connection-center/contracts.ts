@@ -94,7 +94,7 @@ export interface ConnectionCenterResponse {
     updated_at: string;
   };
   billing: {
-    audit_credits: number;
+    credit_balance: number;
   };
   verified_job: {
     id: string;

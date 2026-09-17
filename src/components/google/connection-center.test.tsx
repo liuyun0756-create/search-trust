@@ -65,7 +65,7 @@ function response(ready = false): ConnectionCenterResponse {
   return {
     schema_version: "connection_center_v1",
     case: { id: "case-1", business_name: "Example Plumbing", site_url: "https://example.test", updated_at: "2026-09-07T10:00:00.000Z" },
-    billing: { audit_credits: ready ? 1 : 0 },
+    billing: { credit_balance: ready ? 1 : 0 },
     verified_job: null,
     coverage: {
       verified_core_ready: ready,

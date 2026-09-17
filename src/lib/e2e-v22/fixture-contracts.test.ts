@@ -143,7 +143,7 @@ describe("V22-090 browser fixtures", () => {
     const scenario = new LocalApiScenario({ verifiedBalance: 1, verified: "success" });
     const connectionUrl = `/api/v2/cases/${E2E_IDS.caseId}/connection-center`;
     expect(scenario.resolve({ method: "GET", url: connectionUrl }).body).toMatchObject({
-      billing: { audit_credits: 1 },
+      billing: { credit_balance: 1 },
       verified_job: null,
       coverage: { next_action: { code: "generate_verified_plan" } },
     });
@@ -167,7 +167,7 @@ describe("V22-090 browser fixtures", () => {
     ).status);
     expect(states).toEqual(["queued", "running", "succeeded"]);
     expect(scenario.resolve({ method: "GET", url: connectionUrl }).body).toMatchObject({
-      billing: { audit_credits: 0 },
+      billing: { credit_balance: 0 },
       verified_job: { status: "succeeded", charge_state: "consumed", report_id: E2E_IDS.verifiedReportId },
       coverage: { next_action: { code: "open_verified_report" } },
     });
@@ -178,7 +178,7 @@ describe("V22-090 browser fixtures", () => {
   it("models purchase without generation, exact compensation, and a distinct retry", () => {
     const scenario = new LocalApiScenario({ verifiedBalance: 0, verified: "first_failure" });
     const connectionUrl = `/api/v2/cases/${E2E_IDS.caseId}/connection-center`;
-    const checkoutUrl = `/api/v2/cases/${E2E_IDS.caseId}/verified-credit/checkout`;
+    const checkoutUrl = "/api/v2/credits/checkout";
     expect(scenario.resolve({ method: "POST", url: checkoutUrl })).toMatchObject({
       status: 201,
       body: verifiedCreditCheckoutCreatedFixture,
@@ -187,8 +187,8 @@ describe("V22-090 browser fixtures", () => {
 
     const confirmUrl = `${checkoutUrl}/confirm`;
     const confirm = { method: "POST", url: confirmUrl, body: { payment_id: VERIFIED_PAYMENT_ID } } as const;
-    expect(scenario.resolve(confirm).body).toMatchObject({ credits_added: 1, audit_credits: 1, already_confirmed: false });
-    expect(scenario.resolve(confirm).body).toMatchObject({ credits_added: 0, audit_credits: 1, already_confirmed: true });
+    expect(scenario.resolve(confirm).body).toMatchObject({ credits_added: 1, credit_balance: 1, already_confirmed: false });
+    expect(scenario.resolve(confirm).body).toMatchObject({ credits_added: 0, credit_balance: 1, already_confirmed: true });
     expect(scenario.snapshot()).toMatchObject({ verifiedBalance: 1, verifiedCheckoutPaid: true, verifiedAttempt: 0 });
 
     const analyzeUrl = `/api/v2/cases/${E2E_IDS.caseId}/verified-analysis`;
@@ -202,7 +202,7 @@ describe("V22-090 browser fixtures", () => {
     scenario.resolve({ method: "GET", url: firstStatusUrl });
     expect(scenario.resolve({ method: "GET", url: firstStatusUrl }).body).toMatchObject({ status: "failed" });
     expect(scenario.resolve({ method: "GET", url: `${connectionUrl}?tracked_job_id=${E2E_IDS.verifiedFailedJobId}` }).body)
-      .toMatchObject({ billing: { audit_credits: 1 }, verified_job: { charge_state: "compensated" } });
+      .toMatchObject({ billing: { credit_balance: 1 }, verified_job: { charge_state: "compensated" } });
 
     const retryHeaders = {
       "x-searchtrust-job-id": E2E_IDS.verifiedRetryJobId,

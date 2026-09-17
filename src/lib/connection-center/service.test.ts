@@ -16,10 +16,10 @@ function read(): ConnectionCenterRead {
       bindings: [],
     jobs: [],
     snapshots: [],
-    audit_credits: 0,
+    credit_balance: 0,
     verified_job: null,
     },
-    revision: { case_updated_at: "2026-09-07T10:00:00Z", binding_signature: "", audit_credits: 0, verified_job_signature: "" },
+    revision: { case_updated_at: "2026-09-07T10:00:00Z", binding_signature: "", credit_balance: 0, verified_job_signature: "" },
   };
 }
 

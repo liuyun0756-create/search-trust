@@ -17,7 +17,7 @@ type ProjectionData = Omit<ConnectionCenterProjectionInput, "flags">;
 export interface ConnectionCenterRevision {
   case_updated_at: string;
   binding_signature: string;
-  audit_credits: number;
+  credit_balance: number;
   verified_job_signature: string;
 }
 
@@ -194,8 +194,9 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
     fail(jobResult.error);
     const job = jobResult.data as VerifiedJobRow | null;
     if (!job) return { job: null, charge: null };
-    const chargeResult = await this.db.from("analysis_attempt_charges").select("state")
-      .eq("user_id", userId).eq("case_id", caseId).eq("job_id", job.id).maybeSingle();
+    const chargeResult = await this.db.from("workflow_charges").select("state")
+      .eq("user_id", userId).eq("case_id", caseId).eq("workflow_kind", "verified")
+      .eq("analysis_job_id", job.id).maybeSingle();
     fail(chargeResult.error);
     return { job, charge: chargeResult.data as ChargeRow | null };
   }
@@ -237,14 +238,14 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
         ? this.db.from("reports").select(REPORT_FIELDS).eq("id", ownedCase.latest_report_id)
           .eq("user_id", userId).eq("case_id", caseId).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
-      this.db.from("users").select("audit_credits").eq("id", userId).maybeSingle(),
+      this.db.from("users").select("credit_balance").eq("id", userId).maybeSingle(),
       this.verifiedJob(userId, caseId, trackedJobId),
     ]);
     fail(connectionsResult.error);
     fail(reportResult.error);
     fail(balanceResult.error);
-    const auditCredits = (balanceResult.data as { audit_credits?: unknown } | null)?.audit_credits;
-    if (!Number.isSafeInteger(auditCredits) || (auditCredits as number) < 0) throw new ConnectionCenterRepositoryError();
+    const creditBalance = (balanceResult.data as { credit_balance?: unknown } | null)?.credit_balance;
+    if (!Number.isSafeInteger(creditBalance) || (creditBalance as number) < 0) throw new ConnectionCenterRepositoryError();
     const verifiedJob = verifiedJobProjection(verifiedRead.job, verifiedRead.charge);
     const parentReport = await this.parentReport(userId, ownedCase, reportResult.data as ReportRow | null);
 
@@ -272,13 +273,13 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
         bindings,
         jobs,
         snapshots,
-        audit_credits: auditCredits as number,
+        credit_balance: creditBalance as number,
         verified_job: verifiedJob,
       },
       revision: {
         case_updated_at: ownedCase.updated_at,
         binding_signature: bindingSignature(bindings),
-        audit_credits: auditCredits as number,
+        credit_balance: creditBalance as number,
         verified_job_signature: verifiedJobSignature(verifiedJob),
       },
     };
@@ -289,15 +290,15 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
     if (!ownedCase || ownedCase.updated_at !== revision.case_updated_at) return false;
     const [bindings, balanceResult, verifiedRead] = await Promise.all([
       this.activeBindings(caseId),
-      this.db.from("users").select("audit_credits").eq("id", userId).maybeSingle(),
+      this.db.from("users").select("credit_balance").eq("id", userId).maybeSingle(),
       this.verifiedJob(userId, caseId, trackedJobId),
     ]);
     fail(balanceResult.error);
-    const auditCredits = (balanceResult.data as { audit_credits?: unknown } | null)?.audit_credits;
-    if (!Number.isSafeInteger(auditCredits) || (auditCredits as number) < 0) throw new ConnectionCenterRepositoryError();
+    const creditBalance = (balanceResult.data as { credit_balance?: unknown } | null)?.credit_balance;
+    if (!Number.isSafeInteger(creditBalance) || (creditBalance as number) < 0) throw new ConnectionCenterRepositoryError();
     const verifiedJob = verifiedJobProjection(verifiedRead.job, verifiedRead.charge);
     return bindingSignature(bindings) === revision.binding_signature
-      && auditCredits === revision.audit_credits
+      && creditBalance === revision.credit_balance
       && verifiedJobSignature(verifiedJob) === revision.verified_job_signature;
   }
 }

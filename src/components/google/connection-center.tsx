@@ -375,7 +375,7 @@ export function ConnectionCenter({
     const controller = new AbortController();
     paymentAbort.current = controller;
     try {
-      const response = await fetch(`/api/v2/cases/${encodeURIComponent(caseId)}/verified-credit/checkout/confirm`, {
+      const response = await fetch("/api/v2/credits/checkout/confirm", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ payment_id: paymentId }),
@@ -645,7 +645,8 @@ export function ConnectionCenter({
     setActionBusy("checkout");
     setTaskMessage("");
     try {
-      const response = await fetch(`/api/v2/cases/${encodeURIComponent(caseId)}/verified-credit/checkout`, { method: "POST" });
+      const returnTo = `/cases/${encodeURIComponent(caseId)}/connections`;
+      const response = await fetch(`/api/v2/credits/checkout?return_to=${encodeURIComponent(returnTo)}`, { method: "POST" });
       if (!response.ok) throw new Error(await responseMessage(response, "Secure checkout could not be opened."));
       const body = await response.json() as { checkout_url?: unknown };
       const checkoutUrl = safeCheckoutUrl(body.checkout_url);
@@ -721,7 +722,7 @@ export function ConnectionCenter({
                   : data?.coverage.next_action.label ?? "Check readiness"}
           </button>
         </div>
-        {data && <p className="mt-5 text-sm text-[#c7d0c3]">Account balance: <span className="font-semibold text-white">{data.billing.audit_credits} {data.billing.audit_credits === 1 ? "credit" : "credits"}</span></p>}
+        {data && <p className="mt-5 text-sm text-[#c7d0c3]">Account balance: <span className="font-semibold text-white">{data.billing.credit_balance} {data.billing.credit_balance === 1 ? "credit" : "credits"}</span></p>}
       </section>
 
       <div aria-live="polite" aria-atomic="true" className="mt-4 min-h-6 text-sm text-[#53604f]">

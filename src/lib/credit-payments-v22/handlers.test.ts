@@ -12,6 +12,7 @@ import type { CreditPaymentRepository } from "./repository";
 const user = { userId: "11111111-1111-4111-8111-111111111111", clerkUserId: "user_123" };
 const orderId = "22222222-2222-4222-8222-222222222222";
 const token = "33333333-3333-4333-8333-333333333333";
+const caseId = "44444444-4444-4444-8444-444444444444";
 
 function repository(overrides: Partial<CreditPaymentRepository> = {}): CreditPaymentRepository {
   return {
@@ -67,6 +68,29 @@ describe("unified credit payment handlers", () => {
     });
     expect(input.metadata).not.toHaveProperty("case_id");
     expect(new URL(input.returnUrl).pathname).toBe("/pricing");
+  });
+
+  it("returns a Case connection purchase to its same account page without adding Case metadata", async () => {
+    const repo = repository();
+    const deps = dependencies(repo);
+    const returnTo = `/cases/${caseId}/connections`;
+    await createCreditPaymentHandlers(deps).POST(new NextRequest(
+      `https://searchtrust.example/api/v2/credits/checkout?return_to=${encodeURIComponent(returnTo)}`,
+      { method: "POST" },
+    ));
+    const input = vi.mocked(deps.dodo.createCheckout).mock.calls[0][0];
+    expect(new URL(input.returnUrl).pathname).toBe(returnTo);
+    expect(new URL(input.cancelUrl).pathname).toBe(returnTo);
+    expect(input.metadata).not.toHaveProperty("case_id");
+  });
+
+  it("ignores an unsafe external return path", async () => {
+    const deps = dependencies(repository());
+    await createCreditPaymentHandlers(deps).POST(new NextRequest(
+      "https://searchtrust.example/api/v2/credits/checkout?return_to=https%3A%2F%2Fevil.example",
+      { method: "POST" },
+    ));
+    expect(new URL(vi.mocked(deps.dodo.createCheckout).mock.calls[0][0].returnUrl).pathname).toBe("/pricing");
   });
 
   it("returns an attached checkout without starting any workflow", async () => {

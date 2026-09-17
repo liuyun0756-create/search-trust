@@ -235,10 +235,10 @@ export class LocalApiScenario {
         : null;
       return { status: 200, body: connectionCenterFixture(state, { balance: this.verifiedBalance, job: verifiedJob }) };
     }
-    if (key === `POST /api/v2/cases/${E2E_IDS.caseId}/verified-credit/checkout`) {
+    if (key === "POST /api/v2/credits/checkout") {
       return { status: 201, body: verifiedCreditCheckoutCreatedFixture };
     }
-    if (key === `POST /api/v2/cases/${E2E_IDS.caseId}/verified-credit/checkout/confirm`) {
+    if (key === "POST /api/v2/credits/checkout/confirm") {
       const input = jsonBody(request) as { payment_id?: unknown };
       if (input.payment_id !== VERIFIED_PAYMENT_ID) throw new Error("Local fixture rejected invalid Verified payment confirmation.");
       const alreadyConfirmed = this.verifiedCheckoutPaid;
@@ -248,7 +248,7 @@ export class LocalApiScenario {
         status: 200,
         body: {
           ...verifiedCreditCheckoutConfirmedFixture,
-          audit_credits: this.verifiedBalance,
+          credit_balance: this.verifiedBalance,
           credits_added: alreadyConfirmed ? 0 : 1,
           already_confirmed: alreadyConfirmed,
         },

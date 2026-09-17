@@ -80,7 +80,7 @@ function requireCheckoutConfiguration(dependencies: CreditPaymentHandlerDependen
 
 export function createCreditPaymentHandlers(dependencies: CreditPaymentHandlerDependencies) {
   return {
-    async POST(_request: NextRequest) {
+    async POST(request: NextRequest) {
       const requestId = randomUUID();
       try {
         const user = await requireUser(dependencies);
@@ -113,10 +113,15 @@ export function createCreditPaymentHandlers(dependencies: CreditPaymentHandlerDe
         }
         if (claim.provider_product_id !== productId) throw CasePaymentError.unavailable();
 
-        const returnUrl = new URL("/pricing", baseUrl);
+        const requestedReturnPath = request.nextUrl.searchParams.get("return_to");
+        const returnPath = requestedReturnPath
+          && /^\/cases\/[0-9a-f-]{36}\/connections$/i.test(requestedReturnPath)
+          ? requestedReturnPath
+          : "/pricing";
+        const returnUrl = new URL(returnPath, baseUrl);
         returnUrl.searchParams.set("payment", "return");
         returnUrl.searchParams.set("order_id", claim.order_id);
-        const cancelUrl = new URL("/pricing", baseUrl);
+        const cancelUrl = new URL(returnPath, baseUrl);
         cancelUrl.searchParams.set("payment", "cancelled");
         const checkout = await dependencies.createDodoClient().createCheckout({
           productId,

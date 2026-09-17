@@ -87,7 +87,7 @@ export interface ConnectionCenterProjectionInput {
   bindings: ConnectionCenterBindingInput[];
   jobs: ConnectionCenterJobInput[];
   snapshots: ConnectionCenterSnapshotInput[];
-  audit_credits: number;
+  credit_balance: number;
   verified_job: ConnectionCenterVerifiedJobInput | null;
   flags: {
     gsc_sync_enabled: boolean;
@@ -395,7 +395,7 @@ export function projectConnectionCenter(input: ConnectionCenterProjectionInput, 
       nextAction = action("wait_for_verified_analysis", "Finalizing credit return", null);
     } else if (latestVerifiedJob?.status === "succeeded" && latestVerifiedJob.report_id) {
       nextAction = action("open_verified_report", "Open Verified Action Plan", null);
-    } else if (input.audit_credits > 0) {
+    } else if (input.credit_balance > 0) {
       nextAction = action("generate_verified_plan", "Generate Verified Action Plan · uses 1 credit", null);
     } else {
       nextAction = action("buy_verified_credit", "Buy 1 credit · $19", null);
@@ -410,7 +410,7 @@ export function projectConnectionCenter(input: ConnectionCenterProjectionInput, 
       site_url: input.case.site_url,
       updated_at: input.case.updated_at,
     },
-    billing: { audit_credits: input.audit_credits },
+    billing: { credit_balance: input.credit_balance },
     verified_job: latestVerifiedJob,
     coverage: {
       verified_core_ready: verifiedCoreReady,

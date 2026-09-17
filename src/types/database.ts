@@ -326,7 +326,7 @@ export interface StartV22VerifiedAnalysisResult {
   gsc_snapshot_id: string;
   ga4_snapshot_id: string;
   public_gbp_snapshot_id: string;
-  audit_credits: number;
+  credit_balance: number;
 }
 
 export interface ResolveV22VerifiedAnalysisInputArgs {

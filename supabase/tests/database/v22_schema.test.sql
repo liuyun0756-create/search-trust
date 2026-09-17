@@ -4,7 +4,7 @@ set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(142);
+select plan(145);
 
 select has_column('public','users','credit_balance','Unified permanent credit balance exists');
 select col_not_null('public','users','credit_balance','Unified credit balance is required');
@@ -91,6 +91,10 @@ select has_function('public','settle_v22_verified_job_on_report_link',array[]::t
 select has_function('public','prevent_v22_report_backed_compensation',array[]::text[],'Report-backed jobs have a compensation guard function');
 select has_trigger('public','analysis_jobs','settle_v22_verified_job_on_report_link','Verified report linking triggers atomic success settlement');
 select has_trigger('public','analysis_attempt_charges','prevent_v22_report_backed_compensation','Charge compensation cannot cross the durable report boundary');
+select has_function('public','prevent_v22_report_backed_workflow_compensation',array[]::text[],'Unified report-backed charges have a compensation guard');
+select has_trigger('public','workflow_charges','prevent_v22_report_backed_workflow_compensation','Unified charge compensation cannot cross the durable report boundary');
+select ok(not has_function_privilege('service_role','public.start_v22_verified_analysis_legacy_financial_bridge(uuid,uuid,uuid,text,text,uuid,uuid)','EXECUTE'),
+  'The legacy Verified financial bridge is internal-only');
 select ok(not has_function_privilege('anon','public.settle_v22_verified_job_on_report_link()','EXECUTE')
   and not has_function_privilege('authenticated','public.settle_v22_verified_job_on_report_link()','EXECUTE')
   and not has_function_privilege('anon','public.prevent_v22_report_backed_compensation()','EXECUTE')

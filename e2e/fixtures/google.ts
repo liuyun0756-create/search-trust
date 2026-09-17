@@ -99,7 +99,7 @@ export function connectionCenterFixture(
   return {
     schema_version: "connection_center_v1",
     case: { id: E2E_IDS.caseId, business_name: "SearchTrust E2E Plumbing", site_url: E2E_IDS.siteUrl, updated_at: E2E_NOW },
-    billing: { audit_credits: balance },
+    billing: { credit_balance: balance },
     verified_job: verifiedJob,
     coverage: {
       verified_core_ready: ready,
