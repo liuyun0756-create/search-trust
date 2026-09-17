@@ -14,6 +14,13 @@ interface CompetitorConfirmationStepProps {
   onEditScope(): void;
 }
 
+function limitationMessage(value: string) {
+  if (/^[A-Z0-9_]+$/.test(value)) {
+    return "Some map-result details were unavailable. Candidate confidence uses the verified market and website evidence that was returned.";
+  }
+  return value;
+}
+
 export function CompetitorConfirmationStep({ status, selectedIds, onSelectionChange, onConfirm, onRerun, onEditScope }: CompetitorConfirmationStepProps) {
   const result = status.result;
   const candidates = result?.candidates ?? [];
@@ -88,7 +95,7 @@ export function CompetitorConfirmationStep({ status, selectedIds, onSelectionCha
         </div>
       </form>
 
-      {result?.limitations.length ? <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#f2f4ef] px-4 py-3 text-xs leading-5 text-[#687468]"><AlertTriangle className="mt-0.5 shrink-0" size={14} />{result.limitations[0]}</div> : null}
+      {result?.limitations.length ? <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#f2f4ef] px-4 py-3 text-xs leading-5 text-[#687468]"><AlertTriangle className="mt-0.5 shrink-0" size={14} />{limitationMessage(result.limitations[0])}</div> : null}
 
       <div className="mt-6 flex justify-end">
         <button type="button" disabled={selectedIds.length === 0} onClick={onConfirm} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1a211a] px-6 text-sm font-bold text-white outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/40 disabled:cursor-not-allowed disabled:bg-[#aab1a7]">

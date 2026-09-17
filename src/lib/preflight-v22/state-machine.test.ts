@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CompetitorDiscoveryStatusResponse, PreflightResponse } from "./contracts";
-import { canConfirmCompetitors, createNewCaseDraft, reduceWorkspaceState } from "./state-machine";
+import { canConfirmCompetitors, createNewCaseDraft, defaultCompetitorSelection, reduceWorkspaceState } from "./state-machine";
 
 const draftId = "11111111-1111-4111-8111-111111111111";
 const jobId = "22222222-2222-4222-8222-222222222222";
@@ -82,6 +82,15 @@ describe("new Case workspace state machine", () => {
     expect(state.discovery_status).toBe(discovery);
     expect(canConfirmCompetitors(state)).toBe(true);
     expect(reduceWorkspaceState(state, { type: "CONFIRM_COMPETITORS" }).stage).toBe("coverage");
+  });
+
+  it("prefers high-confidence businesses with public GBP evidence for the default set", () => {
+    const candidates = succeeded(["directory", "forum", "verified_a", "verified_b", "verified_c"]).result!.candidates;
+    candidates[0] = { ...candidates[0], confidence: "medium", public_gbp_url: null };
+    candidates[1] = { ...candidates[1], confidence: "medium", public_gbp_url: null };
+    for (const candidate of candidates.slice(2)) candidate.public_gbp_url = `https://maps.google.com/?cid=${candidate.competitor_id}`;
+
+    expect(defaultCompetitorSelection(candidates)).toEqual(["verified_a", "verified_b", "verified_c"]);
   });
 
   it("strictly blocks coverage when no competitor is selected", () => {

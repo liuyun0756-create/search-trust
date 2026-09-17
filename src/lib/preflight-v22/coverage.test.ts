@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mapCoverage } from "./coverage";
+import { mapCoverage, resolveCoverageAfterConfirmation } from "./coverage";
 
 const modules = [
   { module_key: "competitor_analysis" as const, available: true, reason: "Candidates confirmed." },
@@ -20,5 +20,19 @@ describe("coverage mapping", () => {
 
   it("does not treat a missing public GBP as matched or available", () => {
     expect(mapCoverage(modules, [], 3)[1].status).toBe("unavailable");
+  });
+
+  it("removes resolved preflight gaps and exposes collected market evidence", () => {
+    const resolved = resolveCoverageAfterConfirmation([
+      ...modules,
+      { module_key: "serp_organic" as const, available: false, reason: "Missing prerequisites." },
+    ], [
+      { gap_code: "BUSINESS_IDENTITY_UNCONFIRMED", message: "Confirm identity.", blocking: true, resolution: "Confirm it." },
+      { gap_code: "COMPETITOR_DISCOVERY_PENDING", message: "Run discovery.", blocking: false, resolution: "Run it." },
+      { gap_code: "PAGESPEED_UNAVAILABLE", message: "Unavailable.", blocking: false, resolution: "Configure it." },
+    ], true);
+
+    expect(resolved.gaps.map((gap) => gap.gap_code)).toEqual(["PAGESPEED_UNAVAILABLE"]);
+    expect(resolved.modules.find((module) => module.module_key === "serp_organic")).toEqual(expect.objectContaining({ available: true }));
   });
 });

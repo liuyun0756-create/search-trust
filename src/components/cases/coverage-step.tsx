@@ -1,6 +1,6 @@
 import { AlertOctagon, CheckCircle2, CircleDashed, Clock3, EyeOff, LockKeyhole, ShieldAlert, Sparkles } from "lucide-react";
 
-import { mapCoverage, type NewCaseDraft, type WorkGoal } from "@/lib/preflight-v22";
+import { mapCoverage, resolveCoverageAfterConfirmation, type NewCaseDraft, type WorkGoal } from "@/lib/preflight-v22";
 
 interface CoverageStepProps {
   draft: NewCaseDraft;
@@ -27,9 +27,11 @@ const statusMeta = {
   not_connected: { label: "Not connected", className: "bg-[#ecf2f8] text-[#3c6480]", icon: LockKeyhole },
 };
 
-function cta(goal: WorkGoal) {
+function cta(goal: WorkGoal, workflowReserved: boolean) {
   return goal === "win_new_client"
-    ? { eyebrow: "$19 one-time report", title: "Turn this coverage into a client-ready opportunity report.", button: "Sign in & continue", detail: "Payment comes after sign-in. Nothing is charged on this page." }
+    ? workflowReserved
+      ? { eyebrow: "Already covered", title: "Generate the client-ready Prospect report.", button: "Generate Prospect report", detail: "Your credit was reserved when provider-backed discovery started. Generating this report uses no additional credit." }
+      : { eyebrow: "Prospect report", title: "Continue to the provider-backed Prospect workflow.", button: "Continue", detail: "One credit is reserved before paid providers are called." }
     : { eyebrow: "Client project", title: "Save this Case and prepare first-party connections.", button: "Save client project & continue", detail: "Google connections remain optional and happen only after you choose to connect them." };
 }
 
@@ -38,8 +40,10 @@ export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
   const business = draft.business_confirmation;
   const selected = draft.selected_competitor_ids.length;
   if (!preflight || !business) return null;
-  const coverage = mapCoverage(preflight.module_availability, preflight.data_gaps, selected);
-  const action = cta(draft.goal);
+  const discoveryCompleted = draft.discovery_status?.status === "succeeded";
+  const resolved = resolveCoverageAfterConfirmation(preflight.module_availability, preflight.data_gaps, discoveryCompleted);
+  const coverage = mapCoverage(resolved.modules, resolved.gaps, selected);
+  const action = cta(draft.goal, Boolean(draft.prospect_workflow_id));
 
   return (
     <section>
@@ -56,7 +60,7 @@ export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-[#dfe4da] bg-white">
-        <div className="border-b border-[#e5e9e1] bg-[#fafbf8] px-5 py-4"><h2 className="font-bold text-[#202a20]">Evidence modules</h2><p className="mt-1 text-xs text-[#7b867b]">Every status comes from public preflight data and the confirmed competitor count.</p></div>
+        <div className="border-b border-[#e5e9e1] bg-[#fafbf8] px-5 py-4"><h2 className="font-bold text-[#202a20]">Evidence modules</h2><p className="mt-1 text-xs text-[#7b867b]">Every status reflects the confirmed business scope and latest provider-backed discovery.</p></div>
         <div className="divide-y divide-[#edf0ea]">
           {coverage.map((item) => {
             const meta = statusMeta[item.status];
@@ -72,11 +76,11 @@ export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
         </div>
       </div>
 
-      {preflight.data_gaps.length > 0 && (
+      {resolved.gaps.length > 0 && (
         <div className="mt-5 rounded-2xl border border-[#e4ddd0] bg-[#fffdf8] p-5">
           <h2 className="text-sm font-bold text-[#332e25]">Known data gaps</h2>
           <ul className="mt-3 space-y-3">
-            {preflight.data_gaps.map((gap) => <li key={gap.gap_code} className="flex gap-3 text-sm leading-6 text-[#675f51]"><span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${gap.blocking ? "bg-[#b6402c]" : "bg-[#d49b24]"}`} /><span><strong className="text-[#3c352b]">{gap.message}</strong> {gap.resolution}</span></li>)}
+            {resolved.gaps.map((gap) => <li key={gap.gap_code} className="flex gap-3 text-sm leading-6 text-[#675f51]"><span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${gap.blocking ? "bg-[#b6402c]" : "bg-[#d49b24]"}`} /><span><strong className="text-[#3c352b]">{gap.message}</strong> {gap.resolution}</span></li>)}
           </ul>
         </div>
       )}

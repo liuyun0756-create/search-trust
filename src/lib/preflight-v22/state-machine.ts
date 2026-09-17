@@ -135,6 +135,22 @@ export function canConfirmCompetitors(state: NewCaseDraft): boolean {
     && state.selected_competitor_ids.every((id) => available.has(id));
 }
 
+export function defaultCompetitorSelection(
+  candidates: NonNullable<CompetitorDiscoveryStatusResponse["result"]>["candidates"],
+): string[] {
+  const confidence = { high: 3, medium: 2, low: 1 } as const;
+  return candidates
+    .map((candidate, index) => ({ candidate, index }))
+    .sort((left, right) =>
+      Number(Boolean(right.candidate.public_gbp_url)) - Number(Boolean(left.candidate.public_gbp_url)) ||
+      confidence[right.candidate.confidence] - confidence[left.candidate.confidence] ||
+      right.candidate.query_appearance_count - left.candidate.query_appearance_count ||
+      left.candidate.best_position - right.candidate.best_position ||
+      left.index - right.index)
+    .slice(0, 3)
+    .map(({ candidate }) => candidate.competitor_id);
+}
+
 export function reduceWorkspaceState(
   state: NewCaseDraft,
   event: WorkspaceEvent,
@@ -190,7 +206,7 @@ export function reduceWorkspaceState(
       return touch(state, {
         stage: "competitor_confirmation",
         discovery_status: event.status,
-        selected_competitor_ids: candidates.slice(0, 3).map((candidate) => candidate.competitor_id),
+        selected_competitor_ids: defaultCompetitorSelection(candidates),
       }, now);
     }
     case "DISCOVERY_REQUEST_FAILED":
