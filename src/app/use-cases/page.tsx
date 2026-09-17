@@ -1,10 +1,4 @@
-import { UseCasesHero } from "@/components/useCase/UseCasesHero";
-import { WhyTeamsTurnToUs } from "@/components/useCase/WhyTeamsTurnToUs";
-import { CommunityScenario } from "@/components/useCase/CommunityScenario";
-import { PrimaryUseCasesOverview } from "@/components/useCase/PrimaryUseCasesOverview";
-import { UseCasesByTeam } from "@/components/useCase/UseCasesByTeam";
-import { WorkflowSection } from "@/components/useCase/WorkflowSection";
-import { WhatTeamsGet } from "@/components/useCase/WhatTeamsGet";
+import { UseCasesV22 } from "@/components/useCase/UseCasesV22";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 
 const useCasesFAQData = [
@@ -37,8 +31,6 @@ const useCasesFAQData = [
     answer: 'No. SearchTrust observes public GBP information through search data and compares it with the site and Case identity. It does not edit, manage or continuously monitor the profile.',
   },
 ];
-import {WorkflowIntegrations} from "@/components/useCase/WorkflowIntegrations";
-import { RelatedResources } from "@/components/useCase/RelatedResources";
 import { createPageMetadata, pageSeo } from "@/lib/seo";
 
 export const metadata = createPageMetadata(pageSeo.useCases);
@@ -63,16 +55,7 @@ export default function UseCasesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(useCasesJsonLd) }}
       />
-      <UseCasesHero />
-      <WhyTeamsTurnToUs />
-      <CommunityScenario />
-      <PrimaryUseCasesOverview />
-      <UseCasesByTeam />
-      <WorkflowIntegrations />
-      {/* <WorkflowSection /> */}
-      <WhatTeamsGet />
-            <RelatedResources />
-
+      <UseCasesV22 />
       <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"}  items={useCasesFAQData} />
     </>
   );

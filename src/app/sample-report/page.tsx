@@ -1,7 +1,4 @@
-import { SampleReportHero } from "@/components/sampleReport/SampleReportHero";
-import { WhatsInsideReport } from "@/components/sampleReport/WhatsInsideReport";
-import { KeyInsights } from "@/components/sampleReport/KeyInsights";
-import { WhoThisReportFor } from "@/components/sampleReport/WhoThisReportFor";
+import { SampleReportsV22 } from "@/components/sampleReport/SampleReportsV22";
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 
 const sampleReportFAQData = [
@@ -46,8 +43,6 @@ const sampleReportFAQData = [
     answer: "An unspent credit purchase may be refunded through the payment provider. If a purchased credit has already been used, the request needs manual review. Please see our Refund Policy for full details.",
   },
 ];
-import {SampleReportInfo} from "@/components/sampleReport/SampleReportInfo";
-import {ReportDifference} from "@/components/sampleReport/ReportDifference";
 import { createPageMetadata, pageSeo } from "@/lib/seo";
 
 export const metadata = createPageMetadata(pageSeo.sampleReport);
@@ -72,12 +67,7 @@ export default function SampleReportPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(sampleReportJsonLd) }}
       />
-      <SampleReportHero />
-      <SampleReportInfo />
-      <WhatsInsideReport />
-      <KeyInsights />
-      <ReportDifference />
-      <WhoThisReportFor />
+      <SampleReportsV22 />
       <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"} items={sampleReportFAQData} />
     </>
   );
