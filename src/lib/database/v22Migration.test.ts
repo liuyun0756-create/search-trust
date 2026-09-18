@@ -639,7 +639,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
         evidence_id:"ev_parent_coverage",source_type:"coverage",snapshot_id:snapshots.site});
       await db.query(`insert into public.reports
         (id,report_id,user_id,page_url,gbp_url,status,access_type,case_id,report_type,schema_version,version_number,report_v2_2,snapshot_ids,coverage_state,version_diff,generation_config,ruleset_version,copy_model_version)
-        values ($1::uuid,$1::text,$2,'https://example.com',$3,'paid_full','unlocked',$4,'prospect','2.2.0',1,$5,array[$6::uuid,$7::uuid,$8::uuid,$9::uuid],$10,'{}','{}','rules-v1','copy-v1')`,
+        values ($1::uuid,$1::text,$2,'https://example.com',$3,'paid_full','unlocked',$4,'prospect','2.2.1',1,$5,array[$6::uuid,$7::uuid,$8::uuid,$9::uuid],$10,'{}','{}','rules-v1','copy-v1')`,
         [parentId,owner,url,caseId,JSON.stringify(parent),snapshots.site,snapshots.serp,snapshots.competitor,publicGbp,JSON.stringify(parent.data_coverage)]);
       await db.query(`update public.client_cases set latest_report_id=$2 where id=$1`, [caseId,parentId]);
       const jobId = randomUUID();
@@ -776,11 +776,15 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const f = await fixture(); await f.start();
       await expect(f.persist(f.result(),2)).rejects.toThrow("V22_VERIFIED_JOB_INVALID");
       for (const mutate of [
+        (p:ReturnType<typeof f.result>) => {p.report_version.schema_version="2.2.0";},
         (p:ReturnType<typeof f.result>) => {p.report_version.parent_report_id=randomUUID();},
         (p:ReturnType<typeof f.result>) => {p.report_version.version_number=3;},
         (p:ReturnType<typeof f.result>) => {p.first_party_performance.gsc.snapshot_id=randomUUID();},
         (p:ReturnType<typeof f.result>) => {p.evidence_index=[...p.evidence_index,{snapshot_id:randomUUID()}];},
       ]) { const p=structuredClone(f.result()); mutate(p); await expect(f.persist(p)).rejects.toThrow("V22_VERIFIED_"); }
+      const missingClientDelivery=structuredClone(f.result());
+      delete (missingClientDelivery as {client_delivery?:unknown}).client_delivery;
+      await expect(f.persist(missingClientDelivery)).rejects.toThrow("reports_v22_client_delivery_required");
       expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:false}]);
       expect((await f.persist()).rows).toEqual([{report_id:f.jobId,idempotent:true}]);
       expect((await db.query(`select latest_report_id,latest_verified_report_id from public.client_cases where id=$1`,[f.caseId])).rows[0]).toEqual({latest_report_id:f.jobId,latest_verified_report_id:f.jobId});
@@ -1374,15 +1378,22 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
          normalized_payload,payload_checksum) values ($1,'site','site_inventory_snapshot_v1','report_generation',
          'healthy','{}'::jsonb,$2) returning id`, [caseId, checksum],
     );
+    const firstPartyParentPayload = {
+      report_version: { schema_version: "2.2.1" },
+      client_delivery: {
+        decision: {}, evidence_cards: [{}], priority_actions: [{}, {}, {}],
+        roadmap: [{}, {}, {}], coverage_appendix: {}, next_review_date: "2026-09-18",
+      },
+    };
     const parent = await insertId(
       `insert into public.reports (
          report_id,user_id,page_url,gbp_url,status,access_type,case_id,report_type,schema_version,
          version_number,report_v2_2,snapshot_ids,coverage_state,version_diff,generation_config,
          ruleset_version,copy_model_version
        ) values ($1,$2,'https://first-party-findings-case.example.com','','paid_full','unlocked',$3,
-         'prospect','2.2.0',1,'{}'::jsonb,array[$4::uuid],'{}'::jsonb,'{}'::jsonb,'{}'::jsonb,
+         'prospect','2.2.1',1,$5::jsonb,array[$4::uuid],'{}'::jsonb,'{}'::jsonb,'{}'::jsonb,
          'rules-v1','copy-v1') returning id`,
-      [`first-party-parent-${randomUUID()}`, owner, caseId, site],
+      [`first-party-parent-${randomUUID()}`, owner, caseId, site, JSON.stringify(firstPartyParentPayload)],
     );
     await db.query(`update public.client_cases set latest_report_id=$2 where id=$1`, [caseId, parent]);
     const resolve = (gbpId: string | null = null) => db.query<{ payload: {
@@ -2436,7 +2447,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       report_version: {
         report_id: jobId,
         report_type: "prospect",
-        schema_version: "2.2.0",
+        schema_version: "2.2.1",
         version_number: 1,
         parent_report_id: null,
         generated_at: now,
@@ -2445,6 +2456,14 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       },
       data_coverage: { sources: [{source_type:"gbp",health_status:"healthy",
         identity_match_status:"matched",snapshot_ids:[publicGbpId]}] },
+      client_delivery: {
+        decision: {},
+        evidence_cards: [{}],
+        priority_actions: [{}, {}, {}],
+        roadmap: [{}, {}, {}],
+        coverage_appendix: {},
+        next_review_date: "2026-09-18",
+      },
       evidence_index: [{ snapshot_id: siteId },{snapshot_id:publicGbpId,source_type:"gbp",
         health_status:"healthy",source_locator:{url:null,external_resource_id:"cid:123456789"}}],
       version_diff: { kind: "initial", parent_report_id: null, entries: [] },
@@ -2458,6 +2477,24 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       JSON.stringify(publicGbpReference),
       JSON.stringify(reportPayload),
     ];
+    const oldContractArgs = [...persistArgs];
+    oldContractArgs[17] = JSON.stringify({
+      ...reportPayload,
+      report_version: {...reportPayload.report_version, schema_version: "2.2.0"},
+    });
+    await expect(db.query(
+      `select * from public.persist_v22_prospect_result(
+         $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9,
+         $10, $11::jsonb, $12, $13, $14::jsonb, $15, $16, $17::jsonb, $18::jsonb
+       )`, oldContractArgs)).rejects.toThrow("v2.2 prospect report identity mismatch");
+    const missingClientDeliveryArgs = [...persistArgs];
+    const {client_delivery: _omitted, ...missingClientDelivery} = reportPayload;
+    missingClientDeliveryArgs[17] = JSON.stringify(missingClientDelivery);
+    await expect(db.query(
+      `select * from public.persist_v22_prospect_result(
+         $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9,
+         $10, $11::jsonb, $12, $13, $14::jsonb, $15, $16, $17::jsonb, $18::jsonb
+       )`, missingClientDeliveryArgs)).rejects.toThrow("reports_v22_client_delivery_required");
     const persisted = await db.query<{ report_id: string; idempotent: boolean }>(
       `select * from public.persist_v22_prospect_result(
          $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9,
