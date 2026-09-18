@@ -60,7 +60,7 @@ describe("report_v2_2 shared fixtures", () => {
   ])("accepts the %s fixture", (_name, fixture) => {
     const result = validateReportV22(fixture);
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.report.report_version.schema_version).toBe("2.2.0");
+    if (result.ok) expect(result.report.report_version.schema_version).toBe("2.2.1");
   });
 
   it("rejects an unknown field", () => {
@@ -98,6 +98,37 @@ describe("report_v2_2 shared fixtures", () => {
     const fixture = clone(prospectFixture);
     setAtPath(fixture, ["top_actions", 0, "finding_ids"], ["fn_missing_reference"]);
     expectInvalid(fixture, "REPORT_REFERENCE_INVALID", "Unknown finding references");
+  });
+
+  it("rejects dangling client delivery evidence references", () => {
+    const fixture = clone(prospectFixture);
+    setAtPath(fixture, ["client_delivery", "evidence_cards", 0, "evidence_ids"], ["ev_missing_reference"]);
+    expectInvalid(fixture, "REPORT_REFERENCE_INVALID", "Unknown evidence references");
+  });
+
+  it("rejects client evidence that is not bound to its referenced finding", () => {
+    const fixture = clone(prospectFixture) as {
+      client_delivery: { evidence_cards: Array<{ evidence_ids: string[] }> };
+      findings: Array<{ evidence_ids: string[] }>;
+    };
+    fixture.client_delivery.evidence_cards[0].evidence_ids = [fixture.findings[0].evidence_ids[0]];
+    expectInvalid(fixture, "REPORT_REFERENCE_INVALID", "must belong to the card's referenced findings");
+  });
+
+  it("rejects client delivery actions that diverge from the ordered top actions", () => {
+    const fixture = clone(prospectFixture) as {
+      client_delivery: { priority_actions: Array<{ action_id: string }> };
+    };
+    fixture.client_delivery.priority_actions[0].action_id = fixture.client_delivery.priority_actions[1].action_id;
+    expectInvalid(fixture, "REPORT_REFERENCE_INVALID", "must match ordered top actions");
+  });
+
+  it("rejects a client roadmap that repeats an action", () => {
+    const fixture = clone(prospectFixture) as {
+      client_delivery: { roadmap: Array<{ action_ids: string[] }> };
+    };
+    fixture.client_delivery.roadmap[1].action_ids = [...fixture.client_delivery.roadmap[0].action_ids];
+    expectInvalid(fixture, "REPORT_REFERENCE_INVALID", "ordered top actions exactly once");
   });
 
   it("rejects incorrectly ordered actions", () => {

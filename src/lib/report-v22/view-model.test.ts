@@ -9,7 +9,7 @@ const prospect = prospectFixture as unknown as SearchTrustReportV2_2;
 const verified = verifiedFixture as unknown as SearchTrustReportV2_2;
 
 describe("buildReportV22ViewModel", () => {
-  it("keeps the three actions and 30/60/90 roadmap in canonical order", () => {
+  it("projects only client delivery in canonical action and roadmap order", () => {
     const view = buildReportV22ViewModel(prospect, "client");
 
     expect(view.actions.map((action) => action.sequence)).toEqual([1, 2, 3]);
@@ -18,7 +18,8 @@ describe("buildReportV22ViewModel", () => {
       "Days 31–60",
       "Days 61–90",
     ]);
-    expect(view.competitorAnalysis.competitors).toHaveLength(3);
+    expect(view.evidenceCards).toHaveLength(3);
+    expect(view.decision.headline).toBe(prospect.client_delivery.decision.headline);
   });
 
   it("does not serialize advisor-only diagnostics into the client projection", () => {
@@ -33,6 +34,17 @@ describe("buildReportV22ViewModel", () => {
       "snapshot_id",
       "health_reasons",
       "findingIds",
+      "competitorAnalysis",
+      "clientSummary",
+      "actionId",
+      "caseId",
+      "reportId",
+      "siteUrl",
+      "http://",
+      "https://",
+      "fn_",
+      "ev_",
+      "ac_",
     ]) {
       expect(serialized).not.toContain(privateKey);
     }
@@ -49,11 +61,11 @@ describe("buildReportV22ViewModel", () => {
     expect(view.versionDiff.entries?.length).toBeGreaterThan(0);
   });
 
-  it("supports the contract minimum of one confirmed competitor", () => {
-    const oneCompetitor = structuredClone(prospect);
-    oneCompetitor.competitor_analysis.competitors = [prospect.competitor_analysis.competitors[0]];
+  it("does not change the client projection when advisor-only competitor details change", () => {
+    const changedAdvisorDetail = structuredClone(prospect);
+    changedAdvisorDetail.competitor_analysis.competitors[0].business_name = "Advisor-only change";
 
-    const view = buildReportV22ViewModel(oneCompetitor, "client");
-    expect(view.competitorAnalysis.competitors).toHaveLength(1);
+    expect(buildReportV22ViewModel(changedAdvisorDetail, "client"))
+      .toEqual(buildReportV22ViewModel(prospect, "client"));
   });
 });

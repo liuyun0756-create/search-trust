@@ -97,6 +97,11 @@ describe("ReportShareService", () => {
     expect(serialized).not.toContain("connection_id");
     expect(serialized).not.toContain("access_token");
     expect(serialized).not.toContain("payment_id");
+    expect(serialized).not.toContain(reportV22.identity.business.site_url);
+    expect(serialized).not.toContain(reportV22.report_version.report_id);
+    for (const competitor of reportV22.competitor_analysis.competitors) {
+      expect(serialized).not.toContain(competitor.website_url);
+    }
   });
 
   it("rejects malformed, missing, and cross-Case shares as not found", async () => {

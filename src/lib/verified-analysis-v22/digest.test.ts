@@ -19,8 +19,8 @@ describe("Verified canonical digest", () => {
   });
 
   it("matches backend request_digest for the complete Prospect ReportV22 fixture", () => {
-    // Computed by app.jobs_v22.digest.request_digest(json.load(prospect.json)).
-    expect(canonicalDigest(prospect)).toBe("sha256:5c437ac449da35e7ae9b060a3b0c8a54c7b9aa472dd77cc923b2f95388183f60");
+    // Computed by app.jobs_v22.digest.verified_request_digest(json.load(prospect.json)).
+    expect(canonicalDigest(prospect)).toBe("sha256:0a093496b57a559ebed6660245eec41bac828cae11fc0c45473447ee668bde7a");
   });
 
   it.each([
@@ -39,7 +39,7 @@ describe("Verified canonical digest", () => {
     Object.assign(report.market_snapshot.target_market, { latitude: 1.0, longitude: -0 });
     Object.assign(report.identity.business.primary_location, { latitude: 1e-6, longitude: -0 });
     expect(validateReportV22(report).ok).toBe(true);
-    expect(canonicalDigest(report)).toBe("sha256:b976d1b3fba055fdb91c0a3e31477cb515f2add186831d8779741c2ead0e2c3c");
+    expect(canonicalDigest(report)).toBe("sha256:5af54f0bb6d3391f48790d0066edf968951657b44bc85f90f43379d38f059f06");
   });
 
   it.each([undefined, NaN, Infinity, -Infinity, BigInt(1), { bad: undefined }, [undefined], new Date(), new Map(), Array(1)])("rejects values outside deterministic JSON: %s", (value) => {

@@ -51,13 +51,13 @@ export class SupabaseVerifiedAnalysisRepository implements VerifiedAnalysisRepos
       if (!isUuid(latest.parent_report_id)) throw new VerifiedAnalysisPersistenceError();
       parent = await this.ownedReport(userId, caseId, latest.parent_report_id);
     }
-    if (parent.report_type !== "prospect" || parent.parent_report_id !== null || parent.status !== "paid_full" || parent.schema_version !== "2.2.0") throw new VerifiedAnalysisPersistenceError();
+    if (parent.report_type !== "prospect" || parent.parent_report_id !== null || parent.status !== "paid_full" || parent.schema_version !== "2.2.1") throw new VerifiedAnalysisPersistenceError();
     const parsed = validateReportV22(parent.report_v2_2);
     if (!parsed.ok || parsed.report.identity.case_id !== caseId
       || parsed.report.report_version.report_id !== parent.id
       || parsed.report.report_version.report_type !== "prospect"
       || parsed.report.report_version.parent_report_id !== null
-      || parsed.report.report_version.schema_version !== "2.2.0"
+      || parsed.report.report_version.schema_version !== "2.2.1"
       || parsed.report.report_version.version_number !== parent.version_number) throw new VerifiedAnalysisPersistenceError();
 
     const { data, error } = await this.db.rpc("start_v22_verified_analysis", {

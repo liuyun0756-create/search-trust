@@ -17,13 +17,15 @@ describe("v2.2 report views", () => {
       <ClientReportView report={buildReportV22ViewModel(fixture, "client")} />,
     );
 
-    expect(html).toContain("The decision");
-    expect(html).toContain("Three moves, in the right order.");
+    expect(html).toContain("The core decision");
+    expect(html).toContain("Three actions, in the right order.");
+    expect(html).toContain("Representative evidence");
     expect(html).toContain("Days 1–30");
     expect(html).toContain("What we need from you.");
-    expect(html.match(/Action<\/span>/g)).toHaveLength(3);
+    expect(html.match(/Priority<\/span>/g)).toHaveLength(3);
     expect(html).not.toContain("RULE-");
     expect(html).not.toContain("snapshot");
+    expect(html).not.toContain("https://");
   });
 
   it("renders advisor findings, eight layers, source health, and evidence controls", () => {

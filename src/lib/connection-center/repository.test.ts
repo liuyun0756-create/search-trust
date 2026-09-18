@@ -66,7 +66,7 @@ function prospectRow(report = fixture(), overrides: Record<string, unknown> = {}
     case_id: caseId,
     status: "paid_full",
     report_type: "prospect",
-    schema_version: "2.2.0",
+    schema_version: "2.2.1",
     version_number: report.report_version.version_number,
     parent_report_id: null,
     report_v2_2: report,
@@ -157,7 +157,7 @@ describe("Connection Center parent report projection", () => {
       ],
       workflow_charges: [{ user_id: userId, case_id: caseId, workflow_kind: "verified", analysis_job_id: latestJobId, state: "consumed" }],
       reports: [
-        { id: verifiedId, user_id: userId, case_id: caseId, status: "paid_full", report_type: "verified_execution", schema_version: "2.2.0", version_number: 2, parent_report_id: reportId, report_v2_2: verified },
+        { id: verifiedId, user_id: userId, case_id: caseId, status: "paid_full", report_type: "verified_execution", schema_version: "2.2.1", version_number: 2, parent_report_id: reportId, report_v2_2: verified },
         { ...prospectRow(prospect), user_id: userId },
       ],
     });

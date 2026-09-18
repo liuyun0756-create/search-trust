@@ -30,16 +30,63 @@ export const REPORT_V22_PERIOD_LABELS = {
   days_61_90: "Days 61–90",
 } as const;
 
-export interface ReportV22HeaderViewModel {
+interface ReportHeaderBase {
   businessName: string;
-  caseId: string;
   generatedAt: string;
   location: string;
   primaryService: string;
-  reportId: string;
   reportType: "prospect" | "verified_execution";
-  siteUrl: string;
   versionNumber: number;
+}
+
+export interface ReportV22HeaderViewModel extends ReportHeaderBase {
+  caseId: string;
+  reportId: string;
+  siteUrl: string;
+}
+
+export interface ClientEvidenceViewModel {
+  decisionRelevance: string;
+  observation: string;
+  sourceLabel: string;
+  subjectLabel: string | null;
+}
+
+export interface ClientActionViewModel {
+  effort: TopAction["effort_bucket"];
+  expectedResult: string;
+  requiredClientAssets: string[];
+  reviewDate: string;
+  sequence: number;
+  title: string;
+  whyNow: string;
+}
+
+export interface ClientRoadmapPhaseViewModel {
+  expectedResult: string;
+  label: string;
+  objective: string;
+  period: "days_1_30" | "days_31_60" | "days_61_90";
+}
+
+export interface ClientReportV22ViewModel {
+  actions: ClientActionViewModel[];
+  clientInputs: string[];
+  coverageAppendix: {
+    boundarySummary: string;
+    checkedSources: string[];
+    unavailableSources: string[];
+  };
+  decision: {
+    businessImpact: string;
+    headline: string;
+    opportunity: string;
+  };
+  evidenceCards: ClientEvidenceViewModel[];
+  header: ReportHeaderBase;
+  mode: "client";
+  nextReviewDate: string;
+  roadmap: ClientRoadmapPhaseViewModel[];
 }
 
 export interface ReportV22CompetitorViewModel {
@@ -51,16 +98,6 @@ export interface ReportV22CompetitorViewModel {
   queryAppearanceCount: number;
   strengths: string[];
   websiteUrl: string;
-}
-
-export interface ClientActionViewModel {
-  actionId: string;
-  clientFacingExplanation: string;
-  effort: TopAction["effort_bucket"];
-  requiredClientAssets: string[];
-  reviewDate: string;
-  sequence: number;
-  whyNow: string;
 }
 
 export interface ReportV22RoadmapPhaseViewModel {
@@ -78,7 +115,31 @@ export interface PublicLimitationViewModel {
   severity: Limitation["severity"];
 }
 
-interface SharedReportV22ViewModel {
+export interface AdvisorActionViewModel {
+  actionId: string;
+  clientFacingExplanation: string;
+  dataSources: TopAction["data_sources"];
+  definitionOfDone: string[];
+  dependencies: string[];
+  effort: TopAction["effort_bucket"];
+  exactTargets: string[];
+  findingIds: string[];
+  implementationSteps: TopAction["implementation_steps"];
+  ownerSuggestion: string;
+  requiredClientAssets: string[];
+  reviewDate: string;
+  sequence: number;
+  specification: TopAction["specification"];
+  validationMetrics: TopAction["validation_metrics"];
+  whyNow: string;
+}
+
+export interface AdvisorLayerViewModel extends LayerAssessment {
+  label: string;
+}
+
+export interface AdvisorReportV22ViewModel {
+  actions: AdvisorActionViewModel[];
   clientSummary: {
     coreProblem: string;
     headline: string;
@@ -91,34 +152,6 @@ interface SharedReportV22ViewModel {
     competitors: ReportV22CompetitorViewModel[];
     limitations: string[];
   };
-  header: ReportV22HeaderViewModel;
-  limitations: PublicLimitationViewModel[];
-  roadmap: ReportV22RoadmapPhaseViewModel[];
-}
-
-export interface ClientReportV22ViewModel extends SharedReportV22ViewModel {
-  actions: ClientActionViewModel[];
-  mode: "client";
-}
-
-export interface AdvisorActionViewModel extends ClientActionViewModel {
-  dataSources: TopAction["data_sources"];
-  definitionOfDone: string[];
-  dependencies: string[];
-  exactTargets: string[];
-  findingIds: string[];
-  implementationSteps: TopAction["implementation_steps"];
-  ownerSuggestion: string;
-  specification: TopAction["specification"];
-  validationMetrics: TopAction["validation_metrics"];
-}
-
-export interface AdvisorLayerViewModel extends LayerAssessment {
-  label: string;
-}
-
-export interface AdvisorReportV22ViewModel extends SharedReportV22ViewModel {
-  actions: AdvisorActionViewModel[];
   dataCoverage: {
     fullEvidenceCoverage: boolean;
     limitations: string[];
@@ -128,7 +161,9 @@ export interface AdvisorReportV22ViewModel extends SharedReportV22ViewModel {
   executiveDecision: SearchTrustReportV2_2["executive_decision"];
   findings: Finding[];
   firstPartyPerformance: FirstPartyPerformance;
+  header: ReportV22HeaderViewModel;
   layers: AdvisorLayerViewModel[];
+  limitations: PublicLimitationViewModel[];
   marketSnapshot: SearchTrustReportV2_2["market_snapshot"];
   mode: "advisor";
   reportMetadata: {
@@ -136,29 +171,98 @@ export interface AdvisorReportV22ViewModel extends SharedReportV22ViewModel {
     rulesetVersion: string;
     schemaVersion: string;
   };
+  roadmap: ReportV22RoadmapPhaseViewModel[];
   siteInventory: SiteInventorySummary;
   versionDiff: VersionDiff;
 }
 
 export type ReportV22ViewModel = ClientReportV22ViewModel | AdvisorReportV22ViewModel;
 
-function sharedViewModel(report: SearchTrustReportV2_2): SharedReportV22ViewModel {
+function headerBase(report: SearchTrustReportV2_2): ReportHeaderBase {
+  return {
+    businessName: report.identity.business.business_name,
+    generatedAt: report.report_version.generated_at,
+    location: report.case_context.target_market.display_name,
+    primaryService: report.case_context.primary_service,
+    reportType: report.report_version.report_type,
+    versionNumber: report.report_version.version_number,
+  };
+}
+
+function buildClientViewModel(report: SearchTrustReportV2_2): ClientReportV22ViewModel {
+  const delivery = report.client_delivery;
+  return {
+    actions: delivery.priority_actions.map((action) => ({
+      effort: action.effort_bucket,
+      expectedResult: action.expected_result,
+      requiredClientAssets: [...(action.required_client_assets ?? [])],
+      reviewDate: action.review_date,
+      sequence: action.sequence,
+      title: action.title,
+      whyNow: action.why_now,
+    })),
+    clientInputs: [...new Set(
+      delivery.priority_actions.flatMap((action) => action.required_client_assets ?? []),
+    )],
+    coverageAppendix: {
+      boundarySummary: delivery.coverage_appendix.boundary_summary,
+      checkedSources: [...(delivery.coverage_appendix.checked_sources ?? [])],
+      unavailableSources: [...(delivery.coverage_appendix.unavailable_sources ?? [])],
+    },
+    decision: {
+      businessImpact: delivery.decision.business_impact,
+      headline: delivery.decision.headline,
+      opportunity: delivery.decision.opportunity,
+    },
+    evidenceCards: delivery.evidence_cards.map((card) => ({
+      decisionRelevance: card.decision_relevance,
+      observation: card.observation,
+      sourceLabel: card.source_label,
+      subjectLabel: card.subject_label ?? null,
+    })),
+    header: headerBase(report),
+    mode: "client",
+    nextReviewDate: delivery.next_review_date,
+    roadmap: delivery.roadmap.map((phase) => ({
+      expectedResult: phase.expected_result,
+      label: REPORT_V22_PERIOD_LABELS[phase.period],
+      objective: phase.objective,
+      period: phase.period,
+    })),
+  };
+}
+
+function advisorAction(action: TopAction): AdvisorActionViewModel {
+  return {
+    actionId: action.action_id,
+    clientFacingExplanation: action.client_facing_explanation,
+    dataSources: [...action.data_sources] as TopAction["data_sources"],
+    definitionOfDone: [...action.definition_of_done],
+    dependencies: [...(action.dependencies ?? [])],
+    effort: action.effort_bucket,
+    exactTargets: [...action.exact_targets],
+    findingIds: [...action.finding_ids],
+    implementationSteps: action.implementation_steps.map((step) => ({ ...step })) as TopAction["implementation_steps"],
+    ownerSuggestion: action.owner_suggestion,
+    requiredClientAssets: [...(action.required_client_assets ?? [])],
+    reviewDate: action.review_date,
+    sequence: action.sequence,
+    specification: {
+      content_requirements: [...(action.specification.content_requirements ?? [])],
+      gbp_requirements: [...(action.specification.gbp_requirements ?? [])],
+      technical_requirements: [...(action.specification.technical_requirements ?? [])],
+    },
+    validationMetrics: action.validation_metrics.map((metric) => ({ ...metric })) as TopAction["validation_metrics"],
+    whyNow: action.why_now,
+  };
+}
+
+function buildAdvisorViewModel(report: SearchTrustReportV2_2): AdvisorReportV22ViewModel {
   const actionLabels = new Map(
     report.top_actions.map((action) => [action.action_id, action.client_facing_explanation]),
   );
-
   return {
-    header: {
-      businessName: report.identity.business.business_name,
-      caseId: report.identity.case_id,
-      generatedAt: report.report_version.generated_at,
-      location: report.case_context.target_market.display_name,
-      primaryService: report.case_context.primary_service,
-      reportId: report.report_version.report_id,
-      reportType: report.report_version.report_type,
-      siteUrl: report.identity.business.site_url,
-      versionNumber: report.report_version.version_number,
-    },
+    actions: report.top_actions.map(advisorAction),
     clientSummary: {
       coreProblem: report.client_summary.core_problem,
       headline: report.client_summary.headline,
@@ -180,74 +284,6 @@ function sharedViewModel(report: SearchTrustReportV2_2): SharedReportV22ViewMode
       })),
       limitations: [...(report.competitor_analysis.limitations ?? [])],
     },
-    roadmap: report.roadmap_30_60_90.phases.map((phase) => ({
-      actionIds: [...phase.action_ids],
-      actionLabels: phase.action_ids.map((actionId) => actionLabels.get(actionId) ?? actionId),
-      exitCriteria: [...phase.exit_criteria],
-      label: REPORT_V22_PERIOD_LABELS[phase.period],
-      objective: phase.objective,
-      period: phase.period,
-    })),
-    limitations: (report.limitations ?? []).map((limitation) => ({
-      category: limitation.category,
-      description: limitation.description,
-      severity: limitation.severity,
-    })),
-  };
-}
-
-function clientAction(action: TopAction): ClientActionViewModel {
-  return {
-    actionId: action.action_id,
-    clientFacingExplanation: action.client_facing_explanation,
-    effort: action.effort_bucket,
-    requiredClientAssets: [...(action.required_client_assets ?? [])],
-    reviewDate: action.review_date,
-    sequence: action.sequence,
-    whyNow: action.why_now,
-  };
-}
-
-export function buildReportV22ViewModel(
-  report: SearchTrustReportV2_2,
-  mode: "client",
-): ClientReportV22ViewModel;
-export function buildReportV22ViewModel(
-  report: SearchTrustReportV2_2,
-  mode: "advisor",
-): AdvisorReportV22ViewModel;
-export function buildReportV22ViewModel(
-  report: SearchTrustReportV2_2,
-  mode: ReportV22Mode,
-): ReportV22ViewModel {
-  const shared = sharedViewModel(report);
-
-  if (mode === "client") {
-    return {
-      ...shared,
-      actions: report.top_actions.map(clientAction),
-      mode,
-    };
-  }
-
-  return {
-    ...shared,
-    actions: report.top_actions.map((action) => ({
-      ...clientAction(action),
-      dataSources: [...action.data_sources] as TopAction["data_sources"],
-      definitionOfDone: [...action.definition_of_done],
-      dependencies: [...(action.dependencies ?? [])],
-      exactTargets: [...action.exact_targets],
-      findingIds: [...action.finding_ids],
-      implementationSteps: action.implementation_steps.map((step) => ({ ...step })) as TopAction["implementation_steps"],
-      ownerSuggestion: action.owner_suggestion,
-      specification: {
-        content_requirements: [...(action.specification.content_requirements ?? [])],
-        gbp_requirements: [...(action.specification.gbp_requirements ?? [])],
-        technical_requirements: [...(action.specification.technical_requirements ?? [])],
-      },
-      validationMetrics: action.validation_metrics.map((metric) => ({ ...metric })) as TopAction["validation_metrics"],
-    })),
     dataCoverage: {
       fullEvidenceCoverage: report.data_coverage.full_evidence_coverage,
       limitations: [...(report.data_coverage.limitations ?? [])],
@@ -264,18 +300,52 @@ export function buildReportV22ViewModel(
       evidence_ids: [...finding.evidence_ids],
     })) as SearchTrustReportV2_2["findings"],
     firstPartyPerformance: report.first_party_performance,
+    header: {
+      ...headerBase(report),
+      caseId: report.identity.case_id,
+      reportId: report.report_version.report_id,
+      siteUrl: report.identity.business.site_url,
+    },
     layers: report.eight_layers.map((layer) => ({
       ...layer,
       label: REPORT_V22_LAYER_LABELS[layer.layer_key],
     })),
+    limitations: (report.limitations ?? []).map((limitation) => ({
+      category: limitation.category,
+      description: limitation.description,
+      severity: limitation.severity,
+    })),
     marketSnapshot: report.market_snapshot,
-    mode,
+    mode: "advisor",
     reportMetadata: {
       copyModelVersion: report.report_version.copy_model_version,
       rulesetVersion: report.report_version.ruleset_version,
       schemaVersion: report.report_version.schema_version,
     },
+    roadmap: report.roadmap_30_60_90.phases.map((phase) => ({
+      actionIds: [...phase.action_ids],
+      actionLabels: phase.action_ids.map((actionId) => actionLabels.get(actionId) ?? actionId),
+      exitCriteria: [...phase.exit_criteria],
+      label: REPORT_V22_PERIOD_LABELS[phase.period],
+      objective: phase.objective,
+      period: phase.period,
+    })),
     siteInventory: report.site_inventory_summary,
     versionDiff: report.version_diff,
   };
+}
+
+export function buildReportV22ViewModel(
+  report: SearchTrustReportV2_2,
+  mode: "client",
+): ClientReportV22ViewModel;
+export function buildReportV22ViewModel(
+  report: SearchTrustReportV2_2,
+  mode: "advisor",
+): AdvisorReportV22ViewModel;
+export function buildReportV22ViewModel(
+  report: SearchTrustReportV2_2,
+  mode: ReportV22Mode,
+): ReportV22ViewModel {
+  return mode === "client" ? buildClientViewModel(report) : buildAdvisorViewModel(report);
 }

@@ -15,7 +15,7 @@ const ga4Id = "66666666-6666-4666-8666-666666666666";
 const publicGbpId = "77777777-7777-4777-8777-777777777777";
 const binding = { job_id: jobId, created: true, idempotent: false, parent_report_id: parentId, gsc_snapshot_id: gscId, ga4_snapshot_id: ga4Id, public_gbp_snapshot_id: publicGbpId, credit_balance: 3 };
 const identity = { case_id: caseId, job_id: jobId, parent_report_id: parentId, gsc_snapshot_id: gscId, ga4_snapshot_id: ga4Id, public_gbp_snapshot_id: publicGbpId };
-const parent = { id: parentId, user_id: userId, case_id: caseId, report_type: "prospect", parent_report_id: null, status: "paid_full", schema_version: "2.2.0", version_number: 1, report_v2_2: prospect };
+const parent = { id: parentId, user_id: userId, case_id: caseId, report_type: "prospect", parent_report_id: null, status: "paid_full", schema_version: "2.2.1", version_number: 1, report_v2_2: prospect };
 
 function database(options: { latest?: Record<string, unknown>; parent?: Record<string, unknown> | null; owned?: boolean; rpcData?: unknown; rpcError?: unknown } = {}) {
   const rows: Record<string, Record<string, unknown>[]> = {

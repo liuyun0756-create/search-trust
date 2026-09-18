@@ -108,6 +108,7 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
 
   const evidenceReferences = [
     ...report.findings.flatMap((finding) => [...finding.evidence_ids, ...(finding.comparator_ids ?? [])]),
+    ...report.client_delivery.evidence_cards.flatMap((card) => card.evidence_ids),
     ...(report.market_snapshot.results ?? []).map((result) => result.evidence_id),
     ...(report.site_inventory_summary.selected_pages ?? []).flatMap((page) => page.evidence_ids ?? []),
     ...report.competitor_analysis.competitors.flatMap((competitor) => competitor.evidence_ids),
@@ -121,6 +122,7 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
 
   const findingReferences = [
     ...report.executive_decision.finding_ids,
+    ...report.client_delivery.evidence_cards.flatMap((card) => card.finding_ids),
     ...report.top_actions.flatMap((action) => action.finding_ids),
     ...report.eight_layers.flatMap((layer) => layer.finding_ids ?? []),
     ...(report.version_diff.entries ?? []).flatMap((entry) => entry.current_finding_ids),
@@ -135,6 +137,30 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
   }
   if (!sameJson(report.client_summary.action_ids, actionIds)) {
     errors.push(semanticError("/client_summary/action_ids", "Client summary actions must match ordered top actions."));
+  }
+  const clientActionIds = report.client_delivery.priority_actions.map((action) => action.action_id);
+  if (!sameJson(clientActionIds, actionIds)) {
+    errors.push(semanticError("/client_delivery/priority_actions", "Client delivery actions must match ordered top actions."));
+  }
+  if (!sameJson(report.client_delivery.priority_actions.map((action) => action.sequence), [1, 2, 3])) {
+    errors.push(semanticError("/client_delivery/priority_actions", "Client delivery actions must be ordered with sequences 1, 2, 3."));
+  }
+
+  const findingsById = new Map(report.findings.map((finding) => [finding.finding_id, finding]));
+  for (const [index, card] of report.client_delivery.evidence_cards.entries()) {
+    const evidenceBoundToCardFindings = new Set(
+      card.finding_ids.flatMap((findingId) => {
+        const finding = findingsById.get(findingId);
+        return finding ? [...finding.evidence_ids, ...(finding.comparator_ids ?? [])] : [];
+      }),
+    );
+    const unboundEvidence = card.evidence_ids.filter((evidenceId) => !evidenceBoundToCardFindings.has(evidenceId));
+    if (unboundEvidence.length) {
+      errors.push(semanticError(
+        `/client_delivery/evidence_cards/${index}/evidence_ids`,
+        `Client evidence must belong to the card's referenced findings: ${unboundEvidence.join(", ")}`,
+      ));
+    }
   }
 
   for (const [index, action] of report.top_actions.entries()) {
@@ -158,6 +184,13 @@ function validateSemantics(report: SearchTrustReportV2_2): ReportV22ValidationEr
   const roadmapActionIds = report.roadmap_30_60_90.phases.flatMap((phase) => phase.action_ids);
   if (!sameJson([...new Set(roadmapActionIds)].sort(), [...actionSet].sort())) {
     errors.push(semanticError("/roadmap_30_60_90", "Roadmap must reference every top action and no unknown actions."));
+  }
+  if (!sameJson(report.client_delivery.roadmap.map((phase) => phase.period), ["days_1_30", "days_31_60", "days_61_90"])) {
+    errors.push(semanticError("/client_delivery/roadmap", "Client delivery roadmap phases must be ordered 30, 60, then 90 days."));
+  }
+  const clientRoadmapActionIds = report.client_delivery.roadmap.flatMap((phase) => phase.action_ids);
+  if (!sameJson(clientRoadmapActionIds, actionIds)) {
+    errors.push(semanticError("/client_delivery/roadmap", "Client delivery roadmap must reference the ordered top actions exactly once."));
   }
 
   const expectedLayers = [

@@ -114,7 +114,7 @@ export function parseConnectionCenterParentReport(
   const report = validated.report;
   if (report.report_version.report_id !== row.id
     || row.status !== "paid_full"
-    || row.schema_version !== "2.2.0"
+    || row.schema_version !== "2.2.1"
     || row.version_number !== report.report_version.version_number
     || report.report_version.report_type !== "prospect"
     || report.report_version.parent_report_id !== null
@@ -215,13 +215,13 @@ export class SupabaseConnectionCenterRepository implements ConnectionCenterRepos
       || !reportVersion.parent_report_id
       || latest.status !== "paid_full"
       || latest.report_type !== "verified_execution"
-      || latest.schema_version !== "2.2.0"
+      || latest.schema_version !== "2.2.1"
       || latest.version_number !== reportVersion.version_number
       || latest.parent_report_id !== reportVersion.parent_report_id) return null;
     const parentResult = await this.db.from("reports").select(REPORT_FIELDS)
       .eq("id", reportVersion.parent_report_id).eq("user_id", userId)
       .eq("case_id", ownedCase.id).eq("status", "paid_full")
-      .eq("schema_version", "2.2.0").eq("report_type", "prospect").maybeSingle();
+      .eq("schema_version", "2.2.1").eq("report_type", "prospect").maybeSingle();
     fail(parentResult.error);
     return parseConnectionCenterParentReport(parentResult.data as ReportRow | null, ownedCase, true);
   }

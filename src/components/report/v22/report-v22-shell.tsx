@@ -20,11 +20,11 @@ const advisorNav = [
 
 const clientNav = [
   ["Decision", "#decision"],
-  ["Market", "#market"],
-  ["Actions", "#actions"],
+  ["Evidence", "#evidence"],
+  ["Priorities", "#actions"],
   ["30 / 60 / 90", "#roadmap"],
   ["Client inputs", "#client-inputs"],
-  ["Limitations", "#limitations"],
+  ["Coverage", "#coverage"],
 ] as const;
 
 export function ReportV22Shell({
