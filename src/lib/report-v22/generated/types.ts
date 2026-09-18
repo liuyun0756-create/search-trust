@@ -21,16 +21,82 @@ export type Latitude = number | null;
 export type Longitude = number | null;
 export type PostalCode = string | null;
 export type Region = string | null;
+export type BoundarySummary = string;
+/**
+ * @maxItems 4
+ */
+export type CheckedSources =
+  [] | [string] | [string, string] | [string, string, string] | [string, string, string, string];
+/**
+ * @maxItems 4
+ */
+export type UnavailableSources =
+  [] | [string] | [string, string] | [string, string, string] | [string, string, string, string];
+export type BusinessImpact = string;
+export type Headline = string;
+export type Opportunity = string;
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type EvidenceCards =
+  | [ClientEvidenceCard]
+  | [ClientEvidenceCard, ClientEvidenceCard]
+  | [ClientEvidenceCard, ClientEvidenceCard, ClientEvidenceCard];
+export type DecisionRelevance = string;
+/**
+ * @minItems 1
+ * @maxItems 4
+ */
+export type EvidenceIds = [string] | [string, string] | [string, string, string] | [string, string, string, string];
+/**
+ * @minItems 1
+ * @maxItems 2
+ */
+export type FindingIds = [string] | [string, string];
+export type Observation = string;
+export type SourceLabel = string;
+export type SubjectLabel = string | null;
+export type NextReviewDate = string;
 /**
  * @minItems 3
  * @maxItems 3
  */
-export type ActionIds = [string, string, string];
+export type PriorityActions = [ClientPriorityAction, ClientPriorityAction, ClientPriorityAction];
+export type ActionId = string;
+export type EffortBucket = "small" | "medium" | "large";
+export type ExpectedResult = string;
+/**
+ * @maxItems 3
+ */
+export type RequiredClientAssets = [] | [string] | [string, string] | [string, string, string];
+export type ReviewDate = string;
+export type Sequence = number;
+export type Title = string;
+export type WhyNow = string;
+/**
+ * @minItems 3
+ * @maxItems 3
+ */
+export type Roadmap = [ClientRoadmapPhase, ClientRoadmapPhase, ClientRoadmapPhase];
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type ActionIds = [string] | [string, string] | [string, string, string];
+export type ExpectedResult1 = string;
+export type Objective = string;
+export type Period = "days_1_30" | "days_31_60" | "days_61_90";
+/**
+ * @minItems 3
+ * @maxItems 3
+ */
+export type ActionIds1 = [string, string, string];
 export type CoreProblem = string;
-export type Headline = string;
-export type NextReviewDate = string;
-export type Opportunity = string;
-export type RequiredClientAssets = string[];
+export type Headline1 = string;
+export type NextReviewDate1 = string;
+export type Opportunity1 = string;
+export type RequiredClientAssets1 = string[];
 export type ComparisonSummary = string;
 /**
  * @minItems 1
@@ -47,7 +113,7 @@ export type CompetitorId = string;
 /**
  * @minItems 1
  */
-export type EvidenceIds = [string, ...string[]];
+export type EvidenceIds1 = [string, ...string[]];
 export type Gaps = string[];
 export type PublicGbpUrl = string | null;
 export type QueryAppearanceCount = number;
@@ -83,8 +149,8 @@ export type EightLayers = [
   LayerAssessment,
   LayerAssessment
 ];
-export type EvidenceIds1 = string[];
-export type FindingIds = string[];
+export type EvidenceIds2 = string[];
+export type FindingIds1 = string[];
 export type LayerKey =
   | "foundation"
   | "entity_presence"
@@ -128,8 +194,8 @@ export type DecisionSummary = string;
 /**
  * @minItems 1
  */
-export type FindingIds1 = [string, ...string[]];
-export type WhyNow = string;
+export type FindingIds2 = [string, ...string[]];
+export type WhyNow1 = string;
 /**
  * @minItems 1
  */
@@ -143,7 +209,7 @@ export type Confidence1 = "low" | "medium" | "high";
 /**
  * @minItems 1
  */
-export type EvidenceIds2 = [string, ...string[]];
+export type EvidenceIds3 = [string, ...string[]];
 export type FindingId = string;
 export type MissingData = string[];
 export type RuleId = string;
@@ -223,7 +289,7 @@ export type ParentReportId = string | null;
 export type ReportId = string;
 export type ReportType = "prospect" | "verified_execution";
 export type RulesetVersion = string;
-export type SchemaVersion = "2.2.0";
+export type SchemaVersion = "2.2.1";
 export type VersionNumber = number;
 /**
  * @minItems 3
@@ -233,13 +299,13 @@ export type Phases = [RoadmapPhase, RoadmapPhase, RoadmapPhase];
 /**
  * @minItems 1
  */
-export type ActionIds1 = [string, ...string[]];
+export type ActionIds2 = [string, ...string[]];
 /**
  * @minItems 1
  */
 export type ExitCriteria = [string, ...string[]];
-export type Objective = string;
-export type Period = "days_1_30" | "days_31_60" | "days_61_90";
+export type Objective1 = string;
+export type Period1 = "days_1_30" | "days_31_60" | "days_61_90";
 export type DeepAnalysisLimit = number;
 export type DeepAnalyzedCount = number;
 export type DiscoveredUrlCount = number;
@@ -250,7 +316,7 @@ export type Label1 = string;
 export type PageTypeCounts = LabelCount[];
 export type CrawlDepth = number;
 export type DeepAnalyzed = boolean;
-export type EvidenceIds3 = string[];
+export type EvidenceIds4 = string[];
 export type PageType = string;
 export type Url2 = string;
 /**
@@ -263,7 +329,7 @@ export type StructurallyCheckedCount = number;
  * @maxItems 3
  */
 export type TopActions = [TopAction, TopAction, TopAction];
-export type ActionId = string;
+export type ActionId1 = string;
 export type ClientFacingExplanation = string;
 /**
  * @minItems 1
@@ -277,7 +343,7 @@ export type DataSources = [
  */
 export type DefinitionOfDone = [string, ...string[]];
 export type Dependencies = string[];
-export type EffortBucket = "small" | "medium" | "large";
+export type EffortBucket1 = "small" | "medium" | "large";
 /**
  * @minItems 1
  */
@@ -285,18 +351,18 @@ export type ExactTargets = [string, ...string[]];
 /**
  * @minItems 1
  */
-export type FindingIds2 = [string, ...string[]];
+export type FindingIds3 = [string, ...string[]];
 /**
  * @minItems 1
  */
 export type ImplementationSteps = [ImplementationStep, ...ImplementationStep[]];
 export type Instruction = string;
-export type Sequence = number;
-export type Title = string;
-export type OwnerSuggestion = string;
-export type RequiredClientAssets1 = string[];
-export type ReviewDate = string;
 export type Sequence1 = number;
+export type Title1 = string;
+export type OwnerSuggestion = string;
+export type RequiredClientAssets2 = string[];
+export type ReviewDate1 = string;
+export type Sequence2 = number;
 export type ContentRequirements = string[];
 export type GbpRequirements = string[];
 export type TechnicalRequirements = string[];
@@ -308,7 +374,7 @@ export type Baseline = string;
 export type MetricKey1 = string;
 export type SourceType5 = "site" | "serp" | "competitor" | "gsc" | "gbp" | "ga4" | "pagespeed" | "coverage";
 export type SuccessCondition = string;
-export type WhyNow1 = string;
+export type WhyNow2 = string;
 export type ChangeType = "confirmed" | "reprioritized" | "refined" | "replaced" | "new";
 /**
  * @minItems 1
@@ -317,7 +383,7 @@ export type CurrentFindingIds = [string, ...string[]];
 /**
  * @minItems 1
  */
-export type EvidenceIds4 = [string, ...string[]];
+export type EvidenceIds5 = [string, ...string[]];
 export type FindingId1 = string;
 export type Fingerprint = string;
 export type ReportId1 = string;
@@ -329,6 +395,7 @@ export type ParentReportId1 = string | null;
 
 export interface SearchTrustReportV2_2 {
   case_context: CaseContext;
+  client_delivery: ClientDelivery;
   client_summary: ClientSummary;
   competitor_analysis: CompetitorAnalysis;
   data_coverage: DataCoverage;
@@ -341,7 +408,7 @@ export interface SearchTrustReportV2_2 {
   limitations?: Limitations7;
   market_snapshot: MarketSnapshot;
   report_version: ReportVersion;
-  roadmap_30_60_90: Roadmap;
+  roadmap_30_60_90: Roadmap1;
   site_inventory_summary: SiteInventorySummary;
   top_actions: TopActions;
   version_diff: VersionDiff;
@@ -372,15 +439,81 @@ export interface TargetMarket {
 }
 /**
  * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
+ * via the `definition` "ClientDelivery".
+ */
+export interface ClientDelivery {
+  coverage_appendix: ClientCoverageAppendix;
+  decision: ClientDecision;
+  evidence_cards: EvidenceCards;
+  next_review_date: NextReviewDate;
+  priority_actions: PriorityActions;
+  roadmap: Roadmap;
+}
+/**
+ * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
+ * via the `definition` "ClientCoverageAppendix".
+ */
+export interface ClientCoverageAppendix {
+  boundary_summary: BoundarySummary;
+  checked_sources?: CheckedSources;
+  unavailable_sources?: UnavailableSources;
+}
+/**
+ * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
+ * via the `definition` "ClientDecision".
+ */
+export interface ClientDecision {
+  business_impact: BusinessImpact;
+  headline: Headline;
+  opportunity: Opportunity;
+}
+/**
+ * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
+ * via the `definition` "ClientEvidenceCard".
+ */
+export interface ClientEvidenceCard {
+  decision_relevance: DecisionRelevance;
+  evidence_ids: EvidenceIds;
+  finding_ids: FindingIds;
+  observation: Observation;
+  source_label: SourceLabel;
+  subject_label?: SubjectLabel;
+}
+/**
+ * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
+ * via the `definition` "ClientPriorityAction".
+ */
+export interface ClientPriorityAction {
+  action_id: ActionId;
+  effort_bucket: EffortBucket;
+  expected_result: ExpectedResult;
+  required_client_assets?: RequiredClientAssets;
+  review_date: ReviewDate;
+  sequence: Sequence;
+  title: Title;
+  why_now: WhyNow;
+}
+/**
+ * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
+ * via the `definition` "ClientRoadmapPhase".
+ */
+export interface ClientRoadmapPhase {
+  action_ids: ActionIds;
+  expected_result: ExpectedResult1;
+  objective: Objective;
+  period: Period;
+}
+/**
+ * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
  * via the `definition` "ClientSummary".
  */
 export interface ClientSummary {
-  action_ids: ActionIds;
+  action_ids: ActionIds1;
   core_problem: CoreProblem;
-  headline: Headline;
-  next_review_date: NextReviewDate;
-  opportunity: Opportunity;
-  required_client_assets?: RequiredClientAssets;
+  headline: Headline1;
+  next_review_date: NextReviewDate1;
+  opportunity: Opportunity1;
+  required_client_assets?: RequiredClientAssets1;
 }
 /**
  * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
@@ -401,7 +534,7 @@ export interface CompetitorSummary {
   best_position: BestPosition;
   business_name: BusinessName;
   competitor_id: CompetitorId;
-  evidence_ids: EvidenceIds;
+  evidence_ids: EvidenceIds1;
   gaps?: Gaps;
   public_gbp_url?: PublicGbpUrl;
   query_appearance_count: QueryAppearanceCount;
@@ -436,8 +569,8 @@ export interface SourceCoverage {
  * via the `definition` "LayerAssessment".
  */
 export interface LayerAssessment {
-  evidence_ids?: EvidenceIds1;
-  finding_ids?: FindingIds;
+  evidence_ids?: EvidenceIds2;
+  finding_ids?: FindingIds1;
   layer_key: LayerKey;
   status: Status;
   summary: Summary;
@@ -482,8 +615,8 @@ export interface SourceLocator {
 export interface ExecutiveDecision {
   core_problem: CoreProblem1;
   decision_summary: DecisionSummary;
-  finding_ids: FindingIds1;
-  why_now: WhyNow;
+  finding_ids: FindingIds2;
+  why_now: WhyNow1;
 }
 /**
  * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
@@ -496,7 +629,7 @@ export interface Finding {
   classification: Classification;
   comparator_ids?: ComparatorIds;
   confidence: Confidence1;
-  evidence_ids: EvidenceIds2;
+  evidence_ids: EvidenceIds3;
   finding_id: FindingId;
   missing_data?: MissingData;
   rule_id: RuleId;
@@ -646,7 +779,7 @@ export interface ReportVersion {
  * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
  * via the `definition` "Roadmap".
  */
-export interface Roadmap {
+export interface Roadmap1 {
   phases: Phases;
 }
 /**
@@ -654,10 +787,10 @@ export interface Roadmap {
  * via the `definition` "RoadmapPhase".
  */
 export interface RoadmapPhase {
-  action_ids: ActionIds1;
+  action_ids: ActionIds2;
   exit_criteria: ExitCriteria;
-  objective: Objective;
-  period: Period;
+  objective: Objective1;
+  period: Period1;
 }
 /**
  * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
@@ -688,7 +821,7 @@ export interface LabelCount {
 export interface SitePageSummary {
   crawl_depth: CrawlDepth;
   deep_analyzed: DeepAnalyzed;
-  evidence_ids?: EvidenceIds3;
+  evidence_ids?: EvidenceIds4;
   page_type: PageType;
   url: Url2;
 }
@@ -697,22 +830,22 @@ export interface SitePageSummary {
  * via the `definition` "TopAction".
  */
 export interface TopAction {
-  action_id: ActionId;
+  action_id: ActionId1;
   client_facing_explanation: ClientFacingExplanation;
   data_sources: DataSources;
   definition_of_done: DefinitionOfDone;
   dependencies?: Dependencies;
-  effort_bucket: EffortBucket;
+  effort_bucket: EffortBucket1;
   exact_targets: ExactTargets;
-  finding_ids: FindingIds2;
+  finding_ids: FindingIds3;
   implementation_steps: ImplementationSteps;
   owner_suggestion: OwnerSuggestion;
-  required_client_assets?: RequiredClientAssets1;
-  review_date: ReviewDate;
-  sequence: Sequence1;
+  required_client_assets?: RequiredClientAssets2;
+  review_date: ReviewDate1;
+  sequence: Sequence2;
   specification: ActionSpecification;
   validation_metrics: ValidationMetrics;
-  why_now: WhyNow1;
+  why_now: WhyNow2;
 }
 /**
  * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
@@ -720,8 +853,8 @@ export interface TopAction {
  */
 export interface ImplementationStep {
   instruction: Instruction;
-  sequence: Sequence;
-  title: Title;
+  sequence: Sequence1;
+  title: Title1;
 }
 /**
  * This interface was referenced by `SearchTrustReportV2_2`'s JSON-Schema
@@ -758,7 +891,7 @@ export interface VersionDiff {
 export interface VersionDiffEntry {
   change_type: ChangeType;
   current_finding_ids: CurrentFindingIds;
-  evidence_ids: EvidenceIds4;
+  evidence_ids: EvidenceIds5;
   previous_finding?: PreviousFindingReference | null;
   reason: Reason;
 }
