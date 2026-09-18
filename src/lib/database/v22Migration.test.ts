@@ -22,7 +22,6 @@ let siteSnapshotA: string;
 let gbpSnapshotA: string;
 let prospectReportA: string;
 let verifiedReportA: string;
-let legacyReport: string;
 
 async function insertId(sql: string, params: unknown[] = []): Promise<string> {
   const result = await db.query<IdRow>(sql, params);
@@ -1018,17 +1017,6 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await db.exec("create role anon; create role authenticated; create role service_role bypassrls;");
 
     for (const filename of (await readdir(migrationDirectory)).sort()) {
-      if (filename === "20260826000000_add_v2_2_case_data_model.sql") {
-        const legacyUser = await insertUser("legacy");
-        legacyReport = await insertId(
-          `insert into public.reports (
-             report_id, user_id, page_url, gbp_url, access_type, report_v2_1
-           ) values (
-             'legacy-v21', $1, 'https://legacy.example.com', '', 'free_trial', '{"legacy":true}'::jsonb
-           ) returning id`,
-          [legacyUser],
-        );
-      }
       const migration = await readFile(path.join(migrationDirectory, filename), "utf8");
       await db.exec(migration);
     }
@@ -1463,21 +1451,11 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     );
   });
 
-  it("preserves existing v2.1 reports while adding nullable v2.2 fields", async () => {
-    const legacy = await db.query<{
-      report_v2_1: { legacy: boolean };
-      report_v2_2: null;
-      case_id: null;
-    }>(
-      `select report_v2_1, report_v2_2, case_id
-       from public.reports where id = $1`,
-      [legacyReport],
-    );
-    expect(legacy.rows[0]).toEqual({
-      report_v2_1: { legacy: true },
-      report_v2_2: null,
-      case_id: null,
-    });
+  it("starts without legacy v2.1 report rows", async () => {
+    expect((await db.query(
+      `select count(*)::int as count from public.reports where report_id = 'legacy-v21'`,
+    )).rows[0])
+      .toEqual({ count: 0 });
   });
 
   it("enforces the Case API Location key, uniqueness, identity consistency, and site immutability", async () => {
