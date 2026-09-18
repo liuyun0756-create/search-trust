@@ -14,8 +14,8 @@ select is(
     select string_agg(version, ',' order by version)
     from supabase_migrations.schema_migrations
   ),
-  '20260706000000,20260707000000,20260812000000,20260826000000,20260827000000,20260827010000,20260903000000,20260904000000,20260904100000,20260905000000,20260905100000,20260905200000,20260906000000,20260907000000,20260907100000,20260908000000,20260909170000,20260910000000,20260910100000,20260912100000,20260913100000,20260913110000,20260914100000,20260914110000,20260914120000,20260914130000,20260914140000,20260914150000,20260914160000',
-  'the database has exactly the approved 29 migrations in order'
+  '20260706000000,20260707000000,20260812000000,20260826000000,20260827000000,20260827010000,20260903000000,20260904000000,20260904100000,20260905000000,20260905100000,20260905200000,20260906000000,20260907000000,20260907100000,20260908000000,20260909170000,20260910000000,20260910100000,20260912100000,20260913100000,20260913110000,20260914100000,20260914110000,20260914120000,20260914130000,20260914140000,20260914150000,20260914160000,20260917090000,20260917100000,20260917110000,20260917120000,20260917130000,20260917140000,20260918100000',
+  'the database has exactly the approved 36 migrations in order'
 );
 
 select is(
@@ -661,7 +661,7 @@ select lives_ok(
       'https://release-a.example.invalid',
       'https://maps.searchtrust_release_validation.example.invalid/place',
       'paid_full', 'unlocked', '22092001-0000-4000-8000-000000000001',
-      'prospect', '2.2.0', 1,
+      'prospect', '2.2.1', 1,
       jsonb_build_object(
         'identity', jsonb_build_object(
           'case_id', '22092001-0000-4000-8000-000000000001',
@@ -672,7 +672,7 @@ select lives_ok(
         ),
         'report_version', jsonb_build_object(
           'report_id', '22092005-0000-4000-8000-000000000010',
-          'report_type', 'prospect', 'schema_version', '2.2.0',
+          'report_type', 'prospect', 'schema_version', '2.2.1',
           'parent_report_id', null, 'version_number', 1
         ),
         'evidence_index', jsonb_build_array(jsonb_build_object(
@@ -683,7 +683,15 @@ select lives_ok(
         'data_coverage', jsonb_build_object('sources', jsonb_build_array(jsonb_build_object(
           'source_type', 'gbp', 'health_status', 'healthy', 'identity_match_status', 'matched',
           'snapshot_ids', jsonb_build_array('22092004-0000-4000-8000-000000000014')
-        )))
+        ))),
+        'client_delivery', jsonb_build_object(
+          'decision', '{}'::jsonb,
+          'evidence_cards', jsonb_build_array('{}'::jsonb),
+          'priority_actions', jsonb_build_array('{}'::jsonb, '{}'::jsonb, '{}'::jsonb),
+          'roadmap', jsonb_build_array('{}'::jsonb, '{}'::jsonb, '{}'::jsonb),
+          'coverage_appendix', '{}'::jsonb,
+          'next_review_date', '2026-12-13'
+        )
       ),
       array[
         '22092004-0000-4000-8000-000000000001'::uuid,
@@ -813,7 +821,7 @@ select lives_ok(
         ),
         'report_version', jsonb_build_object(
           'report_id', '22092006-0000-4000-8000-000000000010',
-          'report_type', 'verified_execution', 'schema_version', '2.2.0',
+          'report_type', 'verified_execution', 'schema_version', '2.2.1',
           'parent_report_id', '22092005-0000-4000-8000-000000000010',
           'version_number', 2, 'generated_at', '2026-09-14T11:00:00Z',
           'ruleset_version', 'searchtrust_release_validation_rules',
@@ -835,6 +843,14 @@ select lives_ok(
         'version_diff', jsonb_build_object(
           'kind', 'upgrade', 'parent_report_id', '22092005-0000-4000-8000-000000000010',
           'entries', jsonb_build_array(jsonb_build_object('change_type', 'confirmed'))
+        ),
+        'client_delivery', jsonb_build_object(
+          'decision', '{}'::jsonb,
+          'evidence_cards', jsonb_build_array('{}'::jsonb),
+          'priority_actions', jsonb_build_array('{}'::jsonb, '{}'::jsonb, '{}'::jsonb),
+          'roadmap', jsonb_build_array('{}'::jsonb, '{}'::jsonb, '{}'::jsonb),
+          'coverage_appendix', '{}'::jsonb,
+          'next_review_date', '2026-12-13'
         )
       ),
       1
