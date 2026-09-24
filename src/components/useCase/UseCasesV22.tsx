@@ -1,126 +1,154 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  BarChart3,
-  BriefcaseBusiness,
-  Check,
-  FileSearch,
-  RefreshCw,
-  SearchCheck,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
+import { ArrowDown, ArrowRight, Check, MoveRight } from "lucide-react";
 
 import { RunAuditButton } from "@/components/common/RunAuditButton";
 
-const moments = [
-  {
-    icon: SearchCheck,
-    eyebrow: "Before the first call",
-    title: "Qualify a prospect with real market context.",
-    body: "Confirm the business and at least one actual local competitor before you spend time preparing a pitch. SearchTrust keeps weak identity matches and missing evidence visible instead of smoothing them over.",
-    points: ["Website + public GBP match", "At least one real competitor", "Free input and business confirmation"],
-  },
-  {
-    icon: BriefcaseBusiness,
-    eyebrow: "During the proposal",
-    title: "Show why the work deserves attention.",
-    body: "Use the Prospect report to explain trust gaps, competitive context and the next best actions in language a client can understand—while keeping the deeper source trail available to the advisor.",
-    points: ["L1–L8 evidence model", "Advisor and client views", "Source-backed recommendations"],
-  },
-  {
-    icon: BarChart3,
-    eyebrow: "After the client says yes",
-    title: "Replace assumptions with verified performance.",
-    body: "Connect Google Search Console and Google Analytics 4 to the same Case. SearchTrust compares recent and prior 90-day periods and checks source health before generating a plan.",
-    points: ["GSC + GA4 connection health", "Recent 90 days vs prior 90", "Public GBP remains observable"],
-  },
-  {
-    icon: RefreshCw,
-    eyebrow: "During delivery",
-    title: "Regenerate only when new evidence matters.",
-    body: "Keep each plan tied to its source snapshot. When evidence changes, the next generation calls it out; when nothing changed, the product does not manufacture a change label.",
-    points: ["Historical snapshots", "Evidence-change markers", "One credit per generation"],
-  },
-] as const;
+import { UseCaseEvidenceVisual } from "./UseCaseEvidenceVisuals";
+import { UseCaseNavigation } from "./UseCaseNavigation";
+import { useCaseScenes, type UseCaseScene } from "./use-case-data";
+import styles from "./use-cases-v22.module.css";
+
+function StoryLabel({ children }: { children: React.ReactNode }) {
+  return <p className={styles.storyLabel}>{children}</p>;
+}
+
+function SceneStory({ scene, index }: { scene: UseCaseScene; index: number }) {
+  const next = useCaseScenes[index + 1];
+
+  return (
+    <article id={`scene-${scene.number}`} className={styles.scene} data-scene={scene.number} aria-labelledby={`scene-title-${scene.number}`}>
+      <div className={styles.sceneInner}>
+        <header className={styles.sceneHeader}>
+          <div className={styles.sceneMeta}>
+            <span>{scene.number} / {scene.group}</span>
+            <i aria-hidden="true" />
+            <span>{scene.trigger}</span>
+          </div>
+          <h2 id={`scene-title-${scene.number}`}>{scene.title}</h2>
+          <p className={styles.sceneMoment}>{scene.moment}</p>
+        </header>
+
+        <div className={styles.problemStory}>
+          <div>
+            <StoryLabel>The problem</StoryLabel>
+            <p>{scene.problem}</p>
+          </div>
+          <div>
+            <StoryLabel>The real issue</StoryLabel>
+            <p>{scene.realIssue}</p>
+          </div>
+        </div>
+
+        <div className={styles.visualStage}>
+          <UseCaseEvidenceVisual kind={scene.visual} />
+          <p className={styles.visualNote}>Illustrated method example · not a real client result</p>
+        </div>
+
+        <div className={styles.reasoningStage}>
+          <div className={styles.analysisBlock}>
+            <StoryLabel>How the problem gets analysed</StoryLabel>
+            <ul>
+              {scene.analysis.map((item) => <li key={item}><Check aria-hidden="true" />{item}</li>)}
+            </ul>
+          </div>
+          <div className={styles.handlingBlock}>
+            <StoryLabel>How SearchTrust handles it</StoryLabel>
+            <p>{scene.handling}</p>
+          </div>
+        </div>
+
+        <section className={styles.decisionStage} aria-label={`Working decision for scene ${scene.number}`}>
+          <span>Working decision</span>
+          <p>{scene.decision}</p>
+        </section>
+
+        <section className={styles.outcomeStage} aria-labelledby={`outcome-title-${scene.number}`}>
+          <div className={styles.outcomeHeading}>
+            <StoryLabel>What the SEO takes forward</StoryLabel>
+            <h3 id={`outcome-title-${scene.number}`}>A decision that can move into real work.</h3>
+          </div>
+          <div className={styles.outcomeList}>
+            {scene.outcomes.map((outcome, outcomeIndex) => (
+              <div key={outcome.label}>
+                <span>{String(outcomeIndex + 1).padStart(2, "0")}</span>
+                <p><strong>{outcome.label}</strong>{outcome.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className={styles.seoCall}>
+            <span>SEO keeps the final call</span>
+            <p>{scene.seoKeeps}</p>
+          </div>
+          {scene.link ? (
+            <Link href={scene.link.href} className={styles.routeLink}>{scene.link.label}<ArrowRight aria-hidden="true" /></Link>
+          ) : null}
+        </section>
+
+        {next ? (
+          <a href={`#scene-${next.number}`} className={styles.sceneTransition}>
+            <span><small>Next work moment</small><strong>{scene.transition}</strong></span>
+            <span className={styles.nextScene}>{next.number}<ArrowDown aria-hidden="true" /></span>
+          </a>
+        ) : null}
+      </div>
+    </article>
+  );
+}
 
 export function UseCasesV22() {
   return (
-    <main className="overflow-hidden bg-[#f3f4ed] text-[#182018]">
-      <section className="relative bg-[#101710] px-4 py-20 text-white sm:px-6 sm:py-28 lg:px-8">
-        <div aria-hidden="true" className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(184,230,38,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(184,230,38,0.08)_1px,transparent_1px)] [background-size:54px_54px]" />
-        <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1fr_0.82fr] lg:items-end">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.26em] text-[#b8e626]">Built for small local SEO practices</p>
-            <h1 className="mt-5 max-w-4xl font-[family-name:Georgia] text-5xl leading-[0.98] tracking-[-0.055em] sm:text-7xl">One evidence chain from prospect to client delivery.</h1>
-            <p className="mt-8 max-w-2xl text-lg leading-8 text-white/62">SearchTrust helps independent consultants and small agencies make a credible case before they have private access—then make better decisions once the client shares verified first-party data.</p>
+    <main className={styles.page}>
+      <section className={styles.hero}>
+        <div className={styles.heroGlow} aria-hidden="true" />
+        <div className={styles.heroInner}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>In practice / six real work moments</p>
+            <h1>Know what to examine when the next SEO decision matters.</h1>
+            <p className={styles.heroIntro}>See how SearchTrust helps an SEO move from a client’s real situation to a responsible decision—before the proposal, during delivery and when the work needs reviewing.</p>
+            <p className={styles.heroPromise}><span aria-hidden="true" />Each story ends with evidence, a working decision and something the SEO can take forward.</p>
+            <a href="#scene-01" className={styles.scrollLink}>Read the first work moment<ArrowDown aria-hidden="true" /></a>
           </div>
-          <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm sm:p-8">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-white/40">The operating model</p>
-            <div className="mt-6 space-y-5">
-              {[
-                ["01", "Prospect", "Public evidence creates the reason to talk."],
-                ["02", "Connect", "The client authorizes GSC and GA4."],
-                ["03", "Verified", "Owned data creates the action plan."],
-              ].map(([number, title, body]) => (
-                <div key={number} className="grid grid-cols-[2.5rem_1fr] gap-3 border-t border-white/10 pt-5 first:border-0 first:pt-0">
-                  <span className="font-mono text-xs font-black text-[#b8e626]">{number}</span>
-                  <div><p className="font-black">{title}</p><p className="mt-1 text-sm leading-6 text-white/48">{body}</p></div>
-                </div>
+
+          <div className={styles.sceneIndex}>
+            <p>Choose the moment that looks familiar</p>
+            <ol>
+              {useCaseScenes.map((scene) => (
+                <li key={scene.number}>
+                  <a href={`#scene-${scene.number}`}>
+                    <span>{scene.number}</span>
+                    <strong>{scene.shortTitle}</strong>
+                    <MoveRight aria-hidden="true" />
+                  </a>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-[#718d18]">Four moments that matter</p>
-            <h2 className="mt-4 font-[family-name:Georgia] text-4xl leading-tight tracking-[-0.04em] sm:text-5xl">Use SearchTrust where evidence changes the decision.</h2>
-          </div>
-          <div className="mt-14 grid gap-5 md:grid-cols-2">
-            {moments.map(({ icon: Icon, eyebrow, title, body, points }, index) => (
-              <article key={title} className={`rounded-[2rem] p-7 sm:p-10 ${index === 2 ? "bg-[#182018] text-white" : "border border-[#d7ddce] bg-white"}`}>
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${index === 2 ? "bg-[#b8e626] text-[#182018]" : "bg-[#edf3d9] text-[#718d18]"}`}><Icon className="h-5 w-5" /></div>
-                <p className={`mt-7 text-xs font-black uppercase tracking-[0.2em] ${index === 2 ? "text-[#b8e626]" : "text-[#718d18]"}`}>{eyebrow}</p>
-                <h3 className="mt-3 font-[family-name:Georgia] text-3xl leading-tight tracking-[-0.035em]">{title}</h3>
-                <p className={`mt-5 leading-7 ${index === 2 ? "text-white/58" : "text-[#667064]"}`}>{body}</p>
-                <ul className="mt-7 space-y-3 text-sm font-bold">
-                  {points.map((point) => <li key={point} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#90b51d]" />{point}</li>)}
-                </ul>
-              </article>
-            ))}
-          </div>
+      <UseCaseNavigation scenes={useCaseScenes} />
+
+      <section className={styles.storyIntro} aria-labelledby="stories-title">
+        <div>
+          <p className={styles.eyebrow}>Six situations / one working discipline</p>
+          <h2 id="stories-title">Start with the problem. Keep the evidence visible. Make the next move explicit.</h2>
         </div>
+        <p>These are not feature tours. Each chapter follows a normal SEO working story: what happened, what the problem really means, how it gets analysed, how SearchTrust helps and what the SEO receives.</p>
       </section>
 
-      <section className="border-y border-[#d7ddce] bg-[#e8ecdd] px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
-          <div>
-            <UsersRound className="h-8 w-8 text-[#718d18]" />
-            <h2 className="mt-5 font-[family-name:Georgia] text-4xl tracking-[-0.04em] sm:text-5xl">Designed for expertise that needs leverage—not another dashboard.</h2>
-            <p className="mt-6 text-lg leading-8 text-[#667064]">The product is intentionally narrow: help a small local SEO practice win work honestly, preserve the evidence, and improve the client with better data after access is granted.</p>
-          </div>
-          <div className="grid gap-px overflow-hidden rounded-[1.75rem] border border-[#ccd3c2] bg-[#ccd3c2] sm:grid-cols-2">
-            {[
-              [FileSearch, "Independent consultant", "Create a defensible client conversation without hand-building a speculative audit."],
-              [ShieldCheck, "Small agency", "Give sales, strategy and delivery one shared Case and source history."],
-            ].map(([Icon, title, body]) => {
-              const Glyph = Icon as typeof FileSearch;
-              return <div key={String(title)} className="bg-[#f8f9f3] p-8 sm:p-10"><Glyph className="h-6 w-6 text-[#789b12]" /><h3 className="mt-8 font-[family-name:Georgia] text-2xl">{String(title)}</h3><p className="mt-4 text-sm leading-7 text-[#667064]">{String(body)}</p></div>;
-            })}
-          </div>
-        </div>
-      </section>
+      <div className={styles.sceneCollection}>
+        {useCaseScenes.map((scene, index) => <SceneStory key={scene.number} scene={scene} index={index} />)}
+      </div>
 
-      <section className="px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 rounded-[2rem] bg-[#b8e626] p-8 sm:p-12 lg:flex-row lg:items-center">
-          <div><p className="text-xs font-black uppercase tracking-[0.22em] text-[#42540c]">Five permanent credits included</p><h2 className="mt-3 max-w-3xl font-[family-name:Georgia] text-4xl tracking-[-0.04em]">Start with a real business. Spend a credit only when provider-backed work begins.</h2></div>
-          <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
-            <RunAuditButton trackingSource="use_cases_v22" className="inline-flex min-h-13 items-center justify-center gap-2 rounded-xl bg-[#142013] px-6 py-3.5 text-sm font-black text-white">Start a Case <ArrowRight className="h-4 w-4" /></RunAuditButton>
-            <Link href="/sample-report" className="inline-flex min-h-13 items-center justify-center rounded-xl border border-[#142013]/20 px-6 py-3.5 text-sm font-black">See sample reports</Link>
-          </div>
+      <section className={styles.finalCta}>
+        <div>
+          <p className={styles.eyebrow}>Your expertise / a clearer evidence trail</p>
+          <h2>Bring one real business. Leave with a decision you can defend.</h2>
+          <p>Start with the website and business context. SearchTrust organises what can be observed, what still needs confirmation and which actions are worth discussing next.</p>
+        </div>
+        <div className={styles.finalActions}>
+          <RunAuditButton trackingSource="use_cases_v22" className={styles.primaryAction}>Start with one business<ArrowRight aria-hidden="true" /></RunAuditButton>
+          <Link href="/sample-report" className={styles.secondaryAction}>See the complete report example<ArrowRight aria-hidden="true" /></Link>
         </div>
       </section>
     </main>
