@@ -29,8 +29,8 @@ export { expect };
 export async function openProspectStart(page: Page): Promise<void> {
   await page.goto("/cases/new");
   await page.getByLabel("Business website").fill("searchtrust-e2e.example.invalid");
-  await page.getByRole("button", { name: /Check this business/ }).click();
-  await expect(page.getByRole("heading", { name: "Make sure we are analyzing the right business." })).toBeVisible();
+  await page.getByRole("button", { name: /Check this prospect/ }).click();
+  await expect(page.getByRole("heading", { name: "Prove the website and public profile belong to the same business." })).toBeVisible();
   await page.getByRole("button", { name: /Confirm business scope/ }).click();
   await expect(page.getByRole("heading", { name: "Start the complete prospect analysis." })).toBeVisible();
 }

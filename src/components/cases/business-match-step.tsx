@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, HelpCircle, MapPin, MinusCircle, Phone, Store } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Globe2, HelpCircle, MapPin, MapPinned, MinusCircle, PencilLine, SearchCheck, Store } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 import { isLocalE2ETestMode } from "@/lib/e2e-v22/config";
@@ -44,6 +44,20 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
 
   const primaryLocationBase = initialPrimaryLocation;
   const targetMarketBase = initialTargetMarket;
+  const comparisons = candidate?.field_comparisons ?? [];
+  const exactMatches = comparisons.filter((comparison) => comparison.status === "exact_match").length;
+  const hasMissingEvidence = comparisons.some((comparison) => comparison.status === "error");
+  const hasConflict = comparisons.some((comparison) => comparison.status === "not_matched");
+  const hasPartialMatch = comparisons.some((comparison) => comparison.status === "partial_match");
+  const verdict = !candidate
+    ? { label: "Manual confirmation required", detail: "No complete public identity was formed automatically. Confirm every Case field below and provide a traceable GBP listing.", tone: "attention" as const }
+    : hasMissingEvidence
+      ? { label: "Public evidence is incomplete", detail: "At least one identity field is missing on both sources or could not be checked. Keep that limitation visible while confirming the Case.", tone: "attention" as const }
+      : hasConflict
+        ? { label: "Identity conflict needs review", detail: "The website and public GBP disagree on at least one business field. Resolve the scope before competitor discovery begins.", tone: "conflict" as const }
+        : hasPartialMatch
+          ? { label: "Identity partially overlaps", detail: "The sources appear related, but at least one field is not identical. Check the details before confirming the Case.", tone: "attention" as const }
+          : { label: "Public identity is aligned", detail: "The checked website and GBP fields point to the same business. You still set the service and market the report should cover.", tone: "aligned" as const };
 
   function choose(index: number) {
     const next = preflight.identity_candidates[index];
@@ -97,84 +111,99 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
   }
 
   return (
-    <section>
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <section className="case-step-enter">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#718218]">02 / Identify the business</p>
-          <h1 className="text-3xl font-semibold tracking-[-0.045em] text-[#172017] sm:text-[42px]">Make sure we are analyzing the right business.</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#657165]">Compare the website with its public Google Business Profile, then confirm the service and market this Case should represent.</p>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#718218]">02 / Confirm the business</p>
+          <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-[#172017] sm:text-[42px]">Prove the website and public profile belong to the same business.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#657165]">We compare the available identity evidence. You resolve conflicts and define the service and market this Case will actually represent.</p>
         </div>
-        <button type="button" onClick={onEditSource} className="self-start text-sm font-bold text-[#657165] underline decoration-[#b5c1b0] underline-offset-4 hover:text-[#1d271d]">Edit website</button>
+        <button type="button" onClick={onEditSource} className="inline-flex self-start items-center gap-2 text-sm font-bold text-[#657165] outline-none hover:text-[#1d271d] focus-visible:rounded-lg focus-visible:ring-4 focus-visible:ring-[#A5D020]/25"><PencilLine size={15} />Edit website</button>
       </div>
 
       {preflight.identity_candidates.length > 1 && (
-        <fieldset className="mb-5 rounded-2xl border border-[#dfe4da] bg-white p-5">
-          <legend className="px-2 text-sm font-bold text-[#283228]">Possible business identities</legend>
+        <fieldset className="mb-5 rounded-[22px] bg-[#e7ece3] p-5">
+          <legend className="px-2 text-sm font-bold text-[#283228]">Choose the business identity to inspect</legend>
           <div className="grid gap-2 sm:grid-cols-2">
             {preflight.identity_candidates.map((item, index) => (
-              <label key={`${item.business.business_name}-${index}`} className={`cursor-pointer rounded-xl border p-3 ${selectedIndex === index ? "border-[#8caf1b] bg-[#f5fadf]" : "border-[#e0e5dc]"}`}>
+              <label key={`${item.business.business_name}-${index}`} className={`cursor-pointer rounded-2xl p-4 transition focus-within:ring-4 focus-within:ring-[#A5D020]/25 ${selectedIndex === index ? "bg-white shadow-[0_10px_28px_rgba(34,49,31,.08)]" : "hover:bg-white/55"}`}>
                 <input type="radio" className="mr-2 accent-[#789b12]" checked={selectedIndex === index} onChange={() => choose(index)} />
                 <span className="text-sm font-bold text-[#253025]">{item.business.business_name}</span>
+                <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-[#849084]">{item.confidence} confidence</span>
               </label>
             ))}
           </div>
         </fieldset>
       )}
 
+      <div className={`mb-6 grid overflow-hidden rounded-[24px] text-white shadow-[0_22px_60px_rgba(25,37,27,.12)] lg:grid-cols-[1fr_auto] ${verdict.tone === "conflict" ? "bg-[#332119]" : "bg-[#172017]"}`}>
+        <div className="px-6 py-6 sm:px-8 sm:py-7">
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#b7dc3f]"><SearchCheck size={15} />Identity verdict</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{verdict.label}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">{verdict.detail}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-px bg-white/10 lg:min-w-[250px]">
+          <div className="bg-white/[0.045] px-5 py-5 lg:grid lg:content-center"><span className="text-2xl font-semibold">{exactMatches}/{comparisons.length || 4}</span><span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.13em] text-white/38">fields aligned</span></div>
+          <div className="bg-white/[0.045] px-5 py-5 lg:grid lg:content-center"><span className="text-2xl font-semibold">{candidate?.confidence ?? "—"}</span><span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.13em] text-white/38">source confidence</span></div>
+        </div>
+      </div>
+
       {candidate ? (
-        <div className="mb-6 overflow-hidden rounded-2xl border border-[#dfe4da] bg-white">
-          <div className="grid grid-cols-[1fr_auto] items-center border-b border-[#e5e9e1] bg-[#fafbf8] px-5 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#778177] sm:grid-cols-[150px_1fr_1fr_auto]">
-            <span className="hidden sm:block">Field</span><span>Website</span><span className="hidden sm:block">Public GBP</span><span>Result</span>
+        <section aria-labelledby="identity-evidence-title" className="mb-6 rounded-[24px] bg-white p-5 shadow-[0_18px_50px_rgba(31,39,27,0.06)] ring-1 ring-[#dfe4da] sm:p-7">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div><p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#718218]">Evidence reconciliation</p><h2 id="identity-evidence-title" className="mt-2 text-xl font-bold tracking-[-0.025em] text-[#1d281e]">Website and GBP, field by field.</h2></div>
+            <p className="text-xs text-[#7b867b]">{comparisons.length} public fields compared</p>
           </div>
-          {candidate.field_comparisons.map((comparison) => {
-            const meta = statusMeta[comparison.status];
-            const Icon = meta.icon;
-            return (
-              <div key={comparison.field} className="grid grid-cols-1 gap-3 border-b border-[#edf0ea] px-5 py-4 last:border-b-0 sm:grid-cols-[150px_1fr_1fr_auto] sm:items-center">
-                <div className="text-sm font-bold text-[#263026]">{fieldLabel[comparison.field]}</div>
-                <div><span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-[#98a098] sm:hidden">Website</span><span className="text-sm text-[#566156]">{comparison.site_value ?? "Not found"}</span></div>
-                <div><span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-[#98a098] sm:hidden">Public GBP</span><span className="text-sm text-[#566156]">{comparison.gbp_value ?? "Not found"}</span></div>
-                <span title={comparison.reason} className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${meta.className}`}><Icon size={13} />{meta.label}</span>
-              </div>
-            );
-          })}
-        </div>
+          <div className="hidden grid-cols-[160px_1fr_1fr_165px] gap-5 px-4 pb-3 text-[10px] font-bold uppercase tracking-[0.13em] text-[#929b92] sm:grid"><span>Identity field</span><span>Website evidence</span><span>Public GBP evidence</span><span>Result</span></div>
+          <div className="divide-y divide-[#e9ede5]">
+            {comparisons.map((comparison) => {
+              const meta = statusMeta[comparison.status];
+              const Icon = meta.icon;
+              return (
+                <div key={comparison.field} className="grid gap-4 px-1 py-5 first:pt-4 sm:grid-cols-[160px_1fr_1fr_165px] sm:items-start sm:gap-5 sm:px-4">
+                  <div><p className="text-sm font-bold text-[#263026]">{fieldLabel[comparison.field]}</p><p className="mt-1 text-[11px] leading-4 text-[#8a948a]">{comparison.reason}</p></div>
+                  <div><span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-[#98a098] sm:hidden">Website</span><span className="flex items-start gap-2 text-sm leading-5 text-[#566156]"><Globe2 className="mt-0.5 hidden shrink-0 text-[#a1aaa1] lg:block" size={14} />{comparison.site_value ?? "Not found"}</span></div>
+                  <div><span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-[#98a098] sm:hidden">Public GBP</span><span className="flex items-start gap-2 text-sm leading-5 text-[#566156]"><MapPinned className="mt-0.5 hidden shrink-0 text-[#a1aaa1] lg:block" size={14} />{comparison.gbp_value ?? "Not found"}</span></div>
+                  <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${meta.className}`}><Icon size={13} />{meta.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       ) : (
-        <div className="mb-6 rounded-2xl border border-[#e3c985] bg-[#fff9e8] p-5 text-sm leading-6 text-[#72560d]">
-          We couldn’t form a complete public identity automatically. Enter the confirmed client scope below to continue; missing GBP coverage will remain visible as a gap.
-        </div>
+        <div className="mb-6 flex gap-4 rounded-[22px] bg-[#fff6dc] p-5 text-sm leading-6 text-[#72560d]"><AlertCircle className="mt-0.5 shrink-0" size={20} /><div><p className="font-bold">Public identity needs manual confirmation.</p><p className="mt-1">Enter the client scope below. Missing GBP evidence remains a blocking gap until a full traceable listing URL is provided.</p></div></div>
       )}
 
-      <form onSubmit={submit} className="rounded-2xl border border-[#dfe4da] bg-white p-5 sm:p-6">
-        <div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-lg bg-[#edf3e5] text-[#607060]"><Store size={18} /></span><div><h2 className="font-bold text-[#202a20]">Confirmed report scope</h2><p className="text-xs text-[#7d877d]">Editing these fields invalidates any prior competitor search.</p></div></div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Business name"><input required value={businessName} onChange={(event) => setBusinessName(event.target.value)} className="field-input" /></Field>
-          <Field label="Operating model"><select value={operatingModel} onChange={(event) => setOperatingModel(event.target.value as BusinessIdentity["operating_model"])} className="field-input"><option value="storefront">Storefront</option><option value="service_area">Service area</option><option value="hybrid">Hybrid</option></select></Field>
-          <Field label="Primary service"><input required value={service} onChange={(event) => setService(event.target.value)} className="field-input" /></Field>
-          <Field label="Primary location"><div className="relative"><MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929b92]" size={16} /><input required value={location} onChange={(event) => setLocation(event.target.value)} className="field-input pl-10" /></div></Field>
-          <Field label="Target market"><input required value={marketName} onChange={(event) => setMarketName(event.target.value)} className="field-input" /></Field>
-          <Field label="Public GBP">
-            <div className="relative">
-              <Phone aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929b92]" size={15} />
-              <input
-                required
-                type="url"
-                aria-label="Public GBP"
-                autoComplete="url"
-                inputMode="url"
-                value={gbpUrl}
-                onChange={(event) => { setGbpUrl(event.target.value); setGbpError(null); }}
-                aria-describedby={gbpError ? "business-gbp-error" : "business-gbp-help"}
-                placeholder="https://www.google.com/maps?cid=..."
-                className="field-input pl-9"
-              />
-            </div>
-            {gbpError
-              ? <p id="business-gbp-error" role="alert" className="mt-2 text-xs font-semibold leading-5 text-[#a3412c]">{gbpError}</p>
-              : <p id="business-gbp-help" className="mt-2 text-xs leading-5 text-[#798479]">Required for a trustworthy report. Use the full public listing URL, not a short share link.</p>}
-          </Field>
+      <form onSubmit={submit} className="rounded-[24px] bg-[#e8ede4] p-5 sm:p-7">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-[#607060]"><Store size={18} /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#718218]">SEO-confirmed scope</p><h2 className="mt-1 text-xl font-bold tracking-[-0.025em] text-[#202a20]">Define what this Case will analyze.</h2><p className="mt-1 max-w-xl text-xs leading-5 text-[#697569]">Your edits set the Case scope; they do not rewrite the public evidence above.</p></div></div>
+          <span className="w-fit rounded-full bg-white/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#728072]">Required before competitors</span>
         </div>
-        <div className="mt-6 flex justify-end"><button type="submit" className="min-h-12 rounded-xl bg-[#1a211a] px-6 text-sm font-bold text-white outline-none hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/40">Confirm business scope <span aria-hidden="true">→</span></button></div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-[20px] bg-white/70 p-5">
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.15em] text-[#718218]">Business identity</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <Field label="Business name"><input required value={businessName} onChange={(event) => setBusinessName(event.target.value)} className="field-input" /></Field>
+              <Field label="Operating model"><select value={operatingModel} onChange={(event) => setOperatingModel(event.target.value as BusinessIdentity["operating_model"])} className="field-input"><option value="storefront">Storefront</option><option value="service_area">Service area</option><option value="hybrid">Hybrid</option></select></Field>
+              <div className="sm:col-span-2 lg:col-span-1 xl:col-span-2"><Field label="Public GBP"><div className="relative"><MapPinned aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929b92]" size={16} /><input required type="url" aria-label="Public GBP" autoComplete="url" inputMode="url" value={gbpUrl} onChange={(event) => { setGbpUrl(event.target.value); setGbpError(null); }} aria-describedby={gbpError ? "business-gbp-error" : "business-gbp-help"} placeholder="https://www.google.com/maps?cid=..." className="field-input pl-10" /></div>{gbpError ? <p id="business-gbp-error" role="alert" className="mt-2 text-xs font-semibold leading-5 text-[#a3412c]">{gbpError}</p> : <p id="business-gbp-help" className="mt-2 text-xs leading-5 text-[#798479]">Use the full listing URL with a place ID or cid. A short share link is not traceable enough for the report.</p>}</Field></div>
+            </div>
+          </div>
+
+          <div className="rounded-[20px] bg-white/70 p-5">
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.15em] text-[#718218]">Analysis scope</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <div className="sm:col-span-2 lg:col-span-1 xl:col-span-2"><Field label="Primary service"><input required value={service} onChange={(event) => setService(event.target.value)} className="field-input" /></Field></div>
+              <Field label="Primary location"><div className="relative"><MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929b92]" size={16} /><input required value={location} onChange={(event) => setLocation(event.target.value)} className="field-input pl-10" /></div></Field>
+              <Field label="Target market"><input required value={marketName} onChange={(event) => setMarketName(event.target.value)} className="field-input" /></Field>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-xl text-xs leading-5 text-[#667266]">Changing this scope later invalidates earlier competitor results, so the next analysis never reuses evidence from a different business or market.</p>
+          <button type="submit" className="group inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a211a] px-6 text-sm font-bold text-white outline-none transition hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/40">Confirm business scope <ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" /></button>
+        </div>
       </form>
     </section>
   );

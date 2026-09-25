@@ -22,6 +22,7 @@ describe("BusinessMatchStep interactions", () => {
       />,
     );
 
+    expect(screen.getByRole("heading", { name: "Manual confirmation required" })).toBeInTheDocument();
     expect(screen.getByLabelText("Public GBP")).toHaveValue(TRACEABLE_GBP_URL);
     await user.type(screen.getByLabelText("Business name"), "SearchTrust E2E Plumbing");
     await user.click(screen.getByRole("button", { name: /Confirm business scope/ }));
@@ -52,6 +53,9 @@ describe("BusinessMatchStep interactions", () => {
       />,
     );
 
+    expect(screen.getByRole("heading", { name: "Public identity is aligned" })).toBeInTheDocument();
+    expect(screen.getByText("4 public fields compared")).toBeInTheDocument();
+    expect(screen.getByText("Names match.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Confirm business scope/ }));
     expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
       business_identity: expect.objectContaining({ public_gbp_url: TRACEABLE_GBP_URL }),
@@ -79,6 +83,28 @@ describe("BusinessMatchStep interactions", () => {
 
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent("place ID or cid");
+  });
+
+  it("surfaces a source conflict and its reason before the editable scope", () => {
+    render(
+      <BusinessMatchStep
+        preflight={{
+          ...preflightFixture,
+          identity_candidates: preflightFixture.identity_candidates.map((candidate) => ({
+            ...candidate,
+            field_comparisons: candidate.field_comparisons.map((comparison, index) => index === 0
+              ? { ...comparison, status: "not_matched" as const, reason: "The public names point to different businesses." }
+              : comparison),
+          })),
+        }}
+        submittedGbpUrl={TRACEABLE_GBP_URL}
+        onConfirm={vi.fn()}
+        onEditSource={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Identity conflict needs review" })).toBeInTheDocument();
+    expect(screen.getByText("The public names point to different businesses.")).toBeInTheDocument();
   });
 
   it("restores the last confirmed scope and clears stale coordinates when the market label changes", async () => {
