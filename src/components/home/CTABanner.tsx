@@ -1,83 +1,66 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+const productLinks = [
+  { href: "/framework", label: "Our Method" },
+  { href: "/sample-report", label: "Sample Report" },
+  { href: "/use-cases", label: "In Practice" },
+  { href: "/pricing", label: "Pricing" },
+];
+
+const accountLinks = [
+  { href: "/cases/new", label: "Start a Case" },
+  { href: "/sign-in", label: "Sign In" },
+];
+
+const legalLinks = [
+  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/refund-policy", label: "Refund Policy" },
+];
 
 export function CTABanner() {
   const pathname = usePathname();
-  if (pathname === "/cases/new" || pathname === "/share" || /^\/cases\/[^/]+\/reports\/[^/]+$/.test(pathname)) return null;
+  if (pathname === "/cases/new" || pathname === "/reports" || pathname === "/share" || /^\/cases\/[^/]+\/reports\/[^/]+$/.test(pathname)) return null;
+
   return (
-    <footer className="relative overflow-hidden bg-[#F7F9F2] pt-20 pb-12">
-      <div className="absolute inset-0 z-0 opacity-[0.08]">
-        <img 
-          src="/images/bottom-bg.jpg" 
-          alt="Background" 
-          className="w-full h-full object-cover"
-        />
-      </div>
-      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,rgba(165,208,32,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(26,31,43,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
-      <div className="absolute inset-x-0 top-0 z-0 h-px bg-gradient-to-r from-transparent via-[#A5D020]/40 to-transparent" />
-      <div className="absolute left-1/2 top-8 z-0 h-72 w-72 -translate-x-1/2 rounded-full bg-[#A5D020]/16 blur-[100px]" />
-
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        {/* 底部导航区域 */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 border-t border-[#1A1F2B]/10 pt-16">
-          
-          {/* 左侧品牌信息 */}
-          <div className="md:col-span-4">
-            <div className="flex items-center gap-2 mb-6">
-              {/* <div className="w-6 h-6 grid grid-cols-2 gap-1">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white rounded-sm"></div>
-                ))}
-              </div>
-              <span className="text-xl font-bold text-white tracking-tight">SearchTrust</span> */}
-              <div className="flex items-center">
-                <img src="/images/logo.png" alt="SearchTrust Logo" className="w-[120px] h-auto md:w-[175px] md:h-[32px]" />
-              </div>
-            </div>
-            <p className="text-[#657083] text-sm mb-8 max-w-[240px] leading-relaxed">
-              Win client work with evidence. Improve it with verified data.
-            </p>
+    <footer aria-label="Site footer" className="bg-[#eef1e9] px-4 py-14 text-[#172018] sm:px-6 sm:py-16 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
+          <div>
+            <Link href="/" aria-label="SearchTrust home" className="inline-flex rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#86a91b]">
+              <img src="/images/logo.png" alt="SearchTrust" className="h-8 w-auto" />
+            </Link>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-[#627066]">Evidence-backed local SEO decisions for winning client work, planning delivery and explaining what changes.</p>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-[#668315]">Five permanent credits included with every new account</p>
           </div>
 
-          {/* 右侧链接网格 */}
-          <div className="md:col-span-8 grid grid-cols-2 md:grid-cols-3 gap-8">
-            <div>
-              {/* <h4 className="text-white font-bold mb-6">Product</h4> */}
-              <ul className="space-y-4 text-sm font-medium">
-                <li><a href="/" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Home</a></li>
-                <li><a href="/framework" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Framework</a></li>
-                <li><a href="/sample-report" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Sample Report</a></li>
-                <li><a href="/pricing" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Pricing</a></li>
-              </ul>
-            </div>
-            <div>
-              {/* <h4 className="text-white font-bold mb-6">Use Cases</h4> */}
-              <ul className="space-y-4 text-sm font-medium">
-                <li><a href="/use-cases" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Use Cases</a></li>
-                <li><a href="/use-cases" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Contact</a></li>
-                {/* <li><a href="#" className="text-white hover:text-[#A5D020] transition-colors">Blog</a></li> */}
-              </ul>
-            </div>
-            <div>
-              {/* <h4 className="text-white font-bold mb-6">Legal</h4> */}
-              <ul className="space-y-4 text-sm font-medium">
-                <li><a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Terms</a></li>
-                <li><a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Privacy</a></li>
-                <li><a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="text-[#1A1F2B] hover:text-[#7FA40F] transition-colors">Refunds</a></li>
-              </ul>
-            </div>
-          </div>
+          <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+            {[
+              ["Product", productLinks],
+              ["Account", accountLinks],
+              ["Legal", legalLinks],
+            ].map(([heading, links]) => (
+              <div key={String(heading)}>
+                <h2 className="text-xs font-black uppercase tracking-[0.16em] text-[#728078]">{String(heading)}</h2>
+                <ul className="mt-5 space-y-3">
+                  {(links as typeof productLinks).map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="text-sm font-semibold text-[#36443a] transition-colors hover:text-[#6c8a16] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#86a91b]">{link.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
 
-        {/* 版权信息 */}
-        <div className="mt-24 text-center">
-          <p className="text-gray-500 text-xs">
-            © 2026 SearchTrust. All rights reserved.
-          </p>
+        <div className="mt-14 flex flex-col gap-3 border-t border-[#172018]/10 pt-6 text-xs text-[#778279] sm:flex-row sm:items-center sm:justify-between">
+          <p>© 2026 SearchTrust. All rights reserved.</p>
+          <p>No subscription · Permanent credits · Secure Dodo Payments checkout</p>
         </div>
-
       </div>
     </footer>
   );

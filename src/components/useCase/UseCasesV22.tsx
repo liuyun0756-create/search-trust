@@ -97,7 +97,7 @@ function SceneStory({ scene, index }: { scene: UseCaseScene; index: number }) {
 
 export function UseCasesV22() {
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <section className={styles.hero}>
         <div className={styles.heroGlow} aria-hidden="true" />
         <div className={styles.heroInner}>
@@ -151,6 +151,6 @@ export function UseCasesV22() {
           <Link href="/sample-report" className={styles.secondaryAction}>See the complete report example<ArrowRight aria-hidden="true" /></Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

@@ -12,6 +12,7 @@ interface HeaderUserActionsProps {
 
 export function HeaderUserActions({ mobile = false, onNavigate }: HeaderUserActionsProps) {
   const { isSignedIn, isLoaded } = useAppUser();
+  const actionLabel = isLoaded && isSignedIn ? "Start a Case" : "Start with 5 free credits";
 
   if (mobile) {
     return (
@@ -27,8 +28,8 @@ export function HeaderUserActions({ mobile = false, onNavigate }: HeaderUserActi
             Sign In
           </Link>
         )}
-        <RunAuditButton className="w-full rounded-full bg-[#1D2531] py-4 text-[16px] font-bold text-white">
-          Start with 5 free credits
+        <RunAuditButton trackingSource="header_mobile" className="w-full rounded-full bg-[#1D2531] py-4 text-[16px] font-bold text-white">
+          {actionLabel}
         </RunAuditButton>
       </>
     );
@@ -46,8 +47,8 @@ export function HeaderUserActions({ mobile = false, onNavigate }: HeaderUserActi
           Sign In
         </Link>
       )}
-      <RunAuditButton className="rounded-full bg-[#1D2531] px-6 py-2.5 text-[14px] font-bold text-white transition-all hover:bg-black">
-        Start with 5 free credits
+      <RunAuditButton trackingSource="header_desktop" className="rounded-full bg-[#1D2531] px-6 py-2.5 text-[14px] font-bold text-white transition-all hover:bg-black">
+        {actionLabel}
       </RunAuditButton>
     </div>
   );

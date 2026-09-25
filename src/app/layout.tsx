@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { CTABanner } from "@/components/home/CTABanner";
 import { AuditModalProvider } from "@/components/common/AuditModalProvider";
-import { FooterPreCTA } from "@/components/layout/FooterPreCTA";
 import { AnalyticsIdentify } from "@/components/common/AnalyticsIdentify";
 import { SearchTrustGoogleAnalytics } from "@/components/common/SearchTrustGoogleAnalytics";
 import { siteUrl, ogImage } from "@/lib/seo";
@@ -76,8 +74,6 @@ export default function RootLayout({
           <AuditModalProvider>
           <Header />
           <main>{children}</main>
-          {/* <Footer /> */}
-          <FooterPreCTA />
           <CTABanner />
           </AuditModalProvider>
         </AppAuthProvider>
