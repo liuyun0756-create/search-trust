@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Coins, LockKeyhole, LoaderCircle, RotateCcw, ShieldCheck } from "lucide-react";
+import { Check, LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -30,6 +30,7 @@ import { CoverageStep } from "./coverage-step";
 import { GoalWebsiteStep } from "./goal-website-step";
 import { NewCaseStepper } from "./new-case-stepper";
 import { PreflightStatus } from "./preflight-status";
+import { ProspectStartStep } from "./prospect-start-step";
 
 function normalizeWebInput(value: string) {
   const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
@@ -572,39 +573,17 @@ export function NewCaseWorkspace() {
             {draft.stage === "preflight_failed" && <PreflightStatus kind="error" title="Preflight needs attention" message={draft.preflight_error?.message ?? "The public data check could not be completed."} onRetry={() => void startPreflight({ goal: draft.goal, site_url: draft.site_url, gbp_url: draft.gbp_url })} />}
             {draft.stage === "business_confirmation" && draft.preflight && <BusinessMatchStep key={draft.preflight.preflight_id} preflight={draft.preflight} submittedGbpUrl={draft.gbp_url} initialConfirmation={draft.business_confirmation} onConfirm={confirmBusiness} onEditSource={() => setDraft((current) => reduceWorkspaceState(current, { type: "CHANGE_SOURCE", goal: current.goal, site_url: current.site_url, gbp_url: current.gbp_url }))} />}
             {draft.stage === "prospect_start" && draft.business_confirmation && (
-              <section className="overflow-hidden rounded-2xl border border-[#d9dfd3] bg-white shadow-[0_18px_55px_rgba(31,39,27,0.07)]">
-                <div className="grid gap-8 p-7 sm:p-9 lg:grid-cols-[1fr_270px] lg:items-center">
-                  <div>
-                    <span className="grid h-12 w-12 place-items-center rounded-full bg-[#1a211a] text-[#b7dc3f]">
-                      {paymentHandoff.status === "saving_case" ? <LoaderCircle className="animate-spin" size={23} /> : <Coins size={23} />}
-                    </span>
-                    <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-[#718218]">Prospect Opportunity Report</p>
-                    <h1 className="mt-2 max-w-xl text-3xl font-bold tracking-[-0.035em] text-[#172017]">Start the complete prospect analysis.</h1>
-                    <p className="mt-4 max-w-xl text-sm leading-6 text-[#667266]">{draft.prospect_workflow_id ? "This Prospect Case is already covered. Resume competitor discovery without another charge." : "Your site and business scope are confirmed. Starting now reserves 1 credit before competitor and market providers are called. This same Case can be refreshed and resumed without another charge."}</p>
-                    {!isSignedIn && <p className="mt-4 text-sm font-semibold text-[#7a5b14]">Sign in first to receive and use your permanent credits.</p>}
-                    <p aria-live="polite" className="mt-4 text-sm text-[#667266]">{paymentHandoff.message}</p>
-                  </div>
-                  <div className="rounded-2xl border border-[#dfe5d8] bg-[#f7f9f3] p-5">
-                    <div className="flex items-center justify-between border-b border-[#dfe5d8] pb-4">
-                      <span className="text-xs font-bold text-[#657065]">This workflow</span>
-                      <span className="text-xl font-bold text-[#1a231a]">{draft.prospect_workflow_id ? "Covered" : "1 credit"}</span>
-                    </div>
-                    <p className="mt-4 text-xs leading-5 text-[#667266]">{creditBalance === null ? "Loading your balance…" : `${creditBalance} ${creditBalance === 1 ? "credit" : "credits"} available`}</p>
-                    {isSignedIn ? (
-                      creditBalance === 0 ? (
-                        <Link href="/pricing" className="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-[#1a211a] px-5 text-sm font-bold text-white">Buy 1 credit · $19</Link>
-                      ) : (
-                        <button type="button" onClick={() => void startDiscovery(draft.business_confirmation!)} disabled={!paymentHandoff.caseId || paymentHandoff.status === "saving_case" || paymentHandoff.status === "starting_analysis" || creditBalance === null} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1a211a] px-5 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-55">
-                          {paymentHandoff.status === "saving_case" || paymentHandoff.status === "starting_analysis" ? <LoaderCircle className="animate-spin" size={17} /> : <Coins size={17} />}
-                          {draft.prospect_workflow_id ? "Resume discovery · no extra credit" : "Start analysis · uses 1 credit"}
-                        </button>
-                      )
-                    ) : (
-                      <button type="button" onClick={openLogin} className="mt-5 min-h-12 w-full rounded-xl bg-[#1a211a] px-5 text-sm font-bold text-white">Sign in & continue</button>
-                    )}
-                  </div>
-                </div>
-              </section>
+              <ProspectStartStep
+                business={draft.business_confirmation}
+                status={paymentHandoff.status}
+                message={paymentHandoff.message}
+                caseReady={Boolean(paymentHandoff.caseId)}
+                covered={Boolean(draft.prospect_workflow_id)}
+                creditBalance={creditBalance}
+                signedIn={Boolean(isSignedIn)}
+                onStart={() => void startDiscovery(draft.business_confirmation!)}
+                onSignIn={openLogin}
+              />
             )}
             {draft.stage === "competitor_discovery_running" && <PreflightStatus kind="loading" title="Finding qualified local competitors" message={draft.discovery_status?.message ?? "The durable discovery task is checking market results and validating candidate websites."} progress={draft.discovery_status?.progress} />}
             {draft.stage === "competitor_discovery_failed" && <PreflightStatus kind="error" title="Competitor discovery needs attention" message={draft.discovery_error?.message ?? "The competitor search could not be completed."} onRetry={draft.discovery_error?.retryable === false ? undefined : () => void retryDiscovery()} onEdit={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} editLabel="Edit business scope" />}

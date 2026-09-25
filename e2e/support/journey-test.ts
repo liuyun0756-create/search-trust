@@ -40,7 +40,7 @@ export async function completeProspectAcquisition(page: Page, selectedCompetitor
   const start = page.getByRole("button", { name: "Start analysis · uses 1 credit" });
   await expect(start).toBeEnabled();
   await start.click();
-  await expect(page.getByRole("heading", { name: "Choose who competes for the same demand." })).toBeVisible({ timeout: 12_000 });
+  await expect(page.getByRole("heading", { name: "Confirm who really competes for the same demand." })).toBeVisible({ timeout: 12_000 });
 
   const candidates = page.getByRole("checkbox");
   await expect(candidates).toHaveCount(3);
@@ -49,7 +49,7 @@ export async function completeProspectAcquisition(page: Page, selectedCompetitor
       await page.getByText(`Synthetic Competitor ${index + 1}`, { exact: true }).click();
     }
   }
-  await page.getByRole("button", { name: /Confirm competitors/ }).click();
+  await page.getByRole("button", { name: /Confirm \d+ competitor/ }).click();
   await expect(page.getByRole("heading", { name: "See what this analysis can responsibly support." })).toBeVisible();
 }
 

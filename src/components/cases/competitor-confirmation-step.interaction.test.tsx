@@ -33,7 +33,7 @@ describe("CompetitorConfirmationStep interactions", () => {
     const first = screen.getByRole("checkbox", { name: /Synthetic Competitor 1/ });
     await user.click(first);
     expect(screen.getByText("Limited coverage")).toBeInTheDocument();
-    const confirm = screen.getByRole("button", { name: /Confirm competitors/ });
+    const confirm = screen.getByRole("button", { name: /Confirm 1 competitor/ });
     expect(confirm).toBeEnabled();
     await user.click(confirm);
     expect(onConfirm).toHaveBeenCalledOnce();
