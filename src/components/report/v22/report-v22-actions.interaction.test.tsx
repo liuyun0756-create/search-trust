@@ -18,10 +18,11 @@ describe("ReportV22Actions interactions", () => {
       return new Response(JSON.stringify(createdShareFixture), { status: 201 });
     });
     vi.stubGlobal("fetch", fetchMock);
-    render(<ReportV22Actions caseId={E2E_IDS.caseId} reportId={E2E_IDS.reportId} mode="advisor" />);
+    render(<ReportV22Actions caseId={E2E_IDS.caseId} reportId={E2E_IDS.reportId} mode="advisor" versionNumber={3} />);
 
     await user.click(screen.getByRole("button", { name: "Share" }));
     expect(screen.getByRole("dialog", { name: "Share client report" })).toBeInTheDocument();
+    expect(screen.getByText(/Client view of report version 3/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Create secure link" }));
     expect(await screen.findByText(createdShareFixture.url)).toBeInTheDocument();
     expect(new URL(createdShareFixture.url).search).toBe("");

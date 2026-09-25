@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReportV22ViewModel } from "@/lib/report-v22/view-model";
-import { ArrowLeft, BriefcaseBusiness, Eye, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, CheckCircle2, Eye, FileText, Sparkles } from "lucide-react";
 
 import { AdvisorReportView } from "./advisor-report-view";
 import { ClientReportView } from "./client-report-view";
@@ -38,6 +38,10 @@ export function ReportV22Shell({
 }) {
   const basePath = `/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(reportId)}`;
   const navItems = report.mode === "advisor" ? advisorNav : clientNav;
+  const isProspect = report.header.reportType === "prospect";
+  const stageLabel = isProspect ? "01 / Win the work" : "02 / Serve the client";
+  const reportLabel = isProspect ? "Prospect Analysis" : "Verified Action Plan";
+  const alternateMode = report.mode === "advisor" ? "client" : "advisor";
 
   return (
     <div className="min-h-screen bg-[#172019] text-[#172019]">
@@ -47,7 +51,7 @@ export function ReportV22Shell({
         <div className="relative mx-auto max-w-[1440px]">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <Link href="/reports" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-white/55 transition-colors hover:text-white">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> All reports
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Cases &amp; reports
             </Link>
             <div className="flex flex-wrap items-center justify-end gap-3">
             <div className="flex rounded-full border border-white/12 bg-black/15 p-1" aria-label="Report view">
@@ -56,19 +60,19 @@ export function ReportV22Shell({
                 aria-current={report.mode === "advisor" ? "page" : undefined}
                 className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black transition-colors ${report.mode === "advisor" ? "bg-[#a5d020] text-[#142013]" : "text-white/55 hover:text-white"}`}
               >
-                <BriefcaseBusiness className="h-3.5 w-3.5" aria-hidden="true" /> Advisor
+                <BriefcaseBusiness className="h-3.5 w-3.5" aria-hidden="true" /> SEO work view
               </Link>
               <Link
                 href={`${basePath}?view=client`}
                 aria-current={report.mode === "client" ? "page" : undefined}
                 className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black transition-colors ${report.mode === "client" ? "bg-[#a5d020] text-[#142013]" : "text-white/55 hover:text-white"}`}
               >
-                <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Client
+                <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Client preview
               </Link>
             </div>
-            <ReportV22Actions caseId={caseId} reportId={reportId} mode={report.mode} />
+            <ReportV22Actions caseId={caseId} reportId={reportId} mode={report.mode} versionNumber={report.header.versionNumber} />
             {report.mode === "advisor" && process.env.GOOGLE_CONNECTIONS_ENABLED === "true" && (
-              <Link href={`/cases/${encodeURIComponent(caseId)}/connections`} className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold">Choose Google resources</Link>
+              <Link href={`/cases/${encodeURIComponent(caseId)}/connections`} className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold transition hover:border-white/40 hover:bg-white/5">Manage client evidence</Link>
             )}
             </div>
           </div>
@@ -77,7 +81,7 @@ export function ReportV22Shell({
             <div>
               <div className="mb-5 flex items-center gap-2 text-[#b8dd3c]">
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
-                <span className="text-[11px] font-black uppercase tracking-[0.22em]">SearchTrust intelligence report</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.22em]">{stageLabel} · {reportLabel}</span>
               </div>
               <h1 className="max-w-4xl text-balance text-[42px] font-black leading-[0.98] tracking-[-0.06em] sm:text-[62px] lg:text-[76px]">
                 {report.header.businessName}
@@ -85,7 +89,7 @@ export function ReportV22Shell({
               <div className="mt-7"><ReportContextPills service={report.header.primaryService} location={report.header.location} /></div>
             </div>
             <div className="grid min-w-[250px] grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 text-sm">
-              <div className="bg-[#1d2820] p-4"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Report</p><p className="mt-2 font-bold">v{report.header.versionNumber} · {report.header.reportType === "prospect" ? "Prospect" : "Verified"}</p></div>
+              <div className="bg-[#1d2820] p-4"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Report version</p><p className="mt-2 font-bold">v{report.header.versionNumber} · {reportLabel}</p></div>
               <div className="bg-[#1d2820] p-4"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Generated</p><p className="mt-2 font-bold">{formatReportDate(report.header.generatedAt)}</p></div>
             </div>
           </div>
@@ -93,10 +97,24 @@ export function ReportV22Shell({
       </header>
 
       <div className="bg-[#f4f1e8]">
+        <div className="border-b border-[#dbe0d5] bg-white">
+          <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-5 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-black text-[#243026]">Generated report · version {report.header.versionNumber}</p>
+                <p className="mt-1 text-xs leading-5 text-[#788176]">Switching views changes the level of detail, not the evidence or conclusions. Nothing is sent to the client automatically.</p>
+              </div>
+            </div>
+            <Link href={`${basePath}?view=${alternateMode}`} className="inline-flex shrink-0 items-center gap-2 text-xs font-black text-[#5d711c] transition hover:text-[#172019]">
+              {report.mode === "advisor" ? "Preview what the client sees" : "Return to SEO work view"} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
         <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[220px_minmax(0,1fr)]">
           <aside className="hidden border-r border-[#dfe1d8] px-6 py-12 lg:block">
             <div className="sticky top-24">
-              <div className="mb-8 flex items-center gap-2 text-[#263127]"><FileText className="h-4 w-4 text-[#8eb51b]" /><span className="text-[10px] font-black uppercase tracking-[0.18em]">{report.mode} report</span></div>
+              <div className="mb-8 flex items-center gap-2 text-[#263127]"><FileText className="h-4 w-4 text-[#8eb51b]" /><span className="text-[10px] font-black uppercase tracking-[0.18em]">{report.mode === "advisor" ? "SEO work view" : "Client preview"}</span></div>
               <nav aria-label="Report sections" className="space-y-1">
                 {navItems.map(([label, href], index) => (
                   <a key={href} href={href} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#788176] transition-colors hover:bg-white hover:text-[#273127]">
