@@ -12,7 +12,7 @@ describe("CasePaymentHandoff interactions", () => {
     const onCheckout = vi.fn();
     render(<CasePaymentHandoff status="ready" message="Ready for checkout." caseId="e2000000-0000-4000-8000-000000000002" onCheckout={onCheckout} onBack={vi.fn()} />);
 
-    expect(screen.getByText(/Case e2000000-/)).toBeInTheDocument();
+    expect(screen.getByText(/e2000000-0000-4000-8000-000000000002/)).toBeInTheDocument();
     const start = screen.getByRole("button", { name: "Start analysis · uses 1 credit" });
     expect(start).toBeEnabled();
     await user.click(start);
@@ -27,6 +27,7 @@ describe("CasePaymentHandoff interactions", () => {
 
     rerender(<CasePaymentHandoff status="analysis_failed" message="One credit has been returned. Generating again will use one credit." caseId="e2000000-0000-4000-8000-000000000002" onCheckout={vi.fn()} onRetryAnalysis={retry} retryLabel="Add confirmed GBP" onBack={vi.fn()} />);
     expect(screen.getByText(/One credit has been returned/)).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByText(/Credit returned/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Add confirmed GBP" }));
     expect(retry).toHaveBeenCalledOnce();
   });

@@ -6,7 +6,7 @@ const steps = [
   { label: "Scope", detail: "Choose the work and website" },
   { label: "Business", detail: "Confirm the public identity" },
   { label: "Competitors", detail: "Confirm at least 1 real rival" },
-  { label: "Coverage", detail: "Review what analysis can support" },
+  { label: "Evidence & report", detail: "Review boundaries and build" },
 ];
 
 function activeIndex(stage: WorkspaceStage) {

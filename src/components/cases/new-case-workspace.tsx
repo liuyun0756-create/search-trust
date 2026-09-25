@@ -595,6 +595,10 @@ export function NewCaseWorkspace() {
                   status={paymentHandoff.status}
                   message={paymentHandoff.message}
                   caseId={paymentHandoff.caseId}
+                  businessName={draft.business_confirmation?.business_identity.business_name}
+                  scopeLine={draft.business_confirmation ? `${draft.business_confirmation.primary_service} · ${draft.business_confirmation.target_market.display_name} · ${draft.selected_competitor_ids.length} confirmed ${draft.selected_competitor_ids.length === 1 ? "competitor" : "competitors"}` : undefined}
+                  analysisStage={analysisStatus?.stage}
+                  progress={analysisStatus?.progress}
                   onCheckout={() => undefined}
                   onRetryAnalysis={retryAnalysis}
                   retryLabel={needsGbpRepair ? "Add confirmed GBP" : undefined}

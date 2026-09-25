@@ -10,6 +10,7 @@ describe("NewCaseStepper", () => {
     expect(html).toContain("Scope");
     expect(html).toContain("Confirm the public identity");
     expect(html).toContain("Confirm at least 1 real rival");
-    expect(html).toContain("Review what analysis can support");
+    expect(html).toContain("Evidence &amp; report");
+    expect(html).toContain("Review boundaries and build");
   });
 });
