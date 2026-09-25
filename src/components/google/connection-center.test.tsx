@@ -95,6 +95,11 @@ describe("Connection Center", () => {
     expect(html).not.toContain("Official GBP Performance");
     expect(html).not.toContain("progressbar");
     expect(html).toContain("Technical details");
+    expect(html).toContain("Turn the first diagnosis into a verified plan.");
+    expect(html).toContain("Case workflow");
+    expect(html).toContain("Evidence pipeline / 03 sources");
+    expect(html).toContain("Current task");
+    expect(html).toContain("Continue in highlighted source");
   });
 
   it("shows the enabled one-credit generation action when the three-source gate is ready", () => {
@@ -108,5 +113,7 @@ describe("Connection Center", () => {
     const cta = html.slice(html.lastIndexOf("<button", labelAt), html.indexOf("</button>", labelAt));
     expect(cta).not.toContain('disabled=""');
     expect(html).not.toContain("Choose Search Console resource");
+    expect(html).toContain("The required evidence is ready for your review.");
+    expect(html).toContain("SEO review");
   });
 });

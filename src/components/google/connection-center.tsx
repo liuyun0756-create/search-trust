@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
   BarChart3,
   Check,
   ChevronDown,
   Circle,
-  ExternalLink,
   Globe2,
   LoaderCircle,
   CreditCard,
@@ -16,6 +17,7 @@ import {
   Search,
   Settings2,
   ShieldCheck,
+  Waypoints,
 } from "lucide-react";
 
 import type {
@@ -130,40 +132,46 @@ function safeCheckoutUrl(value: unknown): string | null {
   } catch { return null; }
 }
 
-function SourceCard({ source, onAction }: { source: ConnectionCenterSource; onAction: (action: ConnectionCenterAction) => void }) {
+function SourceCard({ source, onAction, isCurrent, index }: { source: ConnectionCenterSource; onAction: (action: ConnectionCenterAction) => void; isCurrent: boolean; index: number }) {
   const details = source.technical_status;
-  return <article data-source-key={source.source_key} className="flex min-h-[25rem] flex-col rounded-[1.4rem] border border-[#d9ded3] bg-white p-6 shadow-[0_12px_32px_rgba(34,45,31,0.05)]">
-    <div className="flex items-start justify-between gap-4">
-      <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#182218] text-[#b8e626]">{sourceIcon(source)}</span>
-      <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(source)}`}>
-        {statusIcon(source)} {STATUS_LABELS[source.user_status]}
-      </span>
+  return <article id={`source-${source.source_key}`} data-source-key={source.source_key} className={`relative scroll-mt-24 grid gap-5 px-5 py-7 sm:px-7 lg:grid-cols-[72px_minmax(0,1fr)_220px] lg:gap-7 ${isCurrent ? "bg-[#f4f8e9]" : "bg-white"}`}>
+    {isCurrent && <span className="absolute bottom-0 left-0 top-0 w-1 bg-[#a5d020]" aria-hidden="true" />}
+    <div className="flex items-center gap-3 lg:block">
+      <span className={`grid h-11 w-11 place-items-center rounded-xl ${source.ready ? "bg-[#dfeaba] text-[#445716]" : isCurrent ? "bg-[#172019] text-[#b8e626]" : "bg-[#edf0e9] text-[#667164]"}`}>{sourceIcon(source)}</span>
+      <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#9aa198] lg:mt-3 lg:block">Source {String(index).padStart(2, "0")}</span>
     </div>
-    <div className="mt-5 flex-1">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7a8376]">{source.required_for_verified_core ? "Verified Core" : "Optional source"}</p>
-      <h2 className="mt-2 text-xl font-semibold text-[#182218]">{source.title}</h2>
-      <p className="mt-3 text-sm leading-6 text-[#626d5f]">{source.summary}</p>
-      {details.resource_name && <div className="mt-4 rounded-xl bg-[#f5f6f1] p-3">
-        <p className="text-sm font-medium text-[#253023]">{details.resource_name}</p>
-        {details.resource_id && <p className="mt-1 break-all text-xs text-[#758071]">{details.resource_id}</p>}
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-xl font-black tracking-[-0.03em] text-[#182218]">{source.title}</h2>
+        {isCurrent && <span className="rounded-full bg-[#172019] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.13em] text-[#b8e626]">Current task</span>}
+      </div>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-[#626d5f]">{source.summary}</p>
+      {details.resource_name && <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+        <span className="font-black text-[#2d392e]">{details.resource_name}</span>
+        {details.resource_id && <span className="break-all text-xs text-[#8a9388]">{details.resource_id}</span>}
       </div>}
-      <details className="group mt-4 border-t border-[#e8ebe4] pt-4 text-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-[#53604f]">
+      <details className="group mt-4 max-w-2xl text-sm">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-2 font-bold text-[#5e695b]">
           Technical details <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden="true" />
         </summary>
-        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-xs leading-5 text-[#687362]">
-          <dt>Connection</dt><dd className="text-right font-medium text-[#344032]">{technicalLabel(details.connection_status)}</dd>
-          <dt>Identity</dt><dd className="text-right font-medium text-[#344032]">{technicalLabel(details.identity_match_status)}</dd>
-          <dt>Data health</dt><dd className="text-right font-medium text-[#344032]">{technicalLabel(details.snapshot?.effective_health_status ?? null)}</dd>
-          {details.snapshot && <><dt>Collected</dt><dd className="text-right font-medium text-[#344032]">{displayDate(details.snapshot.fetched_at)}</dd></>}
-          {details.job && <><dt>Latest sync</dt><dd className="text-right font-medium capitalize text-[#344032]">{technicalLabel(details.job.status)}</dd></>}
+        <dl className="mt-4 grid max-w-xl grid-cols-[auto_1fr] gap-x-5 gap-y-2 rounded-2xl bg-[#f4f5f0] p-4 text-xs leading-5 text-[#687362]">
+          <dt>Connection</dt><dd className="text-right font-bold text-[#344032]">{technicalLabel(details.connection_status)}</dd>
+          <dt>Identity</dt><dd className="text-right font-bold text-[#344032]">{technicalLabel(details.identity_match_status)}</dd>
+          <dt>Data health</dt><dd className="text-right font-bold text-[#344032]">{technicalLabel(details.snapshot?.effective_health_status ?? null)}</dd>
+          {details.snapshot && <><dt>Collected</dt><dd className="text-right font-bold text-[#344032]">{displayDate(details.snapshot.fetched_at)}</dd></>}
+          {details.job && <><dt>Latest sync</dt><dd className="text-right font-bold capitalize text-[#344032]">{technicalLabel(details.job.status)}</dd></>}
         </dl>
-        {details.warnings.length > 0 && <p className="mt-3 rounded-lg bg-[#fff7e6] p-2 text-xs text-[#77550f]">The latest refresh failed, but the current healthy evidence is still available.</p>}
+        {details.warnings.length > 0 && <p className="mt-3 rounded-xl bg-[#fff7e6] p-3 text-xs text-[#77550f]">The latest refresh failed, but the current healthy evidence is still available.</p>}
       </details>
     </div>
-    {source.action && <button type="button" onClick={() => onAction(source.action!)} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#cfd6c9] px-4 py-2.5 text-sm font-semibold text-[#263125] transition hover:border-[#96b331] hover:bg-[#f7faed] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#b8e626]/30">
-      {source.action.label} <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-    </button>}
+    <div className="flex items-start justify-between gap-3 lg:flex-col lg:items-stretch lg:justify-start">
+      <span className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${statusClasses(source)}`}>
+        {statusIcon(source)} {STATUS_LABELS[source.user_status]}
+      </span>
+      {source.action && <button type="button" onClick={() => onAction(source.action!)} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#b8e626]/30 ${isCurrent ? "bg-[#172019] text-white hover:bg-[#29362b]" : "border border-[#cfd6c9] text-[#263125] hover:border-[#96b331] hover:bg-[#f7faed]"}`}>
+        {source.action.label} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>}
+    </div>
   </article>;
 }
 
@@ -673,56 +681,94 @@ export function ConnectionCenter({
   const primaryDisabled = loading || actionBusy !== null || balanceRefresh !== "hidden" || generationActive || data?.coverage.next_action.code === "wait_for_verified_analysis";
   const returnedCredit = data?.verified_job?.status === "failed" && data.verified_job.charge_state === "compensated";
   const displayedTaskMessage = taskMessage || (returnedCredit ? "Generation failed. 1 credit returned. You can try again when ready." : "");
+  const evidenceReady = Boolean(data?.coverage.verified_core_ready);
+  const verifiedReady = Boolean(data?.verified_job?.status === "succeeded" && data.verified_job.report_id);
+  const currentSourceKey = data?.coverage.next_action.source_key ?? data?.coverage.blockers[0]?.source_key ?? null;
 
-  return <main className="min-h-screen bg-[#f3f4ed] px-4 py-8 text-[#1c251b] sm:px-6 sm:py-12">
-    <div className="mx-auto max-w-7xl">
-      <nav className="flex flex-wrap items-center justify-between gap-3 text-sm">
-        <a className="font-medium underline decoration-[#91aa35] underline-offset-4" href="/reports">← Reports</a>
-        <button type="button" onClick={refresh} disabled={loading} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-medium hover:bg-white disabled:opacity-50">
+  return <main className="min-h-screen bg-[#f3f4ed] px-4 py-5 text-[#1c251b] sm:px-6 sm:py-8">
+    <div className="mx-auto max-w-[1280px]">
+      <nav className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm">
+        <a className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#596456] transition hover:text-[#172019]" href="/reports"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Cases &amp; reports</a>
+        <button type="button" onClick={refresh} disabled={loading} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black text-[#596456] transition hover:bg-white hover:text-[#172019] disabled:opacity-50">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" /> Refresh status
         </button>
       </nav>
 
-      <header className="mt-8 max-w-3xl">
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#687362]">Connection Center</p>
-          <span className="rounded-full border border-[#cfd6c9] px-2.5 py-1 text-xs font-semibold">V2.2</span>
+      <header className="relative mt-5 overflow-hidden rounded-[34px] bg-[#172019] px-6 py-9 text-white shadow-[0_24px_70px_rgba(23,32,25,0.16)] sm:px-9 sm:py-11 lg:px-12">
+        <div className="absolute -right-24 -top-28 h-80 w-80 rounded-full bg-[#a5d020]/12 blur-[90px]" aria-hidden="true" />
+        <div className="relative grid gap-9 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
+          <div>
+            <div className="mb-5 flex flex-wrap items-center gap-3 text-[#b8dd3c]">
+              <Waypoints className="h-4 w-4" aria-hidden="true" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Case workflow / client evidence</p>
+            </div>
+            <h1 className="max-w-4xl text-balance text-[38px] font-black leading-[1.02] tracking-[-0.055em] sm:text-[54px]">Turn the first diagnosis into a verified plan.</h1>
+            <p className="mt-5 max-w-2xl text-sm font-medium leading-6 text-white/55">Connect evidence for <span className="font-black text-white">{current.business_name}</span>, confirm that each source belongs to this Case, then decide when to generate the next report.</p>
+          </div>
+          <div className="rounded-[22px] bg-white/[0.07] p-5 ring-1 ring-white/10">
+            <p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Case website</p>
+            <p className="mt-2 break-all text-sm font-bold leading-6 text-white/80">{current.site_url}</p>
+            <p className="mt-4 text-xs leading-5 text-white/45">Sources are used only after identity and data-health checks.</p>
+          </div>
         </div>
-        <h1 className="text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Verified data for {current.business_name}</h1>
-        <p className="mt-3 break-all text-sm text-[#687362]">{current.site_url}</p>
-        <p className="mt-4 max-w-2xl leading-7 text-[#53604f]">Connect, confirm and refresh the three sources required for a Verified Client Action Plan.</p>
+
+        <div className="relative mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Case workflow">
+          {[
+            { number: "01", title: "Prospect diagnosis", detail: "Public evidence", done: Boolean(data?.coverage.parent_report_id), current: !data?.coverage.parent_report_id },
+            { number: "02", title: "Client evidence", detail: evidenceReady ? "Required sources ready" : "Connect and confirm", done: evidenceReady, current: Boolean(data?.coverage.parent_report_id) && !evidenceReady },
+            { number: "03", title: "Verified plan", detail: verifiedReady ? "Report generated" : "Uses 1 credit", done: verifiedReady, current: evidenceReady && !verifiedReady },
+            { number: "04", title: "SEO review", detail: "Review before delivery", done: false, current: verifiedReady },
+          ].map((step) => <div key={step.number} className={`rounded-[18px] px-4 py-4 ${step.current ? "bg-[#a5d020] text-[#172019]" : "bg-white/[0.055] text-white"}`}>
+            <div className="flex items-center justify-between gap-3">
+              <span className={`font-mono text-[10px] font-black ${step.current ? "text-[#172019]/55" : "text-white/35"}`}>{step.number}</span>
+              {step.done ? <Check className={`h-4 w-4 ${step.current ? "text-[#172019]" : "text-[#b8dd3c]"}`} aria-hidden="true" /> : null}
+            </div>
+            <p className="mt-5 text-sm font-black">{step.title}</p>
+            <p className={`mt-1 text-[11px] ${step.current ? "text-[#172019]/65" : "text-white/40"}`}>{step.detail}</p>
+          </div>)}
+        </div>
       </header>
 
       {error && <div role="alert" className="mt-7 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#ecd9af] bg-[#fff7e6] p-5 text-[#6f5013]">
         <span>{error}</span><button type="button" onClick={refresh} className="font-semibold underline">Try again</button>
       </div>}
 
-      <section aria-label="Verified Core readiness" className="mt-8 overflow-hidden rounded-[1.6rem] border border-[#d9ded3] bg-[#182218] p-6 text-white shadow-[0_20px_50px_rgba(25,36,24,0.12)] sm:p-8">
-        <div className="grid items-center gap-7 lg:grid-cols-[1fr_auto]">
+      <section aria-label="Verified Core readiness" className="mt-7 overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_16px_50px_rgba(35,48,36,0.07)] ring-1 ring-[#dfe3da] sm:p-8">
+        <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div>
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="h-6 w-6 text-[#b8e626]" aria-hidden="true" />
-              <h2 className="text-xl font-semibold">Verified Core</h2>
+            <div className="flex items-center gap-2 text-[#708b18]">
+              <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+              <span className="text-[10px] font-black uppercase tracking-[0.17em]">Current task</span>
             </div>
             {data ? <>
-              <p className="mt-3 text-[#c7d0c3]">{data.coverage.verified_core_ready
+              <h2 className="mt-4 max-w-3xl text-2xl font-black leading-8 tracking-[-0.035em] text-[#172019]">{data.coverage.verified_core_ready
+                ? "The required evidence is ready for your review."
+                : data.coverage.blockers[0]?.message ?? "Complete the required source before generating."}</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#707a6e]">{data.coverage.verified_core_ready
                 ? "Ready to generate. All required evidence is healthy and matched to this Case."
-                : "Complete the required source shown below before generating."}</p>
-              {!data.coverage.verified_core_ready && data.coverage.blockers[0] && <p className="mt-4 text-sm text-[#d6ddd3]">Next: {data.coverage.blockers[0].message}</p>}
-            </> : <p className="mt-3 text-[#c7d0c3]">Loading the latest source status…</p>}
+                : "Complete the required source shown below before generating. The highlighted evidence row is the only step to handle now."}</p>
+            </> : <p className="mt-3 text-[#707a6e]">Loading the latest source status…</p>}
           </div>
-          <button type="button" onClick={primaryAction} disabled={primaryDisabled} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#b8e626] px-6 py-3 font-semibold text-[#182218] transition hover:bg-[#c8ef4a] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#b8e626]/30 disabled:cursor-not-allowed disabled:opacity-60">
-            {data?.coverage.next_action.code === "buy_verified_credit" ? <CreditCard className="h-4 w-4" aria-hidden="true" /> : <FileCheck2 className="h-4 w-4" aria-hidden="true" />}
-            {actionBusy === "checkout" ? "Opening secure checkout…"
-              : actionBusy === "generate" ? "Starting…"
-                : settlementRecoveryBlocked ? "Refresh status required"
-                  : latestProjectionSync !== "hidden" ? "Latest status refresh pending"
-                  : settlingJobId ? "Finalizing credit status…"
-                    : generationActive ? "Generating Verified Action Plan…"
-                  : data?.coverage.next_action.label ?? "Check readiness"}
-          </button>
+          <div className="lg:min-w-[280px]">
+            {data && !evidenceReady && !generationActive ? (
+              <a href={currentSourceKey ? `#source-${currentSourceKey}` : "#manage-google-sources"} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#edf2e8] px-6 py-3 text-sm font-black text-[#344034] transition hover:bg-[#e2eacb]">
+                Continue in highlighted source <ArrowRight className="h-4 w-4 rotate-90" aria-hidden="true" />
+              </a>
+            ) : (
+              <button type="button" onClick={primaryAction} disabled={primaryDisabled} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#172019] px-6 py-3 text-sm font-black text-white transition hover:bg-[#2a372c] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#b8e626]/30 disabled:cursor-not-allowed disabled:opacity-50">
+                {data?.coverage.next_action.code === "buy_verified_credit" ? <CreditCard className="h-4 w-4" aria-hidden="true" /> : <FileCheck2 className="h-4 w-4" aria-hidden="true" />}
+                {actionBusy === "checkout" ? "Opening secure checkout…"
+                  : actionBusy === "generate" ? "Starting…"
+                    : settlementRecoveryBlocked ? "Refresh status required"
+                      : latestProjectionSync !== "hidden" ? "Latest status refresh pending"
+                      : settlingJobId ? "Finalizing credit status…"
+                        : generationActive ? "Generating Verified Action Plan…"
+                      : data?.coverage.next_action.label ?? "Check readiness"}
+              </button>
+            )}
+            {data && <p className="mt-3 text-center text-xs text-[#7c857a]">Available balance: <span className="font-black text-[#364136]">{data.billing.credit_balance} {data.billing.credit_balance === 1 ? "credit" : "credits"}</span></p>}
+          </div>
         </div>
-        {data && <p className="mt-5 text-sm text-[#c7d0c3]">Account balance: <span className="font-semibold text-white">{data.billing.credit_balance} {data.billing.credit_balance === 1 ? "credit" : "credits"}</span></p>}
       </section>
 
       <div aria-live="polite" aria-atomic="true" className="mt-4 min-h-6 text-sm text-[#53604f]">
@@ -743,28 +789,24 @@ export function ConnectionCenter({
       </div>}
 
       {data && <>
-        <section aria-label="Required data sources" className="mt-8 grid gap-5 lg:grid-cols-3">
-          {data.sources.map((source) => <SourceCard key={source.source_key} source={source} onAction={handleAction} />)}
-        </section>
-
-        <section className="mt-7 rounded-2xl border border-[#d9ded3] bg-white p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <section className="mt-12">
+          <div className="mb-6 grid gap-3 lg:grid-cols-[1fr_440px] lg:items-end">
             <div>
-              <h2 className="text-lg font-semibold">Next required action</h2>
-              <p className="mt-2 text-sm leading-6 text-[#687362]">{generationActive
-                ? taskMessage || "Your Verified Action Plan is being generated. You can safely leave and return to this page."
-                : data.coverage.verified_core_ready ? data.coverage.next_action.label : data.coverage.blockers[0]?.message}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#78931c]">Evidence pipeline / 03 sources</p>
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] text-[#172019]">Follow the highlighted task—not three separate setup journeys.</h2>
             </div>
-            {!data.coverage.verified_core_ready && <button type="button" onClick={() => handleAction(data.coverage.next_action)} className="min-h-11 rounded-xl bg-[#182218] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#283627] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#b8e626]/30">
-              {data.coverage.next_action.label}
-            </button>}
+            <p className="text-sm leading-6 text-[#707a6e]">Public business identity establishes the Case. Search Console shows how it is found. GA4 shows what happens after arrival. Each source must be matched and healthy before it can support the Verified plan.</p>
+          </div>
+          <div aria-label="Required data sources" className="overflow-hidden rounded-[28px] bg-white shadow-[0_16px_50px_rgba(35,48,36,0.06)] ring-1 ring-[#dfe3da] divide-y divide-[#e5e8e1]">
+            {data.sources.map((source, index) => <SourceCard key={source.source_key} source={source} onAction={handleAction} isCurrent={currentSourceKey === source.source_key} index={index + 1} />)}
           </div>
         </section>
+
       </>}
 
-      <details id="manage-google-sources" open={manageOpen} onToggle={(event) => setManageOpen(event.currentTarget.open)} className="group mt-8 scroll-mt-5 rounded-[1.6rem] border border-[#d9ded3] bg-white p-6 sm:p-8">
+      <details id="manage-google-sources" open={manageOpen} onToggle={(event) => setManageOpen(event.currentTarget.open)} className="group mt-8 scroll-mt-5 rounded-[28px] bg-white p-6 shadow-[0_16px_50px_rgba(35,48,36,0.05)] ring-1 ring-[#dfe3da] sm:p-8">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-          <div className="flex items-center gap-3"><Settings2 className="h-5 w-5 text-[#749016]" aria-hidden="true" /><div><h2 className="text-xl font-semibold">Manage connections and resources</h2><p className="mt-1 text-sm text-[#687362]">Connect accounts, choose the matching property, confirm identity and start syncs.</p></div></div>
+          <div className="flex items-center gap-3"><Settings2 className="h-5 w-5 text-[#749016]" aria-hidden="true" /><div><h2 className="text-xl font-black tracking-[-0.03em]">Manage connections and resources</h2><p className="mt-1 text-sm text-[#687362]">Connect accounts, choose the matching property, confirm identity and start syncs.</p></div></div>
           <ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
         </summary>
         <div className="mt-7 border-t border-[#e5e8df] pt-7">
