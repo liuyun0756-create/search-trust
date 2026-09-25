@@ -41,6 +41,7 @@ export function Header() {
     pathname === "/refund-policy"
     || pathname === "/cases/new"
     || pathname === "/share"
+    || pathname.startsWith("/sign-in")
     || isCaseReport
   ) return null;
 

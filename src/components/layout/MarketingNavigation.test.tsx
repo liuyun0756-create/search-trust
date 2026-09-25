@@ -56,4 +56,13 @@ describe("marketing navigation consistency", () => {
     const { container } = render(<CTABanner />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("keeps the sign-in experience focused by hiding marketing chrome", () => {
+    navigationState.pathname = "/sign-in";
+    const header = render(<Header />);
+    const footer = render(<CTABanner />);
+
+    expect(header.container).toBeEmptyDOMElement();
+    expect(footer.container).toBeEmptyDOMElement();
+  });
 });

@@ -3,7 +3,7 @@ import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Sign In | SearchTrust",
-  description: "Sign in to SearchTrust.",
+  description: "Sign in to your private SearchTrust Case workspace and continue evidence-backed local SEO client work.",
   path: "/sign-in",
   noindex: true,
 });

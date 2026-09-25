@@ -23,7 +23,7 @@ const legalLinks = [
 
 export function CTABanner() {
   const pathname = usePathname();
-  if (pathname === "/cases/new" || pathname === "/reports" || pathname === "/share" || /^\/cases\/[^/]+\/reports\/[^/]+$/.test(pathname)) return null;
+  if (pathname === "/cases/new" || pathname === "/reports" || pathname === "/share" || pathname.startsWith("/sign-in") || /^\/cases\/[^/]+\/reports\/[^/]+$/.test(pathname)) return null;
 
   return (
     <footer aria-label="Site footer" className="bg-[#eef1e9] px-4 py-14 text-[#172018] sm:px-6 sm:py-16 lg:px-8">
