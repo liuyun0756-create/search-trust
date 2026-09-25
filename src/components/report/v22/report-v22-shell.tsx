@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReportV22ViewModel } from "@/lib/report-v22/view-model";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, CheckCircle2, Eye, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, CheckCircle2, Eye, FileText, ListChecks, SearchCheck, Sparkles } from "lucide-react";
 
 import { AdvisorReportView } from "./advisor-report-view";
 import { ClientReportView } from "./client-report-view";
@@ -9,9 +9,9 @@ import { ReportV22Actions } from "./report-v22-actions";
 
 const advisorNav = [
   ["Decision", "#decision"],
+  ["Priority actions", "#actions"],
   ["Market", "#market"],
   ["Findings", "#findings"],
-  ["Actions", "#actions"],
   ["30 / 60 / 90", "#roadmap"],
   ["Eight layers", "#layers"],
   ["Coverage", "#coverage"],
@@ -98,17 +98,26 @@ export function ReportV22Shell({
 
       <div className="bg-[#f4f1e8]">
         <div className="border-b border-[#dbe0d5] bg-white">
-          <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-5 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" />
-              <div>
-                <p className="text-sm font-black text-[#243026]">Generated report · version {report.header.versionNumber}</p>
-                <p className="mt-1 text-xs leading-5 text-[#788176]">Switching views changes the level of detail, not the evidence or conclusions. Nothing is sent to the client automatically.</p>
+          <div className="mx-auto max-w-[1440px] px-5 py-5 sm:px-8 lg:px-12">
+            {report.mode === "advisor" ? (
+              <div className="grid gap-5 lg:grid-cols-[220px_1fr_auto] lg:items-center">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" />
+                  <div><p className="text-sm font-black text-[#243026]">Review before delivery</p><p className="mt-1 text-[11px] leading-5 text-[#788176]">Version {report.header.versionNumber} is private.</p></div>
+                </div>
+                <ol className="grid gap-2 sm:grid-cols-3">
+                  <li className="flex items-center gap-2 rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="font-mono text-[9px] text-[#7f9a24]">01</span><CheckCircle2 className="h-3.5 w-3.5 text-[#88a925]" />Check the decision</li>
+                  <li className="flex items-center gap-2 rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="font-mono text-[9px] text-[#7f9a24]">02</span><ListChecks className="h-3.5 w-3.5 text-[#88a925]" />Review three actions</li>
+                  <li className="flex items-center gap-2 rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="font-mono text-[9px] text-[#7f9a24]">03</span><SearchCheck className="h-3.5 w-3.5 text-[#88a925]" />Verify evidence &amp; limits</li>
+                </ol>
+                <Link href={`${basePath}?view=${alternateMode}`} className="inline-flex shrink-0 items-center gap-2 text-xs font-black text-[#5d711c] transition hover:text-[#172019]">Preview client report <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
               </div>
-            </div>
-            <Link href={`${basePath}?view=${alternateMode}`} className="inline-flex shrink-0 items-center gap-2 text-xs font-black text-[#5d711c] transition hover:text-[#172019]">
-              {report.mode === "advisor" ? "Preview what the client sees" : "Return to SEO work view"} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            ) : (
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3"><Eye className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" /><div><p className="text-sm font-black text-[#243026]">Client preview · version {report.header.versionNumber}</p><p className="mt-1 text-xs leading-5 text-[#788176]">This changes the level of detail, not the facts or limitations. Nothing is sent automatically.</p></div></div>
+                <Link href={`${basePath}?view=${alternateMode}`} className="inline-flex shrink-0 items-center gap-2 text-xs font-black text-[#5d711c] transition hover:text-[#172019]">Return to SEO work view <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+              </div>
+            )}
           </div>
         </div>
         <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[220px_minmax(0,1fr)]">

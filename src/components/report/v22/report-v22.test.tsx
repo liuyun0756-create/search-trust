@@ -33,6 +33,12 @@ describe("v2.2 report views", () => {
       <AdvisorReportView report={buildReportV22ViewModel(fixture, "advisor")} />,
     );
 
+    expect(html).toContain("Three actions to review first.");
+    expect(html).toContain(fixture.top_actions[0].why_now);
+    expect(html).toContain("Client inputs required");
+    expect(html.indexOf("Three actions to review first.")).toBeLessThan(
+      html.indexOf("Diagnostic findings"),
+    );
     expect(html).toContain("Diagnostic findings");
     expect(html).toContain("The eight layers of local trust.");
     expect(html).toContain("Coverage and source health");

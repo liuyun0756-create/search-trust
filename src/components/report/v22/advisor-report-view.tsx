@@ -172,6 +172,94 @@ function EvidenceDrawer({
   );
 }
 
+function PriorityActionsSection({
+  report,
+  onOpenEvidence,
+}: {
+  report: AdvisorReportV22ViewModel;
+  onOpenEvidence: (ids: string[]) => void;
+}) {
+  return (
+    <section id="actions" className="scroll-mt-28">
+      <SectionHeading eyebrow="Recommended work" title="Three actions to review first." description="Each recommendation shows why it is prioritized, what it needs from the client, how to execute it, and how completion will be checked." />
+      <div className="mb-5 flex flex-col gap-3 rounded-[20px] bg-[#e8ede3] px-5 py-4 text-xs leading-5 text-[#5d685c] sm:flex-row sm:items-center sm:justify-between">
+        <p><strong className="text-[#2e392e]">System recommendation:</strong> this order follows the current evidence and dependencies.</p>
+        <p className="font-bold text-[#64751f]">Review before using it as the client plan.</p>
+      </div>
+      <div className="space-y-4">
+        {report.actions.map((action) => {
+          const evidenceIds = [...new Set(report.findings.filter((finding) => action.findingIds.includes(finding.finding_id)).flatMap((finding) => finding.evidence_ids))];
+          return (
+            <details key={action.actionId} open={action.sequence === 1} className="group overflow-hidden rounded-[26px] border border-[#dfe5d9] bg-white shadow-[0_10px_35px_rgba(34,48,26,0.035)] open:border-[#b9ce79]">
+              <summary className="grid cursor-pointer list-none gap-4 p-5 marker:hidden sm:grid-cols-[58px_1fr_auto] sm:p-7">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#1f2922] text-lg font-black text-[#b8dd3c]">0{action.sequence}</span>
+                <div className="min-w-0">
+                  <p className="text-lg font-black leading-7 tracking-[-0.025em] text-[#1c251f]">{action.clientFacingExplanation}</p>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#677266]"><strong className="text-[#3c483b]">Why now:</strong> {action.whyNow}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-[#f0f4e7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#61734b]">{action.effort} effort</span>
+                    <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">Owner: {action.ownerSuggestion}</span>
+                    <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">Review {formatReportDate(action.reviewDate)}</span>
+                    <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">{evidenceIds.length} linked {evidenceIds.length === 1 ? "source" : "sources"}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 self-start pt-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#768175]"><span className="hidden group-open:inline">Close detail</span><span className="group-open:hidden">Review detail</span><ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" /></div>
+              </summary>
+              <div className="border-t border-[#e5e9e0] bg-[#fafbf8] p-5 sm:p-7">
+                <div className="mb-7 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+                  <div className="rounded-2xl bg-[#eef3e8] p-5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#718218]">Decision basis</p>
+                    <p className="mt-2 text-sm font-bold leading-6 text-[#344033]">{action.whyNow}</p>
+                  </div>
+                  <div className="rounded-2xl border border-[#dde4d8] bg-white p-5 lg:min-w-[240px]">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Client inputs required</p>
+                    {action.requiredClientAssets.length ? <ul className="mt-3 space-y-2">{action.requiredClientAssets.map((asset) => <li key={asset} className="flex gap-2 text-xs leading-5 text-[#4e5a4d]"><CircleDot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8eb51b]" />{asset}</li>)}</ul> : <p className="mt-3 text-xs text-[#6f796e]">No additional client asset is required.</p>}
+                  </div>
+                </div>
+                <div className="grid gap-7 lg:grid-cols-2">
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Implementation steps</h4>
+                    <ol className="mt-4 space-y-3">
+                      {action.implementationSteps.map((step) => (
+                        <li key={step.sequence} className="flex gap-3 rounded-2xl bg-white p-4 shadow-sm">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#a5d020] text-[10px] font-black">{step.sequence}</span>
+                          <div><p className="text-sm font-black text-[#344033]">{step.title}</p><p className="mt-1 text-sm leading-6 text-[#687367]">{step.instruction}</p></div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                  <div className="space-y-5">
+                    <div><h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Exact targets</h4><ul className="mt-3 space-y-2">{action.exactTargets.map((target) => <li key={target} className="flex gap-2 break-all text-sm leading-6 text-[#4e5a4d]"><Link2 className="mt-1 h-4 w-4 shrink-0 text-[#8eb51b]" />{target}</li>)}</ul></div>
+                    <div><h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Definition of done</h4><ul className="mt-3 space-y-2">{action.definitionOfDone.map((item) => <li key={item} className="flex gap-2 text-sm leading-6 text-[#4e5a4d]"><Check className="mt-1 h-4 w-4 shrink-0 text-[#8eb51b]" />{item}</li>)}</ul></div>
+                    <div><h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Validation</h4><ul className="mt-3 space-y-2">{action.validationMetrics.map((metric) => <li key={metric.metric_key} className="rounded-xl border border-[#e1e6dc] bg-white p-3 text-sm"><strong className="text-[#334031]">{metric.success_condition}</strong><span className="mt-1 block text-xs text-[#7a8478]">Baseline: {metric.baseline} · {metric.source_type}</span></li>)}</ul></div>
+                    <div>
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Specification</h4>
+                      <div className="mt-3 space-y-3">
+                        {([
+                          ["Content", action.specification.content_requirements ?? []],
+                          ["GBP", action.specification.gbp_requirements ?? []],
+                          ["Technical", action.specification.technical_requirements ?? []],
+                        ] as const).filter(([, items]) => items.length).map(([label, items]) => (
+                          <div key={label} className="rounded-xl border border-[#e1e6dc] bg-white p-3"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#7a8676]">{label}</p><ul className="mt-2 space-y-1.5">{items.map((item) => <li key={item} className="text-sm leading-6 text-[#4e5a4d]">• {item}</li>)}</ul></div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 border-t border-[#e2e7dd] pt-4">
+                      {action.dataSources.map((source) => <span key={source} className="rounded-full bg-[#edf2e6] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#61734b]">{source}</span>)}
+                      {action.dependencies.length ? <span className="rounded-full bg-[#fff5e5] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#8a6819]">Depends on {action.dependencies.length} action{action.dependencies.length === 1 ? "" : "s"}</span> : null}
+                      <span className="ml-auto"><EvidenceButton ids={evidenceIds} onOpen={onOpenEvidence} /></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </details>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function AdvisorReportView({ report }: { report: AdvisorReportV22ViewModel }) {
   const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([]);
   const [selectedEvidenceIndex, setSelectedEvidenceIndex] = useState(0);
@@ -207,6 +295,8 @@ export function AdvisorReportView({ report }: { report: AdvisorReportV22ViewMode
           </div>
         </section>
 
+        <PriorityActionsSection report={report} onOpenEvidence={openEvidence} />
+
         <section id="market" className="scroll-mt-28">
           <SectionHeading eyebrow="Observed market" title="Evidence from the competitive set." description={report.competitorAnalysis.comparisonSummary} />
           <CompetitorGrid competitors={report.competitorAnalysis.competitors} />
@@ -239,67 +329,6 @@ export function AdvisorReportView({ report }: { report: AdvisorReportV22ViewMode
                 </div>
                 <div className="sm:pt-1"><EvidenceButton ids={finding.evidence_ids} onOpen={openEvidence} /></div>
               </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="actions" className="scroll-mt-28">
-          <SectionHeading eyebrow="Implementation brief" title="Three actions with executable detail." description="Open an action for targets, owner, implementation steps, and validation criteria." />
-          <div className="space-y-4">
-            {report.actions.map((action) => (
-              <details key={action.actionId} className="group overflow-hidden rounded-[26px] border border-[#dfe5d9] bg-white open:border-[#b9ce79]">
-                <summary className="flex cursor-pointer list-none items-start gap-5 p-5 marker:hidden sm:p-7">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#1f2922] text-lg font-black text-[#b8dd3c]">0{action.sequence}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-lg font-black leading-7 tracking-[-0.025em] text-[#1c251f]">{action.clientFacingExplanation}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-[#f0f4e7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#61734b]">{action.effort} effort</span>
-                      <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">Owner: {action.ownerSuggestion}</span>
-                      <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">Review {formatReportDate(action.reviewDate)}</span>
-                    </div>
-                  </div>
-                  <ChevronDown className="mt-2 h-5 w-5 shrink-0 text-[#7b8579] transition-transform group-open:rotate-180" aria-hidden="true" />
-                </summary>
-                <div className="border-t border-[#e5e9e0] bg-[#fafbf8] p-5 sm:p-7">
-                  <div className="grid gap-7 lg:grid-cols-2">
-                    <div>
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Implementation steps</h4>
-                      <ol className="mt-4 space-y-3">
-                        {action.implementationSteps.map((step) => (
-                          <li key={step.sequence} className="flex gap-3 rounded-2xl bg-white p-4 shadow-sm">
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#a5d020] text-[10px] font-black">{step.sequence}</span>
-                            <div><p className="text-sm font-black text-[#344033]">{step.title}</p><p className="mt-1 text-sm leading-6 text-[#687367]">{step.instruction}</p></div>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                    <div className="space-y-5">
-                      <div><h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Exact targets</h4><ul className="mt-3 space-y-2">{action.exactTargets.map((target) => <li key={target} className="flex gap-2 break-all text-sm leading-6 text-[#4e5a4d]"><Link2 className="mt-1 h-4 w-4 shrink-0 text-[#8eb51b]" />{target}</li>)}</ul></div>
-                      <div><h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Definition of done</h4><ul className="mt-3 space-y-2">{action.definitionOfDone.map((item) => <li key={item} className="flex gap-2 text-sm leading-6 text-[#4e5a4d]"><Check className="mt-1 h-4 w-4 shrink-0 text-[#8eb51b]" />{item}</li>)}</ul></div>
-                      <div><h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Validation</h4><ul className="mt-3 space-y-2">{action.validationMetrics.map((metric) => <li key={metric.metric_key} className="rounded-xl border border-[#e1e6dc] bg-white p-3 text-sm"><strong className="text-[#334031]">{metric.success_condition}</strong><span className="mt-1 block text-xs text-[#7a8478]">Baseline: {metric.baseline} · {metric.source_type}</span></li>)}</ul></div>
-                      <div>
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Specification</h4>
-                        <div className="mt-3 space-y-3">
-                          {([
-                            ["Content", action.specification.content_requirements ?? []],
-                            ["GBP", action.specification.gbp_requirements ?? []],
-                            ["Technical", action.specification.technical_requirements ?? []],
-                          ] as const).filter(([, items]) => items.length).map(([label, items]) => (
-                            <div key={label} className="rounded-xl border border-[#e1e6dc] bg-white p-3">
-                              <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#7a8676]">{label}</p>
-                              <ul className="mt-2 space-y-1.5">{items.map((item) => <li key={item} className="text-sm leading-6 text-[#4e5a4d]">• {item}</li>)}</ul>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 border-t border-[#e2e7dd] pt-4">
-                        {action.dataSources.map((source) => <span key={source} className="rounded-full bg-[#edf2e6] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#61734b]">{source}</span>)}
-                        {action.dependencies.length ? <span className="rounded-full bg-[#fff5e5] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#8a6819]">Depends on {action.dependencies.length} action{action.dependencies.length === 1 ? "" : "s"}</span> : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </details>
             ))}
           </div>
         </section>
