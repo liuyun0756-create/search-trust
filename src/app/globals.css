@@ -198,3 +198,24 @@ body {
   border-radius: 999px;
   background: #A5D020;
 }
+
+@keyframes case-step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.case-step-enter {
+  animation: case-step-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .case-step-enter {
+    animation: none;
+  }
+}

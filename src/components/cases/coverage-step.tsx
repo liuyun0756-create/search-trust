@@ -48,9 +48,9 @@ export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
   return (
     <section>
       <div className="mb-7">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#718218]">Step 4 of 4</p>
-        <h1 className="text-3xl font-bold tracking-[-0.035em] text-[#172017] sm:text-[38px]">Your evidence coverage is ready.</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#657165]">This is a coverage check—not the diagnosis. It shows exactly what the full workflow can support.</p>
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#718218]">04 / Review before analysis</p>
+        <h1 className="text-3xl font-semibold tracking-[-0.045em] text-[#172017] sm:text-[42px]">See what this analysis can responsibly support.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#657165]">This is the final scope check, not the diagnosis. Review the business, competitors and known evidence gaps before continuing.</p>
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">

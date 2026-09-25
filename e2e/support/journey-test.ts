@@ -28,9 +28,9 @@ export { expect };
 
 export async function openProspectStart(page: Page): Promise<void> {
   await page.goto("/cases/new");
-  await page.getByLabel("Client website").fill("searchtrust-e2e.example.invalid");
-  await page.getByRole("button", { name: /Run free preflight/ }).click();
-  await expect(page.getByRole("heading", { name: "Confirm the business match." })).toBeVisible();
+  await page.getByLabel("Business website").fill("searchtrust-e2e.example.invalid");
+  await page.getByRole("button", { name: /Check this business/ }).click();
+  await expect(page.getByRole("heading", { name: "Make sure we are analyzing the right business." })).toBeVisible();
   await page.getByRole("button", { name: /Confirm business scope/ }).click();
   await expect(page.getByRole("heading", { name: "Start the complete prospect analysis." })).toBeVisible();
 }
@@ -40,7 +40,7 @@ export async function completeProspectAcquisition(page: Page, selectedCompetitor
   const start = page.getByRole("button", { name: "Start analysis · uses 1 credit" });
   await expect(start).toBeEnabled();
   await start.click();
-  await expect(page.getByRole("heading", { name: "Choose the real competitive set." })).toBeVisible({ timeout: 12_000 });
+  await expect(page.getByRole("heading", { name: "Choose who competes for the same demand." })).toBeVisible({ timeout: 12_000 });
 
   const candidates = page.getByRole("checkbox");
   await expect(candidates).toHaveCount(3);
@@ -50,7 +50,7 @@ export async function completeProspectAcquisition(page: Page, selectedCompetitor
     }
   }
   await page.getByRole("button", { name: /Confirm competitors/ }).click();
-  await expect(page.getByRole("heading", { name: "Your evidence coverage is ready." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "See what this analysis can responsibly support." })).toBeVisible();
 }
 
 export async function seedCoverageDraft(page: Page): Promise<void> {

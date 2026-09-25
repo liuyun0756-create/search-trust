@@ -1,12 +1,12 @@
-import { Check, CircleDot } from "lucide-react";
+import { Check } from "lucide-react";
 
 import type { WorkspaceStage } from "@/lib/preflight-v22";
 
 const steps = [
-  { label: "Goal & website", detail: "Choose the job and client site" },
-  { label: "Business match", detail: "Verify the public identity" },
-  { label: "Competitors", detail: "Confirm 1–3 real businesses" },
-  { label: "Coverage", detail: "Review what the report can support" },
+  { label: "Start", detail: "Choose the work and website" },
+  { label: "Identify", detail: "Confirm the business and GBP" },
+  { label: "Compare", detail: "Choose 1–3 real competitors" },
+  { label: "Review", detail: "Check the scope before analysis" },
 ];
 
 function activeIndex(stage: WorkspaceStage) {
@@ -20,8 +20,11 @@ export function NewCaseStepper({ stage }: { stage: WorkspaceStage }) {
   const current = activeIndex(stage);
   return (
     <nav aria-label="New Case progress" className="border-b border-white/10 px-5 py-5 lg:border-b-0 lg:px-0 lg:py-0">
-      <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white/40 lg:mb-8">Prospect workflow</p>
-      <ol className="grid grid-cols-4 gap-2 lg:block lg:space-y-2">
+      <div className="mb-4 flex items-center justify-between lg:mb-9 lg:block">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/42">One client / four decisions</p>
+        <p className="text-[10px] font-semibold text-white/35 lg:mt-2">Step {current + 1} of {steps.length}</p>
+      </div>
+      <ol className="grid grid-cols-4 gap-2 lg:block lg:space-y-0">
         {steps.map((step, index) => {
           const complete = index < current;
           const active = index === current;
@@ -29,18 +32,24 @@ export function NewCaseStepper({ stage }: { stage: WorkspaceStage }) {
             <li
               key={step.label}
               aria-current={active ? "step" : undefined}
-              className={`relative rounded-xl px-2 py-2.5 lg:px-4 lg:py-4 ${active ? "bg-white/[0.07]" : ""}`}
+              className="relative px-1 py-1.5 lg:px-0 lg:py-0"
             >
-              <div className="flex items-center gap-3">
-                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-xs font-bold ${
-                  complete ? "border-[#A5D020] bg-[#A5D020] text-[#151914]" : active ? "border-[#A5D020] text-[#A5D020]" : "border-white/20 text-white/35"
+              {index < steps.length - 1 && (
+                <span aria-hidden="true" className={`absolute left-[13px] top-8 hidden h-12 w-px lg:block ${index < current ? "bg-[#A5D020]/70" : "bg-white/12"}`} />
+              )}
+              <div className={`flex items-center gap-3 rounded-xl transition-colors lg:min-h-[66px] lg:px-3 ${active ? "lg:bg-white/[0.065]" : ""}`}>
+                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[10px] font-bold ${
+                  complete ? "border-[#A5D020] bg-[#A5D020] text-[#151914]" : active ? "border-[#A5D020] bg-[#A5D020]/10 text-[#C7EE4E] shadow-[0_0_0_5px_rgba(165,208,32,0.08)]" : "border-white/18 text-white/32"
                 }`}>
-                  {complete ? <Check size={14} strokeWidth={3} /> : active ? <CircleDot size={14} /> : index + 1}
+                  {complete ? <Check size={13} strokeWidth={3} /> : String(index + 1).padStart(2, "0")}
                 </span>
-                <span className={`hidden text-sm font-semibold lg:block ${active ? "text-white" : complete ? "text-white/70" : "text-white/35"}`}>{step.label}</span>
+                <span className="hidden min-w-0 lg:block">
+                  <span className={`block text-sm font-semibold ${active ? "text-white" : complete ? "text-white/68" : "text-white/34"}`}>{step.label}</span>
+                  <span className={`mt-0.5 block text-[11px] leading-4 ${active ? "text-white/48" : "text-white/28"}`}>{step.detail}</span>
+                </span>
               </div>
-              <p className="mt-1 hidden pl-10 text-xs leading-5 text-white/38 lg:block">{step.detail}</p>
               <span className={`mt-2 block h-0.5 rounded-full lg:hidden ${complete || active ? "bg-[#A5D020]" : "bg-white/10"}`} />
+              <span className={`mt-1 block truncate text-[9px] font-semibold lg:hidden ${active ? "text-white" : complete ? "text-white/55" : "text-white/28"}`}>{step.label}</span>
             </li>
           );
         })}

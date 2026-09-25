@@ -5,8 +5,8 @@ import { NewCaseWorkspace } from "@/components/cases/new-case-workspace";
 import { isV22PublicEntryEnabled } from "@/lib/release-v22/public-entry";
 
 export const metadata: Metadata = {
-  title: "Start a Free Local SEO Preflight | SearchTrust",
-  description: "Confirm a local business, its real competitors, and available evidence before creating a SearchTrust Case.",
+  title: "Start With One Business | SearchTrust",
+  description: "Set the client scope for one evidence-backed local SEO Case. Public setup is free; a credit is used only when you start complete analysis.",
   robots: { index: false, follow: false },
 };
 

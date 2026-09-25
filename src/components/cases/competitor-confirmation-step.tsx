@@ -42,9 +42,9 @@ export function CompetitorConfirmationStep({ status, selectedIds, onSelectionCha
     <section>
       <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#718218]">Step 3 of 4</p>
-          <h1 className="text-3xl font-bold tracking-[-0.035em] text-[#172017] sm:text-[38px]">Choose the real competitive set.</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#657165]">Three is recommended. Select at least one verified business to continue.</p>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#718218]">03 / Compare the real market</p>
+          <h1 className="text-3xl font-semibold tracking-[-0.045em] text-[#172017] sm:text-[42px]">Choose who competes for the same demand.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#657165]">Select at least one verified business in the same service and market context. Three gives the analysis a broader comparison set.</p>
         </div>
         <button type="button" onClick={onEditScope} className="self-start text-sm font-bold text-[#657165] underline decoration-[#b5c1b0] underline-offset-4 hover:text-[#1d271d]">Edit business scope</button>
       </div>

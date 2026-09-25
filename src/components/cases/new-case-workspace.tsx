@@ -538,21 +538,31 @@ export function NewCaseWorkspace() {
     setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving this confirmed Case before analysis…" });
   }
 
-  if (!hydrated) return <div className="min-h-screen bg-[#171d17]" />;
+  if (!hydrated) return <div className="min-h-screen bg-[#141b15]" />;
 
   return (
-    <div className="min-h-screen bg-[#171d17] text-[#1c241c]">
-      <header className="border-b border-white/10 bg-[#171d17]">
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-5 sm:px-8">
-          <Link href="/" className="flex items-center gap-3 text-white outline-none focus-visible:ring-4 focus-visible:ring-[#A5D020]/30"><img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="text-sm font-bold tracking-tight">SearchTrust</span><span className="rounded-full border border-white/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/50">v2.2</span></Link>
-          <div className="flex items-center gap-4"><span className="hidden items-center gap-1.5 text-xs font-semibold text-white/50 sm:flex"><ShieldCheck size={14} className="text-[#A5D020]" />Public-data preflight</span><button type="button" onClick={reset} className="text-xs font-bold text-white/55 outline-none hover:text-white focus-visible:ring-4 focus-visible:ring-[#A5D020]/30">Clear draft</button></div>
+    <div className="min-h-screen bg-[#141b15] text-[#1c241c]">
+      <header className="border-b border-white/[0.08] bg-[#141b15]">
+        <div className="mx-auto flex h-[68px] max-w-[1500px] items-center justify-between px-5 sm:px-8">
+          <Link href="/" className="flex items-center gap-3 text-white outline-none focus-visible:rounded-lg focus-visible:ring-4 focus-visible:ring-[#A5D020]/30"><img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="text-sm font-bold tracking-tight">SearchTrust</span><span className="hidden text-white/20 sm:inline">/</span><span className="hidden text-xs font-semibold text-white/45 sm:inline">New Case</span></Link>
+          <div className="flex items-center gap-4"><span className="hidden items-center gap-1.5 rounded-full bg-white/[0.055] px-3 py-1.5 text-[11px] font-semibold text-white/55 sm:flex"><ShieldCheck size={13} className="text-[#A5D020]" />Public setup is free</span><button type="button" onClick={reset} className="rounded-lg px-2 py-1.5 text-xs font-bold text-white/48 outline-none transition hover:bg-white/[0.06] hover:text-white focus-visible:ring-4 focus-visible:ring-[#A5D020]/30">Clear draft</button></div>
         </div>
       </header>
 
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[1440px] lg:grid-cols-[290px_1fr]">
-        <aside className="border-white/10 bg-[#171d17] lg:border-r lg:px-7 lg:py-10"><NewCaseStepper stage={draft.stage} /><div className="hidden px-4 lg:mt-12 lg:block"><p className="flex items-center gap-2 text-xs font-semibold text-white/45"><LockKeyhole size={13} />Saved only in this session</p><p className="mt-2 break-all text-[10px] leading-4 text-white/25">Draft {draft.draft_case_id}</p></div></aside>
-        <main className="bg-[#f1f3ed] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-20">
-          <div className="mx-auto max-w-[920px]">
+      <div className="mx-auto grid min-h-[calc(100vh-68px)] max-w-[1500px] lg:grid-cols-[264px_1fr]">
+        <aside className="border-white/[0.08] bg-[#141b15] lg:flex lg:flex-col lg:border-r lg:px-6 lg:py-9">
+          <NewCaseStepper stage={draft.stage} />
+          <div className="hidden px-3 lg:mt-auto lg:block">
+            <div className="rounded-2xl bg-white/[0.045] p-4">
+              <p className="flex items-center gap-2 text-[11px] font-bold text-white/58"><LockKeyhole size={13} className="text-[#A5D020]" />Clear credit boundary</p>
+              <p className="mt-2 text-[11px] leading-5 text-white/36">Setup is free. One credit is used only when you approve complete analysis.</p>
+            </div>
+            <p className="mt-5 text-[10px] leading-4 text-white/24">Session draft<br /><span className="break-all">{draft.draft_case_id}</span></p>
+          </div>
+        </aside>
+        <main className="relative overflow-hidden bg-[#f1f3ed] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-[72px] xl:py-16">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-[420px] w-[420px] rounded-full bg-[#dce8c7]/45 blur-3xl" />
+          <div className="relative mx-auto max-w-[980px]">
             {draft.stage === "goal_website" && <GoalWebsiteStep key={draft.draft_case_id} initialGoal={draft.goal} initialSiteUrl={draft.site_url} initialGbpUrl={draft.gbp_url} onSubmit={startPreflight} />}
             {draft.stage === "preflight_running" && <PreflightStatus kind="loading" title="Checking the public evidence surface" message="We’re resolving the business website, public profile, service, market, and available analysis modules." />}
             {draft.stage === "preflight_failed" && <PreflightStatus kind="error" title="Preflight needs attention" message={draft.preflight_error?.message ?? "The public data check could not be completed."} onRetry={() => void startPreflight({ goal: draft.goal, site_url: draft.site_url, gbp_url: draft.gbp_url })} />}
@@ -616,7 +626,7 @@ export function NewCaseWorkspace() {
                 </section>
               )
             )}
-            <p className="mt-8 flex items-center justify-center gap-2 text-center text-[11px] leading-5 text-[#849084]"><RotateCcw size={12} />Refreshing this page resumes active discovery from its real task status.</p>
+            <p className="mt-10 flex items-center justify-center gap-2 text-center text-[11px] leading-5 text-[#849084]"><RotateCcw size={12} />Your active task resumes from its real status after a refresh.</p>
           </div>
         </main>
       </div>
