@@ -66,8 +66,8 @@ export function SignInExperience({ authPanel }: { authPanel: ReactNode }) {
                   <div>
                     <p className="text-sm font-black text-[#273329]">Know the credit boundary before you begin.</p>
                     <ul className="mt-3 space-y-2 text-xs leading-5 text-[#6e786c]">
-                      <li className="flex gap-2"><span className="font-black text-[#78931c]">Free</span><span>Case setup, site and business confirmation, and competitor preflight.</span></li>
-                      <li className="flex gap-2"><span className="font-black text-[#172019]">1 credit</span><span>Each Prospect Analysis or Verified Action Plan you choose to generate.</span></li>
+                      <li className="flex gap-2"><span className="font-black text-[#78931c]">Free</span><span>Case setup, site check, business identity and service/market confirmation.</span></li>
+                      <li className="flex gap-2"><span className="font-black text-[#172019]">1 credit</span><span>Competitor discovery plus a complete Prospect Analysis, or one Verified Action Plan.</span></li>
                     </ul>
                   </div>
                 </div>

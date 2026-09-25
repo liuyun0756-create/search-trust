@@ -12,12 +12,14 @@ describe("GoalWebsiteStep interactions", () => {
     const onSubmit = vi.fn();
     render(<GoalWebsiteStep initialGoal="win_new_client" initialSiteUrl="" initialGbpUrl={null} onSubmit={onSubmit} />);
 
+    expect(screen.getByRole("heading", { name: /Build a useful first view/ })).toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: /Serve a client/ }));
+    expect(screen.getByRole("heading", { name: /Anchor ongoing work/ })).toBeInTheDocument();
     await user.type(screen.getByLabelText("Business website"), "  searchtrust-e2e.example.invalid  ");
     await user.click(screen.getByRole("button", { name: /Google Business Profile link/ }));
     expect(screen.getByRole("button", { name: /Google Business Profile link/ })).toHaveAttribute("aria-expanded", "true");
     await user.type(screen.getByLabelText("Google Business Profile link"), "  https://gbp.searchtrust-e2e.example.invalid/location  ");
-    await user.click(screen.getByRole("button", { name: /Check this business/ }));
+    await user.click(screen.getByRole("button", { name: /Check this client/ }));
 
     expect(onSubmit).toHaveBeenCalledWith({
       goal: "work_existing_client",

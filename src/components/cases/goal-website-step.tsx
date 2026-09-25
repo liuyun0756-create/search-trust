@@ -1,6 +1,6 @@
 "use client";
 
-import { BriefcaseBusiness, ChevronDown, Globe2, Handshake, SearchCheck, ShieldCheck } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, ChevronDown, Globe2, Handshake, SearchCheck, ShieldCheck } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 import type { WorkGoal } from "@/lib/preflight-v22";
@@ -28,11 +28,27 @@ const goals = [
   },
 ];
 
+const goalContext = {
+  win_new_client: {
+    label: "Prospect Case",
+    title: "Build a useful first view before asking for private data.",
+    detail: "Confirm the public website and business identity before deciding whether to start the complete Prospect Analysis.",
+    action: "Check this prospect · free",
+  },
+  work_existing_client: {
+    label: "Active client Case",
+    title: "Anchor ongoing work to the correct business scope.",
+    detail: "Confirm the public business, service and market before competitor evidence and ongoing analysis.",
+    action: "Check this client · free",
+  },
+} satisfies Record<WorkGoal, { label: string; title: string; detail: string; action: string }>;
+
 export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, error, onSubmit }: GoalWebsiteStepProps) {
   const [goal, setGoal] = useState(initialGoal);
   const [siteUrl, setSiteUrl] = useState(initialSiteUrl);
   const [gbpUrl, setGbpUrl] = useState(initialGbpUrl ?? "");
   const [showGbp, setShowGbp] = useState(Boolean(initialGbpUrl));
+  const context = goalContext[goal];
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -71,9 +87,10 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
               );
             })}
           </div>
-          <div className="mt-6 border-t border-[#cfd7ca] pt-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#718218]">What this step establishes</p>
-            <p className="mt-2 text-xs leading-5 text-[#667267]">The correct business identity, market context and evidence scope for one continuous Case.</p>
+          <div className="mt-6 border-l-2 border-[#A5D020] pl-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#718218]">{context.label}</p>
+            <h2 className="mt-1.5 text-lg font-bold leading-6 tracking-[-0.02em] text-[#1d281e]">{context.title}</h2>
+            <p className="mt-1 text-xs leading-5 text-[#647064]">{context.detail}</p>
           </div>
         </fieldset>
 
@@ -96,8 +113,8 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
               <input id="gbp-url" autoComplete="url" inputMode="url" value={gbpUrl} onChange={(event) => setGbpUrl(event.target.value)} placeholder="https://www.google.com/maps?cid=..." className="h-12 w-full rounded-xl border border-[#ccd4c7] bg-[#fbfcfa] px-4 text-sm text-[#1d271d] outline-none focus:border-[#89ad1c] focus:ring-4 focus:ring-[#A5D020]/20" />
             </div>
           )}
-          <button type="submit" className="mt-7 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#172017] px-6 text-sm font-bold text-white shadow-[0_14px_32px_rgba(23,32,23,0.18)] outline-none transition hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_18px_36px_rgba(23,32,23,0.22)] focus-visible:ring-4 focus-visible:ring-[#A5D020]/40 motion-reduce:transform-none">
-            Check this business · free <span aria-hidden="true">→</span>
+          <button type="submit" className="group mt-7 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#172017] px-6 text-sm font-bold text-white shadow-[0_14px_32px_rgba(23,32,23,0.18)] outline-none transition hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_18px_36px_rgba(23,32,23,0.22)] focus-visible:ring-4 focus-visible:ring-[#A5D020]/40 motion-reduce:transform-none">
+            {context.action} <ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" />
           </button>
           <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-[#f2f5ed] px-3.5 py-3 text-xs leading-5 text-[#637063]">
             <ShieldCheck className="mt-0.5 shrink-0 text-[#6f8f11]" size={15} />
@@ -105,10 +122,22 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
           </div>
         </div>
 
-        <div className="lg:col-span-2 flex flex-wrap items-center gap-x-6 gap-y-2 px-1 text-[11px] font-semibold text-[#718071]">
-          <span className="flex items-center gap-1.5"><SearchCheck size={13} />Public sources only</span>
-          <span className="flex items-center gap-1.5"><ShieldCheck size={13} />You confirm the business scope</span>
-          <span>Usually under 5 minutes</span>
+        <div aria-label="What the free setup returns" className="lg:col-span-2 grid overflow-hidden rounded-[22px] bg-[#172017] text-white sm:grid-cols-[1fr_1fr_1.15fr]">
+          <div className="px-5 py-5 sm:px-6">
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#b7dc3f]"><SearchCheck size={14} />Free setup returns</p>
+            <p className="mt-2 text-sm font-bold">A confirmed public business</p>
+            <p className="mt-1 text-xs leading-5 text-white/42">Website and public identity matched to the right company.</p>
+          </div>
+          <div className="px-5 py-5 sm:px-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/38">Scope you can inspect</p>
+            <p className="mt-2 text-sm font-bold">Service and market context</p>
+            <p className="mt-1 text-xs leading-5 text-white/42">What the Case is about before provider-backed discovery begins.</p>
+          </div>
+          <div className="bg-white/[0.06] px-5 py-5 sm:px-6">
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/38"><ShieldCheck size={14} className="text-[#b7dc3f]" />Then you decide</p>
+            <p className="mt-2 text-sm font-bold">Approve complete analysis · 1 credit</p>
+            <p className="mt-1 text-xs leading-5 text-white/42">Competitor discovery starts only after the confirmed scope and clear credit boundary.</p>
+          </div>
         </div>
       </form>
     </section>

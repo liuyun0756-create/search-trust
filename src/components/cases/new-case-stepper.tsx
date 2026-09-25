@@ -3,10 +3,10 @@ import { Check } from "lucide-react";
 import type { WorkspaceStage } from "@/lib/preflight-v22";
 
 const steps = [
-  { label: "Start", detail: "Choose the work and website" },
-  { label: "Identify", detail: "Confirm the business and GBP" },
-  { label: "Compare", detail: "Choose 1–3 real competitors" },
-  { label: "Review", detail: "Check the scope before analysis" },
+  { label: "Scope", detail: "Choose the work and website" },
+  { label: "Business", detail: "Confirm the public identity" },
+  { label: "Competitors", detail: "Confirm at least 1 real rival" },
+  { label: "Coverage", detail: "Review what analysis can support" },
 ];
 
 function activeIndex(stage: WorkspaceStage) {

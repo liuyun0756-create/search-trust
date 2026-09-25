@@ -11,8 +11,8 @@ describe("SignInExperience", () => {
     expect(html).toContain("Start a client Case");
     expect(html).toContain("Verify with client data");
     expect(html).toContain("5 permanent credits");
-    expect(html).toContain("Case setup, site and business confirmation, and competitor preflight");
-    expect(html).toContain("Each Prospect Analysis or Verified Action Plan");
+    expect(html).toContain("Case setup, site check, business identity and service/market confirmation");
+    expect(html).toContain("Competitor discovery plus a complete Prospect Analysis");
     expect(html).toContain("Secure authentication form");
   });
 });

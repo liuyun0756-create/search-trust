@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, LockKeyhole, LoaderCircle, RotateCcw, ShieldCheck } from "lucide-react";
+import { Check, Coins, LockKeyhole, LoaderCircle, RotateCcw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -544,7 +544,7 @@ export function NewCaseWorkspace() {
     <div className="min-h-screen bg-[#141b15] text-[#1c241c]">
       <header className="border-b border-white/[0.08] bg-[#141b15]">
         <div className="mx-auto flex h-[68px] max-w-[1500px] items-center justify-between px-5 sm:px-8">
-          <Link href="/" className="flex items-center gap-3 text-white outline-none focus-visible:rounded-lg focus-visible:ring-4 focus-visible:ring-[#A5D020]/30"><img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="text-sm font-bold tracking-tight">SearchTrust</span><span className="hidden text-white/20 sm:inline">/</span><span className="hidden text-xs font-semibold text-white/45 sm:inline">New Case</span></Link>
+          <Link href="/" className="flex items-center gap-3 text-white outline-none focus-visible:rounded-lg focus-visible:ring-4 focus-visible:ring-[#A5D020]/30"><img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="text-sm font-black tracking-[-0.03em]">Search<span className="text-[#A5D020]">Trust</span></span><span className="hidden text-white/20 sm:inline">/</span><span className="hidden text-xs font-semibold text-white/45 sm:inline">New Case</span></Link>
           <div className="flex items-center gap-4"><span className="hidden items-center gap-1.5 rounded-full bg-white/[0.055] px-3 py-1.5 text-[11px] font-semibold text-white/55 sm:flex"><ShieldCheck size={13} className="text-[#A5D020]" />Public setup is free</span><button type="button" onClick={reset} className="rounded-lg px-2 py-1.5 text-xs font-bold text-white/48 outline-none transition hover:bg-white/[0.06] hover:text-white focus-visible:ring-4 focus-visible:ring-[#A5D020]/30">Clear draft</button></div>
         </div>
       </header>
@@ -553,9 +553,13 @@ export function NewCaseWorkspace() {
         <aside className="border-white/[0.08] bg-[#141b15] lg:flex lg:flex-col lg:border-r lg:px-6 lg:py-9">
           <NewCaseStepper stage={draft.stage} />
           <div className="hidden px-3 lg:mt-auto lg:block">
-            <div className="rounded-2xl bg-white/[0.045] p-4">
-              <p className="flex items-center gap-2 text-[11px] font-bold text-white/58"><LockKeyhole size={13} className="text-[#A5D020]" />Clear credit boundary</p>
-              <p className="mt-2 text-[11px] leading-5 text-white/36">Setup is free. One credit is used only when you approve complete analysis.</p>
+            <div className="border-t border-white/[0.08] pt-5">
+              <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45"><LockKeyhole size={13} className="text-[#A5D020]" />Before any credit</p>
+              <ul className="mt-3 space-y-2 text-[11px] leading-4 text-white/38">
+                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#A5D020]" />Check the primary website</li>
+                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#A5D020]" />Confirm the public business</li>
+                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#A5D020]" />Review service and market scope</li>
+              </ul>
             </div>
             <p className="mt-5 text-[10px] leading-4 text-white/24">Session draft<br /><span className="break-all">{draft.draft_case_id}</span></p>
           </div>
