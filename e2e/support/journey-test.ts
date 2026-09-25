@@ -50,7 +50,7 @@ export async function completeProspectAcquisition(page: Page, selectedCompetitor
     }
   }
   await page.getByRole("button", { name: /Confirm \d+ competitor/ }).click();
-  await expect(page.getByRole("heading", { name: "See what this analysis can responsibly support." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Know what the report can say before it is generated." })).toBeVisible();
 }
 
 export async function seedCoverageDraft(page: Page): Promise<void> {

@@ -4,7 +4,8 @@ test.describe("prospect acquisition", () => {
   test("completes public preflight with one confirmed competitor", async ({ page, apiScenario }) => {
     await completeProspectAcquisition(page, 1);
     await expect(page.getByText("1 confirmed")).toBeVisible();
-    await expect(page.getByText("Limited coverage")).toBeVisible();
+    await expect(page.getByText("Available with limits")).toBeVisible();
+    await expect(page.getByText("Focused competitive view")).toBeVisible();
     expect(apiScenario.snapshot().discoveryPoll).toBeGreaterThanOrEqual(2);
   });
 
