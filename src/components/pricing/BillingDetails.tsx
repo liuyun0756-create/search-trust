@@ -1,30 +1,47 @@
-"use client";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
-import React from 'react';
-import { CreditCard, FileText, RefreshCcw, ShieldCheck, Info } from 'lucide-react';
+import styles from "./pricing-v22.module.css";
 
-const billingDetails = [
-  { icon: CreditCard, label: 'One–time payment' },
-  { icon: FileText, label: 'One credit per purchase' },
-  { icon: RefreshCcw, label: 'No automatic renewal' },
-  { icon: ShieldCheck, label: 'Secure checkout via Dodo' },
-  { icon: Info, label: 'Credits never expire' },
+const protections = [
+  {
+    title: "Payment",
+    detail: "$19 USD buys one additional permanent credit. It is a one-time purchase processed securely through Dodo Payments.",
+  },
+  {
+    title: "Delivery",
+    detail: "The credit is added after payment confirmation and joins the same account balance shared across all Cases.",
+  },
+  {
+    title: "Technical failure",
+    detail: "If a paid workflow fails for a technical reason, exactly one credit is returned automatically. A later new generation uses one credit again.",
+  },
+  {
+    title: "Refund review",
+    detail: "An unused purchased credit may be refunded after provider confirmation. A credit that has already been used requires manual review.",
+  },
 ];
 
 export function BillingDetails() {
   return (
-    <section className="pt-20 bg-white">
-      <div className="max-w-[1200px] mx-auto px-8 text-center">
-        <h2 className="text-[42px] font-bold mb-16">Billing details</h2>
-        <div className="flex flex-wrap justify-center gap-10 md:gap-16">
-          {billingDetails.map((item, i) => (
-            <div key={i} className="flex flex-col items-center gap-5 max-w-[260px]">
-              <div className="w-16 h-16 bg-white border border-[#EBECEF] rounded-[22px] flex items-center justify-center shadow-sm text-[#A5D020]">
-                <item.icon size={24} strokeWidth={1.5} />
-              </div>
-              <span className="text-[13px] font-bold text-[#3E4651]">{item.label}</span>
+    <section className={`${styles.pricingBody} ${styles.protectionSection}`} aria-labelledby="billing-protection-title">
+      <div className={styles.sectionInner}>
+        <div className={styles.protectionPanel}>
+          <div>
+            <p className={styles.eyebrow}>Billing and protection</p>
+            <h2 id="billing-protection-title">Simple payment, clear failure protection.</h2>
+          </div>
+          <div>
+            <div className={styles.protectionRows}>
+              {protections.map((item) => (
+                <div className={styles.protectionRow} key={item.title}>
+                  <strong>{item.title}</strong>
+                  <p>{item.detail}</p>
+                </div>
+              ))}
             </div>
-          ))}
+            <Link href="/refund-policy" className={styles.protectionLink}>Read the full Refund Policy<ArrowRight aria-hidden="true" /></Link>
+          </div>
         </div>
       </div>
     </section>
