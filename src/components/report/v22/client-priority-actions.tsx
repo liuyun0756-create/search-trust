@@ -17,6 +17,7 @@ export function ClientPriorityActions({ actions }: { actions: ClientActionViewMo
             <div className="p-6 sm:p-7">
               <h3 className="text-[22px] font-black leading-7 tracking-[-0.035em] text-[#1c251f]">{action.title}</h3>
               <p className="mt-3 text-sm leading-6 text-[#657064]">{action.whyNow}</p>
+              {action.reviewedPlan && <div className="mt-4 space-y-2 text-xs leading-5 text-[#4e5c4d]"><p><strong>Reviewed scope:</strong> {action.reviewedPlan.target}</p><p><strong>Work:</strong> {action.reviewedPlan.steps || "Execution details to confirm"}</p><p><strong>Complete when:</strong> {action.reviewedPlan.completion || "Completion standard to confirm"}</p><p><strong>Owner:</strong> {action.reviewedPlan.owner || "To confirm"}</p><p><strong>Review:</strong> {action.reviewedPlan.review || "Review approach to confirm"}</p>{action.reviewedPlan.scopeChanged && <p className="rounded-xl bg-[#fff4e3] p-3 font-bold text-[#795a22]">The SEO changed this action’s scope. The original evidence does not by itself verify the new scope.</p>}</div>}
               <div className="mt-5 rounded-2xl bg-[#f2f5ec] p-4">
                 <p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#778476]">Planned result to verify</p>
                 <p className="mt-2 text-sm font-bold leading-6 text-[#3f4b3f]">{action.expectedResult}</p>
@@ -25,7 +26,7 @@ export function ClientPriorityActions({ actions }: { actions: ClientActionViewMo
             <div className="border-t border-[#e5e9e0] bg-[#fafbf8] p-6 lg:border-l lg:border-t-0">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8dfd0] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#677362]"><Clock3 className="h-3.5 w-3.5" />{action.effort} effort</span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4d594c]"><CalendarDays className="h-4 w-4 text-[#8eb51b]" />{formatReportDate(action.reviewDate)}</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4d594c]"><CalendarDays className="h-4 w-4 text-[#8eb51b]" />{action.reviewedPlan?.schedule || formatReportDate(action.reviewDate)}</span>
               </div>
               {action.requiredClientAssets.length ? <div className="mt-6 border-t border-[#e4e9df] pt-5"><p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#8a9388]">Client inputs needed</p><ul className="mt-3 space-y-2">{action.requiredClientAssets.map((asset) => <li key={asset} className="flex gap-2 text-xs font-semibold leading-5 text-[#596457]"><CircleDot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8eb51b]" />{asset}</li>)}</ul></div> : null}
             </div>

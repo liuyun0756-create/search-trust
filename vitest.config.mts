@@ -13,7 +13,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    exclude: ["e2e/**/*.spec.ts", "node_modules/**", ".next/**", "output/**"],
+    exclude: ["e2e/**/*.spec.ts", "node_modules/**", ".next/**", "output/**", ".worktrees/**"],
     setupFiles: ["./src/test/setup.ts"],
   },
 });

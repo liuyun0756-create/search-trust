@@ -1,14 +1,17 @@
 import type { Report, ReportShare } from "../../types/database";
 import { selectValidatedReportV22 } from "../report-v22/access";
 import { buildReportV22ViewModel, type ClientReportV22ViewModel } from "../report-v22/view-model";
+import { buildDeliveryViewModel } from "../report-delivery/projection";
+import type { DeliveryPlanVersion } from "../report-delivery/plan";
 import { createReportShareToken, hashReportShareToken, isReportShareToken } from "./tokens";
 
 export type PublicShareRecord = Pick<ReportShare, "id" | "created_at" | "expires_at" | "revoked_at">;
 
 export interface ReportShareRepository {
   findOwnedReport(userId: string, caseId: string, reportIdentifier: string): Promise<Report | null>;
+  latestPlanVersion(reportId: string): Promise<DeliveryPlanVersion | null>;
   list(userId: string, caseId: string, reportId: string): Promise<PublicShareRecord[]>;
-  resolve(tokenHash: string, accessedAt: string): Promise<{ report: Report; share: ReportShare } | null>;
+  resolve(tokenHash: string, accessedAt: string): Promise<{ report: Report; share: ReportShare; planVersion: DeliveryPlanVersion | null } | null>;
   revoke(userId: string, caseId: string, reportId: string, shareId: string, revokedAt: string): Promise<boolean>;
   rotate(input: {
     caseId: string;
@@ -16,6 +19,7 @@ export interface ReportShareRepository {
     reportId: string;
     tokenHash: string;
     userId: string;
+    deliveryPlanVersionId: string | null;
   }): Promise<PublicShareRecord>;
 }
 
@@ -23,6 +27,13 @@ export class ReportShareNotFoundError extends Error {
   constructor() {
     super("Report share was not found.");
     this.name = "ReportShareNotFoundError";
+  }
+}
+
+export class ReportShareNeedsReviewError extends Error {
+  constructor() {
+    super("Approve the saved plan before creating a client share link.");
+    this.name = "ReportShareNeedsReviewError";
   }
 }
 
@@ -35,6 +46,8 @@ export class ReportShareService {
 
   async create(userId: string, caseId: string, reportIdentifier: string) {
     const report = await this.requireOwnedReport(userId, caseId, reportIdentifier);
+    const planVersion = await this.repository.latestPlanVersion(report.id);
+    if (planVersion?.status === "draft") throw new ReportShareNeedsReviewError();
     const token = this.createToken();
     if (!isReportShareToken(token)) throw new Error("Share token generator returned an invalid token.");
     const expiresAt = new Date(this.now().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -44,6 +57,7 @@ export class ReportShareService {
       reportId: report.id,
       tokenHash: hashReportShareToken(token),
       userId,
+      deliveryPlanVersionId: planVersion?.id ?? null,
     });
     return { ...share, token };
   }
@@ -66,10 +80,16 @@ export class ReportShareService {
         new Date(resolved.share.expires_at).getTime() <= this.now().getTime()) {
       throw new ReportShareNotFoundError();
     }
+    if (resolved.share.delivery_plan_version_id && (
+      !resolved.planVersion || resolved.planVersion.id !== resolved.share.delivery_plan_version_id ||
+      resolved.planVersion.report_id !== resolved.share.report_id || resolved.planVersion.status !== "approved"
+    )) throw new ReportShareNotFoundError();
     const selected = selectValidatedReportV22(resolved.report, resolved.share.case_id);
     if (!selected.ok) throw new ReportShareNotFoundError();
     return {
-      report: buildReportV22ViewModel(selected.report, "client"),
+      report: resolved.planVersion
+        ? buildDeliveryViewModel(selected.report, "client", resolved.planVersion.plan)
+        : buildReportV22ViewModel(selected.report, "client"),
       share: {
         id: resolved.share.id,
         created_at: resolved.share.created_at,

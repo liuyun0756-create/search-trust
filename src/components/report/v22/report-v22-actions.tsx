@@ -6,7 +6,7 @@ import type { ReportV22Mode } from "@/lib/report-v22/view-model";
 
 type Dialog = "pdf" | "share" | null;
 
-export function ReportV22Actions({ caseId, reportId, mode, versionNumber }: { caseId: string; reportId: string; mode: ReportV22Mode; versionNumber: number }) {
+export function ReportV22Actions({ caseId, reportId, mode, versionNumber, deliveryStatus }: { caseId: string; reportId: string; mode: ReportV22Mode; versionNumber: number; deliveryStatus: "original" | "draft" | "approved" }) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [pdfMode, setPdfMode] = useState<ReportV22Mode>(mode);
   const [agencyName, setAgencyName] = useState("");
@@ -23,6 +23,7 @@ export function ReportV22Actions({ caseId, reportId, mode, versionNumber }: { ca
   const close = () => { if (!busy) { setDialog(null); setError(""); } };
 
   async function downloadPdf() {
+    if (deliveryStatus === "draft" && pdfMode === "client") { setError("Approve the saved plan before exporting the client PDF."); return; }
     setBusy(true); setError("");
     try {
       const response = await fetch(`/api/reports/${encodeURIComponent(reportId)}/pdf`, {
@@ -43,6 +44,7 @@ export function ReportV22Actions({ caseId, reportId, mode, versionNumber }: { ca
   }
 
   async function createShare() {
+    if (deliveryStatus === "draft") { setError("Approve the saved plan before creating a client link."); return; }
     setBusy(true); setError(""); setCopied(false);
     try {
       const response = await fetch(shareEndpoint, { method: "POST" });
@@ -91,13 +93,13 @@ export function ReportV22Actions({ caseId, reportId, mode, versionNumber }: { ca
           <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#7b971f]">{dialog === "pdf" ? "PDF export" : "Secure sharing"}</p><h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-[#172019]">{dialog === "pdf" ? "Prepare the deliverable" : "Create a client-only link"}</h2></div><button type="button" onClick={close} className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#445044]"><X className="h-4 w-4" /></button></div>
           {dialog === "pdf" ? <div className="mt-7 space-y-5">
             <div className="grid grid-cols-2 gap-2 rounded-2xl bg-[#e8ebdf] p-1.5">{(["advisor", "client"] as const).map((value) => <button key={value} type="button" onClick={() => setPdfMode(value)} className={`rounded-xl px-4 py-3 text-xs font-black capitalize ${pdfMode === value ? "bg-white text-[#243024] shadow-sm" : "text-[#707a6e]"}`}>{value}</button>)}</div>
-            <p className="text-xs leading-5 text-[#717b6f]">This export uses report version {versionNumber}. Agency branding is optional, applies only to this download, and is not saved.</p>
+            <p className="text-xs leading-5 text-[#717b6f]">This export uses report version {versionNumber}{deliveryStatus === "draft" ? ". The client PDF requires plan approval" : deliveryStatus === "approved" ? " and the approved plan" : " and the original recommendation"}. Agency branding is optional, applies only to this download, and is not saved.</p>
             <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-black text-[#4c584b]">Agency name<input className="field-input mt-2 bg-white" value={agencyName} maxLength={120} onChange={(e) => setAgencyName(e.target.value)} /></label><label className="text-xs font-black text-[#4c584b]">Client name<input className="field-input mt-2 bg-white" value={clientName} maxLength={120} onChange={(e) => setClientName(e.target.value)} /></label></div>
             <label className="block text-xs font-black text-[#4c584b]">Footer note<input className="field-input mt-2 bg-white" value={footerNote} maxLength={240} onChange={(e) => setFooterNote(e.target.value)} /></label>
             <label className="block text-xs font-black text-[#4c584b]">Agency logo <span className="font-medium text-[#879086]">PNG/JPEG, up to 1 MB</span><input ref={logoRef} type="file" accept="image/png,image/jpeg" onChange={(e) => selectLogo(e.target.files?.[0])} className="mt-2 block w-full rounded-xl border border-[#d5dcd0] bg-white p-3 text-xs font-medium" /></label>
             <button type="button" disabled={busy} onClick={downloadPdf} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#172019] px-5 py-4 text-sm font-black text-white disabled:opacity-50">{busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download {pdfMode} PDF</button>
           </div> : <div className="mt-7">
-            <p className="rounded-2xl border border-[#dce5cf] bg-[#f4f8eb] p-4 text-sm leading-6 text-[#56634f]">The link contains only the Client view of report version {versionNumber}. It expires after 30 days and replaces any previous active link for this report.</p>
+            <p className="rounded-2xl border border-[#dce5cf] bg-[#f4f8eb] p-4 text-sm leading-6 text-[#56634f]">The link contains only the Client view of report version {versionNumber}{deliveryStatus === "approved" ? " and this approved plan revision" : " with the original recommendation"}. It expires after 30 days and replaces any previous active link for this report. A saved draft must be approved before creating a new link.</p>
             {share ? <div className="mt-5"><div className="rounded-2xl border border-[#d7ddd1] bg-white p-4"><p className="break-all text-sm font-bold leading-6 text-[#344033]">{share.url}</p><p className="mt-2 text-xs text-[#818a80]">Expires {new Date(share.expiresAt).toLocaleDateString()}</p></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={async () => { await navigator.clipboard.writeText(share.url); setCopied(true); }} className="flex items-center justify-center gap-2 rounded-xl bg-[#a5d020] px-4 py-3 text-xs font-black text-[#172019]">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? "Copied" : "Copy link"}</button><button type="button" disabled={busy} onClick={revokeShare} className="flex items-center justify-center gap-2 rounded-xl border border-[#dfc7bd] bg-white px-4 py-3 text-xs font-black text-[#9a4b2b]"><X className="h-4 w-4" /> Revoke</button></div></div> : <button type="button" disabled={busy} onClick={createShare} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#172019] px-5 py-4 text-sm font-black text-white disabled:opacity-50">{busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Create secure link</button>}
           </div>}
           {error ? <p role="alert" className="mt-4 rounded-xl bg-[#fff0e8] px-4 py-3 text-sm font-bold text-[#9b4b29]">{error}</p> : null}

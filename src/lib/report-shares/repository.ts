@@ -3,9 +3,11 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Report, ReportShare } from "../../types/database";
 import { findUserReportByIdentifier } from "../server/reportLookup";
+import { deliveryPlanVersionById, latestDeliveryPlanVersion } from "../report-delivery/repository";
+import type { DeliveryPlanVersion } from "../report-delivery/plan";
 import type { PublicShareRecord, ReportShareRepository } from "./service";
 
-const SHARE_COLUMNS = "id,user_id,case_id,report_id,token_hash,view_mode,expires_at,revoked_at,last_accessed_at,created_at";
+const SHARE_COLUMNS = "id,user_id,case_id,report_id,delivery_plan_version_id,token_hash,view_mode,expires_at,revoked_at,last_accessed_at,created_at";
 const PUBLIC_SHARE_COLUMNS = "id,created_at,expires_at,revoked_at";
 
 export class SupabaseReportShareRepository implements ReportShareRepository {
@@ -17,13 +19,18 @@ export class SupabaseReportShareRepository implements ReportShareRepository {
     return data?.case_id === caseId ? data : null;
   }
 
-  async rotate(input: { caseId: string; expiresAt: string; reportId: string; tokenHash: string; userId: string }): Promise<PublicShareRecord> {
+  async latestPlanVersion(reportId: string): Promise<DeliveryPlanVersion | null> {
+    return latestDeliveryPlanVersion(this.supabase, reportId);
+  }
+
+  async rotate(input: { caseId: string; expiresAt: string; reportId: string; tokenHash: string; userId: string; deliveryPlanVersionId: string | null }): Promise<PublicShareRecord> {
     const { data: shareId, error } = await this.supabase.rpc("rotate_v22_report_share", {
       p_user_id: input.userId,
       p_case_id: input.caseId,
       p_report_id: input.reportId,
       p_token_hash: input.tokenHash,
       p_expires_at: input.expiresAt,
+      p_delivery_plan_version_id: input.deliveryPlanVersionId,
     });
     if (error || !shareId) throw error ?? new Error("Share rotation returned no record.");
     const { data, error: readError } = await this.supabase
@@ -63,7 +70,7 @@ export class SupabaseReportShareRepository implements ReportShareRepository {
     return Boolean(data);
   }
 
-  async resolve(tokenHash: string, accessedAt: string): Promise<{ report: Report; share: ReportShare } | null> {
+  async resolve(tokenHash: string, accessedAt: string): Promise<{ report: Report; share: ReportShare; planVersion: DeliveryPlanVersion | null } | null> {
     const { data: shareData, error: shareError } = await this.supabase
       .from("report_shares")
       .select(SHARE_COLUMNS)
@@ -86,6 +93,9 @@ export class SupabaseReportShareRepository implements ReportShareRepository {
     if (!reportData) return null;
 
     await this.supabase.from("report_shares").update({ last_accessed_at: accessedAt }).eq("id", share.id);
-    return { report: reportData as Report, share };
+    const planVersion = share.delivery_plan_version_id
+      ? await deliveryPlanVersionById(this.supabase, share.delivery_plan_version_id)
+      : null;
+    return { report: reportData as Report, share, planVersion };
   }
 }

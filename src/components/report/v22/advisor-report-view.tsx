@@ -183,8 +183,8 @@ function PriorityActionsSection({
     <section id="actions" className="scroll-mt-28">
       <SectionHeading eyebrow="Recommended work" title="Three actions to review first." description="Each recommendation shows why it is prioritized, what it needs from the client, how to execute it, and how completion will be checked." />
       <div className="mb-5 flex flex-col gap-3 rounded-[20px] bg-[#e8ede3] px-5 py-4 text-xs leading-5 text-[#5d685c] sm:flex-row sm:items-center sm:justify-between">
-        <p><strong className="text-[#2e392e]">System recommendation:</strong> this order follows the current evidence and dependencies.</p>
-        <p className="font-bold text-[#64751f]">Review before using it as the client plan.</p>
+        <p><strong className="text-[#2e392e]">{report.deliveryPlanEdited ? "SEO-edited plan:" : "System recommendation:"}</strong> {report.deliveryPlanEdited ? "The original evidence and rationale remain available; changed scope needs separate validation." : "This order follows the current evidence and dependencies."}</p>
+        <p className="font-bold text-[#64751f]">{report.deliveryPlanEdited ? "Check the approval state above before delivery." : "Review before using it as the client plan."}</p>
       </div>
       <div className="space-y-4">
         {report.actions.map((action) => {
@@ -196,10 +196,11 @@ function PriorityActionsSection({
                 <div className="min-w-0">
                   <p className="text-lg font-black leading-7 tracking-[-0.025em] text-[#1c251f]">{action.clientFacingExplanation}</p>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-[#677266]"><strong className="text-[#3c483b]">Why now:</strong> {action.whyNow}</p>
+                  {action.reviewedPlan?.scopeChanged && <p className="mt-2 rounded-xl bg-[#fff4e3] px-3 py-2 text-xs font-bold leading-5 text-[#795a22]">Scope changed by SEO. Original findings do not automatically validate the revised target.</p>}
                   <div className="mt-4 flex flex-wrap gap-2">
                     <span className="rounded-full bg-[#f0f4e7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#61734b]">{action.effort} effort</span>
                     <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">Owner: {action.ownerSuggestion}</span>
-                    <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">Review {formatReportDate(action.reviewDate)}</span>
+                    <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">{action.reviewedPlan?.schedule || `Review ${formatReportDate(action.reviewDate)}`}</span>
                     <span className="rounded-full bg-[#f3f4f1] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#6e776d]">{evidenceIds.length} linked {evidenceIds.length === 1 ? "source" : "sources"}</span>
                   </div>
                 </div>
@@ -333,7 +334,7 @@ export function AdvisorReportView({ report }: { report: AdvisorReportV22ViewMode
           </div>
         </section>
 
-        <section id="roadmap" className="scroll-mt-28"><SectionHeading eyebrow="Delivery sequence" title="30 / 60 / 90-day roadmap." /><RoadmapTimeline phases={report.roadmap} /></section>
+        <section id="roadmap" className="scroll-mt-28"><SectionHeading eyebrow="Delivery sequence" title={report.deliveryPlanEdited ? "SEO-reviewed action sequence." : "30 / 60 / 90-day roadmap."} /><RoadmapTimeline phases={report.roadmap} /></section>
 
         <section id="layers" className="scroll-mt-28">
           <SectionHeading eyebrow="SearchTrust diagnostic" title="The eight layers of local trust." description="A layer marked not checked is an explicit coverage boundary—not a passing score." />

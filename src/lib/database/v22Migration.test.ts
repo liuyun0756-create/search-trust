@@ -1923,6 +1923,61 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     );
   });
 
+  it("versions SEO plans without mutating reports and pins an approved plan to the share", async () => {
+    const deliveryReport = await insertId(
+      `insert into public.reports (
+         report_id, user_id, page_url, gbp_url, access_type,
+         case_id, report_type, schema_version, version_number,
+         report_v2_2, snapshot_ids, coverage_state, version_diff, generation_config,
+         ruleset_version, copy_model_version
+       ) values (
+         'v22-delivery-plan-a', $1, 'https://alpha.example.com', '', 'free_trial',
+         $2, 'prospect', '2.2', 1,
+         '{"report_version":{"version_number":1}}'::jsonb,
+         array[$3::uuid], '{}'::jsonb, '{}'::jsonb, '{}'::jsonb,
+         'rules-v1', 'copy-v1'
+       ) returning id`,
+      [userA, caseA, siteSnapshotA],
+    );
+    const plan = JSON.stringify([{ actionId: "a" }, { actionId: "b" }, { actionId: "c" }]);
+    const draft = await db.query<{ id: string; revision: number }>(
+      `select v.id, v.revision from public.save_v22_delivery_plan_version($1,$2,$3,0,1,'draft',$4::jsonb) as v`,
+      [userA, caseA, deliveryReport, plan],
+    );
+    expect(draft.rows[0].revision).toBe(1);
+    await expectSqlError(
+      `select public.save_v22_delivery_plan_version($1,$2,$3,0,1,'draft',$4::jsonb)`,
+      [userA, caseA, deliveryReport, plan], "delivery plan has changed",
+    );
+    await expectSqlError(
+      `select public.save_v22_delivery_plan_version($1,$2,$3,1,1,'approved',$4::jsonb)`,
+      [userB, caseA, deliveryReport, plan], "report does not belong to user and case",
+    );
+    const approved = await db.query<{ id: string; revision: number }>(
+      `select v.id, v.revision from public.save_v22_delivery_plan_version($1,$2,$3,1,1,'approved',$4::jsonb) as v`,
+      [userA, caseA, deliveryReport, plan],
+    );
+    expect(approved.rows[0].revision).toBe(2);
+    await expectSqlError(`update public.report_delivery_plan_versions set status='draft' where id=$1`, [approved.rows[0].id], "immutable");
+    const shared = await db.query<{ rotate_v22_report_share: string }>(
+      `select public.rotate_v22_report_share($1,$2,$3,$4,now()+interval '30 days',$5)`,
+      [userA, caseA, deliveryReport, "d".repeat(64), approved.rows[0].id],
+    );
+    const pinned = await db.query<{ delivery_plan_version_id: string }>(
+      `select delivery_plan_version_id from public.report_shares where id=$1`,
+      [shared.rows[0].rotate_v22_report_share],
+    );
+    expect(pinned.rows[0].delivery_plan_version_id).toBe(approved.rows[0].id);
+    await db.query(
+      `select public.save_v22_delivery_plan_version($1,$2,$3,2,1,'draft',$4::jsonb)`,
+      [userA, caseA, deliveryReport, plan],
+    );
+    await expectSqlError(
+      `select public.rotate_v22_report_share($1,$2,$3,$4,now()+interval '30 days',$5)`,
+      [userA, caseA, deliveryReport, "e".repeat(64), approved.rows[0].id], "delivery plan changed before sharing",
+    );
+  });
+
   it("applies job callback revisions atomically and never regresses a terminal state", async () => {
     const jobId = await insertId(
       `insert into public.analysis_jobs (

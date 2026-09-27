@@ -6,6 +6,7 @@ import { AdvisorReportView } from "./advisor-report-view";
 import { ClientReportView } from "./client-report-view";
 import { ReportContextPills, formatReportDate } from "./report-v22-shared";
 import { ReportV22Actions } from "./report-v22-actions";
+import { DeliveryPlanEditor, type DeliveryPlanPageState } from "./delivery-plan-editor";
 
 const advisorNav = [
   ["Decision", "#decision"],
@@ -31,10 +32,12 @@ export function ReportV22Shell({
   report,
   caseId,
   reportId,
+  deliveryPlan,
 }: {
   report: ReportV22ViewModel;
   caseId: string;
   reportId: string;
+  deliveryPlan: DeliveryPlanPageState;
 }) {
   const basePath = `/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(reportId)}`;
   const navItems = report.mode === "advisor" ? advisorNav : clientNav;
@@ -70,7 +73,7 @@ export function ReportV22Shell({
                 <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Client preview
               </Link>
             </div>
-            <ReportV22Actions caseId={caseId} reportId={reportId} mode={report.mode} versionNumber={report.header.versionNumber} />
+            <ReportV22Actions caseId={caseId} reportId={reportId} mode={report.mode} versionNumber={report.header.versionNumber} deliveryStatus={deliveryPlan.status} />
             {report.mode === "advisor" && process.env.GOOGLE_CONNECTIONS_ENABLED === "true" && (
               <Link href={`/cases/${encodeURIComponent(caseId)}/connections`} className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold transition hover:border-white/40 hover:bg-white/5">Manage client evidence</Link>
             )}
@@ -103,7 +106,7 @@ export function ReportV22Shell({
               <div className="grid gap-5 lg:grid-cols-[220px_1fr_auto] lg:items-center">
                 <div className="flex items-start gap-3">
                   <CircleDot className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" />
-                  <div><p className="text-sm font-black text-[#243026]">Review before delivery</p><p className="mt-1 text-[11px] leading-5 text-[#788176]">Report version {report.header.versionNumber}</p></div>
+                  <div><p className="text-sm font-black text-[#243026]">Review before delivery</p><p className="mt-1 text-[11px] leading-5 text-[#788176]">Report version {report.header.versionNumber} · Plan {deliveryPlan.status === "original" ? "original" : `revision ${deliveryPlan.revision} (${deliveryPlan.status})`}</p></div>
                 </div>
                 <ol className="grid gap-2 sm:grid-cols-3">
                   <li className="rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="mr-2 font-mono text-[9px] text-[#7f9a24]">01</span>Check the decision</li>
@@ -114,7 +117,7 @@ export function ReportV22Shell({
               </div>
             ) : (
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-start gap-3"><Eye className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" /><div><p className="text-sm font-black text-[#243026]">Client preview · version {report.header.versionNumber}</p><p className="mt-1 text-xs leading-5 text-[#788176]">This changes the level of detail, not the facts or limitations. Nothing is sent automatically.</p></div></div>
+                <div className="flex items-start gap-3"><Eye className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" /><div><p className="text-sm font-black text-[#243026]">Client preview · version {report.header.versionNumber} · {deliveryPlan.status === "draft" ? "Unapproved plan draft" : deliveryPlan.status === "approved" ? `Approved plan revision ${deliveryPlan.revision}` : "Original recommendation"}</p><p className="mt-1 text-xs leading-5 text-[#788176]">This changes the level of detail, not the facts or limitations. Nothing is sent automatically.{deliveryPlan.status === "draft" ? " Sharing and client PDF are paused until you approve this plan." : ""}</p></div></div>
                 <Link href={`${basePath}?view=${alternateMode}`} className="inline-flex shrink-0 items-center gap-2 text-xs font-black text-[#5d711c] transition hover:text-[#172019]">Return to SEO work view <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
               </div>
             )}
@@ -136,6 +139,7 @@ export function ReportV22Shell({
 
           <main className="min-w-0 px-5 py-12 sm:px-8 sm:py-16 lg:px-12 xl:px-16">
             <div className="mx-auto max-w-[1060px]">
+              {report.mode === "advisor" && <DeliveryPlanEditor caseId={caseId} reportId={reportId} initialState={deliveryPlan} />}
               {report.mode === "advisor" ? <AdvisorReportView report={report} /> : <ClientReportView report={report} />}
             </div>
           </main>

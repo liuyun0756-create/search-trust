@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import prospectFixture from "../report-v22/contracts/fixtures/prospect.json";
 import type { SearchTrustReportV2_2 } from "../report-v22/generated/types";
 import type { Report, ReportShare } from "../../types/database";
-import { ReportShareNotFoundError, ReportShareService, type PublicShareRecord, type ReportShareRepository } from "./service";
+import { initialDeliveryPlan, type DeliveryPlanVersion } from "../report-delivery/plan";
+import { ReportShareNeedsReviewError, ReportShareNotFoundError, ReportShareService, type PublicShareRecord, type ReportShareRepository } from "./service";
 import { buildReportShareUrl, createReportShareToken, hashReportShareToken, isReportShareToken } from "./tokens";
 
 const reportV22 = prospectFixture as unknown as SearchTrustReportV2_2;
@@ -19,11 +20,13 @@ const report = {
 class FakeRepository implements ReportShareRepository {
   rotated: Parameters<ReportShareRepository["rotate"]>[0] | null = null;
   revoked: Parameters<ReportShareRepository["revoke"]> | null = null;
-  resolved: { report: Report; share: ReportShare } | null = null;
+  latest: DeliveryPlanVersion | null = null;
+  resolved: { report: Report; share: ReportShare; planVersion: DeliveryPlanVersion | null } | null = null;
 
   async findOwnedReport(userId: string, caseId: string) {
     return userId === report.user_id && caseId === report.case_id ? report : null;
   }
+  async latestPlanVersion() { return this.latest; }
   async rotate(input: Parameters<ReportShareRepository["rotate"]>[0]): Promise<PublicShareRecord> {
     this.rotated = input;
     return { id: "share-1", created_at: now.toISOString(), expires_at: input.expiresAt, revoked_at: null };
@@ -53,6 +56,22 @@ describe("report share tokens", () => {
 });
 
 describe("ReportShareService", () => {
+  it("rejects an unapproved draft and pins an approved plan version", async () => {
+    const repository = new FakeRepository();
+    const service = new ReportShareService(repository, () => now, () => token);
+    const version: DeliveryPlanVersion = {
+      id: "33333333-3333-4333-8333-333333333333", user_id: report.user_id,
+      case_id: report.case_id!, report_id: report.id, revision: 1,
+      source_report_version: 1, status: "draft", plan: initialDeliveryPlan(reportV22), created_at: now.toISOString(),
+    };
+    repository.latest = version;
+    await expect(service.create(report.user_id, report.case_id!, report.id)).rejects.toBeInstanceOf(ReportShareNeedsReviewError);
+    expect(repository.rotated).toBeNull();
+    repository.latest = { ...version, status: "approved" };
+    await service.create(report.user_id, report.case_id!, report.id);
+    expect(repository.rotated?.deliveryPlanVersionId).toBe(version.id);
+  });
+
   it("rotates a 30-day client share without persisting its plaintext token", async () => {
     const repository = new FakeRepository();
     const service = new ReportShareService(repository, () => now, () => token);
@@ -73,6 +92,7 @@ describe("ReportShareService", () => {
     const repository = new FakeRepository();
     repository.resolved = {
       report,
+      planVersion: null,
       share: {
         id: "share-1",
         user_id: report.user_id,
@@ -122,13 +142,13 @@ describe("ReportShareService", () => {
     };
     const service = new ReportShareService(repository, () => now);
 
-    repository.resolved = { report, share: { ...baseShare, revoked_at: now.toISOString() } };
+    repository.resolved = { report, share: { ...baseShare, revoked_at: now.toISOString() }, planVersion: null };
     await expect(service.resolve(token)).rejects.toBeInstanceOf(ReportShareNotFoundError);
 
-    repository.resolved = { report, share: { ...baseShare, expires_at: now.toISOString() } };
+    repository.resolved = { report, share: { ...baseShare, expires_at: now.toISOString() }, planVersion: null };
     await expect(service.resolve(token)).rejects.toBeInstanceOf(ReportShareNotFoundError);
 
-    repository.resolved = { report, share: { ...baseShare, view_mode: "advisor" as "client" } };
+    repository.resolved = { report, share: { ...baseShare, view_mode: "advisor" as "client" }, planVersion: null };
     await expect(service.resolve(token)).rejects.toBeInstanceOf(ReportShareNotFoundError);
   });
 

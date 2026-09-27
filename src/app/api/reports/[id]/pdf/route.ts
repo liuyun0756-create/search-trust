@@ -5,7 +5,10 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { ReportV22PDFDocument } from "@/components/report/pdf/ReportV22PDFDocument";
 import { getCurrentUser } from "@/lib/auth";
 import { parsePdfBranding, type EffectiveBranding, type PdfVariant } from "@/lib/report-pdf/branding";
-import { buildReportV22ViewModel, validateReportV22 } from "@/lib/report-v22";
+import { validateReportV22 } from "@/lib/report-v22";
+import { buildDeliveryViewModel } from "@/lib/report-delivery/projection";
+import { latestDeliveryPlanVersion } from "@/lib/report-delivery/repository";
+import type { DeliveryPlanVersion } from "@/lib/report-delivery/plan";
 import type { SearchTrustReportV2_2 } from "@/lib/report-v22/generated/types";
 import { findUserReportByIdentifier } from "@/lib/server/reportLookup";
 import { createServerClient } from "@/lib/supabase";
@@ -26,10 +29,14 @@ async function renderReportPdf(
   report: SearchTrustReportV2_2,
   branding: EffectiveBranding | undefined,
   variant: PdfVariant,
+  planVersion: DeliveryPlanVersion | null,
 ) {
+  if (variant === "client" && planVersion?.status === "draft") {
+    return NextResponse.json({ error: "Approve the saved plan before exporting a client PDF." }, { status: 409 });
+  }
   const viewModel = variant === "client"
-    ? buildReportV22ViewModel(report, "client")
-    : buildReportV22ViewModel(report, "advisor");
+    ? buildDeliveryViewModel(report, "client", planVersion?.plan)
+    : buildDeliveryViewModel(report, "advisor", planVersion?.plan);
   const document = React.createElement(ReportV22PDFDocument, {
     report: viewModel,
     branding,
@@ -65,7 +72,8 @@ async function loadReport(id: string) {
     });
     return { response: NextResponse.json({ error: "Stored report is invalid" }, { status: 422 }) };
   }
-  return { report: validation.report };
+  const planVersion = await latestDeliveryPlanVersion(createServerClient(), data.id);
+  return { report: validation.report, planVersion };
 }
 
 export async function GET(
@@ -86,7 +94,7 @@ export async function GET(
         valid: true,
       });
     }
-    return renderReportPdf(loaded.report, undefined, variant);
+    return renderReportPdf(loaded.report, undefined, variant, loaded.planVersion ?? null);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("pdf_variant")) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -107,7 +115,7 @@ export async function POST(
     const variant = parseVariant(body?.pdf_variant);
     const loaded = await loadReport(id);
     if (loaded.response) return loaded.response;
-    return renderReportPdf(loaded.report, branding, variant);
+    return renderReportPdf(loaded.report, branding, variant, loaded.planVersion ?? null);
   } catch (error) {
     const message = error instanceof Error && (error.message.startsWith("Logo must") || error.message.startsWith("pdf_variant"))
       ? error.message

@@ -695,6 +695,7 @@ export interface ReportShare {
   user_id: string;
   case_id: string;
   report_id: string;
+  delivery_plan_version_id?: string | null;
   token_hash: string;
   view_mode: "client";
   expires_at: string;

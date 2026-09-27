@@ -3,7 +3,10 @@ import { notFound, redirect } from "next/navigation";
 
 import { ReportV22Shell } from "@/components/report/v22/report-v22-shell";
 import { getCurrentUser } from "@/lib/auth";
-import { buildReportV22ViewModel, type ReportV22Mode } from "@/lib/report-v22/view-model";
+import { type ReportV22Mode } from "@/lib/report-v22/view-model";
+import { buildDeliveryViewModel } from "@/lib/report-delivery/projection";
+import { initialDeliveryPlan } from "@/lib/report-delivery/plan";
+import { latestDeliveryPlanVersion } from "@/lib/report-delivery/repository";
 import { loadUserReportV22 } from "@/lib/report-v22/server-report";
 import { createServerClient } from "@/lib/supabase";
 import { isLocalE2ETestMode } from "@/lib/e2e-v22/config";
@@ -32,17 +35,19 @@ export default async function ReportV22Page({
     fixture.report_version.report_id = reportId;
     const localMode: ReportV22Mode = query.view === "client" ? "client" : "advisor";
     const localReport = localMode === "client"
-      ? buildReportV22ViewModel(fixture, "client")
-      : buildReportV22ViewModel(fixture, "advisor");
-    return <ReportV22Shell report={localReport} caseId={caseId} reportId={reportId} />;
+      ? buildDeliveryViewModel(fixture, "client")
+      : buildDeliveryViewModel(fixture, "advisor");
+    return <ReportV22Shell report={localReport} caseId={caseId} reportId={reportId} deliveryPlan={{ plan: initialDeliveryPlan(fixture), originalPlan: initialDeliveryPlan(fixture), revision: 0, status: "original", editingAvailable: false }} />;
   }
-  const loaded = await loadUserReportV22(createServerClient(), user.userId, caseId, reportId);
+  const client = createServerClient();
+  const loaded = await loadUserReportV22(client, user.userId, caseId, reportId);
   if (!loaded.ok) notFound();
+  const latest = await latestDeliveryPlanVersion(client, loaded.databaseId);
 
   const mode: ReportV22Mode = query.view === "client" ? "client" : "advisor";
   const report = mode === "client"
-    ? buildReportV22ViewModel(loaded.report, "client")
-    : buildReportV22ViewModel(loaded.report, "advisor");
+    ? buildDeliveryViewModel(loaded.report, "client", latest?.plan)
+    : buildDeliveryViewModel(loaded.report, "advisor", latest?.plan);
 
-  return <ReportV22Shell report={report} caseId={caseId} reportId={reportId} />;
+  return <ReportV22Shell report={report} caseId={caseId} reportId={reportId} deliveryPlan={{ plan: latest?.plan ?? initialDeliveryPlan(loaded.report), originalPlan: initialDeliveryPlan(loaded.report), revision: latest?.revision ?? 0, status: latest?.status ?? "original", editingAvailable: true }} />;
 }

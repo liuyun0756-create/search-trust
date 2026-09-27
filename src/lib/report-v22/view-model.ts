@@ -60,6 +60,15 @@ export interface ClientActionViewModel {
   sequence: number;
   title: string;
   whyNow: string;
+  reviewedPlan?: {
+    target: string;
+    steps: string;
+    completion: string;
+    owner: string;
+    schedule: string;
+    review: string;
+    scopeChanged: boolean;
+  };
 }
 
 export interface ClientRoadmapPhaseViewModel {
@@ -87,6 +96,7 @@ export interface ClientReportV22ViewModel {
   mode: "client";
   nextReviewDate: string;
   roadmap: ClientRoadmapPhaseViewModel[];
+  deliveryPlanEdited?: boolean;
 }
 
 export interface ReportV22CompetitorViewModel {
@@ -132,6 +142,7 @@ export interface AdvisorActionViewModel {
   specification: TopAction["specification"];
   validationMetrics: TopAction["validation_metrics"];
   whyNow: string;
+  reviewedPlan?: ClientActionViewModel["reviewedPlan"];
 }
 
 export interface AdvisorLayerViewModel extends LayerAssessment {
@@ -174,6 +185,7 @@ export interface AdvisorReportV22ViewModel {
   roadmap: ReportV22RoadmapPhaseViewModel[];
   siteInventory: SiteInventorySummary;
   versionDiff: VersionDiff;
+  deliveryPlanEdited?: boolean;
 }
 
 export type ReportV22ViewModel = ClientReportV22ViewModel | AdvisorReportV22ViewModel;
