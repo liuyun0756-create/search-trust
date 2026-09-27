@@ -82,10 +82,16 @@ export class ReportShareService {
     }
     if (resolved.share.delivery_plan_version_id && (
       !resolved.planVersion || resolved.planVersion.id !== resolved.share.delivery_plan_version_id ||
-      resolved.planVersion.report_id !== resolved.share.report_id || resolved.planVersion.status !== "approved"
+      resolved.planVersion.report_id !== resolved.share.report_id ||
+      resolved.planVersion.case_id !== resolved.share.case_id ||
+      resolved.planVersion.user_id !== resolved.share.user_id ||
+      resolved.planVersion.status !== "approved"
     )) throw new ReportShareNotFoundError();
     const selected = selectValidatedReportV22(resolved.report, resolved.share.case_id);
     if (!selected.ok) throw new ReportShareNotFoundError();
+    if (resolved.planVersion && resolved.planVersion.source_report_version !== selected.report.report_version.version_number) {
+      throw new ReportShareNotFoundError();
+    }
     return {
       report: resolved.planVersion
         ? buildDeliveryViewModel(selected.report, "client", resolved.planVersion.plan)

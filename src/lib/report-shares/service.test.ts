@@ -72,6 +72,28 @@ describe("ReportShareService", () => {
     expect(repository.rotated?.deliveryPlanVersionId).toBe(version.id);
   });
 
+  it("resolves a pinned approved plan and rejects a mismatched stored version", async () => {
+    const repository = new FakeRepository();
+    const changed = initialDeliveryPlan(reportV22);
+    changed[0] = { ...changed[0], title: "SEO-reviewed action" };
+    const approved: DeliveryPlanVersion = {
+      id: "33333333-3333-4333-8333-333333333333", user_id: report.user_id,
+      case_id: report.case_id!, report_id: report.id, revision: 2,
+      source_report_version: reportV22.report_version.version_number,
+      status: "approved", plan: changed, created_at: now.toISOString(),
+    };
+    const share: ReportShare = {
+      id: "share-2", user_id: report.user_id, case_id: report.case_id!, report_id: report.id,
+      delivery_plan_version_id: approved.id, token_hash: hashReportShareToken(token), view_mode: "client",
+      created_at: now.toISOString(), expires_at: "2026-10-04T00:00:00.000Z", revoked_at: null, last_accessed_at: null,
+    };
+    repository.resolved = { report, share, planVersion: approved };
+    const service = new ReportShareService(repository, () => now);
+    expect((await service.resolve(token)).report.actions[0].title).toBe("SEO-reviewed action");
+    repository.resolved = { report, share, planVersion: { ...approved, case_id: "wrong-case" } };
+    await expect(service.resolve(token)).rejects.toBeInstanceOf(ReportShareNotFoundError);
+  });
+
   it("rotates a 30-day client share without persisting its plaintext token", async () => {
     const repository = new FakeRepository();
     const service = new ReportShareService(repository, () => now, () => token);
