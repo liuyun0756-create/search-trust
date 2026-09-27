@@ -1,6 +1,7 @@
 "use client";
 
 import type { ClientReportV22ViewModel } from "@/lib/report-v22/view-model";
+import { clientDeliveryLanguage } from "@/lib/report-v22/delivery-language";
 import { Download, LockKeyhole } from "lucide-react";
 import { useState } from "react";
 
@@ -8,6 +9,7 @@ import { ClientReportView } from "./client-report-view";
 import { ReportContextPills, formatReportDate } from "./report-v22-shared";
 
 export function SharedClientReportShell({ report, token }: { report: ClientReportV22ViewModel; token: string }) {
+  const delivery = clientDeliveryLanguage(report.header.reportType);
   const [downloading, setDownloading] = useState(false);
   const [downloadFailed, setDownloadFailed] = useState(false);
 
@@ -53,11 +55,11 @@ export function SharedClientReportShell({ report, token }: { report: ClientRepor
           </div>
           <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b8dd3c]">SearchTrust client report</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b8dd3c]">{delivery.stage} · version {report.header.versionNumber}</p>
               <h1 className="mt-5 max-w-4xl text-balance text-[42px] font-black leading-[0.98] tracking-[-0.06em] sm:text-[62px] lg:text-[76px]">{report.header.businessName}</h1>
               <div className="mt-7"><ReportContextPills service={report.header.primaryService} location={report.header.location} /></div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Generated</p><p className="mt-2 font-bold">{formatReportDate(report.header.generatedAt)}</p></div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Shared report version</p><p className="mt-2 font-bold">v{report.header.versionNumber} · {delivery.stage}</p><p className="mt-2 text-xs text-white/55">Generated {formatReportDate(report.header.generatedAt)}</p></div>
           </div>
         </div>
       </header>

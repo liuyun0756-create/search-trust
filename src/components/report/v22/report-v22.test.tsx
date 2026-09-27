@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import prospectFixture from "../../../lib/report-v22/contracts/fixtures/prospect.json";
+import verifiedFixture from "../../../lib/report-v22/contracts/fixtures/verified.json";
 import type { SearchTrustReportV2_2 } from "../../../lib/report-v22/generated/types";
 import { buildReportV22ViewModel } from "../../../lib/report-v22/view-model";
 
@@ -18,6 +19,9 @@ describe("v2.2 report views", () => {
     );
 
     expect(html).toContain("The core decision");
+    expect(html).toContain("Prospect proposal");
+    expect(html).toContain("These are recommended actions and planned checks.");
+    expect(html).toContain("Planned result to verify");
     expect(html).toContain("Three actions, in the right order.");
     expect(html).toContain("Representative evidence");
     expect(html).toContain("Days 1–30");
@@ -26,6 +30,14 @@ describe("v2.2 report views", () => {
     expect(html).not.toContain("RULE-");
     expect(html).not.toContain("snapshot");
     expect(html).not.toContain("https://");
+  });
+
+  it("labels a connected-data report as a service action plan", () => {
+    const html = renderToStaticMarkup(
+      <ClientReportView report={buildReportV22ViewModel(verifiedFixture as unknown as SearchTrustReportV2_2, "client")} />,
+    );
+    expect(html).toContain("Service action plan");
+    expect(html).toContain("Recommendations informed by connected client data");
   });
 
   it("renders advisor findings, eight layers, source health, and evidence controls", () => {
@@ -54,6 +66,8 @@ describe("v2.2 report views", () => {
       />,
     );
     expect(html).toContain("Secure client report");
+    expect(html).toContain("Shared report version");
+    expect(html).toContain("v1 · Prospect proposal");
     expect(html).toContain("Download PDF");
     expect(html).not.toContain("Advisor");
     expect(html).not.toContain(fixture.findings[0].rule_id);

@@ -1,5 +1,5 @@
 import type { ClientActionViewModel } from "@/lib/report-v22/view-model";
-import { CalendarDays, Check, Clock3 } from "lucide-react";
+import { CalendarDays, CircleDot, Clock3 } from "lucide-react";
 
 import { SectionHeading, formatReportDate } from "./report-v22-shared";
 
@@ -18,7 +18,7 @@ export function ClientPriorityActions({ actions }: { actions: ClientActionViewMo
               <h3 className="text-[22px] font-black leading-7 tracking-[-0.035em] text-[#1c251f]">{action.title}</h3>
               <p className="mt-3 text-sm leading-6 text-[#657064]">{action.whyNow}</p>
               <div className="mt-5 rounded-2xl bg-[#f2f5ec] p-4">
-                <p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#778476]">Expected result</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#778476]">Planned result to verify</p>
                 <p className="mt-2 text-sm font-bold leading-6 text-[#3f4b3f]">{action.expectedResult}</p>
               </div>
             </div>
@@ -27,7 +27,7 @@ export function ClientPriorityActions({ actions }: { actions: ClientActionViewMo
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8dfd0] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#677362]"><Clock3 className="h-3.5 w-3.5" />{action.effort} effort</span>
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4d594c]"><CalendarDays className="h-4 w-4 text-[#8eb51b]" />{formatReportDate(action.reviewDate)}</span>
               </div>
-              {action.requiredClientAssets.length ? <div className="mt-6 border-t border-[#e4e9df] pt-5"><p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#8a9388]">Client inputs</p><ul className="mt-3 space-y-2">{action.requiredClientAssets.map((asset) => <li key={asset} className="flex gap-2 text-xs font-semibold leading-5 text-[#596457]"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8eb51b]" />{asset}</li>)}</ul></div> : null}
+              {action.requiredClientAssets.length ? <div className="mt-6 border-t border-[#e4e9df] pt-5"><p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#8a9388]">Client inputs needed</p><ul className="mt-3 space-y-2">{action.requiredClientAssets.map((asset) => <li key={asset} className="flex gap-2 text-xs font-semibold leading-5 text-[#596457]"><CircleDot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8eb51b]" />{asset}</li>)}</ul></div> : null}
             </div>
           </article>
         ))}

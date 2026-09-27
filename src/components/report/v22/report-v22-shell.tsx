@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReportV22ViewModel } from "@/lib/report-v22/view-model";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, CheckCircle2, Eye, FileText, ListChecks, SearchCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, CircleDot, Eye, FileText, Sparkles } from "lucide-react";
 
 import { AdvisorReportView } from "./advisor-report-view";
 import { ClientReportView } from "./client-report-view";
@@ -102,13 +102,13 @@ export function ReportV22Shell({
             {report.mode === "advisor" ? (
               <div className="grid gap-5 lg:grid-cols-[220px_1fr_auto] lg:items-center">
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" />
-                  <div><p className="text-sm font-black text-[#243026]">Review before delivery</p><p className="mt-1 text-[11px] leading-5 text-[#788176]">Version {report.header.versionNumber} is private.</p></div>
+                  <CircleDot className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" />
+                  <div><p className="text-sm font-black text-[#243026]">Review before delivery</p><p className="mt-1 text-[11px] leading-5 text-[#788176]">Report version {report.header.versionNumber}</p></div>
                 </div>
                 <ol className="grid gap-2 sm:grid-cols-3">
-                  <li className="flex items-center gap-2 rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="font-mono text-[9px] text-[#7f9a24]">01</span><CheckCircle2 className="h-3.5 w-3.5 text-[#88a925]" />Check the decision</li>
-                  <li className="flex items-center gap-2 rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="font-mono text-[9px] text-[#7f9a24]">02</span><ListChecks className="h-3.5 w-3.5 text-[#88a925]" />Review three actions</li>
-                  <li className="flex items-center gap-2 rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="font-mono text-[9px] text-[#7f9a24]">03</span><SearchCheck className="h-3.5 w-3.5 text-[#88a925]" />Verify evidence &amp; limits</li>
+                  <li className="rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="mr-2 font-mono text-[9px] text-[#7f9a24]">01</span>Check the decision</li>
+                  <li className="rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="mr-2 font-mono text-[9px] text-[#7f9a24]">02</span>Review three actions</li>
+                  <li className="rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="mr-2 font-mono text-[9px] text-[#7f9a24]">03</span>Verify evidence &amp; limits</li>
                 </ol>
                 <Link href={`${basePath}?view=${alternateMode}`} className="inline-flex shrink-0 items-center gap-2 text-xs font-black text-[#5d711c] transition hover:text-[#172019]">Preview client report <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
               </div>
