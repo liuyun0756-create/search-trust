@@ -1,11 +1,11 @@
 .page {
-  --ink: #102019;
-  --muted: #5f6e64;
+  --ink: #1d2a22;
+  --muted: #647466;
   --quiet: #7b887e;
-  --lime: #a8d414;
-  --lime-dark: #668713;
+  --lime: #dcefd4;
+  --lime-dark: #57805b;
   --mint: #eaf4ed;
-  --paper: #f7f7f1;
+  --paper: #f7faf7;
   --white: #fff;
   overflow: clip;
   background: var(--paper);
@@ -18,17 +18,15 @@
   isolation: isolate;
   min-height: 720px;
   overflow: hidden;
-  background: #0f1c16;
-  color: #f8fbf7;
+  background: #f7faf7;
+  color: #1d2a22;
 }
 
 .hero::before {
   position: absolute;
   inset: 0;
   z-index: -2;
-  background:
-    radial-gradient(circle at 12% 8%, rgba(174, 222, 46, .13), transparent 31rem),
-    linear-gradient(135deg, rgba(255,255,255,.018), transparent 52%);
+  background: radial-gradient(circle at 12% 8%, rgba(220, 239, 212, .42), transparent 31rem);
   content: "";
 }
 
@@ -40,7 +38,7 @@
   width: 46rem;
   height: 46rem;
   border-radius: 50%;
-  background: rgba(136, 191, 35, .08);
+  background: rgba(220, 239, 212, .24);
   filter: blur(3px);
 }
 
@@ -67,7 +65,7 @@
 
 .hero .eyebrow,
 .finalCta .eyebrow {
-  color: #b9e83a;
+  color: #57805b;
 }
 
 .heroCopy h1 {
@@ -82,7 +80,7 @@
 .heroIntro {
   max-width: 710px;
   margin: 2rem 0 0;
-  color: rgba(248, 251, 247, .67);
+  color: #647466;
   font-size: clamp(1.08rem, 1.35vw, 1.32rem);
   line-height: 1.72;
 }
@@ -93,7 +91,7 @@
   align-items: flex-start;
   max-width: 620px;
   margin: 1.65rem 0 0;
-  color: rgba(235, 244, 232, .82);
+  color: #527557;
   font-size: .9rem;
   font-weight: 650;
   line-height: 1.6;
@@ -122,8 +120,8 @@
 .scrollLink {
   margin-top: 2.6rem;
   padding-bottom: .45rem;
-  border-bottom: 1px solid rgba(185, 232, 58, .5);
-  color: #e3efdc;
+  border-bottom: 1px solid #8cb790;
+  color: #26432e;
 }
 
 .scrollLink svg,
@@ -141,12 +139,12 @@
 .sceneIndex {
   align-self: center;
   padding: 1.65rem 0 0 2rem;
-  border-left: 1px solid rgba(255,255,255,.14);
+  border-left: 1px solid #e3eae2;
 }
 
 .sceneIndex > p {
   margin: 0 0 .9rem;
-  color: rgba(255,255,255,.4);
+  color: #718073;
   font-size: .69rem;
   font-weight: 800;
   letter-spacing: .15em;
@@ -165,13 +163,13 @@
   gap: .6rem;
   align-items: center;
   padding: .82rem .2rem;
-  color: rgba(255,255,255,.72);
+  color: #42614a;
   text-decoration: none;
   transition: color .18s ease, transform .18s ease;
 }
 
-.sceneIndex a:hover { color: #fff; transform: translateX(4px); }
-.sceneIndex a span { color: #b9e83a; font-family: ui-monospace, monospace; font-size: .73rem; }
+.sceneIndex a:hover { color: #26432e; transform: translateX(4px); }
+.sceneIndex a span { color: #57805b; font-family: ui-monospace, monospace; font-size: .73rem; }
 .sceneIndex a strong { font-size: .88rem; }
 .sceneIndex a svg { width: .95rem; opacity: .38; }
 
@@ -500,17 +498,17 @@
   gap: clamp(3rem, 9vw, 9rem);
   align-items: end;
   padding: clamp(6rem, 10vw, 10rem) max(24px, calc((100vw - 1080px) / 2));
-  background: #102019;
-  color: #f8fbf7;
+  background: #eaf3e8;
+  color: #1d2a22;
 }
 
 .finalCta h2 { max-width: 790px; margin: 1.2rem 0 0; font-size: clamp(2.8rem, 5.5vw, 5.5rem); font-weight: 640; letter-spacing: -.065em; line-height: .99; }
-.finalCta > div > p:not(.eyebrow) { max-width: 670px; margin: 1.7rem 0 0; color: rgba(248,251,247,.62); font-size: 1.05rem; line-height: 1.75; }
+.finalCta > div > p:not(.eyebrow) { max-width: 670px; margin: 1.7rem 0 0; color: #647466; font-size: 1.05rem; line-height: 1.75; }
 .finalActions { display: grid; gap: 1rem; }
-.primaryAction { display: inline-flex; gap: .7rem; align-items: center; justify-content: center; min-height: 58px; border: 0; border-radius: .9rem; background: #b9e83a; color: #112019; font: inherit; font-size: .9rem; font-weight: 800; cursor: pointer; transition: background .18s ease, transform .18s ease; }
-.primaryAction:hover { background: #d0f06d; transform: translateY(-2px); }
+.primaryAction { display: inline-flex; gap: .7rem; align-items: center; justify-content: center; min-height: 58px; border: 0; border-radius: .6rem; background: #26432e; color: white; font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer; transition: background .18s ease; }
+.primaryAction:hover { background: #365d40; }
 .primaryAction svg { width: 1rem; }
-.secondaryAction { justify-content: center; min-height: 44px; color: rgba(255,255,255,.74); }
+.secondaryAction { justify-content: center; min-height: 44px; color: #42614a; }
 
 .page a:focus-visible,
 .page button:focus-visible { outline: 3px solid #9cc828; outline-offset: 4px; }

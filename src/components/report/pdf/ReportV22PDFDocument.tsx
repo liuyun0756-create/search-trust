@@ -5,42 +5,42 @@ import type { AdvisorReportV22ViewModel, ClientReportV22ViewModel, ReportV22View
 import { CLIENT_DELIVERY_STATUS, clientDeliveryLanguage } from "@/lib/report-v22/delivery-language";
 import type { EffectiveBranding } from "@/lib/report-pdf/branding";
 
-const C = { ink: "#172019", muted: "#667166", paper: "#F6F3EA", white: "#FFFFFF", lime: "#A5D020", line: "#DDE3D8", warning: "#9B5C22" };
+const C = { ink: "#1D2A22", muted: "#647466", paper: "#FFFFFF", white: "#FFFFFF", green: "#26432E", accent: "#DCEFD4", soft: "#F2F7F1", line: "#E3EAE2", warning: "#9B5C22" };
 const styles = StyleSheet.create({
   page: { backgroundColor: C.paper, color: C.ink, fontFamily: "Helvetica", fontSize: 9, padding: 38, paddingBottom: 54 },
-  cover: { backgroundColor: C.ink, color: C.white, fontFamily: "Helvetica", padding: 44 },
+  cover: { backgroundColor: C.soft, color: C.ink, fontFamily: "Helvetica", padding: 44 },
   brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   logo: { width: 88, maxHeight: 38, objectFit: "contain" },
-  badge: { color: C.lime, fontSize: 8, fontFamily: "Helvetica-Bold", letterSpacing: 1.6, textTransform: "uppercase" },
+  badge: { color: C.green, fontSize: 8, fontFamily: "Helvetica-Bold", letterSpacing: 1.4, textTransform: "uppercase" },
   coverBody: { marginTop: 118 },
-  coverTitle: { fontSize: 36, lineHeight: 0.98, fontFamily: "Helvetica-Bold", letterSpacing: -1.5, maxWidth: 450 },
+  coverTitle: { fontSize: 36, lineHeight: 1.03, fontFamily: "Helvetica-Bold", letterSpacing: -1.5, maxWidth: 450 },
   coverMeta: { flexDirection: "row", marginTop: 22 },
-  pill: { border: "1 solid #485349", borderRadius: 20, paddingVertical: 6, paddingHorizontal: 10, marginRight: 7, color: "#DDE5DB", fontSize: 8 },
-  coverDecision: { marginTop: 82, borderTop: "1 solid #485349", paddingTop: 22 },
-  coverLabel: { color: C.lime, fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 1.4, textTransform: "uppercase" },
-  coverDecisionText: { marginTop: 9, color: C.white, fontSize: 15, lineHeight: 1.35, maxWidth: 470, fontFamily: "Helvetica-Bold" },
-  agencyPanel: { marginTop: 28, borderRadius: 10, backgroundColor: "#232F26", padding: 14, flexDirection: "row", alignItems: "center" },
-  agencyCopy: { marginLeft: 12 }, agencyName: { color: C.white, fontFamily: "Helvetica-Bold", fontSize: 11 }, agencyClient: { color: "#AEB8AD", marginTop: 3, fontSize: 8 },
+  pill: { backgroundColor: C.white, borderRadius: 6, paddingVertical: 7, paddingHorizontal: 10, marginRight: 7, color: C.green, fontSize: 8 },
+  coverDecision: { marginTop: 82, backgroundColor: C.white, borderRadius: 12, padding: 22 },
+  coverLabel: { color: "#57805B", fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 1.4, textTransform: "uppercase" },
+  coverDecisionText: { marginTop: 9, color: C.ink, fontSize: 15, lineHeight: 1.35, maxWidth: 470, fontFamily: "Helvetica-Bold" },
+  agencyPanel: { marginTop: 24, borderRadius: 10, backgroundColor: C.white, padding: 14, flexDirection: "row", alignItems: "center" },
+  agencyCopy: { marginLeft: 12 }, agencyName: { color: C.green, fontFamily: "Helvetica-Bold", fontSize: 11 }, agencyClient: { color: C.muted, marginTop: 3, fontSize: 8 },
   header: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", borderBottom: `1 solid ${C.line}`, paddingBottom: 12, marginBottom: 24 },
   headerTitle: { fontFamily: "Helvetica-Bold", fontSize: 13 }, headerMeta: { color: C.muted, fontSize: 7 },
-  eyebrow: { color: "#78931C", fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 7 },
+  eyebrow: { color: "#57805B", fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 7 },
   title: { fontSize: 23, lineHeight: 1.08, fontFamily: "Helvetica-Bold", letterSpacing: -0.8, marginBottom: 16 },
   lead: { color: C.muted, fontSize: 10, lineHeight: 1.55, marginBottom: 18 },
-  darkCard: { backgroundColor: C.ink, borderRadius: 12, padding: 20, color: C.white, marginBottom: 22 },
-  darkTitle: { color: C.lime, fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 1.3, textTransform: "uppercase" },
-  darkBody: { marginTop: 10, fontFamily: "Helvetica-Bold", fontSize: 14, lineHeight: 1.32 }, darkFoot: { marginTop: 12, color: "#BFC7BE", fontSize: 9, lineHeight: 1.5 },
+  darkCard: { backgroundColor: C.soft, borderRadius: 10, padding: 20, color: C.ink, marginBottom: 22 },
+  darkTitle: { color: "#57805B", fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 1.3, textTransform: "uppercase" },
+  darkBody: { marginTop: 10, fontFamily: "Helvetica-Bold", fontSize: 14, lineHeight: 1.32 }, darkFoot: { marginTop: 12, color: C.muted, fontSize: 9, lineHeight: 1.5 },
   grid3: { flexDirection: "row", marginHorizontal: -4, marginBottom: 20 }, third: { width: "33.333%", paddingHorizontal: 4 },
   card: { border: `1 solid ${C.line}`, borderRadius: 9, backgroundColor: C.white, padding: 12, minHeight: 125 },
-  cardKicker: { color: "#78931C", fontSize: 7, fontFamily: "Helvetica-Bold", textTransform: "uppercase", letterSpacing: 1 },
+  cardKicker: { color: "#57805B", fontSize: 7, fontFamily: "Helvetica-Bold", textTransform: "uppercase", letterSpacing: 1 },
   cardTitle: { marginTop: 6, fontFamily: "Helvetica-Bold", fontSize: 11, lineHeight: 1.3 }, body: { marginTop: 6, color: C.muted, fontSize: 8, lineHeight: 1.45 },
-  listItem: { flexDirection: "row", marginTop: 5 }, bullet: { width: 10, color: "#78931C", fontFamily: "Helvetica-Bold" }, listText: { flex: 1, color: C.muted, fontSize: 8, lineHeight: 1.4 },
+  listItem: { flexDirection: "row", marginTop: 5 }, bullet: { width: 10, color: "#57805B", fontFamily: "Helvetica-Bold" }, listText: { flex: 1, color: C.muted, fontSize: 8, lineHeight: 1.4 },
   action: { border: `1 solid ${C.line}`, borderRadius: 10, backgroundColor: C.white, padding: 15, marginBottom: 10 }, actionRow: { flexDirection: "row" },
-  actionNumber: { width: 34, height: 34, borderRadius: 9, backgroundColor: C.ink, color: C.lime, fontFamily: "Helvetica-Bold", fontSize: 13, textAlign: "center", paddingTop: 10, marginRight: 12 },
+  actionNumber: { width: 34, height: 34, borderRadius: 8, backgroundColor: C.accent, color: C.green, fontFamily: "Helvetica-Bold", fontSize: 13, textAlign: "center", paddingTop: 10, marginRight: 12 },
   actionCopy: { flex: 1 }, actionTitle: { fontFamily: "Helvetica-Bold", fontSize: 11, lineHeight: 1.35 }, actionMeta: { marginTop: 5, color: C.muted, fontSize: 7.5 },
   section: { marginTop: 20 }, sectionTitle: { fontFamily: "Helvetica-Bold", fontSize: 15, marginBottom: 10 },
   layerGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 }, layer: { width: "25%", paddingHorizontal: 4, marginBottom: 8 },
-  layerInner: { minHeight: 90, border: `1 solid ${C.line}`, borderRadius: 8, padding: 9, backgroundColor: C.white }, status: { marginTop: 8, fontSize: 6.5, color: "#78931C", fontFamily: "Helvetica-Bold", textTransform: "uppercase" },
-  finding: { borderLeft: `3 solid ${C.lime}`, backgroundColor: C.white, padding: 11, marginBottom: 8 }, findingMeta: { color: C.muted, fontSize: 6.5, marginTop: 5 },
+  layerInner: { minHeight: 90, border: `1 solid ${C.line}`, borderRadius: 8, padding: 9, backgroundColor: C.white }, status: { marginTop: 8, fontSize: 6.5, color: "#57805B", fontFamily: "Helvetica-Bold", textTransform: "uppercase" },
+  finding: { borderLeft: `3 solid #91C18D`, backgroundColor: C.soft, padding: 11, marginBottom: 8 }, findingMeta: { color: C.muted, fontSize: 6.5, marginTop: 5 },
   limitation: { border: "1 solid #E8D8C5", backgroundColor: "#FFF8EE", borderRadius: 8, padding: 10, marginBottom: 7, color: C.warning, lineHeight: 1.45 },
   footer: { position: "absolute", bottom: 22, left: 38, right: 38, borderTop: `1 solid ${C.line}`, paddingTop: 8, flexDirection: "row", justifyContent: "space-between", color: "#879087", fontSize: 6.5 },
 });
@@ -76,7 +76,7 @@ export function ReportV22PDFDocument({ report, branding }: { report: ReportV22Vi
   const showBranding = Boolean(branding?.enabled && (branding.agencyName || branding.clientName || branding.agencyLogoData));
   const decision = report.mode === "advisor" ? report.executiveDecision.decision_summary : report.decision.headline;
   return <Document title={`SearchTrust - ${report.header.businessName}`} author={branding?.agencyName || "SearchTrust"} subject="Local search intelligence report">
-    <Page size="A4" style={styles.cover}><View style={styles.brandRow}><Text style={styles.badge}>SearchTrust intelligence report</Text><Text style={{ color: "#899389", fontSize: 8 }}>v{report.header.versionNumber}  /  {report.mode === "client" ? clientDeliveryLanguage(report.header.reportType).stage : "SEO work view"}</Text></View><View style={styles.coverBody}><Text style={styles.coverTitle}>{clean(report.header.businessName)}</Text><View style={styles.coverMeta}><Text style={styles.pill}>{clean(report.header.location)}</Text><Text style={styles.pill}>{clean(report.header.primaryService)}</Text></View><Text style={{ marginTop: 15, color: "#AEB8AD", fontSize: 8 }}>Generated {clean(report.header.generatedAt.slice(0, 10))}</Text></View><View style={styles.coverDecision}><Text style={styles.coverLabel}>The decision</Text><Text style={styles.coverDecisionText}>{clean(decision)}</Text></View>{showBranding ? <View style={styles.agencyPanel}>{branding?.agencyLogoData ? <Image src={branding.agencyLogoData} style={styles.logo} /> : null}<View style={styles.agencyCopy}><Text style={styles.agencyName}>{clean(branding?.agencyName || "Agency report")}</Text>{branding?.clientName ? <Text style={styles.agencyClient}>Prepared for {clean(branding.clientName)}</Text> : null}</View></View> : null}</Page>
+    <Page size="A4" style={styles.cover}><View style={styles.brandRow}><Text style={styles.badge}>SearchTrust intelligence report</Text><Text style={{ color: C.muted, fontSize: 8 }}>v{report.header.versionNumber}  /  {report.mode === "client" ? clientDeliveryLanguage(report.header.reportType).stage : "SEO work view"}</Text></View><View style={styles.coverBody}><Text style={styles.coverTitle}>{clean(report.header.businessName)}</Text><View style={styles.coverMeta}><Text style={styles.pill}>{clean(report.header.location)}</Text><Text style={styles.pill}>{clean(report.header.primaryService)}</Text></View><Text style={{ marginTop: 15, color: C.muted, fontSize: 8 }}>Generated {clean(report.header.generatedAt.slice(0, 10))}</Text></View><View style={styles.coverDecision}><Text style={styles.coverLabel}>The decision</Text><Text style={styles.coverDecisionText}>{clean(decision)}</Text></View>{showBranding ? <View style={styles.agencyPanel}>{branding?.agencyLogoData ? <Image src={branding.agencyLogoData} style={styles.logo} /> : null}<View style={styles.agencyCopy}><Text style={styles.agencyName}>{clean(branding?.agencyName || "Agency report")}</Text>{branding?.clientName ? <Text style={styles.agencyClient}>Prepared for {clean(branding.clientName)}</Text> : null}</View></View> : null}</Page>
     {report.mode === "client" ? <ClientPdfPages report={report} note={branding?.footerNote} /> : <AdvisorPdfPages report={report} note={branding?.footerNote} />}
   </Document>;
 }

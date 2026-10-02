@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, FileSearch, Plus, ShieldCheck } from "lucide-react";
+import { ArrowRight, FileSearch, Plus } from "lucide-react";
 
 import { groupReportsByCase, ReportCaseWorkspace, type ReportWorkspaceItem } from "@/components/report/report-case-workspace";
 import { getCurrentUser } from "@/lib/auth";
@@ -39,28 +39,26 @@ export default async function ReportsPage() {
   const cases = groupReportsByCase(reports);
 
   return (
-    <main className="min-h-screen bg-[#f4f1e8] text-[#172019]">
-      <section className="relative overflow-hidden border-b border-white/10 bg-[#172019] px-5 py-14 text-white sm:px-8 lg:px-12 lg:py-20">
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:42px_42px]" aria-hidden="true" />
-        <div className="absolute -right-24 top-0 h-72 w-72 rounded-full bg-[#a5d020]/10 blur-[90px]" aria-hidden="true" />
-        <div className="relative mx-auto flex max-w-6xl flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+    <main className="min-h-screen bg-[#f7faf7] text-[#1d2a22]">
+      <section className="border-b border-[#e5ebe4] bg-white px-5 py-10 sm:px-8 lg:px-12 lg:py-12">
+        <div className="mx-auto flex max-w-6xl flex-col gap-7 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="mb-5 flex items-center gap-2 text-[#b8dd3c]"><ShieldCheck className="h-4 w-4" /><span className="text-[11px] font-black uppercase tracking-[0.22em]">Private report workspace</span></div>
-            <h1 className="text-[48px] font-black leading-none tracking-[-0.06em] sm:text-[64px]">Client Case workspace</h1>
-            <p className="mt-5 max-w-2xl text-sm font-medium leading-6 text-white/55">Follow each business from the first prospect diagnosis to a verified action plan. Every generated version, evidence review and client deliverable stays attached to the same Case.</p>
+            <div className="mb-3 flex items-center gap-2 text-[#668a50]"><span className="h-1.5 w-1.5 rounded-full bg-[#9bc96f]" aria-hidden="true" /><span className="text-[10px] font-black uppercase tracking-[0.18em]">Private report workspace</span></div>
+            <h1 className="text-[38px] font-black leading-[1.04] tracking-[-0.06em] sm:text-[50px]">Client Case workspace</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#6c7b70]">Follow each business from the first prospect diagnosis to a verified action plan. Every generated version, evidence review and client deliverable stays attached to the same Case.</p>
           </div>
-          <Link href="/cases/new" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#a5d020] px-6 py-3.5 text-sm font-black text-[#172019] transition hover:bg-[#b8dd3c]"><Plus className="h-4 w-4" /> Start a new Case</Link>
+          <Link href="/cases/new" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#26432e] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#365d40]"><Plus className="h-4 w-4" /> Start a new Case</Link>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 lg:px-12 lg:py-16">
+      <section className="mx-auto max-w-6xl px-5 py-9 sm:px-8 lg:px-12 lg:py-12">
         {error ? <div role="alert" className="rounded-2xl border border-[#ead7c5] bg-[#fff8ee] p-5 text-sm font-bold text-[#8f5422]">Reports could not be loaded. Please refresh and try again.</div> : null}
         {!error && reports.length === 0 ? (
-          <div className="rounded-[28px] border border-[#dfe1d8] bg-white px-6 py-16 text-center shadow-[0_22px_60px_rgba(35,48,36,0.06)] sm:px-12">
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#edf3e2] text-[#78931c]"><FileSearch className="h-6 w-6" /></span>
+          <div className="rounded-2xl border border-[#e3eae2] bg-white px-6 py-14 text-center sm:px-12">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#e7f2e2] text-[#65974e]"><FileSearch className="h-5 w-5" /></span>
             <h2 className="mt-6 text-2xl font-black tracking-[-0.04em]">No V2.2 reports yet</h2>
             <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#717b6f]">Start with a free public-data preflight. Once the Case finishes analysis, its report will appear here.</p>
-            <Link href="/cases/new" className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#172019] px-6 py-3 text-sm font-black text-white">Start free preflight <ArrowRight className="h-4 w-4" /></Link>
+            <Link href="/cases/new" className="mt-7 inline-flex items-center gap-2 rounded-lg bg-[#26432e] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#365d40]">Start free preflight <ArrowRight className="h-4 w-4" /></Link>
           </div>
         ) : null}
 

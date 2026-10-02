@@ -182,17 +182,17 @@ function PriorityActionsSection({
   return (
     <section id="actions" className="scroll-mt-28">
       <SectionHeading eyebrow="Recommended work" title="Three actions to review first." description="Each recommendation shows why it is prioritized, what it needs from the client, how to execute it, and how completion will be checked." />
-      <div className="mb-5 flex flex-col gap-3 rounded-[20px] bg-[#e8ede3] px-5 py-4 text-xs leading-5 text-[#5d685c] sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-5 flex flex-col gap-3 rounded-xl bg-[#e9f3e6] px-5 py-4 text-xs leading-5 text-[#5d7461] sm:flex-row sm:items-center sm:justify-between">
         <p><strong className="text-[#2e392e]">{report.deliveryPlanEdited ? "SEO-edited plan:" : "System recommendation:"}</strong> {report.deliveryPlanEdited ? "The original evidence and rationale remain available; changed scope needs separate validation." : "This order follows the current evidence and dependencies."}</p>
         <p className="font-bold text-[#64751f]">{report.deliveryPlanEdited ? "Check the approval state above before delivery." : "Review before using it as the client plan."}</p>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {report.actions.map((action) => {
           const evidenceIds = [...new Set(report.findings.filter((finding) => action.findingIds.includes(finding.finding_id)).flatMap((finding) => finding.evidence_ids))];
           return (
-            <details key={action.actionId} open={action.sequence === 1} className="group overflow-hidden rounded-[26px] border border-[#dfe5d9] bg-white shadow-[0_10px_35px_rgba(34,48,26,0.035)] open:border-[#b9ce79]">
+            <details key={action.actionId} open={action.sequence === 1} className="group overflow-hidden rounded-2xl border border-[#e3eae2] bg-white open:border-[#b9d3ad]">
               <summary className="grid cursor-pointer list-none gap-4 p-5 marker:hidden sm:grid-cols-[58px_1fr_auto] sm:p-7">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#1f2922] text-lg font-black text-[#b8dd3c]">0{action.sequence}</span>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e6f2e1] text-base font-black text-[#65974e]">0{action.sequence}</span>
                 <div className="min-w-0">
                   <p className="text-lg font-black leading-7 tracking-[-0.025em] text-[#1c251f]">{action.clientFacingExplanation}</p>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-[#677266]"><strong className="text-[#3c483b]">Why now:</strong> {action.whyNow}</p>
@@ -206,7 +206,7 @@ function PriorityActionsSection({
                 </div>
                 <div className="flex items-center justify-end gap-2 self-start pt-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#768175]"><span className="hidden group-open:inline">Close detail</span><span className="group-open:hidden">Review detail</span><ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" /></div>
               </summary>
-              <div className="border-t border-[#e5e9e0] bg-[#fafbf8] p-5 sm:p-7">
+              <div className="border-t border-[#edf0eb] bg-[#fbfdfa] p-5 sm:p-7">
                 <div className="mb-7 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
                   <div className="rounded-2xl bg-[#eef3e8] p-5">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#718218]">Decision basis</p>
@@ -222,8 +222,8 @@ function PriorityActionsSection({
                     <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-[#81907a]">Implementation steps</h4>
                     <ol className="mt-4 space-y-3">
                       {action.implementationSteps.map((step) => (
-                        <li key={step.sequence} className="flex gap-3 rounded-2xl bg-white p-4 shadow-sm">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#a5d020] text-[10px] font-black">{step.sequence}</span>
+                        <li key={step.sequence} className="flex gap-3 rounded-xl bg-white p-4">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#e6f2e1] text-[10px] font-black text-[#65974e]">{step.sequence}</span>
                           <div><p className="text-sm font-black text-[#344033]">{step.title}</p><p className="mt-1 text-sm leading-6 text-[#687367]">{step.instruction}</p></div>
                         </li>
                       ))}
@@ -277,20 +277,20 @@ export function AdvisorReportView({ report }: { report: AdvisorReportV22ViewMode
 
   return (
     <>
-      <div className="space-y-16 pb-16 sm:space-y-24">
+      <div className="space-y-10 pb-16 sm:space-y-14">
         <section id="decision" className="scroll-mt-28">
-          <div className="grid overflow-hidden rounded-[30px] bg-[#202a22] text-white lg:grid-cols-[1.25fr_0.75fr]">
-            <div className="p-7 sm:p-10">
-              <div className="flex items-center gap-2 text-[#b8dd3c]"><ShieldCheck className="h-5 w-5" /><span className="text-[11px] font-black uppercase tracking-[0.22em]">Executive decision</span></div>
-              <h2 className="mt-5 max-w-3xl text-balance text-[34px] font-black leading-[1.04] tracking-[-0.05em] sm:text-[48px]">{report.executiveDecision.decision_summary}</h2>
-              <p className="mt-6 max-w-2xl text-base leading-7 text-white/65">{report.executiveDecision.core_problem}</p>
-              <div className="mt-8"><EvidenceButton ids={[...new Set(report.findings.filter((finding) => report.executiveDecision.finding_ids.includes(finding.finding_id)).flatMap((finding) => finding.evidence_ids))]} onOpen={openEvidence} /></div>
+          <div className="grid gap-3 md:grid-cols-[1.72fr_0.83fr]">
+            <div className="flex flex-col rounded-2xl bg-[#e6f1e2] p-6 sm:p-8">
+              <div className="flex items-center gap-2 text-[#5b874b]"><ShieldCheck className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-[0.16em]">Executive decision</span></div>
+              <h2 className="mt-6 max-w-3xl text-balance text-[30px] font-black leading-[1.1] tracking-[-0.055em] sm:text-[39px]">{report.executiveDecision.decision_summary}</h2>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-[#526b58]">{report.executiveDecision.core_problem}</p>
+              <div className="mt-auto pt-6"><EvidenceButton ids={[...new Set(report.findings.filter((finding) => report.executiveDecision.finding_ids.includes(finding.finding_id)).flatMap((finding) => finding.evidence_ids))]} onOpen={openEvidence} /></div>
             </div>
-            <div className="flex flex-col justify-between border-t border-white/10 bg-white/[0.04] p-7 lg:border-l lg:border-t-0 lg:p-9">
-              <CircleDot className="h-8 w-8 text-[#b8dd3c]" aria-hidden="true" />
+            <div className="flex flex-col rounded-2xl border border-[#e3eae2] bg-white p-6 sm:p-8">
+              <CircleDot className="h-6 w-6 text-[#79a962]" aria-hidden="true" />
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">Why now</p>
-                <p className="mt-3 text-lg font-bold leading-8 text-white/90">{report.executiveDecision.why_now}</p>
+                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.16em] text-[#668a50]">Why now</p>
+                <p className="mt-3 text-base font-bold leading-7 text-[#415b47]">{report.executiveDecision.why_now}</p>
               </div>
             </div>
           </div>
@@ -352,13 +352,13 @@ export function AdvisorReportView({ report }: { report: AdvisorReportV22ViewMode
         <section id="coverage" className="scroll-mt-28">
           <SectionHeading eyebrow="Coverage and source health" title="Exactly what this report could see." />
           <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-            <div className="rounded-[26px] bg-[#202a22] p-7 text-white">
-              <Database className="h-8 w-8 text-[#b8dd3c]" />
-              <p className="mt-10 text-[10px] font-black uppercase tracking-[0.18em] text-white/45">Site inventory</p>
+            <div className="rounded-2xl bg-[#e9f3e6] p-7 text-[#24382a]">
+              <Database className="h-7 w-7 text-[#6c9d58]" />
+              <p className="mt-7 text-[10px] font-black uppercase tracking-[0.16em] text-[#668a50]">Site inventory</p>
               <div className="mt-4 grid grid-cols-3 gap-2">
-                {[{ label: "Discovered", value: report.siteInventory.discovered_url_count }, { label: "Checked", value: report.siteInventory.structurally_checked_count }, { label: "Deep", value: report.siteInventory.deep_analyzed_count }].map((item) => <div key={item.label} className="rounded-xl bg-white/[0.06] p-3"><p className="text-2xl font-black tracking-[-0.05em] text-[#b8dd3c]">{item.value}</p><p className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white/45">{item.label}</p></div>)}
+                {[{ label: "Discovered", value: report.siteInventory.discovered_url_count }, { label: "Checked", value: report.siteInventory.structurally_checked_count }, { label: "Deep", value: report.siteInventory.deep_analyzed_count }].map((item) => <div key={item.label} className="rounded-lg bg-white/70 p-3"><p className="text-2xl font-black tracking-[-0.05em] text-[#3f7447]">{item.value}</p><p className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#819984]">{item.label}</p></div>)}
               </div>
-              <p className="mt-6 text-sm leading-6 text-white/60">{report.dataCoverage.fullEvidenceCoverage ? "All required first-party sources were healthy and identity matched." : "Coverage is intentionally partial; limitations below define the boundary."}</p>
+              <p className="mt-6 text-sm leading-6 text-[#627e67]">{report.dataCoverage.fullEvidenceCoverage ? "All required first-party sources were healthy and identity matched." : "Coverage is intentionally partial; limitations below define the boundary."}</p>
             </div>
             <div className="space-y-3">
               {report.dataCoverage.sources.map((source) => (

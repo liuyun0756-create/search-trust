@@ -136,15 +136,15 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
         </fieldset>
       )}
 
-      <div className={`mb-6 grid overflow-hidden rounded-[24px] text-white shadow-[0_22px_60px_rgba(25,37,27,.12)] lg:grid-cols-[1fr_auto] ${verdict.tone === "conflict" ? "bg-[#332119]" : "bg-[#172017]"}`}>
+      <div className={`mb-6 grid overflow-hidden rounded-2xl border lg:grid-cols-[1fr_auto] ${verdict.tone === "conflict" ? "border-[#efdcd0] bg-[#fff8f3]" : "border-[#e3eae2] bg-white"}`}>
         <div className="px-6 py-6 sm:px-8 sm:py-7">
-          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#b7dc3f]"><SearchCheck size={15} />Identity verdict</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{verdict.label}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">{verdict.detail}</p>
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#668a50]"><SearchCheck size={15} />Identity verdict</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#1d2a22]">{verdict.label}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#647466]">{verdict.detail}</p>
         </div>
-        <div className="grid grid-cols-2 gap-px bg-white/10 lg:min-w-[250px]">
-          <div className="bg-white/[0.045] px-5 py-5 lg:grid lg:content-center"><span className="text-2xl font-semibold">{exactMatches}/{comparisons.length || 4}</span><span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.13em] text-white/38">fields aligned</span></div>
-          <div className="bg-white/[0.045] px-5 py-5 lg:grid lg:content-center"><span className="text-2xl font-semibold">{candidate?.confidence ?? "—"}</span><span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.13em] text-white/38">source confidence</span></div>
+        <div className="grid grid-cols-2 gap-px bg-[#e3eae2] text-[#26432e] lg:min-w-[250px]">
+          <div className="bg-[#f2f7f1] px-5 py-5 lg:grid lg:content-center"><span className="text-2xl font-semibold">{exactMatches}/{comparisons.length || 4}</span><span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#718073]">fields aligned</span></div>
+          <div className="bg-[#f2f7f1] px-5 py-5 lg:grid lg:content-center"><span className="text-2xl font-semibold">{candidate?.confidence ?? "—"}</span><span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#718073]">source confidence</span></div>
         </div>
       </div>
 
@@ -202,7 +202,7 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
 
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-xl text-xs leading-5 text-[#667266]">Changing this scope later invalidates earlier competitor results, so the next analysis never reuses evidence from a different business or market.</p>
-          <button type="submit" className="group inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a211a] px-6 text-sm font-bold text-white outline-none transition hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/40">Confirm business scope <ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" /></button>
+          <button type="submit" className="group inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#234b38] px-6 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/40">Confirm business scope <ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" /></button>
         </div>
       </form>
     </section>

@@ -3,32 +3,28 @@ import { FAQAccordion } from "@/components/common/FAQAccordion";
 
 const useCasesFAQData = [
   {
-    question: 'Which use case is best for agencies?',
-    answer: 'Use Prospect before the engagement to build a defensible client case from public evidence. After the client connects GSC and GA4, use Verified to turn observed performance into a prioritized action plan.',
+    question: 'Do I need client access before I can use SearchTrust?',
+    answer: 'No. The prospect stage uses the website, public business information and confirmed competitors to find specific questions worth discussing. Search Console and GA4 are added later when the client work requires performance verification.',
   },
   {
-    question: 'Can I use SearchTrust before publishing pages?',
-    answer: 'Yes, provided the page is publicly accessible to the audit workflow. It can identify weak local grounding, template risk, and trust gaps before a public rollout.',
+    question: 'What if a competitor has a page that the client does not?',
+    answer: 'A competitor page is an observation, not proof that the client should copy it. SearchTrust helps check whether the client already has a relevant page, whether it receives related demand and whether a new page fits the business and evidence available.',
   },
   {
-    question: 'Is it useful for AI-generated local pages?',
-    answer: 'Yes. It helps identify whether pages look generic, templated, or weakly grounded. AI-generated pages often pass surface-level checks but fail trust signals at deeper layers.',
+    question: 'Can it resolve conflicting website and business information automatically?',
+    answer: 'It can surface the exact fields and sources that disagree, but the business still needs to confirm the correct information. The result is a traceable confirmation and correction list, not an automatic change to a public profile.',
   },
   {
-    question: 'Does it replace rank tracking tools?',
-    answer: 'No. It complements them by diagnosing trust-related structural failure. Rank tracking tells you what happened; SearchTrust explains why it happened from a trust perspective.',
+    question: 'Does SearchTrust prove why a page is not generating enough enquiries?',
+    answer: 'No. Search Console and GA4 can show how users find and interact with a page, while data checks can reveal measurement limits. They narrow the next question without turning one metric into a guaranteed causal explanation.',
   },
   {
-    question: 'Is this only for local SEO?',
-    answer: 'SearchTrust V2.2 is built for local pages and local trust diagnosis. Its 8-layer framework is designed for pages that need to establish entity authority, evidence, and accountability in local search contexts.',
+    question: 'Can I change the recommended order of work?',
+    answer: 'Yes. SearchTrust organizes evidence into a recommended starting point, while the SEO decides how client goals, resources, dependencies and release timing change the final order.',
   },
   {
-    question: 'Can multi-location brands use it?',
-    answer: 'Yes. Create a Case for each priority business or location so its identity, competitors, evidence and connected performance data stay correctly separated.',
-  },
-  {
-    question: 'Does SearchTrust manage or monitor GBP?',
-    answer: 'No. SearchTrust observes public GBP information through search data and compares it with the site and Case identity. It does not edit, manage or continuously monitor the profile.',
+    question: 'How should I explain the result to a client?',
+    answer: 'Keep planned, implemented and reviewed work separate. The report should show the problem, the supporting evidence, the next action and what still needs confirmation. Changes in a metric should be described with their limits and review context.',
   },
 ];
 import { createPageMetadata, pageSeo } from "@/lib/seo";

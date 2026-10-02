@@ -48,21 +48,21 @@ export function Header() {
   const activeTab = navLinks.find(l => l.href === pathname)?.id ?? "home";
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-50">
-      <div className="mx-auto flex h-[72px] items-center justify-between px-6">
+    <header className="sticky top-0 z-50 border-b border-[#e3eae2] bg-white/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-5 sm:px-8">
 
         <Link href="/" aria-label="SearchTrust home" className="flex min-w-[150px] items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#86a91b]">
           <img src="/images/logo.png" alt="SearchTrust" className="h-6 w-auto md:h-8" />
         </Link>
 
-        <nav aria-label="Primary navigation" className="relative hidden items-center bg-white p-1 xl:flex">
+        <nav aria-label="Primary navigation" className="relative hidden items-center gap-1 xl:flex">
           {navLinks.map((link) => (
             <Link
               key={link.id}
               href={link.href}
               aria-current={activeTab === link.id ? "page" : undefined}
-              className={`relative px-5 py-2 text-[14px] font-bold rounded-[8px] transition-colors duration-200 z-10 ${
-                activeTab === link.id ? "bg-[#1A1F2B] text-white" : "text-[#657083] hover:text-[#1D2531]"
+              className={`relative z-10 rounded-lg px-4 py-2 text-[13px] font-semibold transition-colors duration-200 ${
+                activeTab === link.id ? "bg-[#eaf3e8] text-[#26432e]" : "text-[#647466] hover:bg-[#f2f7f1] hover:text-[#26432e]"
               }`}
             >
               <span className="relative z-20">{link.label}</span>
@@ -74,7 +74,7 @@ export function Header() {
 
         <button
           type="button"
-          className="xl:hidden p-2 text-[#1D2531]"
+          className="rounded-lg p-2 text-[#26432e] hover:bg-[#f2f7f1] xl:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={mobileOpen}
@@ -84,19 +84,19 @@ export function Header() {
       </div>
 
       {mobileOpen && (
-        <nav aria-label="Mobile navigation" className="absolute left-0 top-[72px] flex w-full flex-col gap-4 border-b border-gray-100 bg-white px-6 py-6 shadow-xl xl:hidden">
+        <nav aria-label="Mobile navigation" className="absolute left-0 top-[68px] flex w-full flex-col gap-2 border-b border-[#e3eae2] bg-white px-6 py-6 shadow-[0_16px_32px_rgba(29,42,34,0.08)] xl:hidden">
           {navLinks.map((link) => (
             <Link
               key={link.id}
               href={link.href}
               aria-current={activeTab === link.id ? "page" : undefined}
-              className={`rounded-lg px-4 py-3 text-left text-[16px] font-bold ${activeTab === link.id ? "bg-[#1A1F2B] text-white" : "text-[#657083]"}`}
+              className={`rounded-lg px-4 py-3 text-left text-[15px] font-semibold ${activeTab === link.id ? "bg-[#eaf3e8] text-[#26432e]" : "text-[#647466]"}`}
               onClick={() => setMobileOpen(false)}
             >
               {link.label}
             </Link>
           ))}
-          <hr className="border-gray-100 my-2" />
+          <hr className="my-2 border-[#e3eae2]" />
           <HeaderUserActions mobile onNavigate={() => setMobileOpen(false)} />
         </nav>
       )}

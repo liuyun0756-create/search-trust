@@ -13,7 +13,7 @@ import { isLocalE2ETestMode } from "@/lib/e2e-v22/config";
 type Binding = { id: string; source_type: GoogleSource; external_resource_name: string; external_resource_id: string; connection_id: string | null;
   identity_match_status: string; confirmation_method: string | null; confirmed_at: string | null };
 const LABELS: Record<GoogleSource, string> = { gsc: "Search Console", ga4: "Google Analytics", gbp: "Business Profile" };
-const button = "rounded-xl bg-[#1c251b] px-5 py-3 text-white disabled:opacity-40 disabled:cursor-not-allowed";
+const button = "rounded-xl bg-[#234b38] px-5 py-3 text-white transition-colors hover:bg-[#2c6348] disabled:cursor-not-allowed disabled:opacity-40";
 const secondary = "rounded-xl border border-[#dce1d5] px-4 py-2 disabled:opacity-40";
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {

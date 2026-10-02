@@ -1,0 +1,107 @@
+# Website / report alignment backlog
+
+## Current audit — October 2, 2026
+
+This section supersedes the historical website-only notes below where they differ. It is a code-and-test audit, not a claim that every authenticated production flow has been manually exercised.
+
+| Website area | Actual report/workspace capability | Remaining gap | Status |
+| --- | --- | --- | --- |
+| Module 4, action-plan demo | Authenticated Case reports support editing the same three generated actions: order, title, target, steps, completion, owner, schedule and review. Saves create report-bound revisions with ownership and conflict checks; original evidence is unchanged and changed scope is marked. | The website's five priority considerations are an explanation of professional review, not a verified automatic scoring formula. Client business-value input and predicted outcome impact should not be described as computed weights. | Real plan editing exists; fictional demo stays isolated. |
+| Module 5, execution workspaces | Reports contain recommended implementation steps, targets, completion criteria and validation guidance. | Five-step brief selection, an editable content draft, a confirmed implementation record, and a before/after comparison tied to the implementation date are website demonstrations. The workspace does not persist these as one execution history. | Product gap; keep demo labeling. |
+| Module 6, practice examples | The report can express conditional findings, evidence limits and next actions. | Website stories are fictional method examples, not measured client outcomes or verified case studies. | Correctly labeled; real case studies require authorized evidence. |
+| Module 7, report delivery | Advisor and Client projections exist. An SEO plan can be saved as a draft and approved. An unapproved draft blocks new client PDF/share delivery; approved content projects into the Client view and PDF. A share pins the approved plan revision and exposes only the Client view. | The website preview and static sample PDF are fictional, separate from real reports. There is no implementation record behind the illustrated follow-up states. Real-account production acceptance remains to be done. | Core delivery implemented in code; production journey unverified. |
+| Sample Report page | The real workspace edits the three proposed actions and their work fields, then versions/approves the plan. | The sample-page desk also edits headline, narrative, decision and Client/SEO wording in memory. Those fields are not a durable editor in the real workspace. The companion PDF is fixed and does not reflect sample-page edits. | Explicit website-only demo; broader editorial workflow is future work. |
+
+Code anchors: `src/components/report/v22/delivery-plan-editor.tsx`, `src/app/api/v2/cases/[id]/reports/[reportId]/delivery-plan/route.ts`, `src/lib/report-delivery/{plan,repository,projection}.ts`, `src/lib/report-shares/service.ts`, `src/components/report/v22/report-v22-actions.tsx`, `src/components/report/pdf/ReportV22PDFDocument.tsx`. Website demos live in `src/components/framework/` and `src/components/sampleReport/`.
+
+### Remediation order
+
+1. **Now — truthful public boundary:** remove obsolete claims that real plan editing and reviewed-version delivery are unavailable. Keep fictional, in-memory and static-PDF labels visible. The October 2 copy correction covers Modules 4, 5 and 7; tests assert those boundaries.
+2. **Next — production acceptance:** with an existing authenticated Case, verify save/conflict/reload, approval, Client/SEO projections, PDF and share pinning/revocation without running a new paid analysis. Code/unit tests do not substitute for this check.
+3. **Product follow-up — execution history:** decide the data model and UX for approved content drafts, actual implementation date/page version, comparable review windows and limitations. Do not convert the Module 5 illustration into an available-product promise until that end-to-end path exists.
+4. **Product follow-up — broader report editorial control:** if headline, narrative and Client/SEO wording must be editable as on the Sample Report page, design one reviewed version that drives both views, PDF and sharing. Current action-plan editing does not cover those fields.
+5. **Later — real proof:** publish a genuine case study only with permission, dated source evidence, actual work records and appropriately qualified outcomes.
+
+## Historical implementation notes (retained for provenance)
+
+## Module 4 — prioritization and editable plans
+
+Scope agreed with the user: complete the website content and isolated interactive demo first; reconcile real report capabilities after the website review. Do not publish the new claims as available product capabilities before reconciliation.
+
+### Current implementation
+
+- Website demo supports original-evidence disclosure, drag/button reorder, seven editable fields, in-memory save and confirmed reset.
+- Demo evidence is illustrative, read-only and separate from edited work fields. Changed scope is explicitly not automatically validated.
+- No report API, identity, credits, payments or persistent browser storage is used by the demo. Refresh/navigation resets it.
+- At the time of the website-only demo, actual report editing and backend prioritization were unchanged. See the current audit above for the now-implemented versioned action-plan editor.
+
+### Product work to resolve before launch
+
+1. Decide how outcome direction and client business priorities inform recommendations; distinguish qualitative planning context from actual automatic sort rules. Current public sorting uses severity, evidence confidence/classification, bounded affected scope and dependencies; Verified adds supported evidence relationships. Do not invent impact estimates or weights.
+2. Implement authenticated, ownership-checked plan editing and durable saving, with report-version binding and concurrent-edit handling.
+3. Keep original evidence and recommendations immutable. Mark edited scope and do not reuse source evidence as proof of the changed target.
+4. Define how saved advisor plans appear in Client view, PDF, shares and subsequent report versions, with clear attribution and no stale system roadmap presented as the edited plan.
+5. Verify reorder, field editing, cancel, save failures, reset confirmation, keyboard/mobile interactions, and that plan editing does not start analysis or consume credits.
+6. Remove the website design-preview notice only after real report support and website claims have been verified together.
+
+## Module 5 — execution materials and implementation review
+
+Website-only scope continues. The fictional air conditioning repair case demonstrates five selectable implementation briefs, an editable/copyable placeholder draft, and content/performance comparisons in separate workspaces. No real report, publishing, credit or measurement API is used. Draft saves are in memory and reset on refresh; switching workspaces retains edits.
+
+Before making these available-product claims public:
+
+1. Reconcile actual task briefs against the demonstrated locations, instructions, client materials and completion criteria.
+2. Implement source-grounded draft creation, editing and durable saving; preserve unconfirmed fields and client approvals rather than fabricate business details. Copying must warn about unresolved information and handle clipboard denial.
+3. Record SEO-confirmed implementation dates and page scope; capture actual before/after page versions separately from editable draft content.
+4. Support comparable, aligned pre/post measurement windows, source health and collection changes. Existing recent-versus-prior reporting windows are not automatically implementation-based windows.
+5. Preserve insufficient-data states, distinguish events from qualified leads or revenue, and avoid automatic causal claims.
+6. Align Client view, PDF, shares and version history with any approved execution materials and review records. The website's fixed comparison illustration must not be presented as a result of edits in its draft sandbox.
+
+## Module 6 — methodology in practice
+
+The website contains three method examples, not verified client case studies. All conclusions are conditional; source evidence, implementation dates and comparison values are explicitly unavailable. No simulated outcomes or time-savings figures are used. The three official Google references support principles, not endorsement or validation of SearchTrust.
+
+Before replacing an example with a real case:
+
+1. Obtain authorized, anonymized evidence with source, scope and observation time. Preserve the SEO's initial hypothesis, investigation notes, decisions and rejected alternatives. Attribute any specific practitioner's experience to a verifiable source.
+2. Audit each described analysis condition against the actual run and report version. Mark automated object matching, supported query detail, sample and source checks separately from manual search-context, business and measurement investigations. The website checklist is not proof that every condition is automated today.
+3. Attach actual implementation targets, approvals, change records and dates. Separate a proposed action from completed work and repair acceptance from performance observation.
+4. Provide comparable before/after values, periods and concurrent influences. Keep missing data unavailable, never zero; allow positive, unchanged, revised and unresolved outcomes without causal overstatement.
+5. Describe only the work the product actually helped with. Publish time savings only with real timing records.
+6. Use “View a full case study” only for an existing verified case; until then keep the “View a method example” entry and explicit example labels. No private analytics, report editing, credit or payment APIs are called by this module.
+
+## Module 7 — advisor review and client delivery
+
+The website offers an isolated two-role report excerpt, defaulting to Client, using a single shared fictional content source (`delivery-example.json`). Both roles retain the same evidence assumptions, pending conditions, limitations and planned/implemented/reviewed states. The public PDF is a static fictional client sample generated from that same source, not a real report export. The existing sample page retains Prospect and service-stage reading entries. No approval, share, email, analysis, payment or credit APIs are called by the demo. The final CTA only navigates to the existing `/cases/new` confirmation flow; credit rules are unchanged.
+
+Before treating these as completed workspace capabilities:
+
+1. Reconcile the full Advisor and Client projections against the same immutable report version, preserving missing data, conditions and important limits in Client view. Do not change uncertainty into proof when simplifying language.
+2. Connect the eventual edited plan to the final reviewed client version, PDF and share. Do not silently serve a different plan after approval; define explicit re-review/version behavior.
+3. Bind implementation and follow-up states to actual records. Report generation or an action's presence is never evidence of completed work. Preserve baseline, dates, scope and review limitations.
+4. Confirm share version, audience visibility and pending information before delivery. Do not promise automatic sending, white-label delivery or client collaboration here.
+5. The existing sample page remains an illustrative overview, not a newly implemented full interactive report. Align its older copy and complete delivery examples during the sample-page/product-gap review.
+6. Rebuild the static PDF with `scripts/build-delivery-sample-pdf.py` whenever shared sample copy changes; its embedded source hash is checked by tests. Keep the fictional label and limits in the PDF. Remove preview notices only after workspace alignment is verified.
+
+## Whole-page UI refresh — September 21, 2026
+
+- Added seven-chapter navigation, a split introduction with one fictional decision trail, a diagnostic matrix, initial/new-evidence comparison, a selected-action reasoning pane, execution workspaces, condensed case summaries with full records, and a readable delivery preview.
+- Supporting detail now uses explicit disclosures. Example provenance, unresolved conditions and causal limitations remain in the visible summaries; switching Client/SEO views does not hide them.
+- Action sorting/editing remains isolated to the website demonstration. Original observations stay read-only even after a target changes. Desktop reasoning selection and mobile evidence disclosure have separate, explicit controls.
+- Execution draft panels stay mounted while switching. Unsaved edits are preserved between panels; leaving through links, the analysis CTA or a document unload is guarded. Saving is only an in-memory demo save, not durable storage.
+- This refresh did not itself implement real report editing or change analysis/payment/credit behavior. Later product work added versioned action-plan editing and delivery; see the current audit above.
+
+## Sample Report page — two continuous reports
+
+- Replaced the two summary cards with two fully readable report examples for the same fictional local air-conditioning repair Case: Prospect Evidence Report followed by Verified Action Plan.
+- Each report now has separate Client and SEO reading views, source records, a decision, three proposed actions, client confirmation, review approach and explicit evidence limits. The second report revises the first report's page-creation question after illustrative client confirmation and eligible data access. No numeric result, actual source snapshot or post-implementation outcome is claimed.
+- Added an isolated SEO review desk per report: sticky beside the report on desktop and available as a closeable panel on phones. Headline, narrative, decision, three actions/order, client requests and follow-up can be changed in memory. Original evidence and work status are read-only. Both reading views must be inspected before the demo can be marked ready; this does not approve or send a real report.
+- Updated page FAQ and metadata to describe the actual two-stage purpose and distinguish the website demo from persistent workspace editing. The service-stage PDF remains a fixed companion illustration and does not reflect page edits.
+
+Before presenting this as a real workspace capability:
+
+1. Build durable, ownership-checked edits bound to a specific report version, with immutable original evidence, edit attribution and conflict behavior.
+2. Define how edits in SEO and Client views remain factually consistent and how both derive from a final reviewed version. A change to one view must not silently revise the other.
+3. Connect that reviewed version to the actual PDF/share surface and make later revisions require a fresh delivery decision. The current PDF is static.
+4. Bind implementation dates, page versions, comparable data windows and follow-up results to real records; never infer completion or causal improvement from a generated action.
+5. Replace fictional source descriptions with authorized, dated and scoped client evidence before using any example as a real case study.

@@ -370,14 +370,14 @@ export function PolicyTabsPage({ initialTab = "terms" }: { initialTab?: TabId })
   const current = policyContent[activeTab];
 
   return (
-    <div className="bg-[#F8F9FA] min-h-screen font-sans text-[#1D2531] selection:bg-[#A5D020]/30">
+    <div className="min-h-screen bg-[#f7faf7] font-sans text-[#1d3127] selection:bg-[#cfe6d5]">
 
       {/* 顶部导航栏 */}
       <BackHeader />
 
       {/* Main Content */}
-      <section className="py-20 max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+      <section className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16">
           
           {/* Sidebar Navigation */}
           <aside className="lg:col-span-4 xl:col-span-3">
@@ -390,13 +390,13 @@ export function PolicyTabsPage({ initialTab = "terms" }: { initialTab?: TabId })
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full group flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 border ${
                       isActive 
-                        ? 'bg-[#1A1F2B] border-[#1A1F2B] shadow-[0_12px_24px_rgba(15,23,42,0.12)] text-white' 
-                        : 'border-transparent text-[#6B7280] hover:bg-gray-100 hover:text-[#1D2531]'
+                        ? 'border-[#dce8dd] bg-[#eaf4ed] text-[#234b38]'
+                        : 'border-transparent text-[#69796d] hover:bg-white hover:text-[#1d3127]'
                     }`}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isActive ? 'bg-white/10 text-[#A5D020]' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
+                        isActive ? 'bg-white text-[#477c60]' : 'bg-[#eef3ee] text-[#69796d] group-hover:bg-white'
                       }`}>
                         <tab.icon size={18} strokeWidth={2.5} />
                       </div>
@@ -406,7 +406,7 @@ export function PolicyTabsPage({ initialTab = "terms" }: { initialTab?: TabId })
                       <ChevronRight
                         size={16}
                         className={`transition-colors duration-200 ${
-                          isActive ? 'text-[#A5D020]' : 'text-gray-300 group-hover:text-gray-400'
+                          isActive ? 'text-[#477c60]' : 'text-[#a6b3a8] group-hover:text-[#477c60]'
                         }`}
                       />
                     </div>
@@ -417,7 +417,7 @@ export function PolicyTabsPage({ initialTab = "terms" }: { initialTab?: TabId })
           </aside>
 
           {/* Policy Body Content */}
-          <main className="lg:col-span-8 xl:col-span-9 bg-white rounded-[32px] border border-[#F1F5F9] p-8 md:p-16 shadow-sm">
+          <main className="rounded-3xl border border-[#e0e9e0] bg-white p-8 lg:col-span-8 xl:col-span-9 md:p-16">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -427,11 +427,11 @@ export function PolicyTabsPage({ initialTab = "terms" }: { initialTab?: TabId })
                 transition={{ duration: 0.3 }}
               >
                 <div className="mb-12 pb-8 border-b border-gray-100">
-                  <h2 className="text-[32px] md:text-[40px] font-bold tracking-tight text-[#1D2531] mb-2 uppercase">
+                  <h2 className="mb-2 text-[32px] font-bold tracking-tight text-[#1d3127] md:text-[40px]">
                     {current.title}
                   </h2>
-                  <div className="flex items-center gap-2 text-[14px] text-[#A5D020] font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#A5D020]" />
+                  <div className="flex items-center gap-2 text-[14px] font-bold text-[#477c60]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#7fb794]" />
                     Effective {current.effective}
                   </div>
                   {current.intro && (
@@ -445,12 +445,12 @@ export function PolicyTabsPage({ initialTab = "terms" }: { initialTab?: TabId })
                   {current.sections.map((section, idx) => (
                     <div key={idx} className="group">
                       <div className="flex items-start gap-4 mb-4">
-                        <div className="mt-1.5 w-5 h-1 bg-[#A5D020] rounded-full group-hover:w-8 transition-all duration-300" />
-                        <h3 className="text-[20px] md:text-[24px] font-bold text-[#1D2531] tracking-tight">
+                        <div className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#7fb794]" />
+                        <h3 className="text-[20px] font-bold tracking-tight text-[#1d3127] md:text-[24px]">
                           {section.heading}
                         </h3>
                       </div>
-                      <div className="text-[16px] text-[#4B5563] leading-[1.6] font-medium whitespace-pre-line pl-9">
+                      <div className="pl-[22px] text-[16px] font-medium leading-[1.7] text-[#52665a] whitespace-pre-line">
                         {section.body}
                       </div>
                     </div>

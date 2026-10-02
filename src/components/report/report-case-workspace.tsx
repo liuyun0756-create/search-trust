@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, Clock3, Database, FileText, FolderOpen, Sparkles } from "lucide-react";
+import { ArrowRight, Check, FileText, FolderOpen } from "lucide-react";
 
 export type ReportWorkspaceItem = {
   caseId: string;
@@ -83,22 +83,22 @@ function Stage({
   pendingHref?: string;
 }) {
   return (
-    <div className="grid grid-cols-[36px_minmax(0,1fr)] gap-4">
-      <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-black ${report ? "bg-[#a5d020] text-[#172019]" : "bg-[#edf0e8] text-[#8a9388]"}`}>
+    <div className="grid grid-cols-[32px_minmax(0,1fr)] gap-3">
+      <div className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold ${report ? "bg-[#dcefd4] text-[#356b3c]" : "bg-white text-[#89988a]"}`}>
         {report ? <Check className="h-4 w-4" aria-hidden="true" /> : index}
       </div>
-      <div className="min-w-0 pb-7">
+      <div className="min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-black text-[#1c281e]">{title}</h3>
-          {report ? <span className="rounded-full bg-[#eef4df] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.13em] text-[#708b18]">Generated</span> : <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#9aa198]">Next stage</span>}
+          <h3 className="text-sm font-bold text-[#213629]">{title}</h3>
+          <span className={`text-[10px] font-semibold ${report ? "text-[#4a8651]" : "text-[#89988a]"}`}>{report ? "Generated" : "Next stage"}</span>
         </div>
-        <p className="mt-1.5 text-xs leading-5 text-[#737d72]">{description}</p>
+        <p className="mt-1.5 text-xs leading-5 text-[#718073]">{description}</p>
         {report ? (
-          <Link href={reportHref(report)} className="mt-3 inline-flex items-center gap-2 text-xs font-black text-[#536319] transition-colors hover:text-[#172019]">
+          <Link href={reportHref(report)} className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-[#356b3c] transition-colors hover:text-[#213629] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#356b3c]">
             Open v{report.version} · {displayReportDate(report.generatedAt)} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         ) : pendingHref ? (
-          <Link href={pendingHref} className="mt-3 inline-flex items-center gap-2 text-xs font-black text-[#536319] transition-colors hover:text-[#172019]">
+          <Link href={pendingHref} className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-[#356b3c] transition-colors hover:text-[#213629] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#356b3c]">
             Connect client evidence <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         ) : null}
@@ -112,48 +112,48 @@ export function ReportCaseWorkspace({ cases }: { cases: ReportCaseGroup[] }) {
 
   return (
     <>
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#78931c]">Active client work</p>
-          <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-[#172019]">{cases.length} {cases.length === 1 ? "Case" : "Cases"}, {reportCount} report {reportCount === 1 ? "version" : "versions"}</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#668a50]">Active client work</p>
+          <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-[#1d2a22]">{cases.length} {cases.length === 1 ? "Case" : "Cases"}, {reportCount} report {reportCount === 1 ? "version" : "versions"}</h2>
         </div>
-        <p className="max-w-md text-sm leading-6 text-[#737d72]">Each Case keeps the prospect diagnosis and later verified plan in one continuous client record.</p>
+        <p className="max-w-md text-sm leading-6 text-[#718073]">Each Case keeps the prospect diagnosis and later verified plan in one continuous client record.</p>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4">
         {cases.map((item) => (
-          <article key={item.caseId} className="overflow-hidden rounded-[30px] bg-white shadow-[0_20px_55px_rgba(35,48,36,0.07)] ring-1 ring-[#dfe3d9]">
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px]">
-              <div className="p-6 sm:p-8 lg:p-10">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff3e7] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#61711f]"><FolderOpen className="h-3.5 w-3.5" aria-hidden="true" /> Client Case</span>
-                  <span className="text-[10px] font-bold text-[#98a096]">Updated {displayReportDate(item.latestReport.generatedAt)}</span>
+          <article key={item.caseId} className="overflow-hidden rounded-2xl border border-[#e3eae2] bg-white">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="p-6 sm:p-8">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#57805b]"><FolderOpen className="h-3.5 w-3.5" aria-hidden="true" /> Client Case</span>
+                  <span className="text-xs text-[#91a093]">Updated {displayReportDate(item.latestReport.generatedAt)}</span>
                 </div>
-                <h2 className="mt-6 text-balance text-3xl font-black tracking-[-0.05em] text-[#172019] sm:text-4xl">{item.businessName}</h2>
-                <p className="mt-3 text-sm font-semibold leading-6 text-[#697368]">{item.service} · {item.market}</p>
-                <p className="mt-1 break-all text-xs text-[#949b92]">{item.siteUrl}</p>
+                <h2 className="mt-5 text-balance text-2xl font-bold tracking-[-0.045em] text-[#1d2a22] sm:text-[30px]">{item.businessName}</h2>
+                <p className="mt-2 text-sm font-medium leading-6 text-[#647466]">{item.service} · {item.market}</p>
+                <p className="mt-0.5 break-all text-xs text-[#8b998d]">{item.siteUrl}</p>
 
-                <div className="mt-8 rounded-[22px] bg-[#f3f5ef] p-5">
-                  <div className="flex items-center gap-2 text-[#60701f]"><Sparkles className="h-4 w-4" aria-hidden="true" /><span className="text-[10px] font-black uppercase tracking-[0.16em]">Current working point</span></div>
-                  <p className="mt-3 text-lg font-black leading-7 text-[#233025]">
+                <div className="mt-6 rounded-xl bg-[#f2f7f1] px-5 py-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#59805d]">Current working point</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-[#2b4431]">
                     {item.latestVerified
                       ? "Client evidence has been applied. Review the verified priorities before delivery."
                       : "The prospect diagnosis is ready. Review it now, then connect client evidence when the engagement begins."}
                   </p>
                 </div>
 
-                <div className="mt-7 flex flex-wrap gap-3">
-                  <Link href={reportHref(item.latestReport)} className="inline-flex items-center gap-2 rounded-full bg-[#172019] px-5 py-3 text-xs font-black text-white transition hover:bg-[#28352b]">
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link href={reportHref(item.latestReport)} className="inline-flex items-center gap-2 rounded-lg bg-[#26432e] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#365d40] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#356b3c]">
                     Open latest report <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </Link>
                   {item.reports.length > 1 ? (
                     <details className="group w-full sm:w-auto">
-                      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#d8ded2] px-5 py-3 text-xs font-black text-[#536052] marker:content-none">View report history <FileText className="h-4 w-4" aria-hidden="true" /></summary>
-                      <div className="mt-2 rounded-2xl border border-[#dce1d7] bg-white p-2 shadow-lg sm:w-[360px]">
+                      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-[#dfe7dc] px-4 py-2.5 text-sm font-semibold text-[#42614a] marker:content-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#356b3c]">View report history <FileText className="h-4 w-4" aria-hidden="true" /></summary>
+                      <div className="mt-2 rounded-xl border border-[#dfe7dc] bg-white p-1.5 shadow-[0_8px_24px_rgba(30,60,37,0.08)] sm:w-[360px]">
                         {item.reports.map((report) => (
-                          <Link key={report.reportId} href={reportHref(report)} className="flex items-center justify-between gap-4 rounded-xl px-3 py-3 text-xs hover:bg-[#f3f5ef]">
-                            <span className="font-black text-[#283329]">{report.type === "prospect" ? "Prospect Analysis" : "Verified Action Plan"} · v{report.version}</span>
-                            <span className="whitespace-nowrap text-[#8a9288]">{displayReportDate(report.generatedAt)}</span>
+                          <Link key={report.reportId} href={reportHref(report)} className="flex items-center justify-between gap-4 rounded-lg px-3 py-3 text-xs hover:bg-[#f2f7f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#356b3c]">
+                            <span className="font-semibold text-[#2b4431]">{report.type === "prospect" ? "Prospect Analysis" : "Verified Action Plan"} · v{report.version}</span>
+                            <span className="whitespace-nowrap text-[#8b998d]">{displayReportDate(report.generatedAt)}</span>
                           </Link>
                         ))}
                       </div>
@@ -162,14 +162,13 @@ export function ReportCaseWorkspace({ cases }: { cases: ReportCaseGroup[] }) {
                 </div>
               </div>
 
-              <div className="bg-[#edf2e8] p-6 sm:p-8 lg:p-10">
-                <div className="mb-7 flex items-center gap-2 text-[#687465]"><Clock3 className="h-4 w-4" aria-hidden="true" /><span className="text-[10px] font-black uppercase tracking-[0.17em]">Case progression</span></div>
-                <div className="relative">
-                  <div className="absolute bottom-9 left-[17px] top-9 w-px bg-[#ced7c7]" aria-hidden="true" />
+              <div className="bg-[#f3f7f2] p-6 sm:p-8">
+                <p className="mb-6 text-[10px] font-bold uppercase tracking-[0.16em] text-[#6d8870]">Case progression</p>
+                <div className="space-y-7">
                   <Stage index="1" title="Prospect Analysis" description="Public evidence for a specific first client conversation." report={item.latestProspect} />
                   <Stage index="2" title="Verified Action Plan" description="Client performance data used to confirm, revise, or defer the first diagnosis." report={item.latestVerified} pendingHref={`/cases/${encodeURIComponent(item.caseId)}/connections`} />
                 </div>
-                <p className="mt-1 flex items-start gap-2 rounded-2xl bg-white/75 p-4 text-xs leading-5 text-[#6f796d]"><Database className="mt-0.5 h-4 w-4 shrink-0 text-[#809820]" aria-hidden="true" />Reports are generated versions. Client sharing and PDF export always act on the version you open.</p>
+                <p className="mt-7 text-xs leading-5 text-[#788879]">Reports are generated versions. Client sharing and PDF export always act on the version you open.</p>
               </div>
             </div>
           </article>

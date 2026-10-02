@@ -42,28 +42,27 @@ export function SharedClientReportShell({ report, token }: { report: ClientRepor
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8]">
-      <header className="relative overflow-hidden bg-[#172019] px-5 pb-12 pt-7 text-white sm:px-8 sm:pb-16 lg:px-12">
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:42px_42px]" aria-hidden="true" />
-        <div className="relative mx-auto max-w-[1180px]">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/55"><LockKeyhole className="h-4 w-4 text-[#b8dd3c]" /> Secure client report</div>
+    <div className="min-h-screen bg-[#f7faf7] text-[#1d2a22]">
+      <header className="border-b border-[#e5ebe4] bg-white px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-[1180px]">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#edf0eb] py-4">
+            <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#697d6e]"><LockKeyhole className="h-4 w-4 text-[#78a760]" /> Secure client report</div>
             <div className="text-right">
-              <button type="button" disabled={downloading} onClick={() => void downloadPdf()} className="inline-flex items-center gap-2 rounded-full bg-[#a5d020] px-4 py-2.5 text-xs font-black text-[#172019] hover:bg-[#b8dd3c] disabled:cursor-wait disabled:opacity-70"><Download className="h-4 w-4" /> {downloading ? "Preparing PDF…" : "Download PDF"}</button>
-              {downloadFailed ? <p className="mt-2 text-xs font-bold text-[#f5c36c]" role="status">PDF download failed. Please try again.</p> : null}
+              <button type="button" disabled={downloading} onClick={() => void downloadPdf()} className="inline-flex items-center gap-2 rounded-lg bg-[#26432e] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#365d40] disabled:cursor-wait disabled:opacity-70"><Download className="h-4 w-4" /> {downloading ? "Preparing PDF…" : "Download PDF"}</button>
+              {downloadFailed ? <p className="mt-2 text-xs font-bold text-[#a24b31]" role="status">PDF download failed. Please try again.</p> : null}
             </div>
           </div>
-          <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="grid gap-6 py-9 sm:py-11 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b8dd3c]">{delivery.stage} · version {report.header.versionNumber}</p>
-              <h1 className="mt-5 max-w-4xl text-balance text-[42px] font-black leading-[0.98] tracking-[-0.06em] sm:text-[62px] lg:text-[76px]">{report.header.businessName}</h1>
-              <div className="mt-7"><ReportContextPills service={report.header.primaryService} location={report.header.location} /></div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#668a50]">{delivery.stage} · version {report.header.versionNumber}</p>
+              <h1 className="mt-3 max-w-4xl text-balance text-[38px] font-black leading-[1.05] tracking-[-0.06em] sm:text-[50px] lg:text-[58px]">{report.header.businessName}</h1>
+              <div className="mt-4"><ReportContextPills service={report.header.primaryService} location={report.header.location} /></div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Shared report version</p><p className="mt-2 font-bold">v{report.header.versionNumber} · {delivery.stage}</p><p className="mt-2 text-xs text-white/55">Generated {formatReportDate(report.header.generatedAt)}</p></div>
+            <div className="text-sm md:text-right"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#96a299]">Shared report version</p><p className="mt-1 font-bold text-[#334439]">v{report.header.versionNumber} · {delivery.stage}</p><p className="mt-1 text-xs text-[#829086]">Generated {formatReportDate(report.header.generatedAt)}</p></div>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-[1180px] px-5 py-12 sm:px-8 sm:py-16 lg:px-12"><ClientReportView report={report} /></main>
+      <main className="mx-auto max-w-[1180px] px-5 py-9 sm:px-8 sm:py-11 lg:px-12"><ClientReportView report={report} /></main>
     </div>
   );
 }

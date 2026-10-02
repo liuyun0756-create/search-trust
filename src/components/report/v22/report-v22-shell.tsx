@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReportV22ViewModel } from "@/lib/report-v22/view-model";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, CircleDot, Eye, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, CircleDot, Eye, FileText } from "lucide-react";
 
 import { AdvisorReportView } from "./advisor-report-view";
 import { ClientReportView } from "./client-report-view";
@@ -47,98 +47,96 @@ export function ReportV22Shell({
   const alternateMode = report.mode === "advisor" ? "client" : "advisor";
 
   return (
-    <div className="min-h-screen bg-[#172019] text-[#172019]">
-      <header className="relative overflow-hidden border-b border-white/10 bg-[#172019] px-5 pb-12 pt-7 text-white sm:px-8 sm:pb-16 lg:px-12">
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:42px_42px]" aria-hidden="true" />
-        <div className="absolute -right-24 top-0 h-72 w-72 rounded-full bg-[#a5d020]/10 blur-[90px]" aria-hidden="true" />
-        <div className="relative mx-auto max-w-[1440px]">
-          <div className="flex flex-wrap items-center justify-between gap-5">
-            <Link href="/reports" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-white/55 transition-colors hover:text-white">
+    <div className="min-h-screen bg-[#f7faf7] text-[#1d2a22]">
+      <header className="border-b border-[#e5ebe4] bg-white px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-[1440px]">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#edf0eb] py-4">
+            <Link href="/reports" className="inline-flex items-center gap-2 text-xs font-bold text-[#6d7d71] transition-colors hover:text-[#24412d]">
               <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Cases &amp; reports
             </Link>
-            <div className="flex flex-wrap items-center justify-end gap-3">
-            <div className="flex rounded-full border border-white/12 bg-black/15 p-1" aria-label="Report view">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex rounded-xl bg-[#f1f4ef] p-1" aria-label="Report view">
               <Link
                 href={`${basePath}?view=advisor`}
                 aria-current={report.mode === "advisor" ? "page" : undefined}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black transition-colors ${report.mode === "advisor" ? "bg-[#a5d020] text-[#142013]" : "text-white/55 hover:text-white"}`}
+                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${report.mode === "advisor" ? "bg-white text-[#233b2a] shadow-[0_1px_4px_rgba(28,48,33,0.10)]" : "text-[#758279] hover:text-[#263b2b]"}`}
               >
                 <BriefcaseBusiness className="h-3.5 w-3.5" aria-hidden="true" /> SEO work view
               </Link>
               <Link
                 href={`${basePath}?view=client`}
                 aria-current={report.mode === "client" ? "page" : undefined}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black transition-colors ${report.mode === "client" ? "bg-[#a5d020] text-[#142013]" : "text-white/55 hover:text-white"}`}
+                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${report.mode === "client" ? "bg-white text-[#233b2a] shadow-[0_1px_4px_rgba(28,48,33,0.10)]" : "text-[#758279] hover:text-[#263b2b]"}`}
               >
                 <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Client preview
               </Link>
             </div>
             <ReportV22Actions caseId={caseId} reportId={reportId} mode={report.mode} versionNumber={report.header.versionNumber} deliveryStatus={deliveryPlan.status} />
             {report.mode === "advisor" && process.env.GOOGLE_CONNECTIONS_ENABLED === "true" && (
-              <Link href={`/cases/${encodeURIComponent(caseId)}/connections`} className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold transition hover:border-white/40 hover:bg-white/5">Manage client evidence</Link>
+              <Link href={`/cases/${encodeURIComponent(caseId)}/connections`} className="rounded-lg border border-[#dfe7dd] bg-white px-3 py-2 text-xs font-semibold text-[#4f6554] transition hover:border-[#b9ccb4] hover:bg-[#f7faf5]">Manage client evidence</Link>
             )}
             </div>
           </div>
 
-          <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="grid gap-6 py-9 sm:py-11 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <div>
-              <div className="mb-5 flex items-center gap-2 text-[#b8dd3c]">
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-                <span className="text-[11px] font-black uppercase tracking-[0.22em]">{stageLabel} · {reportLabel}</span>
+              <div className="mb-3 flex items-center gap-2 text-[#668a50]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#9bc96f]" aria-hidden="true" />
+                <span className="text-[10px] font-black uppercase tracking-[0.18em]">{stageLabel} · {reportLabel}</span>
               </div>
-              <h1 className="max-w-4xl text-balance text-[42px] font-black leading-[0.98] tracking-[-0.06em] sm:text-[62px] lg:text-[76px]">
+              <h1 className="max-w-4xl text-balance text-[38px] font-black leading-[1.05] tracking-[-0.06em] sm:text-[50px] lg:text-[58px]">
                 {report.header.businessName}
               </h1>
-              <div className="mt-7"><ReportContextPills service={report.header.primaryService} location={report.header.location} /></div>
+              <div className="mt-4"><ReportContextPills service={report.header.primaryService} location={report.header.location} /></div>
             </div>
-            <div className="grid min-w-[250px] grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 text-sm">
-              <div className="bg-[#1d2820] p-4"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Report version</p><p className="mt-2 font-bold">v{report.header.versionNumber} · {reportLabel}</p></div>
-              <div className="bg-[#1d2820] p-4"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/35">Generated</p><p className="mt-2 font-bold">{formatReportDate(report.header.generatedAt)}</p></div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm md:justify-end md:text-right">
+              <div><p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#96a299]">Report version</p><p className="mt-1 font-bold text-[#334439]">v{report.header.versionNumber} · {reportLabel}</p></div>
+              <div><p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#96a299]">Generated</p><p className="mt-1 font-bold text-[#334439]">{formatReportDate(report.header.generatedAt)}</p></div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="bg-[#f4f1e8]">
-        <div className="border-b border-[#dbe0d5] bg-white">
-          <div className="mx-auto max-w-[1440px] px-5 py-5 sm:px-8 lg:px-12">
+      <div className="bg-[#f7faf7]">
+        <div className="border-b border-[#e7ece6] bg-[#fbfcfa]">
+          <div className="mx-auto max-w-[1440px] px-5 py-4 sm:px-8 lg:px-12">
             {report.mode === "advisor" ? (
-              <div className="grid gap-5 lg:grid-cols-[220px_1fr_auto] lg:items-center">
+              <div className="grid gap-5 md:grid-cols-[190px_1fr_auto] md:items-center">
                 <div className="flex items-start gap-3">
-                  <CircleDot className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" />
+                  <CircleDot className="mt-0.5 h-5 w-5 shrink-0 text-[#78a760]" aria-hidden="true" />
                   <div><p className="text-sm font-black text-[#243026]">Review before delivery</p><p className="mt-1 text-[11px] leading-5 text-[#788176]">Report version {report.header.versionNumber} · Plan {deliveryPlan.status === "original" ? "original" : `revision ${deliveryPlan.revision} (${deliveryPlan.status})`}</p></div>
                 </div>
                 <ol className="grid gap-2 sm:grid-cols-3">
-                  <li className="rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="mr-2 font-mono text-[9px] text-[#7f9a24]">01</span>Check the decision</li>
-                  <li className="rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="mr-2 font-mono text-[9px] text-[#7f9a24]">02</span>Review three actions</li>
-                  <li className="rounded-xl bg-[#f4f7ef] px-3 py-2.5 text-[11px] font-bold text-[#4f5c4e]"><span className="mr-2 font-mono text-[9px] text-[#7f9a24]">03</span>Verify evidence &amp; limits</li>
+                  <li className="text-[11px] font-bold text-[#66776a]"><span className="mr-2 font-mono text-[10px] text-[#78a760]">01</span>Check the decision</li>
+                  <li className="text-[11px] font-bold text-[#66776a]"><span className="mr-2 font-mono text-[10px] text-[#78a760]">02</span>Review three actions</li>
+                  <li className="text-[11px] font-bold text-[#66776a]"><span className="mr-2 font-mono text-[10px] text-[#78a760]">03</span>Verify evidence &amp; limits</li>
                 </ol>
                 <Link href={`${basePath}?view=${alternateMode}`} className="inline-flex shrink-0 items-center gap-2 text-xs font-black text-[#5d711c] transition hover:text-[#172019]">Preview client report <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
               </div>
             ) : (
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-start gap-3"><Eye className="mt-0.5 h-5 w-5 shrink-0 text-[#819d20]" aria-hidden="true" /><div><p className="text-sm font-black text-[#243026]">Client preview · version {report.header.versionNumber} · {deliveryPlan.status === "draft" ? "Unapproved plan draft" : deliveryPlan.status === "approved" ? `Approved plan revision ${deliveryPlan.revision}` : "Original recommendation"}</p><p className="mt-1 text-xs leading-5 text-[#788176]">This changes the level of detail, not the facts or limitations. Nothing is sent automatically.{deliveryPlan.status === "draft" ? " Sharing and client PDF are paused until you approve this plan." : ""}</p></div></div>
+                <div className="flex items-start gap-3"><Eye className="mt-0.5 h-5 w-5 shrink-0 text-[#78a760]" aria-hidden="true" /><div><p className="text-sm font-black text-[#243026]">Client preview · version {report.header.versionNumber} · {deliveryPlan.status === "draft" ? "Unapproved plan draft" : deliveryPlan.status === "approved" ? `Approved plan revision ${deliveryPlan.revision}` : "Original recommendation"}</p><p className="mt-1 text-xs leading-5 text-[#788176]">This changes the level of detail, not the facts or limitations. Nothing is sent automatically.{deliveryPlan.status === "draft" ? " Sharing and client PDF are paused until you approve this plan." : ""}</p></div></div>
                 <Link href={`${basePath}?view=${alternateMode}`} className="inline-flex shrink-0 items-center gap-2 text-xs font-black text-[#5d711c] transition hover:text-[#172019]">Return to SEO work view <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
               </div>
             )}
           </div>
         </div>
         <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className="hidden border-r border-[#dfe1d8] px-6 py-12 lg:block">
-            <div className="sticky top-24">
-              <div className="mb-8 flex items-center gap-2 text-[#263127]"><FileText className="h-4 w-4 text-[#8eb51b]" /><span className="text-[10px] font-black uppercase tracking-[0.18em]">{report.mode === "advisor" ? "SEO work view" : "Client preview"}</span></div>
+          <aside className="hidden border-r border-[#e7ebe4] bg-[#f1f4ef] px-4 py-10 lg:block">
+            <div className="sticky top-8">
+              <div className="mb-6 flex items-center gap-2 px-3 text-[#35483a]"><FileText className="h-4 w-4 text-[#7ead5b]" /><span className="text-[10px] font-black uppercase tracking-[0.16em]">{report.mode === "advisor" ? "SEO work view" : "Client preview"}</span></div>
               <nav aria-label="Report sections" className="space-y-1">
                 {navItems.map(([label, href], index) => (
-                  <a key={href} href={href} className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#788176] transition-colors hover:bg-white hover:text-[#273127]">
-                    <span className="font-mono text-[9px] text-[#a0a89e] group-hover:text-[#8eb51b]">{String(index + 1).padStart(2, "0")}</span>{label}
+                  <a key={href} href={href} className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold text-[#758279] transition-colors hover:bg-[#e6eee2] hover:text-[#2a4834]">
+                    <span className="font-mono text-[10px] text-[#95a795] group-hover:text-[#729b5e]">{String(index + 1).padStart(2, "0")}</span>{label}
                   </a>
                 ))}
               </nav>
             </div>
           </aside>
 
-          <main className="min-w-0 px-5 py-12 sm:px-8 sm:py-16 lg:px-12 xl:px-16">
-            <div className="mx-auto max-w-[1060px]">
+          <main className="min-w-0 px-5 py-9 sm:px-8 sm:py-11 lg:px-10 xl:px-12">
+            <div className="mx-auto max-w-[1100px]">
               {report.mode === "advisor" && <DeliveryPlanEditor caseId={caseId} reportId={reportId} initialState={deliveryPlan} />}
               {report.mode === "advisor" ? <AdvisorReportView report={report} /> : <ClientReportView report={report} />}
             </div>

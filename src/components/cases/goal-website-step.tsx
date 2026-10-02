@@ -76,18 +76,18 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
               const Icon = item.icon;
               const selected = goal === item.value;
               return (
-                <label key={item.value} className={`group flex cursor-pointer items-start gap-3 rounded-2xl p-3.5 transition focus-within:ring-4 focus-within:ring-[#A5D020]/25 ${selected ? "bg-white shadow-[0_10px_30px_rgba(35,52,29,0.08)]" : "hover:bg-white/55"}`}>
+                <label key={item.value} className={`group flex cursor-pointer items-start gap-3 rounded-2xl p-3.5 transition focus-within:ring-4 focus-within:ring-[#8ab49a]/25 ${selected ? "bg-white shadow-[0_10px_30px_rgba(35,52,29,0.08)]" : "hover:bg-white/55"}`}>
                   <input className="sr-only" type="radio" name="goal" value={item.value} checked={selected} onChange={() => setGoal(item.value)} />
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition ${selected ? "bg-[#A5D020] text-[#172017]" : "bg-white/70 text-[#687468] group-hover:bg-white"}`}><Icon size={19} /></span>
+                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition ${selected ? "bg-[#dcece0] text-[#234b38]" : "bg-white/70 text-[#687468] group-hover:bg-white"}`}><Icon size={19} /></span>
                   <span className="min-w-0 pt-0.5">
-                    <span className="flex items-center gap-2 text-[15px] font-bold text-[#202920]">{item.title}{selected && <span className="rounded-full bg-[#edf6cf] px-2 py-0.5 text-[9px] uppercase tracking-wider text-[#60790f]">Selected</span>}</span>
+                    <span className="flex items-center gap-2 text-[15px] font-bold text-[#202920]">{item.title}{selected && <span className="rounded-full bg-[#eaf4ed] px-2 py-0.5 text-[9px] uppercase tracking-wider text-[#477c60]">Selected</span>}</span>
                     <span className="mt-1 block text-xs leading-5 text-[#667267]">{item.detail}</span>
                   </span>
                 </label>
               );
             })}
           </div>
-          <div className="mt-6 border-l-2 border-[#A5D020] pl-4">
+          <div className="mt-6 border-l-2 border-[#6f9d78] pl-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#718218]">{context.label}</p>
             <h2 className="mt-1.5 text-lg font-bold leading-6 tracking-[-0.02em] text-[#1d281e]">{context.title}</h2>
             <p className="mt-1 text-xs leading-5 text-[#647064]">{context.detail}</p>
@@ -99,21 +99,21 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
           <label htmlFor="client-site" className="mt-5 block text-sm font-bold text-[#263026]">Business website</label>
           <div className="relative mt-2.5">
             <Globe2 aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7b877b]" size={19} />
-            <input id="client-site" required autoComplete="url" inputMode="url" value={siteUrl} onChange={(event) => setSiteUrl(event.target.value)} placeholder="example.com" aria-describedby={error ? "site-error" : "site-help"} className="h-14 w-full rounded-2xl border border-[#c9d2c5] bg-[#f8faf6] pl-12 pr-4 text-base font-medium text-[#1d271d] outline-none transition placeholder:font-normal placeholder:text-[#9ba49b] focus:border-[#86a91c] focus:ring-4 focus:ring-[#A5D020]/20" />
+            <input id="client-site" required autoComplete="url" inputMode="url" value={siteUrl} onChange={(event) => setSiteUrl(event.target.value)} placeholder="example.com" aria-describedby={error ? "site-error" : "site-help"} className="h-14 w-full rounded-2xl border border-[#c9d2c5] bg-[#f8faf6] pl-12 pr-4 text-base font-medium text-[#1d271d] outline-none transition placeholder:font-normal placeholder:text-[#9ba49b] focus:border-[#477c60] focus:ring-4 focus:ring-[#8ab49a]/20" />
           </div>
           <p id="site-help" className="mt-2 text-xs leading-5 text-[#798479]">Use the primary business domain. You can omit https://.</p>
           {error && <p id="site-error" role="alert" className="mt-2 text-sm font-semibold text-[#a3412c]">{error}</p>}
 
-          <button type="button" aria-expanded={showGbp} onClick={() => setShowGbp((value) => !value)} className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#4d594d] outline-none hover:text-[#1c241c] focus-visible:ring-4 focus-visible:ring-[#A5D020]/25">
+          <button type="button" aria-expanded={showGbp} onClick={() => setShowGbp((value) => !value)} className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#4d594d] outline-none hover:text-[#1c241c] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/25">
             <ChevronDown size={15} className={`transition-transform ${showGbp ? "rotate-180" : ""}`} /> I already have the public Google Business Profile link <span className="font-medium text-[#929b92]">(optional)</span>
           </button>
           {showGbp && (
             <div className="mt-3">
               <label htmlFor="gbp-url" className="sr-only">Google Business Profile link</label>
-              <input id="gbp-url" autoComplete="url" inputMode="url" value={gbpUrl} onChange={(event) => setGbpUrl(event.target.value)} placeholder="https://www.google.com/maps?cid=..." className="h-12 w-full rounded-xl border border-[#ccd4c7] bg-[#fbfcfa] px-4 text-sm text-[#1d271d] outline-none focus:border-[#89ad1c] focus:ring-4 focus:ring-[#A5D020]/20" />
+              <input id="gbp-url" autoComplete="url" inputMode="url" value={gbpUrl} onChange={(event) => setGbpUrl(event.target.value)} placeholder="https://www.google.com/maps?cid=..." className="h-12 w-full rounded-xl border border-[#ccd4c7] bg-[#fbfcfa] px-4 text-sm text-[#1d271d] outline-none focus:border-[#477c60] focus:ring-4 focus:ring-[#8ab49a]/20" />
             </div>
           )}
-          <button type="submit" className="group mt-7 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#172017] px-6 text-sm font-bold text-white shadow-[0_14px_32px_rgba(23,32,23,0.18)] outline-none transition hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_18px_36px_rgba(23,32,23,0.22)] focus-visible:ring-4 focus-visible:ring-[#A5D020]/40 motion-reduce:transform-none">
+          <button type="submit" className="group mt-7 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#234b38] px-6 text-sm font-bold text-white shadow-[0_10px_24px_rgba(35,75,56,0.16)] outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/40 motion-reduce:transform-none">
             {context.action} <ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" />
           </button>
           <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-[#f2f5ed] px-3.5 py-3 text-xs leading-5 text-[#637063]">
@@ -122,21 +122,21 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
           </div>
         </div>
 
-        <div aria-label="What the free setup returns" className="lg:col-span-2 grid overflow-hidden rounded-[22px] bg-[#172017] text-white sm:grid-cols-[1fr_1fr_1.15fr]">
+        <div aria-label="What the free setup returns" className="grid overflow-hidden rounded-2xl border border-[#e3eae2] bg-white text-[#1d2a22] sm:grid-cols-[1fr_1fr_1.15fr] lg:col-span-2">
           <div className="px-5 py-5 sm:px-6">
-            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#b7dc3f]"><SearchCheck size={14} />Free setup returns</p>
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#668a50]"><SearchCheck size={14} />Free setup returns</p>
             <p className="mt-2 text-sm font-bold">A confirmed public business</p>
-            <p className="mt-1 text-xs leading-5 text-white/42">Website and public identity matched to the right company.</p>
+            <p className="mt-1 text-xs leading-5 text-[#718073]">Website and public identity matched to the right company.</p>
           </div>
           <div className="px-5 py-5 sm:px-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/38">Scope you can inspect</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#668a50]">Scope you can inspect</p>
             <p className="mt-2 text-sm font-bold">Service and market context</p>
-            <p className="mt-1 text-xs leading-5 text-white/42">What the Case is about before provider-backed discovery begins.</p>
+            <p className="mt-1 text-xs leading-5 text-[#718073]">What the Case is about before provider-backed discovery begins.</p>
           </div>
-          <div className="bg-white/[0.06] px-5 py-5 sm:px-6">
-            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/38"><ShieldCheck size={14} className="text-[#b7dc3f]" />Then you decide</p>
+          <div className="bg-[#f2f7f1] px-5 py-5 sm:px-6">
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#668a50]"><ShieldCheck size={14} />Then you decide</p>
             <p className="mt-2 text-sm font-bold">Approve complete analysis · 1 credit</p>
-            <p className="mt-1 text-xs leading-5 text-white/42">Competitor discovery starts only after the confirmed scope and clear credit boundary.</p>
+            <p className="mt-1 text-xs leading-5 text-[#718073]">Competitor discovery starts only after the confirmed scope and clear credit boundary.</p>
           </div>
         </div>
       </form>

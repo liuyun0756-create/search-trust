@@ -3,22 +3,22 @@ import Link from "next/link";
 
 export function IntakePaused() {
   return (
-    <div className="min-h-screen bg-[#171d17] text-[#1c241c]">
-      <header className="border-b border-white/10">
+    <div className="min-h-screen bg-[#f7faf7] text-[#1d2a22]">
+      <header className="border-b border-[#e3eae2] bg-white">
         <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-5 sm:px-8">
-          <Link href="/" className="flex items-center gap-3 text-white outline-none focus-visible:ring-4 focus-visible:ring-[#A5D020]/30">
+          <Link href="/" className="flex items-center gap-3 text-[#26432e]">
             <img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" />
             <span className="text-sm font-bold tracking-tight">SearchTrust</span>
-            <span className="rounded-full border border-white/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/50">v2.2</span>
+            <span className="rounded-lg bg-[#f2f7f1] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#668a50]">v2.2</span>
           </Link>
-          <span className="hidden items-center gap-1.5 text-xs font-semibold text-white/50 sm:flex">
-            <ShieldCheck size={14} className="text-[#A5D020]" /> Existing data remains available
+          <span className="hidden items-center gap-1.5 text-xs font-semibold text-[#718073] sm:flex">
+            <ShieldCheck size={14} className="text-[#57805b]" /> Existing data remains available
           </span>
         </div>
       </header>
 
-      <main className="min-h-[calc(100vh-4rem)] bg-[#f1f3ed] px-5 py-16 sm:px-8 lg:py-24">
-        <section className="mx-auto max-w-[760px] rounded-[28px] border border-[#dce2d6] bg-white p-7 shadow-[0_24px_80px_rgba(27,38,26,0.08)] sm:p-12">
+      <main className="min-h-[calc(100vh-4rem)] bg-[#f7faf7] px-5 py-16 sm:px-8 lg:py-24">
+        <section className="mx-auto max-w-[760px] rounded-2xl border border-[#e3eae2] bg-white p-7 sm:p-12">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef6d9] text-[#6f8f12]">
             <Clock3 size={27} aria-hidden="true" />
           </div>
@@ -33,7 +33,7 @@ export function IntakePaused() {
             <FileCheck2 className="mt-0.5 shrink-0 text-[#86a91a]" size={19} aria-hidden="true" />
             <p>No saved Case or report is being deleted or changed by this pause.</p>
           </div>
-          <Link href="/" className="mt-8 inline-flex min-h-11 items-center rounded-xl bg-[#172017] px-5 text-sm font-bold text-white outline-none transition hover:bg-[#283428] focus-visible:ring-4 focus-visible:ring-[#A5D020]/35">
+          <Link href="/" className="mt-8 inline-flex min-h-11 items-center rounded-xl bg-[#234b38] px-5 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/35">
             Return to SearchTrust
           </Link>
         </section>

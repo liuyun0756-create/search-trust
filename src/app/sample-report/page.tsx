@@ -4,15 +4,15 @@ import { FAQAccordion } from "@/components/common/FAQAccordion";
 const sampleReportFAQData = [
   {
     question: "What does SearchTrust analyze?",
-    answer: "A Prospect workflow combines the confirmed business, its public site and at least one real competitor with the SearchTrust L1-L8 evidence model. A Verified workflow adds connected GSC and GA4 performance data after engagement.",
+    answer: "Prospect uses the confirmed business, its public website and business information, and at least one real competitor to develop a proposal. After client access, Verified can add eligible Search Console and GA4 evidence to revisit the same questions and prioritize work. The eight-layer trust model is one part of the wider diagnosis.",
   },
   {
-    question: "What kinds of pages is it best for?",
-    answer: "SearchTrust is best for local service pages, city pages, service-area pages, and location landing pages. It is built for local page trust diagnosis, not general-purpose site auditing.",
+    question: "Why are there two reports for one business?",
+    answer: "They serve two consecutive decisions. The Prospect Evidence Report helps an SEO discuss specific work before private analytics access. The Verified Action Plan uses eligible client evidence and confirmation to retain, revise or defer those initial recommendations.",
   },
   {
     question: "Is this a full SEO audit?",
-    answer: "No. SearchTrust is not a full technical SEO audit, rank tracker, or GBP management tool. It focuses on page-level trust qualification, structural credibility, and local competitiveness.",
+    answer: "No. SearchTrust does not replace a full technical audit, rank tracker, GBP management or an SEO's professional review. It organizes business, page, competition and available performance evidence around decisions and actions for local SEO work.",
   },
   {
     question: "What does one Case include?",
@@ -24,19 +24,19 @@ const sampleReportFAQData = [
   },
   {
     question: "Is the report automated?",
-    answer: "SearchTrust generates the report through an automated analysis workflow based on the submitted page and the SearchTrust framework.",
+    answer: "The product generates evidence-based report material, but the SEO remains responsible for checking the reasoning, conditions and proposed work before presenting a professional recommendation to a client.",
   },
   {
-    question: "Can I use this before publishing a page?",
-    answer: "Yes. Pre-publish review is one of the clearest use cases for SearchTrust. It can help identify weak local grounding, template risk, and trust gaps before rollout.",
+    question: "Can I edit the reports on this sample page?",
+    answer: "You can test wording and action edits in this isolated website demonstration. They remain in the current page until refresh and do not change a real customer report, saved plan, PDF or share link. Persistent report editing and approval are not yet represented by this demo.",
   },
   {
     question: "Does this promise higher placement?",
-    answer: "No. SearchTrust does not promise rankings, traffic, or business outcomes. It helps diagnose structural trust weaknesses that may affect a page's ability to compete in local search.",
+    answer: "No. An observed gap or a proposed edit is not proof of causation or a guarantee of rankings, traffic, leads or revenue. The reports preserve what is confirmed, what remains uncertain and how to check the work later.",
   },
   {
     question: "Is this suitable for agencies?",
-    answer: "Yes. Agencies can use the Advisor report as an internal working document, open the focused Client report, and export either view as a PDF.",
+    answer: "Yes. An SEO can inspect the detailed working view and the clearer client reading view. Both must retain important evidence limits and conditions. The sample-page editor is a demonstration only and does not change the actual workspace report.",
   },
   {
     question: "Can I get a refund?",

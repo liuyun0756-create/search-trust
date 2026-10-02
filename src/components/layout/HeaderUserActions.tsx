@@ -22,13 +22,13 @@ export function HeaderUserActions({ mobile = false, onNavigate }: HeaderUserActi
         ) : (
           <Link
             href="/sign-in"
-            className="text-left text-[16px] font-bold text-[#1D2531]"
+            className="rounded-lg px-4 py-3 text-left text-[15px] font-semibold text-[#26432e]"
             onClick={onNavigate}
           >
             Sign In
           </Link>
         )}
-        <RunAuditButton trackingSource="header_mobile" className="w-full rounded-full bg-[#1D2531] py-4 text-[16px] font-bold text-white">
+        <RunAuditButton trackingSource="header_mobile" className="w-full rounded-lg bg-[#26432e] py-3 text-[15px] font-semibold text-white">
           {actionLabel}
         </RunAuditButton>
       </>
@@ -42,12 +42,12 @@ export function HeaderUserActions({ mobile = false, onNavigate }: HeaderUserActi
       ) : (
         <Link
           href="/sign-in"
-          className="text-[14px] font-bold text-[#1D2531] hover:opacity-70 transition-opacity"
+          className="text-[13px] font-semibold text-[#42614a] transition-colors hover:text-[#26432e]"
         >
           Sign In
         </Link>
       )}
-      <RunAuditButton trackingSource="header_desktop" className="rounded-full bg-[#1D2531] px-6 py-2.5 text-[14px] font-bold text-white transition-all hover:bg-black">
+      <RunAuditButton trackingSource="header_desktop" className="rounded-lg bg-[#26432e] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#365d40]">
         {actionLabel}
       </RunAuditButton>
     </div>

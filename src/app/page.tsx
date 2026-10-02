@@ -5,7 +5,7 @@ import { createPageMetadata, pageSeo, siteUrl } from "@/lib/seo";
 const homeFAQData = [
   {
     question: "What does one credit cover?",
-    answer: "One credit starts one provider-backed Prospect workflow or one Verified Action Plan generation. Entering the website and confirming the business happens before the charge. A technical generation failure returns exactly one credit.",
+    answer: "One credit starts competitor discovery and one complete Prospect analysis, or one Verified Action Plan generation. Entering the website and confirming the business happens before the charge. A technical generation failure returns exactly one credit.",
   },
   {
     question: "What is the difference between Prospect and Verified?",
@@ -13,7 +13,11 @@ const homeFAQData = [
   },
   {
     question: "Do I need access to a Google Business Profile account?",
-    answer: "No. SearchTrust checks the confirmed public Business Profile through SerpAPI. Verified generation requires Search Console and Google Analytics connections, but not an official GBP owner connection.",
+    answer: "No. SearchTrust checks the confirmed public Business Profile through public search data. Verified generation requires Search Console and Google Analytics connections, but not an official Business Profile owner connection.",
+  },
+  {
+    question: "Is Google access read-only?",
+    answer: "Yes. SearchTrust requests read-only access to the Search Console and Google Analytics properties you select. It uses that data to check source health, compare performance periods, and generate the Verified Action Plan.",
   },
   {
     question: "What happens if SearchTrust cannot find a competitor?",

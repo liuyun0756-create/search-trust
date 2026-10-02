@@ -1,0 +1,15 @@
+# Local checkouts, caches, generated artifacts, and private configuration.
+/.worktrees/
+/.superpowers/
+/.next/
+/node_modules/
+/output/
+/.clerk/
+/.image-backup/
+/supabase/.temp/
+.env*
+*.pem
+*.tsbuildinfo
+
+# Design explorations are not part of the public site.
+/public/previews/

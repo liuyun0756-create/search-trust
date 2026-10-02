@@ -539,34 +539,33 @@ export function NewCaseWorkspace() {
     setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving this confirmed Case before analysis…" });
   }
 
-  if (!hydrated) return <div className="min-h-screen bg-[#141b15]" />;
+  if (!hydrated) return <div className="min-h-screen bg-[#f7faf7]" />;
 
   return (
-    <div className="min-h-screen bg-[#141b15] text-[#1c241c]">
-      <header className="border-b border-white/[0.08] bg-[#141b15]">
+    <div className="min-h-screen bg-[#f7faf7] text-[#1d2a22]">
+      <header className="border-b border-[#e3eae2] bg-white">
         <div className="mx-auto flex h-[68px] max-w-[1500px] items-center justify-between px-5 sm:px-8">
-          <Link href="/" className="flex items-center gap-3 text-white outline-none focus-visible:rounded-lg focus-visible:ring-4 focus-visible:ring-[#A5D020]/30"><img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="text-sm font-black tracking-[-0.03em]">Search<span className="text-[#A5D020]">Trust</span></span><span className="hidden text-white/20 sm:inline">/</span><span className="hidden text-xs font-semibold text-white/45 sm:inline">New Case</span></Link>
-          <div className="flex items-center gap-4"><span className="hidden items-center gap-1.5 rounded-full bg-white/[0.055] px-3 py-1.5 text-[11px] font-semibold text-white/55 sm:flex"><ShieldCheck size={13} className="text-[#A5D020]" />Public setup is free</span><button type="button" onClick={reset} className="rounded-lg px-2 py-1.5 text-xs font-bold text-white/48 outline-none transition hover:bg-white/[0.06] hover:text-white focus-visible:ring-4 focus-visible:ring-[#A5D020]/30">Clear draft</button></div>
+          <Link href="/" className="flex items-center gap-3 text-[#26432e] outline-none focus-visible:rounded-lg"><img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="text-sm font-bold tracking-[-0.03em]">Search<span className="text-[#68a44d]">Trust</span></span><span className="hidden text-[#c9d7ca] sm:inline">/</span><span className="hidden text-xs font-semibold text-[#7e9081] sm:inline">New Case</span></Link>
+          <div className="flex items-center gap-4"><span className="hidden items-center gap-1.5 rounded-lg bg-[#f2f7f1] px-3 py-1.5 text-[11px] font-semibold text-[#527557] sm:flex"><ShieldCheck size={13} />Public setup is free</span><button type="button" onClick={reset} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-[#718073] outline-none transition hover:bg-[#f2f7f1] hover:text-[#26432e]">Clear draft</button></div>
         </div>
       </header>
 
       <div className="mx-auto grid min-h-[calc(100vh-68px)] max-w-[1500px] lg:grid-cols-[264px_1fr]">
-        <aside className="border-white/[0.08] bg-[#141b15] lg:flex lg:flex-col lg:border-r lg:px-6 lg:py-9">
+        <aside className="border-[#e3eae2] bg-white lg:flex lg:flex-col lg:border-r lg:px-6 lg:py-9">
           <NewCaseStepper stage={draft.stage} />
           <div className="hidden px-3 lg:mt-auto lg:block">
-            <div className="border-t border-white/[0.08] pt-5">
-              <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45"><LockKeyhole size={13} className="text-[#A5D020]" />Before any credit</p>
-              <ul className="mt-3 space-y-2 text-[11px] leading-4 text-white/38">
-                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#A5D020]" />Check the primary website</li>
-                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#A5D020]" />Confirm the public business</li>
-                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#A5D020]" />Review service and market scope</li>
+            <div className="border-t border-[#e3eae2] pt-5">
+              <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#668a50]"><LockKeyhole size={13} />Before any credit</p>
+              <ul className="mt-3 space-y-2 text-[11px] leading-4 text-[#718073]">
+                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#67a16e]" />Check the primary website</li>
+                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#67a16e]" />Confirm the public business</li>
+                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#67a16e]" />Review service and market scope</li>
               </ul>
             </div>
-            <p className="mt-5 text-[10px] leading-4 text-white/24">Session draft<br /><span className="break-all">{draft.draft_case_id}</span></p>
+            <p className="mt-5 text-[10px] leading-4 text-[#9aa79a]">Session draft<br /><span className="break-all">{draft.draft_case_id}</span></p>
           </div>
         </aside>
-        <main className="relative overflow-hidden bg-[#f1f3ed] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-[72px] xl:py-16">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-[420px] w-[420px] rounded-full bg-[#dce8c7]/45 blur-3xl" />
+        <main className="relative overflow-hidden bg-[#f7faf7] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-[72px] xl:py-16">
           <div className="relative mx-auto max-w-[980px]">
             {draft.stage === "goal_website" && <GoalWebsiteStep key={draft.draft_case_id} initialGoal={draft.goal} initialSiteUrl={draft.site_url} initialGbpUrl={draft.gbp_url} onSubmit={startPreflight} />}
             {draft.stage === "preflight_running" && <PreflightStatus kind="loading" title="Checking the public evidence surface" message="We’re resolving the business website, public profile, service, market, and available analysis modules." />}
@@ -608,7 +607,7 @@ export function NewCaseWorkspace() {
                 <section className="rounded-2xl border border-[#cbd8a5] bg-white p-8 text-center shadow-[0_18px_55px_rgba(31,39,27,0.07)]">
                   <h1 className="text-2xl font-bold tracking-tight text-[#1d271d]">Your verified setup is preserved.</h1>
                   <p aria-live="polite" className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#667266]">{handoffMessage ?? (isSignedIn ? "Preparing the next step…" : "Sign in to continue from this exact business and competitor scope.")}</p>
-                  {!isSignedIn && <button type="button" onClick={openLogin} className="mt-6 rounded-xl bg-[#1a211a] px-6 py-3 text-sm font-bold text-white">Sign in & continue</button>}
+                  {!isSignedIn && <button type="button" onClick={openLogin} className="mt-6 rounded-xl bg-[#234b38] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#2c6348]">Sign in & continue</button>}
                   <button type="button" onClick={() => setDraft((current) => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }))} className="mx-auto mt-5 flex items-center gap-2 text-xs font-bold text-[#697569] underline underline-offset-4">Return to coverage</button>
                 </section>
               )

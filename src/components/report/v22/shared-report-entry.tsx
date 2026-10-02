@@ -51,18 +51,18 @@ export function SharedReportEntry() {
   }
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center bg-[#f4f1e8] px-5">
-      <div className="max-w-md rounded-3xl border border-[#dce1d3] bg-white p-8 text-center shadow-sm">
+    <div className="flex min-h-[70vh] items-center justify-center bg-[#f7faf7] px-5">
+      <div className="max-w-md rounded-2xl border border-[#e3eae2] bg-white p-8 text-center">
         {state.status === "loading" ? (
           <>
-            <LoaderCircle className="mx-auto h-8 w-8 animate-spin text-[#7fa60d]" aria-hidden="true" />
-            <h1 className="mt-5 text-2xl font-black text-[#172019]">Opening secure report</h1>
+            <LoaderCircle className="mx-auto h-8 w-8 animate-spin text-[#57805b]" aria-hidden="true" />
+            <h1 className="mt-5 text-2xl font-bold text-[#1d2a22]">Opening secure report</h1>
             <p className="mt-3 text-sm leading-6 text-[#667064]">Checking this private, read-only share link.</p>
           </>
         ) : (
           <>
             <AlertTriangle className="mx-auto h-8 w-8 text-[#a8640a]" aria-hidden="true" />
-            <h1 className="mt-5 text-2xl font-black text-[#172019]">This report link is unavailable</h1>
+            <h1 className="mt-5 text-2xl font-bold text-[#1d2a22]">This report link is unavailable</h1>
             <p className="mt-3 text-sm leading-6 text-[#667064]">The link may be incomplete, expired, or revoked. Ask the sender for a new link.</p>
           </>
         )}

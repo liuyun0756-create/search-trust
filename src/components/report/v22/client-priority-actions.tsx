@@ -5,30 +5,29 @@ import { SectionHeading, formatReportDate } from "./report-v22-shared";
 
 export function ClientPriorityActions({ actions }: { actions: ClientActionViewModel[] }) {
   return (
-    <section id="actions" className="scroll-mt-28">
+    <section id="actions" className="scroll-mt-28 rounded-2xl border border-[#e3eae2] bg-white p-6 sm:p-8">
       <SectionHeading eyebrow="Priority plan" title="Three actions, in the right order." description="Each action has a clear reason, finish line, and review date." />
-      <div className="space-y-4">
+      <div className="space-y-7">
         {actions.map((action) => (
-          <article key={action.sequence} className="grid overflow-hidden rounded-[28px] border border-[#dfe5d9] bg-white lg:grid-cols-[104px_1fr_260px]">
-            <div className="flex items-center bg-[#1b251e] px-6 py-5 text-white lg:flex-col lg:justify-center lg:px-4">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/45">Priority</span>
-              <span className="ml-3 text-4xl font-black tracking-[-0.08em] text-[#b8dd3c] lg:ml-0 lg:mt-2">0{action.sequence}</span>
+          <article key={action.sequence} className="grid gap-4 border-t border-[#e9eee8] pt-7 first:border-t-0 first:pt-0 sm:grid-cols-[36px_minmax(0,1fr)] lg:grid-cols-[36px_minmax(0,1fr)_220px] lg:gap-5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#e7f2e2] text-xs font-black text-[#67974c]">
+              0{action.sequence}
             </div>
-            <div className="p-6 sm:p-7">
-              <h3 className="text-[22px] font-black leading-7 tracking-[-0.035em] text-[#1c251f]">{action.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-[#657064]">{action.whyNow}</p>
-              {action.reviewedPlan && <div className="mt-4 space-y-2 text-xs leading-5 text-[#4e5c4d]"><p><strong>Reviewed scope:</strong> {action.reviewedPlan.target}</p><p><strong>Work:</strong> {action.reviewedPlan.steps || "Execution details to confirm"}</p><p><strong>Complete when:</strong> {action.reviewedPlan.completion || "Completion standard to confirm"}</p><p><strong>Owner:</strong> {action.reviewedPlan.owner || "To confirm"}</p><p><strong>Review:</strong> {action.reviewedPlan.review || "Review approach to confirm"}</p>{action.reviewedPlan.scopeChanged && <p className="rounded-xl bg-[#fff4e3] p-3 font-bold text-[#795a22]">The SEO changed this action’s scope. The original evidence does not by itself verify the new scope.</p>}</div>}
-              <div className="mt-5 rounded-2xl bg-[#f2f5ec] p-4">
-                <p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#778476]">Planned result to verify</p>
-                <p className="mt-2 text-sm font-bold leading-6 text-[#3f4b3f]">{action.expectedResult}</p>
+            <div>
+              <h3 className="text-[18px] font-black leading-6 tracking-[-0.035em] text-[#213228]">{action.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#68776b]">{action.whyNow}</p>
+              {action.reviewedPlan && <div className="mt-4 space-y-1.5 text-xs leading-5 text-[#506553]"><p><strong>Reviewed scope:</strong> {action.reviewedPlan.target}</p><p><strong>Work:</strong> {action.reviewedPlan.steps || "Execution details to confirm"}</p><p><strong>Complete when:</strong> {action.reviewedPlan.completion || "Completion standard to confirm"}</p><p><strong>Owner:</strong> {action.reviewedPlan.owner || "To confirm"}</p><p><strong>Review:</strong> {action.reviewedPlan.review || "Review approach to confirm"}</p>{action.reviewedPlan.scopeChanged && <p className="rounded-lg bg-[#fff4e3] p-3 font-bold text-[#795a22]">The SEO changed this action’s scope. The original evidence does not by itself verify the new scope.</p>}</div>}
+              <div className="mt-4 rounded-lg bg-[#f3f7f1] px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#758a76]">Planned result to verify</p>
+                <p className="mt-1.5 text-xs font-bold leading-5 text-[#405845]">{action.expectedResult}</p>
               </div>
             </div>
-            <div className="border-t border-[#e5e9e0] bg-[#fafbf8] p-6 lg:border-l lg:border-t-0">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8dfd0] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#677362]"><Clock3 className="h-3.5 w-3.5" />{action.effort} effort</span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4d594c]"><CalendarDays className="h-4 w-4 text-[#8eb51b]" />{action.reviewedPlan?.schedule || formatReportDate(action.reviewDate)}</span>
+            <div className="sm:col-start-2 lg:col-auto lg:pl-3">
+              <div className="flex flex-wrap gap-x-4 gap-y-2 lg:space-y-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#617864]"><Clock3 className="h-3.5 w-3.5 text-[#79a962]" />{action.effort} effort</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#617864]"><CalendarDays className="h-3.5 w-3.5 text-[#79a962]" />{action.reviewedPlan?.schedule || formatReportDate(action.reviewDate)}</span>
               </div>
-              {action.requiredClientAssets.length ? <div className="mt-6 border-t border-[#e4e9df] pt-5"><p className="text-[9px] font-black uppercase tracking-[0.17em] text-[#8a9388]">Client inputs needed</p><ul className="mt-3 space-y-2">{action.requiredClientAssets.map((asset) => <li key={asset} className="flex gap-2 text-xs font-semibold leading-5 text-[#596457]"><CircleDot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8eb51b]" />{asset}</li>)}</ul></div> : null}
+              {action.requiredClientAssets.length ? <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#8a9a8d]">Client inputs needed</p><ul className="mt-2 space-y-1.5">{action.requiredClientAssets.map((asset) => <li key={asset} className="flex gap-2 text-xs leading-5 text-[#6b7b6e]"><CircleDot className="mt-0.5 h-3 w-3 shrink-0 text-[#7eab63]" />{asset}</li>)}</ul></div> : null}
             </div>
           </article>
         ))}

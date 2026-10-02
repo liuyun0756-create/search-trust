@@ -24,12 +24,12 @@ export function SectionHeading({
   description?: string;
 }) {
   return (
-    <div className="mb-7 max-w-3xl">
-      <p className="mb-2 text-[11px] font-black uppercase tracking-[0.22em] text-[#7b971f]">{eyebrow}</p>
-      <h2 className="text-balance text-[30px] font-black leading-[1.05] tracking-[-0.045em] text-[#182018] sm:text-[38px]">
+    <div className="mb-6 max-w-3xl">
+      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#668a50]">{eyebrow}</p>
+      <h2 className="text-balance text-[27px] font-black leading-[1.08] tracking-[-0.045em] text-[#1d2a22] sm:text-[33px]">
         {title}
       </h2>
-      {description ? <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[#657064]">{description}</p> : null}
+      {description ? <p className="mt-3 max-w-2xl text-sm leading-6 text-[#6c7b70]">{description}</p> : null}
     </div>
   );
 }
@@ -40,10 +40,10 @@ export function CompetitorGrid({ competitors }: { competitors: ReportV22Competit
       {competitors.map((competitor, index) => (
         <article
           key={competitor.websiteUrl}
-          className="group relative overflow-hidden rounded-[24px] border border-[#dfe5d9] bg-[#fbfcf8] p-5 transition-colors hover:border-[#b9ce79]"
+          className="group relative overflow-hidden rounded-2xl border border-[#e3eae2] bg-white p-5 transition-colors hover:border-[#b9d3ad]"
         >
           <div className="mb-8 flex items-start justify-between gap-4">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1c251f] text-xs font-black text-white">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#e6f2e1] text-xs font-black text-[#65974e]">
               {String(index + 1).padStart(2, "0")}
             </span>
             <span className="rounded-full border border-[#dce5cf] bg-white px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#627053]">
@@ -80,14 +80,13 @@ export function CompetitorGrid({ competitors }: { competitors: ReportV22Competit
 
 export function RoadmapTimeline({ phases }: { phases: ReportV22RoadmapPhaseViewModel[] }) {
   return (
-    <div className="relative grid gap-4 lg:grid-cols-3">
-      <div className="absolute left-[16.666%] right-[16.666%] top-6 hidden h-px bg-[#cdd9b0] lg:block" />
+    <div className="grid gap-3 lg:grid-cols-3">
       {phases.map((phase, index) => (
-        <article key={phase.period} className="relative rounded-[24px] border border-[#dfe5d9] bg-white p-5 pt-8 shadow-[0_10px_35px_rgba(34,48,26,0.04)]">
-          <div className="absolute -top-1 left-5 flex h-12 w-12 items-center justify-center rounded-full border-4 border-[#f4f1e8] bg-[#a5d020] text-sm font-black text-[#172015]">
+        <article key={phase.period} className="rounded-2xl border border-[#e3eae2] bg-white p-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#e6f2e1] text-xs font-black text-[#65974e]">
             {index + 1}
           </div>
-          <p className="mt-5 text-[11px] font-black uppercase tracking-[0.2em] text-[#759017]">{phase.label}</p>
+          <p className="mt-5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6f9659]">{phase.label}</p>
           <h3 className="mt-2 text-xl font-black tracking-[-0.03em] text-[#1c251f]">{phase.objective}</h3>
           <div className="mt-6 border-t border-[#e9ece4] pt-5">
             <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#8a9388]">Exit criteria</p>
@@ -131,10 +130,10 @@ export function LimitationsList({ limitations }: { limitations: PublicLimitation
 export function ReportContextPills({ service, location }: { service: string; location: string }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/80">
-        <MapPin className="h-3.5 w-3.5 text-[#b8dd3c]" aria-hidden="true" /> {location}
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f0f5ed] px-3 py-1.5 text-xs font-bold text-[#59705e]">
+        <MapPin className="h-3.5 w-3.5 text-[#79a75e]" aria-hidden="true" /> {location}
       </span>
-      <span className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/80">
+      <span className="rounded-full bg-[#f0f5ed] px-3 py-1.5 text-xs font-bold text-[#59705e]">
         {service}
       </span>
     </div>

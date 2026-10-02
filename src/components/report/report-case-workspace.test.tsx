@@ -58,5 +58,8 @@ describe("ReportCaseWorkspace", () => {
     expect(html).toContain("Connect client evidence");
     expect(html).toContain("Client evidence has been applied");
     expect(html).toContain("Client sharing and PDF export always act on the version you open");
+    expect(html).toContain('href="/cases/case-two/reports/prospect-two"');
+    expect(html).toContain('href="/cases/case-one/reports/verified-one"');
+    expect(html).toContain('href="/cases/case-two/connections"');
   });
 });

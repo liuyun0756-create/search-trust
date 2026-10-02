@@ -19,7 +19,7 @@ test.describe("Verified Generation", () => {
 
       await page.goto(`/cases/${E2E_IDS.caseId}/connections`);
       await expect(page.getByText("All required evidence is healthy and matched to this Case.")).toBeVisible();
-      await expect(page.getByText("Account balance:").locator(".."))
+      await expect(page.getByText("Available balance:").locator(".."))
         .toContainText("1 credit");
 
       await page.getByRole("button", { name: "Generate Verified Action Plan · uses 1 credit" }).click();
@@ -72,7 +72,7 @@ test.describe("Verified Generation", () => {
 
       await expect(page).toHaveURL(new RegExp(`/cases/${E2E_IDS.caseId}/connections$`));
       await expect(page.getByText("1 credit added. You can generate when you are ready.")).toBeVisible();
-      await expect(page.getByText("Account balance:").locator(".."))
+      await expect(page.getByText("Available balance:").locator(".."))
         .toContainText("1 credit");
       await expect(page.getByText("Generating your Verified Action Plan")).toHaveCount(0);
       expect(apiScenario.snapshot()).toMatchObject({

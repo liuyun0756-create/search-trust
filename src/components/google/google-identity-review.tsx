@@ -36,7 +36,7 @@ export function GoogleIdentityReview({ resource, caseIdentity, busy, confirmed, 
     <p className="text-sm">Saving records who confirmed the identity and when. Data health and synchronization are separate checks.</p>
     {replaces && <p>This replaces the current {replaces} selection for this Case.</p>}
     <div className="flex flex-wrap gap-3">
-      <button disabled={!canSave} className="rounded-xl bg-[#1c251b] px-5 py-3 text-white disabled:cursor-not-allowed disabled:opacity-40" onClick={onSave}>Save this resource</button>
+      <button disabled={!canSave} className="rounded-xl bg-[#234b38] px-5 py-3 text-white transition-colors hover:bg-[#2c6348] disabled:cursor-not-allowed disabled:opacity-40" onClick={onSave}>Save this resource</button>
       <button disabled={busy} className="rounded-xl border border-[#dce1d5] px-4 py-2 disabled:opacity-40" onClick={onReview}>Review again</button>
     </div>
   </div>;

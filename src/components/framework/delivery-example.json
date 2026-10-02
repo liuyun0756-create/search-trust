@@ -1,0 +1,74 @@
+{
+  "id": "core-service-page",
+  "version": "Website example 01",
+  "label": "Report expression example - Not a real client result",
+  "case": "Local air conditioning repair - Existing core service page",
+  "scope": "Service-stage illustration, after access to client data. The evidence below is an example assumption, not collected client evidence.",
+  "action": "Improve the existing service page; do not immediately add a duplicate service page.",
+  "evidence": [
+    { "source": "Search Console", "text": "The page receives impressions and clicks for relevant service searches." },
+    { "source": "Page inspection", "text": "Service coverage, the service process and the contact steps are not explained clearly enough." },
+    { "source": "Client confirmation", "text": "The service is a current business priority." }
+  ],
+  "pending": [
+    "Confirm that the business materials and service coverage are accurate.",
+    "Check whether the page is part of a concurrent redesign or other planned change.",
+    "Verify what the relevant key events measure and whether collection is suitable for follow-up."
+  ],
+  "limitations": "The evidence does not prove that the page content caused fewer enquiries, or that these edits will improve rankings, traffic or leads. No real source snapshots, observation dates, baseline values or results are supplied in this example.",
+  "status": [
+    { "label": "Planned", "text": "Suggested work, awaiting SEO and client review." },
+    { "label": "Implemented", "text": "Not recorded. A recommendation is not completed work." },
+    { "label": "Reviewed", "text": "Not recorded. No post-implementation result is claimed." }
+  ],
+  "views": {
+    "seo": {
+      "label": "SEO working view",
+      "title": "The existing service page needs clearer business information and contact steps.",
+      "intro": "Review the same page against search evidence, the content inspection and client-confirmed business priorities. Improve the existing target before considering another page.",
+      "sections": [
+        { "label": "Action recommendation", "text": "Improve the existing service page; do not immediately add a duplicate service page." },
+        { "label": "Execution requirements", "text": "Add client-confirmed service coverage, process and necessary business information. Make the next contact step clear and check the relevant event collection." },
+        { "label": "Priority and confidence", "text": "Relevant search demand, a business priority and an identifiable content gap make this an action candidate. Compare it with other candidates before confirming the top three. This supports investigating and improving the page, not a proven causal diagnosis." },
+        { "label": "Completion criteria", "text": "Business information is accurate, the approved content is in place, the contact path works and the relevant events have been checked." },
+        { "label": "Review scope and baseline", "text": "Revisit search performance, engagement and relevant key events for the same page. Confirm a baseline, implementation date and suitable review period before interpreting changes; these are not supplied in the example." }
+      ]
+    },
+    "client": {
+      "label": "Client report view",
+      "title": "First, improve the service page that is already attracting search visits.",
+      "intro": "This page is already attracting relevant search visits, but its explanation of service coverage, the service process and how to get in touch is not clear enough. We suggest improving the existing page so visitors can better understand the business and their next step.",
+      "sections": [
+        { "label": "Work proposed for this stage", "text": "Improve the existing service page; do not immediately add a duplicate service page. Add accurate service information, make contact steps clearer and check that the changes are implemented correctly." },
+        { "label": "What we need from you", "text": "Confirm your service coverage, provide the necessary business materials and review the page content before it is used." },
+        { "label": "How we will check it", "text": "First check the work itself, then revisit this page's search performance and relevant on-site behavior. Agree on a starting point and review period before deciding whether to make further changes." }
+      ]
+    }
+  },
+  "scenarios": [
+    {
+      "id": "prospect",
+      "label": "Prospect proposal",
+      "title": "Start a substantive client conversation with specific findings.",
+      "questions": ["What did we observe?", "Why does it deserve attention?", "What should the first stage of work cover?", "What does the client need to provide?", "Which judgments need further testing after data access?"],
+      "summary": "Within the publicly checked pages, the core repair service and the route to contact are not explained clearly. Confirm the intended service page and business details before agreeing on the scope of work.",
+      "evidence": ["Page observation: the checked content leaves service coverage and process unclear.", "Page observation: the checked contact guidance does not clearly explain the next step."],
+      "actions": ["Confirm the existing service page and improve the approved service information.", "Clarify the contact steps on the confirmed page and test the contact path.", "Check relevant event collection when access is available, before using it to judge outcomes."],
+      "needs": "Confirm the service coverage, existing page and accurate business materials. Treat the three actions as a proposed discussion scope, not a fixed ranking for every client.",
+      "boundary": "Public evidence does not establish private search traffic, lead quality or revenue. Relevant search demand and the effect on enquiries still need to be checked after access.",
+      "value": "Discuss this business's actual issues and the first engagement scope, not a checklist that could apply to any business."
+    },
+    {
+      "id": "service",
+      "label": "Service delivery and review",
+      "title": "Explain the work plan and what changed afterwards.",
+      "questions": ["What are the current work priorities?", "Why are they ordered this way?", "What was actually implemented?", "What changed in the corresponding evidence and performance?", "What should the next stage retain or adjust?"],
+      "summary": "Review the existing core service page as an action candidate: it has relevant search visits, a client-confirmed business priority and an identifiable information gap in this illustration.",
+      "evidence": ["Review basis: the page, supporting evidence and limits stay attached to the proposed action."],
+      "actions": ["Review the service-page improvement and contact steps against other action candidates.", "Record the approved scope and actual implementation before describing the work as completed.", "Compare the same page over suitable periods and decide whether to retain, adjust or investigate the next action."],
+      "needs": "Confirm the business materials, concurrent page changes and measurement conditions. An SEO-approved plan and real implementation records would be required for an actual delivery.",
+      "boundary": "In this example, work is proposed only: implementation is not recorded and results have not been reviewed. No comparison values or measured improvement are claimed.",
+      "value": "Help the client see how work follows from a judgment, rather than sending an unexplained set of changing numbers."
+    }
+  ]
+}

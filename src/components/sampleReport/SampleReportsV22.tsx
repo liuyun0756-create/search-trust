@@ -1,84 +1,104 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BarChart3, Check, FileSearch, Fingerprint, Link2, ShieldCheck } from "lucide-react";
-
+import { ArrowDown, ArrowRight, ArrowUp, Check, FileText, RotateCcw } from "lucide-react";
 import { RunAuditButton } from "@/components/common/RunAuditButton";
+import { type EditableReport, type SampleReport, sampleCase, sampleReports } from "./sample-report-data";
+import "./sample-report.css";
 
-const prospectRows = [
-  ["Business identity", "Matched", "Website + public GBP"],
-  ["Competitor set", "Confirmed", "Real local businesses"],
-  ["Trust gap", "L3 consistency", "L1–L8 evidence model"],
-  ["Next action", "Prioritized", "Client-ready rationale"],
-] as const;
+type ReadingView = "client" | "seo";
+const fields: { key: Exclude<keyof EditableReport, "actions">; label: string }[] = [
+  { key: "headline", label: "Report headline" }, { key: "summary", label: "Executive summary" },
+  { key: "decision", label: "Work decision" }, { key: "clientRequest", label: "Client confirmation" },
+  { key: "review", label: "Follow-up plan" },
+];
+function clone(report: SampleReport) {
+  return { client: { ...report.client, actions: [...report.client.actions] }, seo: { ...report.seo, actions: [...report.seo.actions] } };
+}
 
-const verifiedRows = [
-  ["Search Console", "Healthy", "Clicks, impressions, queries"],
-  ["Google Analytics", "Healthy", "Users and engagement"],
-  ["Comparison", "90 vs 90 days", "Aligned source windows"],
-  ["Action plan", "Verified", "Owned + public evidence"],
-] as const;
+function ReportDocument({ report }: { report: SampleReport }) {
+  const [view, setView] = useState<ReadingView>("client");
+  const [saved, setSaved] = useState(() => clone(report));
+  const [draft, setDraft] = useState(() => clone(report));
+  const [editing, setEditing] = useState(false);
+  const [reviewed, setReviewed] = useState(false);
+  const [visitedViews, setVisitedViews] = useState<ReadingView[]>(["client"]);
+  const [editChecked, setEditChecked] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [revisedViews, setRevisedViews] = useState<ReadingView[]>([]);
+  const [deskOpen, setDeskOpen] = useState(false);
+  const display = saved[view];
 
-function ReportCard({ variant }: { variant: "prospect" | "verified" }) {
-  const prospect = variant === "prospect";
-  const rows = prospect ? prospectRows : verifiedRows;
-  return (
-    <article className={`overflow-hidden rounded-[1.8rem] ${prospect ? "border border-[#d7ddce] bg-white text-[#182018]" : "bg-[#182018] text-white shadow-[0_28px_80px_rgba(24,32,24,0.2)]"}`}>
-      <header className={`flex items-center justify-between border-b px-6 py-5 ${prospect ? "border-[#e2e6dc]" : "border-white/10"}`}>
-        <div className="flex items-center gap-3">
-          <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${prospect ? "bg-[#edf3d9] text-[#718d18]" : "bg-[#b8e626] text-[#182018]"}`}>{prospect ? <FileSearch className="h-5 w-5" /> : <BarChart3 className="h-5 w-5" />}</span>
-          <div><p className={`text-[10px] font-black uppercase tracking-[0.2em] ${prospect ? "text-[#718d18]" : "text-[#b8e626]"}`}>{prospect ? "Before the engagement" : "After the engagement"}</p><h3 className="mt-1 font-[family-name:Georgia] text-2xl">{prospect ? "Prospect Evidence Report" : "Verified Action Plan"}</h3></div>
+  function changeView(next: ReadingView) {
+    if (editing && JSON.stringify(draft[view]) !== JSON.stringify(saved[view]) && !window.confirm("Discard unsaved wording in this reading view?")) return;
+    setDraft(saved); setEditing(false); setView(next); setVisitedViews((current) => current.includes(next) ? current : [...current, next]); setNotice(""); setDeskOpen(false);
+  }
+  function changeField(key: Exclude<keyof EditableReport, "actions">, value: string) {
+    setDraft((current) => ({ ...current, [view]: { ...current[view], [key]: value } }));
+  }
+  function changeAction(index: number, value: string) {
+    setDraft((current) => ({ ...current, [view]: { ...current[view], actions: current[view].actions.map((action, i) => i === index ? value : action) } }));
+  }
+  function moveAction(index: number, offset: number) {
+    setDraft((current) => { const actions = [...current[view].actions]; [actions[index], actions[index + offset]] = [actions[index + offset], actions[index]]; return { ...current, [view]: { ...current[view], actions } }; });
+  }
+  function saveDraft() {
+    if (!draft[view].headline.trim() || !draft[view].summary.trim() || !draft[view].decision.trim() || draft[view].actions.some((item) => !item.trim())) {
+      setNotice("Add a headline, summary, decision and all three actions before saving the demo draft."); return;
+    }
+    setSaved(draft); setEditing(false); setReviewed(false); setVisitedViews([view]); setEditChecked(false);
+    setRevisedViews((current) => current.includes(view) ? current : [...current, view]);
+    setNotice("Demo wording saved in this page only. Review both reading views before delivery.");
+    setDeskOpen(false);
+  }
+  function reset() {
+    if (!window.confirm("Restore the original example wording for both views and clear the demo review state?")) return;
+    const original = clone(report); setSaved(original); setDraft(original); setEditing(false); setReviewed(false); setVisitedViews([view]); setRevisedViews([]); setEditChecked(false);
+    setNotice("Original example restored. No real report was changed.");
+  }
+
+  return <section id={`sample-${report.stage}`} aria-labelledby={`${report.stage}-heading`} className="sample-chapter scroll-mt-28">
+    <div className="sample-chapter-heading"><div className="sample-stage-rail"><span>{report.number}</span><span>{report.stage === "prospect" ? "Win the client" : "Serve the client"}</span></div><div><p className="sample-eyebrow">{report.moment}</p><h2 id={`${report.stage}-heading`} className="sample-chapter-title">{report.name}</h2><p className="sample-lede">{report.purpose}</p></div></div>
+    <div className="sample-workspace">
+      <button type="button" className="sample-mobile-desk-button" aria-expanded={deskOpen} aria-controls={`${report.stage}-review-desk`} onClick={() => setDeskOpen(true)}>Open SEO review &amp; edit panel <ArrowRight size={17} aria-hidden="true" /></button>
+      <article className="sample-paper" aria-label={`${report.name} ${view === "seo" ? "SEO working view" : "client report view"}`}>
+        <header className="sample-paper-header"><div className="sample-paper-topline"><span>SEARCHTRUST / REPORT EXAMPLE</span><span>{report.number} / 02</span></div><p className="sample-paper-kicker">{view === "client" ? "CLIENT REPORT VIEW" : "SEO WORKING VIEW"} · FICTIONAL CASE</p><h3>{display.headline}</h3><div className="sample-meta"><span>Case: {sampleCase.name}</span><span>Service: {sampleCase.service}</span><span>Scope: {sampleCase.location}</span></div><p className="sample-source-note">{report.sourceScope}</p></header>
+        <div className="sample-paper-body">
+          <section aria-labelledby={`${report.stage}-summary`} className="sample-report-section sample-report-intro"><p className="sample-section-index">01 / THE SITUATION</p><h4 id={`${report.stage}-summary`}>{view === "client" ? "What we found" : "Diagnosis and scope"}</h4><p>{display.summary}</p></section>
+          <section aria-labelledby={`${report.stage}-evidence`} className="sample-report-section"><div className="sample-section-head"><div><p className="sample-section-index">02 / SOURCE RECORD</p><h4 id={`${report.stage}-evidence`}>The evidence behind the decision</h4></div><span className="sample-locked">Read-only example evidence</span></div><ol className="sample-evidence-list">{report.evidence.map((item, index) => <li key={item.source}><span className="sample-evidence-index">0{index + 1}</span><div><h5>{item.source}</h5><p>{item.finding}</p><p className="sample-implication"><strong>What it supports: </strong>{item.implication}</p></div></li>)}</ol><p className="sample-source-disclaimer">Illustrative source descriptions. This example contains no collected snapshots, observation timestamps or values.</p></section>
+          <section aria-labelledby={`${report.stage}-decision`} className="sample-report-section"><p className="sample-section-index">03 / JUDGMENT</p><h4 id={`${report.stage}-decision`}>What this means for the work</h4><div className="sample-decision"><p>{display.decision}</p></div><dl className="sample-judgment">{report.judgment.map((item) => <div key={item.question}><dt>{item.question}</dt><dd>{item.answer}</dd></div>)}</dl></section>
+          <section aria-labelledby={`${report.stage}-plan`} className="sample-report-section"><p className="sample-section-index">04 / PROPOSED PLAN</p><h4 id={`${report.stage}-plan`}>Three actions for SEO and client review</h4><ol className="sample-actions">{display.actions.map((action, index) => <li key={index}><span>0{index + 1}</span><p>{action}</p></li>)}</ol><div className="sample-plan-foot"><div><h5>What the client needs to confirm</h5><p>{display.clientRequest}</p></div><div><h5>How to check the next step</h5><p>{display.review}</p></div></div></section>
+          <section aria-labelledby={`${report.stage}-boundary`} className="sample-report-section sample-boundary"><p className="sample-section-index">05 / DELIVERY BOUNDARY</p><h4 id={`${report.stage}-boundary`}>What this report does not claim</h4><ul>{report.limits.map((limit) => <li key={limit}>{limit}</li>)}</ul><dl>{report.status.map((item) => <div key={item.label}><dt>{item.label}</dt><dd>{item.detail}</dd></div>)}</dl></section>
+        </div><footer className="sample-paper-footer"><span>Method example / Not a real client result</span><span>SEO review required before any client delivery</span><button type="button" className="sample-mobile-footer-button" onClick={() => setDeskOpen(true)}>Review or edit this report <ArrowRight size={15} aria-hidden="true" /></button></footer>
+      </article>
+      {deskOpen && <button className="sample-desk-backdrop" type="button" aria-label="Close SEO review panel" onClick={() => setDeskOpen(false)} />}
+      <aside id={`${report.stage}-review-desk`} className={`sample-desk ${deskOpen ? "sample-desk-open" : ""}`} aria-label={`${report.name} SEO review desk`} onKeyDown={(event) => { if (event.key === "Escape") setDeskOpen(false); }}><button type="button" className="sample-desk-close" onClick={() => setDeskOpen(false)}>Close panel ×</button><p className="sample-eyebrow">SEO REVIEW DESK</p><h3>Would you send this?</h3><p className="sample-desk-intro">Read the complete report, inspect its source limits, then refine the wording you would put in front of a client.</p>
+        <div role="group" aria-label={`${report.name} reading view`} className="sample-view-switch"><button type="button" aria-pressed={view === "client"} onClick={() => changeView("client")}>Client report</button><button type="button" aria-pressed={view === "seo"} onClick={() => changeView("seo")}>SEO working view</button></div>
+        <div className="sample-review-checklist"><p>Before delivery, check:</p><ul><li>Does the evidence support the conclusion?</li><li>Are the three actions appropriate for this client?</li><li>Are open questions and limits visible in both views?</li></ul></div>
+        <div className="sample-edit-area"><p className="sample-eyebrow">WORDING &amp; PLAN</p><p>Editable: headline, explanation, decision, actions and follow-up. Source observations and status remain unchanged.</p>
+          {!editing ? <button type="button" className="sample-primary-control" onClick={() => { setDraft(saved); setEditing(true); setNotice(""); }}>Edit {view === "client" ? "client" : "SEO"} wording <ArrowRight size={16} aria-hidden="true" /></button> : <div className="sample-edit-form">
+            {fields.map((field) => <label key={field.key}>{field.label}<textarea rows={field.key === "headline" ? 2 : 4} value={draft[view][field.key]} onChange={(event) => changeField(field.key, event.target.value)} /></label>)}
+            <fieldset><legend>Three proposed actions</legend>{draft[view].actions.map((action, index) => <div key={index} className="sample-action-edit"><label>Action {index + 1}<textarea rows={3} value={action} onChange={(event) => changeAction(index, event.target.value)} /></label><div><button type="button" onClick={() => moveAction(index, -1)} disabled={index === 0} aria-label={`Move action ${index + 1} up`}><ArrowUp size={16} /></button><button type="button" onClick={() => moveAction(index, 1)} disabled={index === 2} aria-label={`Move action ${index + 1} down`}><ArrowDown size={16} /></button></div></div>)}</fieldset>
+            <div className="sample-form-actions"><button type="button" className="sample-primary-control" onClick={saveDraft}>Save demo draft</button><button type="button" className="sample-secondary-control" onClick={() => { setDraft(saved); setEditing(false); setNotice("Changes cancelled."); }}>Cancel</button></div>
+          </div>}
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${prospect ? "bg-[#f1f3ed]" : "border border-white/10 text-white/50"}`}>V2.2</span>
-      </header>
-      <div className="p-6">
-        <p className={`min-h-14 text-sm leading-6 ${prospect ? "text-[#667064]" : "text-white/56"}`}>{prospect ? "A persuasive, source-backed view built from public business, site and competitor evidence." : "A prioritized plan built after GSC and GA4 pass health checks and join the Case evidence."}</p>
-        <div className="mt-6 space-y-3">
-          {rows.map(([label, value, source]) => <div key={label} className={`rounded-xl border p-3.5 ${prospect ? "border-[#e2e6dc] bg-[#fafbf7]" : "border-white/8 bg-white/[0.035]"}`}><div className="flex items-center justify-between gap-4 text-xs"><span className={prospect ? "font-bold text-[#586256]" : "font-bold text-white/62"}>{label}</span><span className="font-black text-[#85a918]">{value}</span></div><p className={`mt-1.5 text-[10px] ${prospect ? "text-[#899187]" : "text-white/34"}`}>{source}</p></div>)}
-        </div>
-      </div>
-    </article>
-  );
+        {revisedViews.length > 0 && <label className="sample-edit-check"><input type="checkbox" checked={editChecked} onChange={(event) => setEditChecked(event.target.checked)} /> I checked the edited wording against the original evidence and conditions.</label>}
+        <div className="sample-review-actions"><button type="button" className="sample-secondary-control" disabled={editing || visitedViews.length < 2 || (revisedViews.length > 0 && !editChecked)} onClick={() => { setReviewed(true); setNotice("Marked ready for this demonstration only. Nothing has been shared."); }}><Check size={16} aria-hidden="true" /> Mark demo ready</button><button type="button" className="sample-text-control" onClick={reset}><RotateCcw size={15} aria-hidden="true" /> Restore original example</button></div>
+        <p role="status" className="sample-status">{notice || (reviewed ? "Demo review complete. No report has been sent or approved in the real workspace." : visitedViews.length < 2 ? "Preview both reading views before marking this demo ready." : "Not approved for real client delivery.")}</p>
+        {revisedViews.length > 0 && <p className="sample-revision-note">Edited in this demo: {revisedViews.map((item) => item === "seo" ? "SEO view" : "Client view").join(", ")}. Check the other view for consistency; edits do not change source evidence.</p>}
+        <p className="sample-demo-boundary">Website-only demonstration. Edits stay in this browser page until refresh; they do not update a real report, create a share link, run analysis or use credits.</p>
+        {report.stage === "verified" && <><a className="sample-pdf-link" href="/samples/searchtrust-client-delivery-example.pdf" target="_blank" rel="noopener noreferrer"><FileText size={17} aria-hidden="true" /> View fixed PDF illustration <ArrowRight size={16} aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a><p className="sample-pdf-note">The PDF is a fixed companion example; edits made here do not change it.</p></>}
+      </aside>
+    </div>
+  </section>;
 }
 
 export function SampleReportsV22() {
-  return (
-    <main className="overflow-hidden bg-[#f3f4ed] text-[#182018]">
-      <section className="px-4 pb-24 pt-20 sm:px-6 sm:pb-32 sm:pt-28 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-4xl text-center">
-            <p className="text-xs font-black uppercase tracking-[0.26em] text-[#718d18]">Illustrative V2.2 reports</p>
-            <h1 className="mt-5 font-[family-name:Georgia] text-5xl leading-[0.98] tracking-[-0.055em] sm:text-7xl">The evidence grows with the client relationship.</h1>
-            <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-[#667064]">Prospect shows what can be responsibly learned from public evidence. Verified adds owned performance data only after access is granted. The two reports share one Case and one source history.</p>
-            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><RunAuditButton trackingSource="sample_reports_v22" className="inline-flex min-h-13 items-center justify-center gap-2 rounded-xl bg-[#182018] px-6 py-3.5 text-sm font-black text-white">Start with 5 free credits <ArrowRight className="h-4 w-4" /></RunAuditButton><Link href="/framework" className="inline-flex min-h-13 items-center justify-center rounded-xl border border-[#cfd5c7] bg-white px-6 py-3.5 text-sm font-black">Explore the L1–L8 framework</Link></div>
-          </div>
-          <div className="mt-16 grid gap-6 lg:grid-cols-2"><ReportCard variant="prospect" /><ReportCard variant="verified" /></div>
-          <p className="mx-auto mt-6 max-w-3xl text-center text-xs leading-5 text-[#7c8679]">These previews demonstrate report structure and evidence states. They do not represent a ranking, traffic or revenue guarantee.</p>
-        </div>
-      </section>
-
-      <section className="border-y border-[#d7ddce] bg-[#e8ecdd] px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
-            <div><p className="text-xs font-black uppercase tracking-[0.24em] text-[#718d18]">What changes between reports</p><h2 className="mt-4 font-[family-name:Georgia] text-4xl tracking-[-0.04em] sm:text-5xl">More access creates stronger evidence—not retroactive certainty.</h2></div>
-            <p className="max-w-2xl text-lg leading-8 text-[#667064] lg:justify-self-end">Prospect is honest about public-data limits. Verified does not erase that history; it adds source health, owned performance and time-based comparison so recommendations can become more specific.</p>
-          </div>
-          <div className="mt-14 grid gap-px overflow-hidden rounded-[1.75rem] border border-[#ccd3c2] bg-[#ccd3c2] md:grid-cols-3">
-            {[
-              [Fingerprint, "Same identity", "The confirmed site, public GBP and competitors remain attached to the Case."],
-              [Link2, "New owned sources", "GSC and GA4 are authorized, checked and synchronized before generation."],
-              [ShieldCheck, "Visible change", "A change is marked only when the evidence actually differs from the earlier snapshot."],
-            ].map(([Icon, title, body]) => { const Glyph = Icon as typeof Fingerprint; return <article key={String(title)} className="bg-[#f8f9f3] p-8 sm:p-10"><Glyph className="h-6 w-6 text-[#789b12]" /><h3 className="mt-10 font-[family-name:Georgia] text-2xl">{String(title)}</h3><p className="mt-4 text-sm leading-7 text-[#667064]">{String(body)}</p></article>; })}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_0.9fr] lg:items-center">
-          <div><p className="text-xs font-black uppercase tracking-[0.24em] text-[#718d18]">What every report preserves</p><h2 className="mt-4 font-[family-name:Georgia] text-4xl tracking-[-0.04em] sm:text-5xl">A conclusion should never outrun its source.</h2><p className="mt-6 max-w-2xl text-lg leading-8 text-[#667064]">Each conclusion stays connected to its evidence status. Missing required data blocks the workflow; unavailable optional data remains visible; technical generation failure returns the credit.</p></div>
-          <ul className="space-y-3 rounded-[1.75rem] border border-[#d7ddce] bg-white p-7 sm:p-9">
-            {["Confirmed business identity", "At least one real competitor for Prospect", "GSC and GA4 health for Verified", "Source snapshots and generation history", "Advisor detail and client-ready communication"].map((item) => <li key={item} className="flex items-center gap-3 border-b border-[#e7eadf] pb-3 text-sm font-bold last:border-0 last:pb-0"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#edf3d9]"><Check className="h-4 w-4 text-[#789b12]" /></span>{item}</li>)}
-          </ul>
-        </div>
-      </section>
-    </main>
-  );
+  return <div className="sample-page">
+    <header className="sample-hero"><div className="sample-hero-inner"><p className="sample-eyebrow">SAMPLE REPORT / ONE CASE, TWO MOMENTS</p><h1>See the report you can review before you put your name on it.</h1><p>One fictional local business. First, a proposal grounded in public evidence. Then, after client access, a more specific action plan. Read both reports in full, switch between SEO and client views, and test how you would edit the delivery wording.</p><div className="sample-hero-facts"><span>01 / Win the client</span><ArrowRight size={18} aria-hidden="true" /><span>02 / Serve the client</span><span className="sample-fact-end">Same Case. A more informed decision.</span></div><p className="sample-hero-disclaimer">{sampleCase.note}. This page is a website demonstration, not a real report editor.</p></div></header>
+    <div className="sample-journey"><div className="sample-journey-inner"><div><p className="sample-eyebrow">READ THE CONTINUOUS CASE</p><h2 id="report-scenarios" className="scroll-mt-28">Two reports. Two decisions. One evidence history.</h2><p>The first report makes a responsible proposal without private data. The second carries its open questions forward, tests them against eligible client evidence and changes the work decision where warranted.</p></div><nav aria-label="Report sample scenarios"><a href="#sample-prospect">01 Prospect proposal <ArrowRight size={16} aria-hidden="true" /></a><a href="#sample-verified">02 Service delivery and review <ArrowRight size={16} aria-hidden="true" /></a></nav></div></div>
+    <div className="sample-chapters">{sampleReports.map((report, index) => <div key={report.stage}><ReportDocument report={report} />{index === 0 && <div className="sample-bridge"><div className="sample-bridge-mark">01 <ArrowRight size={18} aria-hidden="true" /> 02</div><div><p className="sample-eyebrow">WHAT ACCESS CHANGES</p><h2>The first question is not erased. It is answered more carefully.</h2><p>Report 01 asks whether a new service page is needed. The client confirms an existing page; relevant search exposure and renewed page inspection give the SEO a different, more specific work candidate. Report 02 preserves what remains unproven.</p></div></div>}</div>)}</div>
+    <footer className="sample-final"><div><p className="sample-eyebrow">FROM EXAMPLE TO YOUR OWN CASE</p><h2>Start with a business you know. Keep the final judgment yours.</h2><p>Confirm the business and its competitors, review the evidence, and decide what you would actually present to the client. This button opens the existing business-confirmation flow; it does not generate a paid report by itself.</p></div><div className="sample-final-actions"><RunAuditButton trackingSource="sample_reports_v22" className="sample-final-primary">Start with one business <ArrowRight size={18} aria-hidden="true" /></RunAuditButton><Link href="/framework" className="sample-final-link">See how the method works <ArrowRight size={17} aria-hidden="true" /></Link></div></footer>
+  </div>;
 }

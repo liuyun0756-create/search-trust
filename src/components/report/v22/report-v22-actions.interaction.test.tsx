@@ -31,4 +31,20 @@ describe("ReportV22Actions interactions", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Create secure link" })).toBeInTheDocument());
     expect(fetchMock).toHaveBeenLastCalledWith(expect.stringContaining(`/${E2E_IDS.shareId}`), { method: "DELETE" });
   });
+
+  it("keeps the share URL visible when clipboard access is denied", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(createdShareFixture), { status: 201 })));
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("NotAllowedError"));
+    render(<ReportV22Actions caseId={E2E_IDS.caseId} reportId={E2E_IDS.reportId} mode="advisor" versionNumber={3} deliveryStatus="original" />);
+
+    await user.click(screen.getByRole("button", { name: "Share" }));
+    await user.click(screen.getByRole("button", { name: "Create secure link" }));
+    expect(await screen.findByText(createdShareFixture.url)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Select and copy the URL above instead.");
+    expect(screen.getByText(createdShareFixture.url)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument();
+  });
 });

@@ -7,7 +7,7 @@ test.describe("Prospect credit boundary", () => {
     await expect(start).toBeEnabled();
     await start.click();
 
-    await expect(page.getByRole("heading", { name: "Choose who competes for the same demand." })).toBeVisible({ timeout: 12_000 });
+    await expect(page.getByRole("heading", { name: "Confirm who really competes for the same demand." })).toBeVisible({ timeout: 12_000 });
     expect(apiScenario.snapshot()).toMatchObject({
       prospectWorkflowId: expect.any(String),
       verifiedBalance: 0,

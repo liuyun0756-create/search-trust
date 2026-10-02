@@ -14,8 +14,9 @@ const fixture = prospectFixture as unknown as SearchTrustReportV2_2;
 
 describe("v2.2 report views", () => {
   it("renders the client decision, three actions, roadmap, and client inputs", () => {
+    const report = buildReportV22ViewModel(fixture, "client");
     const html = renderToStaticMarkup(
-      <ClientReportView report={buildReportV22ViewModel(fixture, "client")} />,
+      <ClientReportView report={report} />,
     );
 
     expect(html).toContain("The core decision");
@@ -26,7 +27,8 @@ describe("v2.2 report views", () => {
     expect(html).toContain("Representative evidence");
     expect(html).toContain("Days 1–30");
     expect(html).toContain("What we need from you.");
-    expect(html.match(/Priority<\/span>/g)).toHaveLength(3);
+    expect(report.actions).toHaveLength(3);
+    report.actions.forEach((action) => expect(html).toContain(action.title));
     expect(html).not.toContain("RULE-");
     expect(html).not.toContain("snapshot");
     expect(html).not.toContain("https://");

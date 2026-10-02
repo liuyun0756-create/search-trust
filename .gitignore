@@ -39,6 +39,7 @@ next-env.d.ts
 /output/playwright/
 /output/playwright-paused/
 /output/v22-data-migration/
+/output/pdf/
 
 # Supabase CLI local project-link cache
 /supabase/.temp/

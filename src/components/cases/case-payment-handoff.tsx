@@ -115,24 +115,24 @@ export function CasePaymentHandoff({
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[#657165]">{copy.detail}</p>
       </div>
 
-      <div className="overflow-hidden rounded-[26px] bg-[#172017] text-white shadow-[0_24px_70px_rgba(24,35,25,.16)]">
+      <div className="overflow-hidden rounded-2xl border border-[#e3eae2] bg-white text-[#1d2a22]">
         <div className="grid gap-8 px-6 py-7 sm:px-8 sm:py-9 lg:grid-cols-[minmax(0,1.35fr)_minmax(260px,.65fr)]">
           <div>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[#b7dc3f]">
+                <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[#668a50]">
                   {status === "analysis_failed" || status === "error" ? <TriangleAlert size={14} /> : building || busy ? <LoaderCircle className="animate-spin" size={14} /> : <ShieldCheck size={14} />}
                   {copy.eyebrow}
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em]">{businessName}</h2>
-                <p className="mt-2 text-xs leading-5 text-white/42">{scopeLine}</p>
+                <p className="mt-2 text-xs leading-5 text-[#718073]">{scopeLine}</p>
               </div>
               {covered && <span className="rounded-full bg-[#dff1ab] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#405c00]">Covered · no extra credit</span>}
             </div>
 
             <div className="mt-8" role="progressbar" aria-label="Report generation progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
-              <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em]"><span className="text-white/38">Report build</span><span className="text-[#b7dc3f]">{percent}%</span></div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.09]"><div className={`h-full rounded-full bg-[#b7dc3f] transition-[width] duration-700 ${building ? "shadow-[0_0_18px_rgba(183,220,63,.45)]" : ""}`} style={{ width: `${percent}%` }} /></div>
+              <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em]"><span className="text-[#718073]">Report build</span><span className="text-[#57805b]">{percent}%</span></div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-[#e3eae2]"><div className="h-full rounded-full bg-[#69a26e] transition-[width] duration-700" style={{ width: `${percent}%` }} /></div>
             </div>
 
             <ol className="mt-8 grid gap-2 sm:grid-cols-2">
@@ -140,16 +140,16 @@ export function CasePaymentHandoff({
                 const done = index < activeIndex;
                 const isActive = index === activeIndex;
                 return (
-                  <li key={step.key} className={`grid grid-cols-[36px_1fr] gap-3 rounded-[16px] px-4 py-4 ring-1 transition ${isActive ? "bg-white/[0.09] ring-[#b7dc3f]/35" : "bg-white/[0.035] ring-white/[0.055]"}`}>
-                    <span className={`grid h-8 w-8 place-items-center rounded-full font-mono text-[9px] font-bold ${done ? "bg-[#b7dc3f] text-[#263700]" : isActive ? "bg-white text-[#172017]" : "bg-white/[0.06] text-white/28"}`}>{done ? <Check size={14} /> : step.number}</span>
-                    <div><p className={`text-xs font-bold ${done || isActive ? "text-white" : "text-white/38"}`}>{step.title}</p><p className={`mt-1 text-[10px] leading-4 ${done || isActive ? "text-white/42" : "text-white/24"}`}>{step.detail}</p></div>
+                  <li key={step.key} className={`grid grid-cols-[36px_1fr] gap-3 rounded-xl px-4 py-4 transition-colors ${isActive ? "bg-[#eaf3e8]" : "bg-[#f7faf7]"}`}>
+                    <span className={`grid h-8 w-8 place-items-center rounded-lg font-mono text-[9px] font-bold ${done ? "bg-[#dcefd4] text-[#356b3c]" : isActive ? "bg-[#26432e] text-white" : "bg-white text-[#a0aca0]"}`}>{done ? <Check size={14} /> : step.number}</span>
+                    <div><p className={`text-xs font-semibold ${done || isActive ? "text-[#26432e]" : "text-[#8b998d]"}`}>{step.title}</p><p className={`mt-1 text-[10px] leading-4 ${done || isActive ? "text-[#647466]" : "text-[#a0aca0]"}`}>{step.detail}</p></div>
                   </li>
                 );
               })}
             </ol>
           </div>
 
-          <aside className={`rounded-[20px] p-6 text-[#1d281e] ${status === "analysis_failed" || status === "error" ? "bg-[#fff2e7]" : "bg-white"}`}>
+          <aside className={`rounded-xl p-6 text-[#1d2a22] ${status === "analysis_failed" || status === "error" ? "bg-[#fff2e7]" : "bg-[#f2f7f1]"}`}>
             <div className="flex items-center justify-between">
               <span className={`grid h-10 w-10 place-items-center rounded-xl ${status === "analysis_failed" || status === "error" ? "bg-[#ffe0d3] text-[#963b27]" : "bg-[#edf3df] text-[#6e8d12]"}`}>
                 {status === "analysis_failed" || status === "error" ? <TriangleAlert size={18} /> : building ? <Radar className="animate-pulse" size={18} /> : <FileCheck2 size={18} />}
@@ -161,10 +161,10 @@ export function CasePaymentHandoff({
             {status === "analysis_failed" ? (
               <>
                 <div className="mt-5 rounded-xl bg-white/70 p-4 text-[11px] leading-5 text-[#6b584e]"><strong className="text-[#4b3b34]">Credit returned.</strong> A new attempt remains available and will use one credit only when you choose to restart it.</div>
-                <button type="button" onClick={onRetryAnalysis} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#172017] px-5 text-sm font-bold text-white outline-none transition hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/35"><RefreshCcw size={16} />{retryLabel}</button>
+                <button type="button" onClick={onRetryAnalysis} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#26432e] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#365d40]"><RefreshCcw size={16} />{retryLabel}</button>
               </>
             ) : !covered ? (
-              <button type="button" onClick={onCheckout} disabled={status !== "ready" && status !== "error"} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#172017] px-5 text-sm font-bold text-white outline-none transition hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/35 disabled:cursor-wait disabled:opacity-55">
+              <button type="button" onClick={onCheckout} disabled={status !== "ready" && status !== "error"} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#26432e] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#365d40] disabled:cursor-wait disabled:opacity-55">
                 {busy ? <LoaderCircle className="animate-spin" size={17} /> : <Coins size={17} />}Start analysis · uses 1 credit
               </button>
             ) : (
@@ -178,12 +178,12 @@ export function CasePaymentHandoff({
           </aside>
         </div>
 
-        <div className="grid gap-5 border-t border-white/[0.08] bg-white/[0.025] px-6 py-6 sm:px-8 lg:grid-cols-[220px_1fr] lg:items-center">
-          <div><p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#b7dc3f]"><Sparkles size={13} />When complete</p><p className="mt-2 text-sm font-bold">A reviewable report—not an automatic client send.</p></div>
-          <div className="grid gap-3 text-[11px] text-white/43 sm:grid-cols-3">
-            <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#b7dc3f]" />Specific findings tied to evidence</p>
-            <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#b7dc3f]" />Three prioritized actions</p>
-            <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#b7dc3f]" />Limits and client confirmations retained</p>
+        <div className="grid gap-5 bg-[#f7faf7] px-6 py-6 sm:px-8 lg:grid-cols-[220px_1fr] lg:items-center">
+          <div><p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#668a50]"><Sparkles size={13} />When complete</p><p className="mt-2 text-sm font-semibold">A reviewable report—not an automatic client send.</p></div>
+          <div className="grid gap-3 text-[11px] text-[#647466] sm:grid-cols-3">
+            <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#57805b]" />Specific findings tied to evidence</p>
+            <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#57805b]" />Three prioritized actions</p>
+            <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#57805b]" />Limits and client confirmations retained</p>
           </div>
         </div>
       </div>

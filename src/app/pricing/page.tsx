@@ -62,7 +62,7 @@ const pricingJsonLd = {
 
 export default function PricingPage() {
   return (
-    <div className="bg-[#F8F9FB] min-h-screen selection:bg-[#A5D020]/30">
+    <div className="min-h-screen bg-[#f7faf7] selection:bg-[#cfe6d5]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}

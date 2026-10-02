@@ -124,16 +124,16 @@ export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[#657165]">The business and competitive scope are confirmed. Review what the public evidence can support, where the report must remain cautious, and what you will receive.</p>
       </div>
 
-      <div className="overflow-hidden rounded-[26px] bg-[#172017] text-white shadow-[0_24px_70px_rgba(24,35,25,.13)]">
+      <div className="overflow-hidden rounded-2xl border border-[#e3eae2] bg-white text-[#1d2a22]">
         <div className="grid gap-7 px-6 py-7 sm:px-8 sm:py-9 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[#b7dc3f]"><FileCheck2 size={15} />Confirmed Case</p>
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[#668a50]"><FileCheck2 size={15} />Confirmed Case</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em]">{business.business_identity.business_name}</h2>
-            <p className="mt-2 text-sm text-white/52">One business, one service and one local market.</p>
+            <p className="mt-2 text-sm text-[#718073]">One business, one service and one local market.</p>
           </div>
           <span className={`w-fit rounded-full px-3 py-1.5 text-xs font-bold ${competitorLimit ? "bg-[#fff0ba] text-[#6f5500]" : "bg-[#dff1ab] text-[#405c00]"}`}>{selected} {selected === 1 ? "competitor" : "competitors"} confirmed</span>
         </div>
-        <dl className="grid border-t border-white/[0.08] sm:grid-cols-3">
+        <dl className="grid bg-[#f2f7f1] sm:grid-cols-3">
           <ScopeFact label="Service" value={business.primary_service} />
           <ScopeFact label="Market" value={business.target_market.display_name} />
           <ScopeFact label="Evidence window" value="Public web & search evidence" />
@@ -216,7 +216,7 @@ export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
           <h2 className="mt-2 max-w-xl text-xl font-semibold tracking-[-0.025em] text-[#202a20]">{action.title}</h2>
           <p className="mt-2 max-w-2xl text-xs leading-5 text-[#69745a]">{action.detail}</p>
         </div>
-        <button type="button" onClick={onContinue} className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#172017] px-6 text-sm font-bold text-white outline-none transition hover:bg-black focus-visible:ring-4 focus-visible:ring-[#A5D020]/45">
+        <button type="button" onClick={onContinue} className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#234b38] px-6 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/45">
           {action.button}<ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" />
         </button>
       </div>
@@ -235,9 +235,9 @@ export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
 
 function ScopeFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border-white/[0.08] px-6 py-5 sm:border-r sm:last:border-r-0 sm:px-8">
-      <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/32">{label}</dt>
-      <dd className="mt-1 truncate text-xs font-semibold text-white/72">{value}</dd>
+    <div className="px-6 py-5 sm:px-8">
+      <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#718073]">{label}</dt>
+      <dd className="mt-1 truncate text-xs font-semibold text-[#26432e]">{value}</dd>
     </div>
   );
 }

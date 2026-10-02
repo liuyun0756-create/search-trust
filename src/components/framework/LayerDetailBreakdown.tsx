@@ -93,6 +93,8 @@ export function LayerDetailBreakdown() {
             {layerDetails.map((layer, index) => (
               <button
                 key={layer.id}
+                type="button"
+                aria-pressed={activeTab === index}
                 onClick={() => setActiveTab(index)}
                 className={`group flex items-center justify-between p-6 rounded-[24px] transition-all duration-300 ${
                   activeTab === index 
@@ -172,7 +174,7 @@ export function LayerDetailBreakdown() {
                   <div className="absolute top-0 right-0 p-4 opacity-10 text-[#A5D020]">
                     <Info size={64} />
                   </div>
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-3 block">Search Interpretation</span>
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-3 block">SearchTrust interpretation</span>
                   <p className="text-[17px] text-white font-medium italic relative z-10 leading-relaxed">
                     "{layerDetails[activeTab].searchInterpretation}"
                   </p>

@@ -66,21 +66,21 @@ export const pageSeo = {
     path: "/",
   },
   framework: {
-    title: "8-Layer Local Trust Framework | SearchTrust",
+    title: "Our Method | Evidence-Led Local SEO Decisions | SearchTrust",
     description:
-      "See how SearchTrust evaluates L1 Foundation through L8 Algorithm Fit, connects findings to evidence, and orders remediation without changing the fixed scoring model.",
+      "See how SearchTrust combines market, website and business evidence with connected performance data to prioritize local SEO actions and define how to review progress.",
     path: "/framework",
   },
   sampleReport: {
-    title: "Sample Prospect & Verified Reports | SearchTrust",
+    title: "Sample Local SEO Reports: Prospect to Service | SearchTrust",
     description:
-      "Explore how SearchTrust turns public evidence into a Prospect report and connected GSC and GA4 data into a Verified Action Plan.",
+      "Read two complete fictional reports for one local SEO case: a public-evidence proposal and a client-data-informed action plan. Inspect SEO and client views before delivery.",
     path: "/sample-report",
   },
   useCases: {
-    title: "Local SEO Prospect & Verified Use Cases | SearchTrust",
+    title: "In Practice: Six Local SEO Decisions | SearchTrust",
     description:
-      "Use SearchTrust to win local SEO clients with public evidence, then improve their businesses with verified first-party performance data.",
+      "See six practical moments when local SEO teams use SearchTrust to turn public evidence, client data and business context into defensible decisions.",
     path: "/use-cases",
   },
   pricing: {
