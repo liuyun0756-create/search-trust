@@ -3,7 +3,7 @@ import {spawn} from "node:child_process";
 import {randomUUID} from "node:crypto";
 import {readdir,readFile} from "node:fs/promises";
 import {createInterface} from "node:readline";
-import path from "node:path";
+import {backendRuntime} from "./backend-runtime";
 import {PGlite} from "@electric-sql/pglite";
 import {createCapabilityDatabaseJourney} from "./capability-database";
 import {validateCapabilityReport} from "../../src/lib/report-capability/validate";
@@ -43,10 +43,10 @@ export async function seedDatabase(db:PGlite,{manifest:m,request:r,private_paylo
 }
 
 export async function createGeneratedFirstServiceJourney(clean:boolean,loseCompletion=false){
+  const script="tests/support/first_service_delivery_bridge.py",backend=backendRuntime(script);
   const db=new PGlite();
-  const backend=path.resolve("../SearchTrust-RD");
-  const child=spawn(path.join(backend,".venv/bin/python"),["tests/support/first_service_delivery_bridge.py"],{
-    cwd:backend,stdio:["pipe","pipe","pipe"],env:{NODE_ENV:"test",PATH:process.env.PATH,PYTHONUNBUFFERED:"1",PYTHONDONTWRITEBYTECODE:"1"}});
+  const child=spawn(backend.python,[script],{
+    cwd:backend.root,stdio:["pipe","pipe","pipe"],env:{NODE_ENV:"test",PATH:process.env.PATH,PYTHONUNBUFFERED:"1",PYTHONDONTWRITEBYTECODE:"1"}});
   let stderr="";child.stderr.on("data",data=>{stderr+=data.toString();});
   const lines=createInterface({input:child.stdout})[Symbol.asyncIterator]();
   const exit=new Promise<number|null>((resolve,reject)=>{child.once("error",reject);child.once("close",resolve);});

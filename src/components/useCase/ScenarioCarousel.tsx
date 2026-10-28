@@ -104,12 +104,14 @@ export function ScenarioCarousel({
       }
     }
     pendingIndex.current = activeIndex;
+    userScroll.current = false;
     scrollToIndex(activeIndex, "auto");
     if (pendingTimer.current !== null)
       window.clearTimeout(pendingTimer.current);
     pendingTimer.current = window.setTimeout(() => {
       pendingIndex.current = null;
-      settle();
+      // Layout may still be zero-width during hydration. Selection comes from
+      // the URL/buttons until the reader actually moves the carousel.
     }, 250);
     // Reposition on a change of selected story or visible group; measurements stay local.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,15 +122,21 @@ export function ScenarioCarousel({
     const viewport = viewportRef.current;
     const track = trackRef.current;
     if (!viewport || !track) return;
+    let disposed = false;
     const align = () => {
-      if (visibleRef.current) scrollToIndex(activeIndexRef.current, "auto");
+      // A late font/size notification must not undo a swipe before it settles.
+      if (!disposed && visibleRef.current && !userScroll.current)
+        scrollToIndex(activeIndexRef.current, "auto");
     };
     const observer =
       typeof ResizeObserver === "undefined" ? null : new ResizeObserver(align);
     observer?.observe(viewport);
     Array.from(track.children).forEach((child) => observer?.observe(child));
     void document.fonts?.ready.then(align);
-    return () => observer?.disconnect();
+    return () => {
+      disposed = true;
+      observer?.disconnect();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVisible]);
 

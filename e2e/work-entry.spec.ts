@@ -112,8 +112,15 @@ test.describe("homepage work entry", () => {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       for (const row of await workbench.getByRole("listitem").all()) {
         await expect(row.locator("dt")).toHaveText(["SearchTrust prepares", "You decide"]);
-        const title = await row.getByRole("heading").boundingBox();
-        const [product, professional] = await Promise.all((await row.locator("dd").all()).map((cell) => cell.boundingBox()));
+        // Read one layout frame: anchor smooth-scrolling can otherwise move
+        // the page between separate protocol calls for the two columns.
+        const [title, product, professional] = await row.evaluate((element) =>
+          [element.querySelector("h3"), ...element.querySelectorAll("dd")].map((cell) => {
+            if (!cell) return null;
+            const { x, y, width, height } = cell.getBoundingClientRect();
+            return { x, y, width, height };
+          }),
+        );
         if (!title || !product || !professional) throw new Error("Responsibilities are not visible");
         if (width === 390) {
           expect(title.y + title.height).toBeLessThan(product.y);

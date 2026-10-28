@@ -35,8 +35,24 @@ jobs:
     name: Local stubbed browser journeys
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      SEARCHTRUST_TEST_BACKEND_ROOT: ${{ github.workspace }}/output/e2e-backend
     steps:
       - uses: actions/checkout@v4
+      - name: Check out the matching backend test harness
+        uses: actions/checkout@v4
+        with:
+          repository: liuyun0756-create/SearchTrust-RD
+          ref: 2dbc06d9fef383e3a035df2224fe474a667f1172
+          path: output/e2e-backend
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Prepare backend integration dependencies
+        run: |
+          python -m venv "$SEARCHTRUST_TEST_BACKEND_ROOT/.venv"
+          "$SEARCHTRUST_TEST_BACKEND_ROOT/.venv/bin/python" -m pip install -r "$SEARCHTRUST_TEST_BACKEND_ROOT/requirements-dev.txt"
       - uses: actions/setup-node@v4
         with:
           node-version: 22

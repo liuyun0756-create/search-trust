@@ -2,7 +2,7 @@
 import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
 import {readdir,readFile} from 'node:fs/promises';
-import path from 'node:path';
+import {backendRuntime} from './backend-runtime';
 import {PGlite} from '@electric-sql/pglite';
 import {seedDatabase,type Seed} from './generated-first-service';
 import {createFirstServiceEntryJourney} from './first-service-entry-database';
@@ -16,9 +16,10 @@ const scalar=new Set(['claim_v22_first_service_discovery_dispatch','claim_v22_fi
 const rows=new Set(['list_v22_first_service_preparation_work','complete_v22_capability_analysis']);
 
 export async function createFirstServiceFullJourney(clean=false,loss:'none'|'freeze'|'handoff'|'collection'='none'){
-  const db=new PGlite(),backend=path.resolve('../SearchTrust-RD');
-  const child=spawn(path.join(backend,'.venv/bin/python'),['tests/support/first_service_entry_bridge.py'],{
-    cwd:backend,stdio:['pipe','pipe','pipe'],env:{NODE_ENV:'test',PATH:process.env.PATH,PYTHONUNBUFFERED:'1',PYTHONDONTWRITEBYTECODE:'1'}});
+  const script='tests/support/first_service_entry_bridge.py',backend=backendRuntime(script);
+  const db=new PGlite();
+  const child=spawn(backend.python,[script],{
+    cwd:backend.root,stdio:['pipe','pipe','pipe'],env:{NODE_ENV:'test',PATH:process.env.PATH,PYTHONUNBUFFERED:'1',PYTHONDONTWRITEBYTECODE:'1'}});
   let stderr='';child.stderr.on('data',chunk=>{stderr+=chunk.toString();});
   const exit=new Promise<number|null>((resolve,reject)=>{child.once('error',reject);child.once('close',resolve);});void exit.catch(()=>{});
   const lines=createInterface({input:child.stdout})[Symbol.asyncIterator]();

@@ -1,8 +1,8 @@
 import { request, type FullConfig } from "@playwright/test";
 
 /** Next dev can reload open pages when a sibling worker first compiles a route.
- * Compile the Method journey's destinations before any interactive test starts,
- * so a cold /sample-report or /cases/new visit cannot reset another worker's tabs.
+ * Compile the public journeys' destinations before any interactive test starts,
+ * so a cold marketing route cannot reset another worker's tabs or deep links.
  * No clicks, retries, altered motion preferences or weakened assertions.
  */
 export default async function warmMethodRoutes(config: FullConfig) {
@@ -14,7 +14,7 @@ export default async function warmMethodRoutes(config: FullConfig) {
     throw new Error("Browser checks require the configured local test server.");
   const api = await request.newContext({ baseURL });
   try {
-    for (const path of ["/framework", "/sample-report", "/cases/new"]) {
+    for (const path of ["/", "/framework", "/sample-report", "/use-cases", "/pricing", "/cases/new", "/cases/service"]) {
       const response = await api.get(path);
       if (!response.ok())
         throw new Error(
