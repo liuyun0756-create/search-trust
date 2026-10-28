@@ -55,6 +55,7 @@ function apiError(error: unknown) {
 export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boolean}={}) {
   const [draft, setDraft] = useState<NewCaseDraft>(() => createNewCaseDraft());
   const [hydrated, setHydrated] = useState(false);
+  const [discoverySubmitting, setDiscoverySubmitting] = useState(false);
   const [planning,setPlanning]=useState<PlanningStatus>({ready:false,revision:null});
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
   const [paymentHandoff, setPaymentHandoff] = useState<{
@@ -99,7 +100,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   }, [draft.draft_case_id, draft.prospect_workflow_id, hydrated, paymentHandoff.caseId]);
 
   useEffect(() => {
-    if (!hydrated || draft.stage !== "competitor_discovery_running" || !draft.discovery_job_id) return;
+    if (!hydrated || discoverySubmitting || draft.stage !== "competitor_discovery_running" || !draft.discovery_job_id) return;
     const controller = new AbortController();
     const delay = draft.discovery_status ? (document.hidden ? 5_000 : 1_500) : 0;
     const timer = window.setTimeout(async () => {
@@ -113,7 +114,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
       }
     }, delay);
     return () => { controller.abort(); window.clearTimeout(timer); };
-  }, [draft.discovery_job_id, draft.discovery_status, draft.stage, hydrated]);
+  }, [draft.discovery_job_id, draft.discovery_status, draft.stage, hydrated, discoverySubmitting]);
 
   useEffect(() => {
     const expiry = draft.discovery_status?.result?.expires_at;
@@ -456,6 +457,8 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     const jobId = crypto.randomUUID();
     const idempotencyKey = `discover:${draft.draft_case_id}:${jobId}`;
     const workflowIdempotencyKey = `prospect:${draft.draft_case_id}:${workflowId}`;
+    // The ownership/task rows do not exist until the start request is accepted.
+    setDiscoverySubmitting(true);
     setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", workflow_id: workflowId, job_id: jobId, idempotency_key: idempotencyKey, supplemental_website_urls: normalizedSupplements }));
     setPaymentHandoff((current) => ({ ...current, status: "starting_analysis", message: "Reserving 1 credit and starting provider-backed discovery…" }));
     try {
@@ -493,6 +496,8 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
         setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_REQUEST_FAILED", ...safe }));
       }
       setPaymentHandoff((current) => ({ ...current, status: "error", message: safe.message }));
+    } finally {
+      setDiscoverySubmitting(false);
     }
   }
 
