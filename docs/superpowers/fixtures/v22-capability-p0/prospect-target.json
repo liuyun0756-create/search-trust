@@ -1,0 +1,133 @@
+{
+  "fixture_version": "p0-report-target-2026-10-19",
+  "classification": "synthetic_quality_target",
+  "runtime_contract": false,
+  "acceptance_status": "target_not_yet_accepted",
+  "identity": {
+    "case_id": "p0-clinic-001",
+    "business": "Northside Dental (synthetic)",
+    "site": "https://clinic.example.invalid",
+    "service": "Emergency dental appointments",
+    "market": "Northside",
+    "business_priority": {
+      "value": "Emergency appointments",
+      "origin": "client_confirmation",
+      "version": 1
+    }
+  },
+  "evaluated_at": "2026-08-29T00:00:00Z",
+  "optional_editing": true,
+  "original_evidence_immutable": true,
+  "limitations": [
+    "Synthetic fixed review material, not collected evidence or a customer outcome.",
+    "Proposed semantic target; not a ReportV22 payload, P1 schema or enabled product workflow."
+  ],
+  "id": "prospect-target",
+  "mode": "acquisition",
+  "report_type": "prospect",
+  "source_policy": "public_only",
+  "previous_report_id": null,
+  "related_cases": [
+    "Q01",
+    "Q02",
+    "Q03",
+    "Q04",
+    "Q16"
+  ],
+  "sources": [
+    {
+      "id": "e-page",
+      "case_id": "p0-clinic-001",
+      "kind": "site",
+      "url": "https://clinic.example.invalid/emergency",
+      "observed_at": "2026-08-28T09:00:00Z",
+      "observations": {
+        "status_code": 200,
+        "title": "Dental services",
+        "heading": "Emergency dental care",
+        "booking_copy": "Contact us",
+        "urgent_booking_steps": null
+      }
+    },
+    {
+      "id": "e-comp",
+      "case_id": "p0-clinic-001",
+      "kind": "confirmed_competitor",
+      "url": "https://other-clinic.example.invalid/emergency",
+      "observed_at": "2026-08-28T09:10:00Z",
+      "observations": {
+        "same_service_confirmed": true,
+        "urgent_booking_copy": "Call the practice to discuss an urgent appointment"
+      }
+    },
+    {
+      "id": "e-business",
+      "case_id": "p0-clinic-001",
+      "kind": "client_confirmation",
+      "observed_at": "2026-08-28T09:20:00Z",
+      "observations": {
+        "current_service_page": "https://clinic.example.invalid/emergency",
+        "service_priority": "Emergency appointments",
+        "same_day_guarantee": null
+      }
+    }
+  ],
+  "summary": {
+    "title": "Make the next step clearer on the existing emergency-care page.",
+    "client_copy": "The checked emergency-care page names the service but its contact link only says “Contact us”. The confirmed competitor explains how to enquire about an urgent appointment. Your existing page is the starting point: confirm how urgent bookings are handled, then make that next step explicit.",
+    "evidence_ids": [
+      "e-page",
+      "e-comp",
+      "e-business"
+    ]
+  },
+  "findings": [
+    {
+      "id": "f-booking",
+      "object": "https://clinic.example.invalid/emergency",
+      "observation": "The observed booking link says “Contact us”; urgent booking steps were not captured.",
+      "classification": "fact",
+      "judgment": "The contact instruction can be made more specific after confirming the booking process.",
+      "impact": "This would explain the next contact step; no lost bookings or ranking cause is established.",
+      "evidence_ids": [
+        "e-page",
+        "e-business"
+      ],
+      "limits": [
+        "Only the saved page sample was checked.",
+        "No private demand, booking or lead-quality data is available."
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "a-booking",
+      "target": "https://clinic.example.invalid/emergency#contact",
+      "title": "Clarify the urgent appointment enquiry.",
+      "evidence_ids": [
+        "e-page",
+        "e-comp",
+        "e-business"
+      ],
+      "steps": [
+        "Confirm who receives urgent enquiries and which contact method the practice supports.",
+        "Replace the generic contact label using the confirmed route.",
+        "Test the contact destination on mobile and desktop."
+      ],
+      "material": {
+        "kind": "conditional_copy",
+        "text": "Need an urgent dental appointment? Contact the practice to ask about availability.",
+        "precondition": "Client confirms urgent enquiries are accepted; do not add same-day availability or opening hours without confirmation."
+      },
+      "done": [
+        "Approved wording is live on the existing page.",
+        "The contact link reaches the confirmed destination."
+      ],
+      "review": "Check the published page and contact route; assess search and on-site evidence only after eligible client access."
+    }
+  ],
+  "client_inputs": [
+    "Confirm urgent enquiry handling and contact destination."
+  ],
+  "conclusion_boundary": "A competitor example informs the discussion, not a causal ranking or revenue claim."
+}

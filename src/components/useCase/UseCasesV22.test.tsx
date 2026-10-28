@@ -1,58 +1,113 @@
 // @vitest-environment jsdom
+import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
-
 import { UseCasesV22 } from "./UseCasesV22";
-import { useCaseScenes } from "./use-case-data";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock("@/lib/analytics-client", () => ({ track: vi.fn() }));
+beforeEach(() => window.history.replaceState(null, "", "/use-cases"));
 
-afterEach(() => vi.restoreAllMocks());
-
-describe("In Practice progressive stories", () => {
-  it("renders six complete work stories with distinct evidence visuals", () => {
+describe("Client Scenarios workbench", () => {
+  it("starts with the first story and keeps the full content and links available", () => {
     const { container } = render(<UseCasesV22 />);
-
-    expect(screen.getAllByRole("article")).toHaveLength(6);
-    expect(screen.getAllByRole("img")).toHaveLength(6);
-
-    for (const scene of useCaseScenes) {
-      const article = container.querySelector(`#scene-${scene.number}`);
-      expect(article).not.toBeNull();
-      const story = within(article as HTMLElement);
-      expect(story.getByRole("heading", { name: scene.title })).toBeVisible();
-      expect(story.getByText(scene.problem)).toBeVisible();
-      expect(story.getByText(scene.realIssue)).toBeVisible();
-      expect(story.getByText(scene.decision)).toBeVisible();
-      expect(story.getByText(scene.seoKeeps)).toBeVisible();
-      expect(story.getAllByText("Illustrated method example · not a real client result")).toHaveLength(1);
-      expect(scene.outcomes).toHaveLength(3);
-    }
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "From the first pitch to the next client review.",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: /Find your situation/ }),
+    ).toHaveAttribute("href", "#practice-scenarios");
+    expect(
+      screen.getByRole("link", { name: /Read the sample reports/ }),
+    ).toHaveAttribute("href", "/sample-report");
+    expect(screen.getByRole("region", { name: "Two report outcomes" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Findings you can explain." })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Actions with the next steps included." })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "A report you can review and share." })).toBeVisible();
+    expect(screen.queryByText("The division of work")).toBeNull();
+    expect(
+      container.querySelectorAll("[data-testid^='practice-scene-']"),
+    ).toHaveLength(15);
+    const stageTabs = within(
+      screen.getByRole("tablist", { name: "Choose a stage of work" }),
+    ).getAllByRole("tab");
+    expect(stageTabs).toHaveLength(2);
+    expect(stageTabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("tablist", { name: /situations$/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Only a website/ })).toBeNull();
+    const first = container.querySelector("#practice-first-conversation");
+    expect(first).toHaveAttribute("aria-hidden", "false");
+    expect(first).not.toHaveAttribute("inert");
+    expect(
+      container.querySelector("#practice-competitor-question"),
+    ).toHaveAttribute("inert");
+    expect(
+      within(first as HTMLElement).getByText(
+        "An emergency-appointment question",
+      ),
+    ).toBeVisible();
+    expect(
+      within(first as HTMLElement).getByText("Only a website"),
+    ).toBeVisible();
+    expect(
+      within(first as HTMLElement).getByText("A · First conversations"),
+    ).toBeVisible();
+    expect(
+      within(first as HTMLElement).getByText(
+        /does not establish lost bookings/,
+      ),
+    ).toBeVisible();
+    expect(
+      within(first as HTMLElement).getByRole("link", {
+        name: /Start a Prospect Case/,
+      }),
+    ).toHaveAttribute("href", "/cases/new");
+    expect(
+      screen.getByText(/Fictional situations, not customer testimonials/),
+    ).toBeVisible();
   });
 
-  it("uses scroll links for chapters and route links for related pages", () => {
-    render(<UseCasesV22 />);
-    const nav = screen.getByRole("navigation", { name: "In Practice scenes" });
-
-    for (const scene of useCaseScenes) {
-      const links = within(nav).getAllByRole("link", { name: new RegExp(scene.shortTitle, "i") });
-      expect(links[0]).toHaveAttribute("href", `#scene-${scene.number}`);
-    }
-
-    expect(screen.getByRole("link", { name: /complete report example/i })).toHaveAttribute("href", "/sample-report");
-  });
-
-  it("opens and closes the mobile scene directory", async () => {
+  it("swipes one continuous set per stage and remembers each stage's card", async () => {
     const user = userEvent.setup();
-    render(<UseCasesV22 />);
-    const button = screen.getByRole("button", { name: /all scenes/i });
-
-    expect(button).toHaveAttribute("aria-expanded", "false");
-    await user.click(button);
-    expect(button).toHaveAttribute("aria-expanded", "true");
-    await user.click(within(screen.getByRole("navigation", { name: "In Practice scenes" })).getAllByRole("link", { name: /new page or improve one/i })[0]);
-    expect(button).toHaveAttribute("aria-expanded", "false");
+    const { container } = render(<UseCasesV22 />);
+    const stageTabs = within(
+      screen.getByRole("tablist", { name: "Choose a stage of work" }),
+    ).getAllByRole("tab");
+    stageTabs[0].focus();
+    await user.keyboard("{ArrowRight}");
+    expect(stageTabs[1]).toHaveFocus();
+    expect(stageTabs[1]).toHaveAttribute("aria-selected", "true");
+    await user.click(
+      screen.getByRole("button", { name: "Next Deliver the work situation" }),
+    );
+    expect(
+      container.querySelector("#practice-execution-brief"),
+    ).toHaveAttribute("aria-hidden", "false");
+    expect(window.location.hash).toBe("#practice-execution-brief");
+    await user.click(stageTabs[0]);
+    for (let index = 0; index < 3; index++) {
+      await user.click(
+        screen.getByRole("button", { name: "Next Win the work situation" }),
+      );
+    }
+    expect(container.querySelector("#practice-limited-budget")).toHaveAttribute(
+      "aria-hidden",
+      "false",
+    );
+    expect(
+      within(
+        container.querySelector("#practice-limited-budget") as HTMLElement,
+      ).getByText("B · Scope the engagement"),
+    ).toBeVisible();
+    await user.click(stageTabs[1]);
+    expect(
+      container.querySelector("#practice-execution-brief"),
+    ).toHaveAttribute("aria-hidden", "false");
+    expect(
+      screen.getByRole("button", {
+        name: "Previous Deliver the work situation",
+      }),
+    ).toBeEnabled();
   });
 });

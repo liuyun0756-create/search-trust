@@ -7,6 +7,9 @@ test("creates, resolves and revokes a fragment-only client share without analyti
   page.on("request", (request) => requestUrls.push(request.url()));
 
   const reportUrl = `/cases/${E2E_IDS.caseId}/reports/${E2E_IDS.reportId}`;
+  // Compile the authenticated route before interacting with it. The toolbar
+  // also stays disabled until hydration, so its first click cannot be lost.
+  expect((await page.request.get(reportUrl)).ok()).toBe(true);
   await page.goto(reportUrl);
   await expect(page.getByText("Review before delivery")).toBeVisible();
   await expect(page.getByText("Version 1 is private.")).toHaveCount(0);

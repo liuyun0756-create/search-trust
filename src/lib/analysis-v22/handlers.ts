@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import type { AnalysisRepository } from "./repository";
-import { parseAnalyzeRequest, parseTaskCreateResponse, parseTaskStatusResponse } from "./validate";
+import { parseAnalyzeRequest, parseTaskCreateResponse } from "./validate";
+import { parseVersionedTaskStatus, completedReportId } from "./versioned-status";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_PATTERN = /^[A-Za-z0-9._:-]{8,200}$/;
@@ -15,6 +16,9 @@ interface Dependencies {
   getConfig(): UpstreamConfig | null;
   fetcher: typeof fetch;
   timeoutMs: number;
+  isCapabilityIntakeEnabled?(): boolean;
+  isCapabilityReadEnabled?(): boolean;
+  isPlanningEnabled?():boolean;
 }
 
 function jsonError(code: string, message: string, status: number) {
@@ -30,6 +34,7 @@ async function upstream(deps: Dependencies, path: string, init: RequestInit) {
     const response = await deps.fetcher(`${config.baseUrl}${path}`, {
       ...init,
       cache: "no-store",
+      redirect: "error",
       signal: controller.signal,
       headers: { "content-type": "application/json", authorization: `Bearer ${config.token}`, ...(init.headers ?? {}) },
     });
@@ -70,6 +75,27 @@ export function createAnalysisSubmitHandler(deps: Dependencies) {
     }
     const parsed = parseAnalyzeRequest(body);
     if (!parsed.ok) return jsonError("INVALID_REQUEST", "The analysis request is invalid.", 400);
+    if (deps.isCapabilityIntakeEnabled?.()) {
+      const planningRevision=request.headers.get("x-searchtrust-planning-revision");
+      if(deps.isPlanningEnabled?.() && (planningRevision===null||!/^(0|[1-9][0-9]{0,9})$/.test(planningRevision)||Number(planningRevision)>2147483647))
+        return jsonError("PLANNING_SETTINGS_REQUIRED","Reload and confirm the saved planning settings before starting this diagnosis.",409);
+      if (parsed.value.report_type !== "prospect") return jsonError("INVALID_REQUEST", "Only a confirmed Prospect analysis can start here.", 400);
+      // The backend verifies discovery, then atomically binds the original
+      // reserved workflow + business version + preparation. No legacy bind first.
+      const result = await upstream(deps, "/api/v2/capability-acquisition", {
+        method: "POST", body: JSON.stringify(parsed.value),
+        headers: { "X-SearchTrust-User-ID": user.userId, "X-SearchTrust-Job-ID": jobId,
+          "X-SearchTrust-Discovery-ID": discoveryId, "X-SearchTrust-Workflow-ID": workflowId,
+          "Idempotency-Key": idempotencyKey, ...(previousJobId ? { "X-SearchTrust-Previous-Job-ID": previousJobId } : {}),
+          ...(deps.isPlanningEnabled?.()?{"X-SearchTrust-Planning-Revision":planningRevision!}:{}) },
+      });
+      if (result.error) return result.error;
+      const checked = parseVersionedTaskStatus(result.response!.payload, jobId, parsed.value.case_id);
+      if (!checked.ok || ("report" in checked.value && checked.value.report !== null)) {
+        return jsonError("V22_UPSTREAM_CONTRACT_INVALID", "The analysis service returned an invalid response.", 502);
+      }
+      return NextResponse.json(checked.value, { status: 202 });
+    }
     try {
       await deps.createRepository().start(user.userId, parsed.value.case_id, workflowId, jobId, idempotencyKey, previousJobId);
     } catch {
@@ -113,6 +139,18 @@ export function createAnalysisStreamHandler(deps: Dependencies) {
     const repository = deps.createRepository();
     const owned = await repository.getOwned(user.userId, id).catch(() => null);
     if (!owned) return jsonError("ANALYSIS_NOT_FOUND", "The analysis task was not found.", 404);
+    if (deps.isCapabilityReadEnabled?.() && repository.getAcquisitionStatus) {
+      try {
+        const saved = await repository.getAcquisitionStatus(user.userId, id);
+        if (saved !== null) {
+          const checked = parseVersionedTaskStatus(saved,id,owned.caseId);
+          if (!checked.ok) throw new Error();
+          return new Response(`retry: 10000\nid: ${checked.value.revision}\nevent: state\ndata: ${JSON.stringify(checked.value)}\n\n`, {
+            headers: { "content-type":"text/event-stream", "cache-control":"no-cache, no-transform" },
+          });
+        }
+      } catch { return jsonError("ANALYSIS_LOOKUP_FAILED", "The analysis task could not be checked yet.",503); }
+    }
     const config = deps.getConfig();
     if (!config) return jsonError("V22_ANALYSIS_NOT_CONFIGURED", "The v2.2 analysis service is not configured.", 503);
     const headers: Record<string, string> = {
@@ -148,15 +186,26 @@ export function createAnalysisStatusHandler(deps: Dependencies) {
     if (!user) return jsonError("UNAUTHORIZED", "Sign in to view this analysis.", 401);
     const { id } = await context.params;
     if (!UUID_PATTERN.test(id)) return jsonError("INVALID_REQUEST", "The analysis task ID is invalid.", 400);
+    const repository = deps.createRepository();
     let job;
-    try { job = await deps.createRepository().getOwned(user.userId, id); } catch {
+    try { job = await repository.getOwned(user.userId, id); } catch {
       return jsonError("ANALYSIS_LOOKUP_FAILED", "The analysis task could not be checked yet.", 500);
     }
     if (!job) return jsonError("ANALYSIS_NOT_FOUND", "The analysis task was not found.", 404);
+    if (deps.isCapabilityReadEnabled?.() && repository.getAcquisitionStatus) {
+      try {
+        const saved=await repository.getAcquisitionStatus(user.userId,id);
+        if (saved!==null) {
+          const checked=parseVersionedTaskStatus(saved,id,job.caseId);
+          if (!checked.ok) throw new Error();
+          return NextResponse.json({...checked.value,database_report_id:completedReportId(checked.value)});
+        }
+      } catch { return jsonError("ANALYSIS_LOOKUP_FAILED", "The analysis task could not be checked yet.",503); }
+    }
     const result = await upstream(deps, `/api/v2/tasks/${id}`, { method: "GET" });
     if (result.error) return result.error;
-    const validated = parseTaskStatusResponse(result.response!.payload);
+    const validated = parseVersionedTaskStatus(result.response!.payload, id, job.caseId);
     if (!validated.ok || validated.value.job_id !== id) return jsonError("V22_UPSTREAM_CONTRACT_INVALID", "The analysis service returned an invalid response.", 502);
-    return NextResponse.json({ ...validated.value, database_report_id: job.reportId });
+    return NextResponse.json({ ...validated.value, database_report_id: completedReportId(validated.value) ?? job.reportId });
   };
 }

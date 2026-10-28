@@ -6,12 +6,16 @@ import { groupReportsByCase, ReportCaseWorkspace, type ReportWorkspaceItem } fro
 import { getCurrentUser } from "@/lib/auth";
 import { validateReportV22 } from "@/lib/report-v22";
 import { createServerClient } from "@/lib/supabase";
+import { CapabilityRepository } from "@/lib/report-capability/repository";
+import {ReviewDeliveryRepository} from "@/lib/review-reports/repository";
+import {isReviewDeliveryEnabled} from "@/lib/review-reports/config";
 
 export default async function ReportsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
 
-  const { data, error } = await createServerClient()
+  const client = createServerClient();
+  const { data, error } = await client
     .from("reports")
     .select("id, report_id, case_id, report_type, version_number, generated_at, completed_at, created_at, report_v2_2")
     .eq("user_id", user.userId)
@@ -36,6 +40,13 @@ export default async function ReportsPage() {
     }];
   });
 
+  let capabilityError = false;
+  if (process.env.V22_CAPABILITY_DISPATCH_ENABLED === "true") {
+    try { reports.push(...await new CapabilityRepository(client).listCompletedReports(user.userId)); }
+    catch { capabilityError = true; }
+  }
+  if(isReviewDeliveryEnabled()){try{reports.push(...await new ReviewDeliveryRepository(client).list(user.userId));}catch{capabilityError=true;}}
+  const failed = Boolean(error) || capabilityError;
   const cases = groupReportsByCase(reports);
 
   return (
@@ -52,8 +63,8 @@ export default async function ReportsPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-9 sm:px-8 lg:px-12 lg:py-12">
-        {error ? <div role="alert" className="rounded-2xl border border-[#ead7c5] bg-[#fff8ee] p-5 text-sm font-bold text-[#8f5422]">Reports could not be loaded. Please refresh and try again.</div> : null}
-        {!error && reports.length === 0 ? (
+        {failed ? <div role="alert" className="rounded-2xl border border-[#ead7c5] bg-[#fff8ee] p-5 text-sm font-bold text-[#8f5422]">Reports could not be loaded. Please refresh and try again.</div> : null}
+        {!failed && reports.length === 0 ? (
           <div className="rounded-2xl border border-[#e3eae2] bg-white px-6 py-14 text-center sm:px-12">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#e7f2e2] text-[#65974e]"><FileSearch className="h-5 w-5" /></span>
             <h2 className="mt-6 text-2xl font-black tracking-[-0.04em]">No V2.2 reports yet</h2>
@@ -62,7 +73,7 @@ export default async function ReportsPage() {
           </div>
         ) : null}
 
-        {!error && reports.length > 0 ? <ReportCaseWorkspace cases={cases} /> : null}
+        {!failed && reports.length > 0 ? <ReportCaseWorkspace cases={cases} /> : null}
       </section>
     </main>
   );

@@ -99,20 +99,22 @@ describe("client delivery module", () => {
     const user = userEvent.setup(); const api = vi.spyOn(globalThis, "fetch"); render(<MethodCTA />);
     expect(screen.getAllByRole("button")).toHaveLength(1);
     expect(screen.getByText(/New accounts receive 5 permanent credits/)).toBeVisible();
-    expect(screen.getByRole("link", { name: "See the full report sample first" })).toHaveAttribute("href", "/sample-report#report-scenarios");
-    await user.click(screen.getByRole("button", { name: "Analyze a business" }));
+    expect(screen.getByRole("link", { name: "Continue with an existing Case" })).toHaveAttribute("href", "/cases/service");
+    await user.click(screen.getByRole("button", { name: "Start a Prospect Case" }));
     expect(push).toHaveBeenCalledExactlyOnceWith("/cases/new"); expect(api).not.toHaveBeenCalled();
   });
 
-  it("keeps both scenario destinations available on the existing sample page", () => {
+  it("keeps both report stages available on the existing sample page", async () => {
+    const user = userEvent.setup();
     const { container } = render(<SampleReportsV22 />);
-    const nav = within(screen.getByRole("navigation", { name: "Report sample scenarios" }));
-    expect(nav.getAllByRole("link")).toHaveLength(2);
-    for (const link of nav.getAllByRole("link")) {
-      const target = container.querySelector(link.getAttribute("href")!);
-      expect(target).toBeVisible(); expect(target).toHaveClass("scroll-mt-28");
-    }
-    expect(container.querySelector("#report-scenarios")).toHaveClass("scroll-mt-28");
+    const tabs = within(screen.getByRole("tablist", { name: "Choose a report stage" })).getAllByRole("tab");
+    expect(tabs).toHaveLength(2);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(container.querySelector("#sample-prospect")).toBeVisible();
+    await user.click(tabs[1]);
+    expect(tabs[1]).toHaveAttribute("aria-selected", "true");
+    expect(container.querySelector("#sample-verified")).toBeVisible();
+    expect(container.querySelector("#report-scenarios")).toBeVisible();
   });
 
   it("does not navigate or track the CTA when an unsaved-edit guard cancels it", async () => {
@@ -120,7 +122,7 @@ describe("client delivery module", () => {
     const cancel = (event: Event) => event.preventDefault();
     window.addEventListener("searchtrust:before-navigation", cancel);
     try {
-      await user.click(screen.getByRole("button", { name: "Analyze a business" }));
+      await user.click(screen.getByRole("button", { name: "Start a Prospect Case" }));
       expect(push).not.toHaveBeenCalled(); expect(track).not.toHaveBeenCalled();
     } finally { window.removeEventListener("searchtrust:before-navigation", cancel); }
   });

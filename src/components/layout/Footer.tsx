@@ -1,12 +1,8 @@
 import Link from "next/link";
+import { marketingProductLinks } from "./marketing-navigation";
 
 const footerLinks = {
-  Product: [
-    { href: "/framework", label: "Our Method" },
-    { href: "/sample-report", label: "Sample Report" },
-    { href: "/use-cases", label: "In Practice" },
-    { href: "/pricing", label: "Pricing" },
-  ],
+  Product: marketingProductLinks,
   "Get Started": [
     { href: "#", label: "Sign In" },
     { href: "/cases/new", label: "Start free preflight" },

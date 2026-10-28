@@ -18,6 +18,11 @@ describe("Verified canonical digest", () => {
     expect(canonicalDigest({ nested: [null, true, "中文", 1.25] })).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
+  it("matches backend UTF-16 key ordering, including supplementary characters", () => {
+    expect(canonicalDigest({ "דּ": 1.0, "😀": [-0, 1e-7], "10": true, "2": null }))
+      .toBe("sha256:715e9d7ff4a22b4952be8ac184d8c626c4ddb71f53bc3538b9c80843e50897b4");
+  });
+
   it("matches backend request_digest for the complete Prospect ReportV22 fixture", () => {
     // Computed by app.jobs_v22.digest.verified_request_digest(json.load(prospect.json)).
     expect(canonicalDigest(prospect)).toBe("sha256:0a093496b57a559ebed6660245eec41bac828cae11fc0c45473447ee668bde7a");
@@ -29,6 +34,11 @@ describe("Verified canonical digest", () => {
     [333333333.33333329, "333333333.3333333"], [0.1 + 0.2, "0.30000000000000004"],
     [1000000000000000128, "1000000000000000100"],
     [Number.MIN_VALUE, "5e-324"], [Number.MAX_VALUE, "1.7976931348623157e+308"],
+    [-1e20, "-100000000000000000000"], [-1e-7, "-1e-7"],
+    [295147905179352825856.0, "295147905179352830000"],
+    [999999999999999900000.0, "999999999999999900000"],
+    [1.0000000000000001e23, "1.0000000000000001e+23"],
+    [9.999999999999997e22, "9.999999999999997e+22"],
   ] as const)("uses ECMAScript numeric bytes for %s", (value, expectedBytes) => {
     expect(canonicalDigest(value)).toBe(`sha256:${createHash("sha256").update(expectedBytes).digest("hex")}`);
   });

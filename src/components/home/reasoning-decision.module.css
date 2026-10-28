@@ -1,0 +1,105 @@
+.section {
+  scroll-margin-top: 5.5rem;
+  padding: clamp(3.5rem, 6vw, 6rem) 1.5rem;
+  color: #233c30;
+  background: radial-gradient(ellipse 34rem 24rem at 92% 5%, #e4eee480, transparent 80%), linear-gradient(#f7faf7, #f0f5f1 60%, #f7faf7);
+}
+.inner { max-width: 80rem; margin: 0 auto; }
+.eyebrow { color: #54705b; font-size: 0.65rem; font-weight: 750; letter-spacing: 0.12em; line-height: 1.6; }
+.intro { max-width: 47rem; margin-bottom: 2.5rem; }
+.intro h2 { margin: 0.7rem 0 1rem; max-width: 26ch; font-size: clamp(1.9rem, 3vw, 2.8rem); font-weight: 650; letter-spacing: -0.05em; line-height: 1.15; text-wrap: balance; }
+.intro > p:last-child { max-width: 43rem; font-size: 0.97rem; line-height: 1.65; color: #586e60; }
+.workbench { display: grid; grid-template-columns: minmax(14rem, 23%) minmax(0, 1fr); align-items: stretch; background: #fff; border-radius: 1.35rem; box-shadow: 0 16px 60px #203d2d08; }
+.sidebar { min-width: 0; padding: 2rem 0.8rem; background: linear-gradient(145deg, #eaf1e9, #f7f9f5 35%, #fafbf9); border-radius: 1.35rem 0 0 1.35rem; }
+.sidebarContent { position: sticky; top: 6rem; }
+.sidebarContent > .eyebrow { padding: 0 0.8rem; margin-bottom: 1.2rem; }
+.tabs { display: flex; flex-direction: column; gap: 0.4rem; }
+.tab { display: grid; grid-template-columns: 1.2rem minmax(0, 1fr) 1rem; align-items: center; gap: 0.7rem; min-height: 5rem; padding: 1rem 0.8rem; border-radius: 0.8rem; border: 0; color: #557360; background: transparent; text-align: left; cursor: pointer; transition: background 160ms, color 160ms; }
+.tab:hover { background: #e6eee2; color: #21432f; }
+.tab[aria-selected="true"] { background: #244a35; color: #fff; box-shadow: 0 5px 12px #244a3514; }
+.tab small { display: block; font-size: 0.66rem; line-height: 1.5; opacity: 0.85; }
+.tab strong { display: block; margin-top: 0.2rem; font-size: 0.94rem; font-weight: 650; line-height: 1.3; letter-spacing: -0.02em; }
+.tabArrow { opacity: 0; }
+.tab[aria-selected="true"] .tabArrow { opacity: 1; }
+.tab:disabled { cursor: default; }
+.tab:focus-visible, .panel:focus-visible, .review a:focus-visible { outline: 2px solid #43855b; outline-offset: 4px; }
+.exampleNote { margin: 1.5rem 0.8rem 0; color: #54705b; font-size: 0.73rem; line-height: 1.6; }
+.sidebarNote { margin: 1rem 0.8rem 0; color: #687b6d; font-size: 0.73rem; line-height: 1.7; }
+.panel { min-width: 0; padding: 2rem clamp(1.5rem, 3vw, 3rem); animation: reveal 180ms ease-out; }
+.panel[hidden] { display: none; }
+.storyHeading h3 { margin: 0.55rem 0 0.8rem; max-width: 35ch; font-size: clamp(1.4rem, 2vw, 1.8rem); font-weight: 650; letter-spacing: -0.035em; line-height: 1.25; text-wrap: balance; }
+.scope { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.8rem; font-size: 0.79rem; line-height: 1.5; color: #617469; }
+.scope > span { font-size: 0.59rem; letter-spacing: 0.09em; font-weight: 750; color: #4e6756; }
+.diagram { margin: 1.3rem 0 1.9rem; }
+.diagram > div { display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center; }
+.diagram > div > span { display: inline-flex; gap: 0.55rem; align-items: center; font-size: 0.78rem; font-weight: 600; color: #405e4c; }
+.diagramNode { display: grid; width: 1.5rem; height: 1.5rem; place-items: center; border-radius: 0.45rem; background: #eef4ec; font-size: 0.64rem; color: #4b7556; }
+.diagram svg { margin-left: 0.35rem; color: #94b29a; }
+.diagram figcaption { margin-top: 0.6rem; color: #627469; font-size: 0.72rem; line-height: 1.5; }
+.stages { display: grid; gap: 1.5rem; }
+.stage { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 1rem; }
+.stageMarker { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding-top: 0.15rem; color: #66846f; }
+.stageMarker > span { font-size: 0.64rem; font-variant-numeric: tabular-nums; }
+.stageMarker::after { content: ""; flex: 1; width: 1px; margin: 0.25rem 0 -1rem; background: linear-gradient(#dce8dd, #eaf0eb00); }
+.stageContent { min-width: 0; }
+.stageLabel { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; color: #577462; font-size: 0.61rem; font-weight: 750; letter-spacing: 0.1em; line-height: 1.5; }
+.stage h4 { margin-top: 0.35rem; font-size: 1.04rem; font-weight: 680; letter-spacing: -0.02em; line-height: 1.4; }
+.fields { display: grid; gap: 0.7rem; margin-top: 0.9rem; }
+.fields > div { display: grid; grid-template-columns: minmax(7rem, 24%) minmax(0, 1fr); gap: 1rem; align-items: baseline; }
+.fields dt { color: #385543; font-size: 0.77rem; font-weight: 650; line-height: 1.6; }
+.fields dd { color: #53685a; font-size: 0.84rem; line-height: 1.65; }
+.decision { padding: 1.15rem; margin-left: -1.15rem; margin-right: -1.15rem; background: linear-gradient(115deg, #edf4e7, #f3f7ed); border-radius: 0.8rem; }
+.decision .stageMarker { color: #3a6843; }
+.decision .stageMarker::after { display: none; }
+.reviewStatus { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; font-weight: 500; letter-spacing: 0; }
+.limit { margin: 0.8rem 0 0 3rem; font-size: 0.75rem; line-height: 1.65; color: #647566; }
+.limit strong { margin-right: 0.4rem; font-weight: 650; color: #465f4d; }
+.clientSummary { display: flex; gap: 1rem; margin: 1.6rem 0 0; padding-top: 0.2rem; }
+.clientSummary > svg { flex: none; margin: 0.2rem 0.4rem 0; color: #638771; }
+.clientSummary blockquote { margin-top: 0.55rem; font-size: 0.89rem; line-height: 1.65; color: #385742; }
+.review { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) auto; align-items: start; gap: 1rem; margin-top: 1.8rem; padding: 0.5rem 0.3rem; }
+.review > svg { margin-top: 0.2rem; color: #52795b; }
+.review h3 { margin-top: 0.3rem; font-size: 1.1rem; font-weight: 650; letter-spacing: -0.025em; }
+.review p:not(.eyebrow) { max-width: 45rem; margin-top: 0.45rem; font-size: 0.83rem; line-height: 1.6; color: #4f6756; }
+.review p.reviewNote { font-size: 0.74rem; color: #647969; }
+.review a { display: inline-flex; align-items: center; gap: 0.7rem; min-height: 2.8rem; align-self: center; padding: 0.75rem 1rem; border: 1px solid #cbdccd; border-radius: 0.65rem; background: #fff; font-size: 0.78rem; font-weight: 650; text-decoration: none; color: #2f563b; }
+.review a:hover { background: #eaf2e7; }
+.review a svg { flex: none; }
+@keyframes reveal { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 1050px) {
+  .workbench { grid-template-columns: 14rem minmax(0, 1fr); }
+  .fields > div { grid-template-columns: 1fr; gap: 0.15rem; }
+  .panel { padding: 1.75rem; }
+  .review { grid-template-columns: 1.6rem minmax(0, 1fr); }
+  .review a { grid-column: 2; justify-self: start; }
+}
+@media (max-width: 750px) {
+  .section { padding: 3.5rem 1rem; }
+  .intro { margin-bottom: 1.6rem; }
+  .workbench { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { border-radius: 1.1rem 1.1rem 0 0; padding: 1.2rem 0.8rem; }
+  .sidebarContent { position: static; }
+  .sidebarContent > .eyebrow { margin-bottom: 0.6rem; }
+  .tab { min-height: 3.4rem; padding: 0.7rem 0.8rem; }
+  .tab small { display: none; }
+  .tab strong { margin: 0; font-size: 0.9rem; }
+  .exampleNote { margin-top: 0.7rem; font-size: 0.7rem; }
+  .sidebarNote { display: none; }
+  .panel { padding: 1.5rem 1.25rem; }
+  .storyHeading h3 { font-size: 1.45rem; }
+  .stage { grid-template-columns: 1.3rem minmax(0, 1fr); gap: 0.7rem; }
+  .stageMarker > svg { width: 17px; }
+  .fields dd { font-size: 0.86rem; }
+  .decision { margin-left: -0.5rem; margin-right: -0.5rem; padding: 1rem 0.5rem; }
+  .limit { margin-left: 2rem; }
+  .clientSummary { gap: 0.5rem; }
+  .clientSummary > svg { margin-left: 0; }
+  .diagram > div { gap: 0.5rem; }
+  .diagram > div > span { font-size: 0.72rem; gap: 0.35rem; }
+  .diagramNode { width: 1.25rem; height: 1.25rem; }
+  .diagram svg { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel { animation: none; }
+  .tab { transition: none; }
+}

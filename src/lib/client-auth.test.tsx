@@ -35,7 +35,8 @@ function Probe() {
     <div>
       <output>{`${isLoaded}:${isSignedIn}:${user?.id ?? "none"}`}</output>
       <button type="button" onClick={() => void getToken().then((token) => document.body.setAttribute("data-token", token ?? ""))}>Token</button>
-      <button type="button" onClick={openSignIn}>Sign in</button>
+      <button type="button" onClick={() => openSignIn()}>Sign in</button>
+      <button type="button" onClick={() => openSignIn({ returnTo: "/pricing#pricing-deliverables" })}>Pricing sign in</button>
       <button type="button" onClick={() => void signOut()}>Sign out</button>
     </div>
   );
@@ -60,6 +61,8 @@ describe("AppAuthProvider", () => {
     await waitFor(() => expect(document.body).toHaveAttribute("data-token", "clerk-test-token"));
     expect(clerk.openSignIn).toHaveBeenCalledOnce();
     expect(clerk.signOut).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "Pricing sign in" }));
+    expect(clerk.openSignIn).toHaveBeenLastCalledWith({ forceRedirectUrl: "/pricing#pricing-deliverables", signUpForceRedirectUrl: "/pricing#pricing-deliverables" });
   });
 
   it("uses the fixed synthetic identity only in local E2E mode", async () => {

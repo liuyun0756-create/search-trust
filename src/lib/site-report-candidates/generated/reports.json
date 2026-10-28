@@ -1,0 +1,1003 @@
+{
+  "purpose": "release_candidate_synthetic_sources_v1",
+  "notice": "Release review · Actual report generator, illustrative sources. Not customer results or a live product release.",
+  "reports": [
+    {
+      "id": "prospect",
+      "label": "Prospect report",
+      "context": "Before analytics access · A specific observation and a first scope to discuss.",
+      "document": {
+        "title": "Plumber",
+        "summary": "The saved response for https://example.test/ had HTTP status 503. Check the saved response before changing the page.",
+        "clientNote": null,
+        "actionState": "actions_supported",
+        "limitations": [
+          "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+          "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+          "v22_public.competitor_sample_page_type_gap: insufficient_sample",
+          "v22_public.gbp_address_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_name_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_phone_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_service_area_alignment: gbp_alignment_not_implemented",
+          "v22_public.market_confirmed_competitors_ahead: insufficient_sample",
+          "v22_public.market_site_domain_unobserved: insufficient_sample",
+          "v22_public.site_duplicate_title: field_not_observed",
+          "v22_public.site_explicit_noindex: field_not_observed",
+          "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+        ],
+        "evidence": [
+          {
+            "id": "evidence-1",
+            "object": "https://example.test/",
+            "field_path": "/payload/pages/0/check_status",
+            "value": "checked",
+            "unit": null,
+            "observed_at": "2026-08-28T08:00:00Z"
+          },
+          {
+            "id": "evidence-2",
+            "object": "https://example.test/",
+            "field_path": "/payload/pages/0/status_code",
+            "value": 503,
+            "unit": null,
+            "observed_at": "2026-08-28T08:00:00Z"
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding-1",
+            "target": "https://example.test/",
+            "observed_fact": "The saved response for https://example.test/ had HTTP status 503.",
+            "judgment": "Check the saved response before changing the page.",
+            "impact_path": "An unintended HTTP error can prevent a visitor reaching the intended page.",
+            "comparison_scope": "Austin, TX · saved public sample",
+            "observed_at": "2026-08-28T08:00:00Z",
+            "evidence_ids": [
+              "evidence-1",
+              "evidence-2"
+            ],
+            "limitations": [
+              "A saved HTTP error is not proof that the URL is permanently inaccessible.",
+              "These observations concern the saved sample only, not complete site or market coverage."
+            ]
+          }
+        ],
+        "actions": [
+          {
+            "id": "action-1",
+            "sequence": 1,
+            "title": "Response and indexing check",
+            "target": "https://example.test/",
+            "steps": [
+              "Target: https://example.test/",
+              "Review each bound page finding and confirm the intended response and indexing policy.",
+              "Correct only the server response or explicit indexing directive confirmed as unintended.",
+              "Recheck every targeted URL and retain new bound evidence."
+            ],
+            "completion": [
+              "Every targeted URL has a new eligible snapshot that no longer triggers the selected HTTP or explicit noindex finding."
+            ],
+            "review": "New bound snapshots no longer trigger the selected condition.",
+            "materials": [
+              {
+                "id": "action-1-material-1",
+                "kind": "technical_check",
+                "title": "Response and indexing check",
+                "body": "Observed: The saved response for https://example.test/ had HTTP status 503.\n\nInspect the recorded response and explicit indexing directive at each target. Confirm the intended policy, correct only an unintended condition and capture a new response. Preserve intentional redirects and exclusions.",
+                "target": "https://example.test/",
+                "readiness": "instructions",
+                "evidence_ids": [
+                  "evidence-1",
+                  "evidence-2"
+                ],
+                "confirmation_items": []
+              }
+            ],
+            "whyNow": {
+              "explanation": "Check access and indexing before optimizing affected pages.",
+              "systemPosition": 1,
+              "systemTarget": "https://example.test/",
+              "systemTitle": "Response and indexing check",
+              "deliveryChanged": false,
+              "prerequisites": [
+                "Access and indexing check before optimization"
+              ],
+              "business": "Business focus is unknown; evidence and problem attributes determine the order.",
+              "evidence": "Supported within the checked scope; this is not proof of cause. Issue severity: high; confidence: medium.",
+              "execution": "Check instructions, not publish-ready content.",
+              "impactPaths": [
+                "An unintended HTTP error can prevent a visitor reaching the intended page."
+              ],
+              "comparisonScopes": [
+                "Austin, TX · saved public sample"
+              ],
+              "rulesVersion": "v22_business_priority_v2",
+              "reasonCodes": [
+                "prerequisite_access_indexing",
+                "business_unknown",
+                "evidence_supported",
+                "execution_instructions_only",
+                "severity_high",
+                "confidence_medium",
+                "return_unknown",
+                "stable_identity_tiebreak",
+                "capacity_unknown",
+                "publishing_unknown"
+              ],
+              "limits": [
+                "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "verified",
+      "label": "Verified plan",
+      "context": "Same Case, after access · Public checks, search evidence and on-site data inform the next plan.",
+      "document": {
+        "title": "Plumber",
+        "summary": "The saved response for https://example.test/ had HTTP status 503. Check the saved response before changing the page.",
+        "clientNote": null,
+        "actionState": "actions_supported",
+        "limitations": [
+          "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+          "v22_public.competitor_sample_page_type_gap: insufficient_sample",
+          "v22_public.gbp_address_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_name_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_phone_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_service_area_alignment: gbp_alignment_not_implemented",
+          "v22_public.market_confirmed_competitors_ahead: insufficient_sample",
+          "v22_public.market_site_domain_unobserved: insufficient_sample",
+          "v22_public.site_duplicate_title: field_not_observed",
+          "v22_public.site_explicit_noindex: field_not_observed",
+          "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change.",
+          "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change.",
+          "V22.CROSS_SOURCE.GA4_GBP.BEHAVIOR_CONFLICT: source_missing",
+          "V22.CROSS_SOURCE.GA4_GBP.BEHAVIOR_TREND: source_missing",
+          "V22.CROSS_SOURCE.GSC_GA4.WEEKLY_CONFLICT: insufficient_sample",
+          "V22.CROSS_SOURCE.GSC_GA4.WEEKLY_COVARIATION: insufficient_sample",
+          "V22.CROSS_SOURCE.GSC_GBP.VISIBILITY_CONFLICT: source_missing",
+          "V22.CROSS_SOURCE.GSC_GBP.VISIBILITY_TREND: source_missing",
+          "V22.FIRST_PARTY.GA4.PAGE_CHANGE: comparison_unavailable",
+          "V22.FIRST_PARTY.GBP.CUSTOMER_ACTION_CHANGE: source_missing",
+          "V22.FIRST_PARTY.GBP.IMPRESSION_CHANGE: source_missing",
+          "V22.FIRST_PARTY.GBP.PROFILE_OR_MEASUREMENT: source_missing",
+          "V22.FIRST_PARTY.GBP.SEARCH_DEMAND_SIGNAL: source_missing",
+          "V22.FIRST_PARTY.GSC.DIMENSION_DECLINE: comparison_unavailable",
+          "V22.FIRST_PARTY.GSC.DIMENSION_GROWTH: comparison_unavailable",
+          "Official GBP Performance was not connected; public business-profile observations are a separate source."
+        ],
+        "evidence": [
+          {
+            "id": "evidence-1",
+            "object": "properties/12345",
+            "field_path": "/current/totals/rows/0/key_events",
+            "value": 100,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-2",
+            "object": "properties/12345",
+            "field_path": "/current/totals/rows/0/sessions",
+            "value": 1000,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-3",
+            "object": "sc-domain:example.test",
+            "field_path": "/current/totals/rows/0/clicks",
+            "value": 100,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-4",
+            "object": "sc-domain:example.test",
+            "field_path": "/current/totals/rows/0/impressions",
+            "value": 1000,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-5",
+            "object": "properties/12345",
+            "field_path": "/current/totals/0/engagement_rate",
+            "value": 0.6,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-6",
+            "object": "/service?gclid=x",
+            "field_path": "/current/landing_pages//service?gclid=x/session_key_event_rate",
+            "value": 0,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-7",
+            "object": "growing query",
+            "field_path": "/previous/querys/growing query/clicks",
+            "value": 20,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-8",
+            "object": "http://www.example.test/service/?utm_source=x",
+            "field_path": "/current/pages/0/position",
+            "value": 8,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-9",
+            "object": "/service?gclid=x",
+            "field_path": "/current/landing_pages//service?gclid=x/engagement_rate",
+            "value": 0.25,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-10",
+            "object": "http://www.example.test/service/?utm_source=x",
+            "field_path": "/current/pages/http://www.example.test/service/?utm_source=x/position",
+            "value": 8,
+            "unit": "position",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-11",
+            "object": "https://example.test/service",
+            "field_path": "/previous/pages/0/clicks",
+            "value": 20,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-12",
+            "object": "http://www.example.test/service/?utm_source=x",
+            "field_path": "/current/pages/0/ctr",
+            "value": 0.04,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-13",
+            "object": "http://www.example.test/service/?utm_source=x",
+            "field_path": "/current/pages/http://www.example.test/service/?utm_source=x/ctr",
+            "value": 0.04,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-14",
+            "object": "/service?gclid=x",
+            "field_path": "/current/landing_pages//service?gclid=x/sessions",
+            "value": 60,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-15",
+            "object": "site_total",
+            "field_path": "/current/landing_pages/site_total/session_key_event_rate",
+            "value": 0.1,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-16",
+            "object": "properties/12345",
+            "field_path": "/current/totals/0/session_key_event_rate",
+            "value": 0.1,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-17",
+            "object": "http://www.example.test/service/?utm_source=x",
+            "field_path": "/current/pages/0/clicks",
+            "value": 30,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-18",
+            "object": "https://example.test/",
+            "field_path": "/payload/pages/0/check_status",
+            "value": "checked",
+            "unit": null,
+            "observed_at": "2026-08-28T08:00:00Z"
+          },
+          {
+            "id": "evidence-19",
+            "object": "service opportunity",
+            "field_path": "/current/querys/service opportunity/impressions",
+            "value": 200,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-20",
+            "object": "/service?gclid=x",
+            "field_path": "/current/landing_pages/0/key_events",
+            "value": 0,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-21",
+            "object": "http://www.example.test/service/?utm_source=x",
+            "field_path": "/current/pages/http://www.example.test/service/?utm_source=x/impressions",
+            "value": 750,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-22",
+            "object": "https://example.test/",
+            "field_path": "/payload/pages/0/status_code",
+            "value": 503,
+            "unit": null,
+            "observed_at": "2026-08-28T08:00:00Z"
+          },
+          {
+            "id": "evidence-23",
+            "object": "growing query",
+            "field_path": "/current/querys/growing query/clicks",
+            "value": 30,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-24",
+            "object": "declining query",
+            "field_path": "/current/querys/declining query/position",
+            "value": 6,
+            "unit": "position",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-25",
+            "object": "/service/",
+            "field_path": "/previous/landing_pages/0/sessions",
+            "value": 30,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-26",
+            "object": "/service?gclid=x",
+            "field_path": "/current/landing_pages//service?gclid=x/key_events",
+            "value": 0,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-27",
+            "object": "declining query",
+            "field_path": "/previous/querys/declining query/clicks",
+            "value": 20,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-28",
+            "object": "sc-domain:example.test",
+            "field_path": "/current/totals/0/ctr",
+            "value": 0.1,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-29",
+            "object": "http://www.example.test/service/?utm_source=x",
+            "field_path": "/current/pages/0/impressions",
+            "value": 750,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-30",
+            "object": "declining query",
+            "field_path": "/current/querys/declining query/clicks",
+            "value": 8,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-31",
+            "object": "declining query",
+            "field_path": "/current/querys/declining query/impressions",
+            "value": 100,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-32",
+            "object": "/service?gclid=x",
+            "field_path": "/current/landing_pages/0/sessions",
+            "value": 60,
+            "unit": "count",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-33",
+            "object": "declining query",
+            "field_path": "/current/querys/declining query/ctr",
+            "value": 0.08,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-34",
+            "object": "service opportunity",
+            "field_path": "/current/querys/service opportunity/position",
+            "value": 8,
+            "unit": "position",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-35",
+            "object": "sc-domain:example.test",
+            "field_path": "/current/aggregates/site_total/ctr",
+            "value": 0.1,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-36",
+            "object": "/service?gclid=x",
+            "field_path": "/current/landing_pages/0/engagement_rate",
+            "value": 0.25,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-37",
+            "object": "service opportunity",
+            "field_path": "/current/querys/service opportunity/ctr",
+            "value": 0.05,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          },
+          {
+            "id": "evidence-38",
+            "object": "site_total",
+            "field_path": "/current/landing_pages/site_total/engagement_rate",
+            "value": 0.6,
+            "unit": "ratio",
+            "observed_at": "2026-08-29T23:00:00Z"
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding-1",
+            "target": "https://example.test/",
+            "observed_fact": "The saved response for https://example.test/ had HTTP status 503.",
+            "judgment": "Check the saved response before changing the page.",
+            "impact_path": "An unintended HTTP error can prevent a visitor reaching the intended page.",
+            "comparison_scope": "Austin, TX · saved public sample",
+            "observed_at": "2026-08-28T08:00:00Z",
+            "evidence_ids": [
+              "evidence-18",
+              "evidence-22"
+            ],
+            "limitations": [
+              "A saved HTTP error is not proof that the URL is permanently inaccessible.",
+              "These observations concern the saved sample only, not complete site or market coverage."
+            ]
+          },
+          {
+            "id": "finding-2",
+            "target": "sc-domain:example.test",
+            "observed_fact": "The GSC current-period totals below were checked for the bound resource.",
+            "judgment": "These totals establish the checked scope, not that SEO is healthy or that an edit is needed.",
+            "impact_path": "No business cause, qualified-lead count or revenue effect is established by these totals.",
+            "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-3",
+              "evidence-4"
+            ],
+            "limitations": [
+              "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change."
+            ]
+          },
+          {
+            "id": "finding-3",
+            "target": "properties/12345",
+            "observed_fact": "The GA4 current-period totals below were checked for the bound resource.",
+            "judgment": "These totals establish the checked scope, not that SEO is healthy or that an edit is needed.",
+            "impact_path": "No business cause, qualified-lead count or revenue effect is established by these totals.",
+            "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-2",
+              "evidence-1"
+            ],
+            "limitations": [
+              "Search clicks, Analytics sessions and configured key events measure different things; these observations do not establish qualified leads, revenue or the cause of a change."
+            ]
+          },
+          {
+            "id": "finding-4",
+            "target": "service opportunity",
+            "observed_fact": "This query has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.",
+            "judgment": "Review the matching search intent, page and current offer before agreeing an improvement.",
+            "impact_path": "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries.",
+            "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-19",
+              "evidence-34",
+              "evidence-35",
+              "evidence-37"
+            ],
+            "limitations": [
+              "GSC_BREAKDOWNS_NOT_ADDITIVE",
+              "GSC_QUERY_PRIVACY_FILTERING",
+              "GSC_SELECTED_PROPERTY_SCOPE",
+              "GSC_TOP_ROWS_ONLY",
+              "GSC_WEB_ONLY"
+            ]
+          },
+          {
+            "id": "finding-5",
+            "target": "declining query",
+            "observed_fact": "This query has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.",
+            "judgment": "Review the matching search intent, page and current offer before agreeing an improvement.",
+            "impact_path": "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries.",
+            "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-24",
+              "evidence-31",
+              "evidence-33",
+              "evidence-35"
+            ],
+            "limitations": [
+              "GSC_BREAKDOWNS_NOT_ADDITIVE",
+              "GSC_QUERY_PRIVACY_FILTERING",
+              "GSC_SELECTED_PROPERTY_SCOPE",
+              "GSC_TOP_ROWS_ONLY",
+              "GSC_WEB_ONLY"
+            ]
+          },
+          {
+            "id": "finding-6",
+            "target": "http://www.example.test/service/?utm_source=x",
+            "observed_fact": "This page has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.",
+            "judgment": "Review the matching search intent, page and current offer before agreeing an improvement.",
+            "impact_path": "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries.",
+            "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-10",
+              "evidence-13",
+              "evidence-21",
+              "evidence-35"
+            ],
+            "limitations": [
+              "GSC_BREAKDOWNS_NOT_ADDITIVE",
+              "GSC_QUERY_PRIVACY_FILTERING",
+              "GSC_SELECTED_PROPERTY_SCOPE",
+              "GSC_TOP_ROWS_ONLY",
+              "GSC_WEB_ONLY"
+            ]
+          },
+          {
+            "id": "finding-7",
+            "target": "declining query",
+            "observed_fact": "Search Console clicks for this query decreased by 60.0% versus the preceding 90 days.",
+            "judgment": "Keep this observation in view and investigate comparable scope before revising the plan.",
+            "impact_path": "Observed movement is not by itself a recommendation or evidence that earlier SEO work caused the change.",
+            "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-27",
+              "evidence-30"
+            ],
+            "limitations": [
+              "GSC_BREAKDOWNS_NOT_ADDITIVE",
+              "GSC_QUERY_PRIVACY_FILTERING",
+              "GSC_SELECTED_PROPERTY_SCOPE",
+              "GSC_TOP_ROWS_ONLY",
+              "GSC_WEB_ONLY"
+            ]
+          },
+          {
+            "id": "finding-8",
+            "target": "growing query",
+            "observed_fact": "Search Console clicks for this query increased by 50.0% versus the preceding 90 days.",
+            "judgment": "Keep this observation in view and investigate comparable scope before revising the plan.",
+            "impact_path": "Observed movement is not by itself a recommendation or evidence that earlier SEO work caused the change.",
+            "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-7",
+              "evidence-23"
+            ],
+            "limitations": [
+              "GSC_BREAKDOWNS_NOT_ADDITIVE",
+              "GSC_QUERY_PRIVACY_FILTERING",
+              "GSC_SELECTED_PROPERTY_SCOPE",
+              "GSC_TOP_ROWS_ONLY",
+              "GSC_WEB_ONLY"
+            ]
+          },
+          {
+            "id": "finding-9",
+            "target": "/service?gclid=x",
+            "observed_fact": "This landing page has at least 20 sessions and an engagement rate at least 20% below the site's current GA4 baseline.",
+            "judgment": "Verify the landing-page path and event meaning before deciding whether to change this page.",
+            "impact_path": "A difference in measured behaviour is a reason to investigate the page and measurement together, not proof that the copy caused it.",
+            "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-9",
+              "evidence-14",
+              "evidence-38"
+            ],
+            "limitations": [
+              "GA4_BREAKDOWNS_NOT_ADDITIVE",
+              "GA4_ESTIMATED_COUNTS",
+              "GA4_HOST_FILTERED",
+              "GA4_PROCESSING_DELAY_2_DAYS",
+              "GA4_TOP_ROWS_ONLY"
+            ]
+          },
+          {
+            "id": "finding-10",
+            "target": "/service?gclid=x",
+            "observed_fact": "This landing page has at least 20 sessions but no observed key events or a key-event rate at least 50% below the site's current baseline.",
+            "judgment": "Verify the landing-page path and event meaning before deciding whether to change this page.",
+            "impact_path": "A difference in measured behaviour is a reason to investigate the page and measurement together, not proof that the copy caused it.",
+            "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-6",
+              "evidence-14",
+              "evidence-15",
+              "evidence-26"
+            ],
+            "limitations": [
+              "GA4_BREAKDOWNS_NOT_ADDITIVE",
+              "GA4_ESTIMATED_COUNTS",
+              "GA4_HOST_FILTERED",
+              "GA4_PROCESSING_DELAY_2_DAYS",
+              "GA4_TOP_ROWS_ONLY"
+            ]
+          },
+          {
+            "id": "finding-11",
+            "target": "https://example.test/service",
+            "observed_fact": "This page has meaningful Google search visibility while GA4 confirms a material engagement or conversion gap.",
+            "judgment": "Review the matching search intent, page and current offer before agreeing an improvement.",
+            "impact_path": "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries.",
+            "comparison_scope": "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-5",
+              "evidence-8",
+              "evidence-12",
+              "evidence-16",
+              "evidence-20",
+              "evidence-28",
+              "evidence-29",
+              "evidence-32",
+              "evidence-36"
+            ],
+            "limitations": [
+              "CROSS_SOURCE_COVARIATION_DOES_NOT_ESTABLISH_CAUSATION",
+              "THIRD_SOURCE_GBP_MISSING"
+            ]
+          },
+          {
+            "id": "finding-12",
+            "target": "https://example.test/service",
+            "observed_fact": "Google organic clicks and GA4 sessions for this page both increased by at least 20% versus the preceding 90 days.",
+            "judgment": "Keep this observation in view and investigate comparable scope before revising the plan.",
+            "impact_path": "Observed movement is not by itself a recommendation or evidence that earlier SEO work caused the change.",
+            "comparison_scope": "previous · 2026-03-03 to 2026-05-31 · Confirmed gsc resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test\nprevious · 2026-03-03 to 2026-05-31 · Confirmed ga4 resource for example.test\ncurrent · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test",
+            "observed_at": "2026-08-29T23:00:00Z",
+            "evidence_ids": [
+              "evidence-11",
+              "evidence-17",
+              "evidence-25",
+              "evidence-32"
+            ],
+            "limitations": [
+              "CROSS_SOURCE_COVARIATION_DOES_NOT_ESTABLISH_CAUSATION",
+              "THIRD_SOURCE_GBP_MISSING"
+            ]
+          }
+        ],
+        "actions": [
+          {
+            "id": "action-1",
+            "sequence": 1,
+            "title": "Response and indexing check",
+            "target": "https://example.test/",
+            "steps": [
+              "Target: https://example.test/",
+              "Review each bound page finding and confirm the intended response and indexing policy.",
+              "Correct only the server response or explicit indexing directive confirmed as unintended.",
+              "Recheck every targeted URL and retain new bound evidence."
+            ],
+            "completion": [
+              "Every targeted URL has a new eligible snapshot that no longer triggers the selected HTTP or explicit noindex finding."
+            ],
+            "review": "New bound snapshots no longer trigger the selected condition.",
+            "materials": [
+              {
+                "id": "action-1-material-1",
+                "kind": "technical_check",
+                "title": "Response and indexing check",
+                "body": "Observed: The saved response for https://example.test/ had HTTP status 503.\n\nInspect the recorded response and explicit indexing directive at each target. Confirm the intended policy, correct only an unintended condition and capture a new response. Preserve intentional redirects and exclusions.",
+                "target": "https://example.test/",
+                "readiness": "instructions",
+                "evidence_ids": [
+                  "evidence-18",
+                  "evidence-22"
+                ],
+                "confirmation_items": []
+              }
+            ],
+            "whyNow": {
+              "explanation": "Check access and indexing before optimizing affected pages.",
+              "systemPosition": 1,
+              "systemTarget": "https://example.test/",
+              "systemTitle": "Response and indexing check",
+              "deliveryChanged": false,
+              "prerequisites": [
+                "Access and indexing check before optimization"
+              ],
+              "business": "Business focus is unknown; evidence and problem attributes determine the order.",
+              "evidence": "Supported within the checked scope; this is not proof of cause. Issue severity: high; confidence: medium.",
+              "execution": "Check instructions, not publish-ready content.",
+              "impactPaths": [
+                "An unintended HTTP error can prevent a visitor reaching the intended page."
+              ],
+              "comparisonScopes": [
+                "Austin, TX · saved public sample"
+              ],
+              "rulesVersion": "v22_business_priority_v2",
+              "reasonCodes": [
+                "prerequisite_access_indexing",
+                "business_unknown",
+                "evidence_supported",
+                "execution_instructions_only",
+                "severity_high",
+                "confidence_medium",
+                "return_unknown",
+                "stable_identity_tiebreak",
+                "capacity_unknown",
+                "publishing_unknown"
+              ],
+              "limits": [
+                "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+              ]
+            }
+          },
+          {
+            "id": "action-2",
+            "sequence": 2,
+            "title": "Review the existing service page",
+            "target": "https://example.test/service",
+            "steps": [
+              "Target: https://example.test/service",
+              "Review the existing target page against the named search observation. Confirm that this service is a business priority and that the page is the intended target. Prepare approved service scope, process, supporting proof and a clear contact step. Improve that page only where its inspected content and confirmed business details support the change; do not infer missing copy from performance data alone."
+            ],
+            "completion": [
+              "The target page and business priority are confirmed.",
+              "A page-specific editing brief or a documented no-change decision is ready for the SEO to execute."
+            ],
+            "review": "Record the actual edit and date if implemented, then compare eligible evidence for the same page and scope without claiming causality.",
+            "materials": [
+              {
+                "id": "action-2-material-1",
+                "kind": "service_brief",
+                "title": "Review the existing service page",
+                "body": "Observed:\nThis page has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.\nThis page has meaningful Google search visibility while GA4 confirms a material engagement or conversion gap.\n\nScope: current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test\n\nReview the existing target page against the named search observation. Confirm that this service is a business priority and that the page is the intended target. Prepare approved service scope, process, supporting proof and a clear contact step. Improve that page only where its inspected content and confirmed business details support the change; do not infer missing copy from performance data alone.",
+                "target": "https://example.test/service",
+                "readiness": "requires_confirmation",
+                "evidence_ids": [
+                  "evidence-5",
+                  "evidence-8",
+                  "evidence-10",
+                  "evidence-12",
+                  "evidence-13",
+                  "evidence-16",
+                  "evidence-20",
+                  "evidence-21",
+                  "evidence-28",
+                  "evidence-29",
+                  "evidence-32",
+                  "evidence-35",
+                  "evidence-36"
+                ],
+                "confirmation_items": [
+                  "Confirm the service priority and intended existing page.",
+                  "Inspect the page and obtain approved business details before drafting publishable copy."
+                ]
+              }
+            ],
+            "whyNow": {
+              "explanation": "Business focus is not specified; order uses evidence and problem attributes, not assumed business value. Business details or approval are still required. Publishing access is unknown, not assumed blocked or approved.",
+              "systemPosition": 2,
+              "systemTarget": "https://example.test/service",
+              "systemTitle": "Review the existing service page",
+              "deliveryChanged": false,
+              "prerequisites": [],
+              "business": "Business focus is unknown; evidence and problem attributes determine the order.",
+              "evidence": "Supported within the checked scope; this is not proof of cause. Issue severity: high; confidence: medium.",
+              "execution": "Confirm business details or approval before publishing.",
+              "impactPaths": [
+                "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries."
+              ],
+              "comparisonScopes": [
+                "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test",
+                "current · 2026-06-01 to 2026-08-29 · Confirmed ga4 resource for example.test"
+              ],
+              "rulesVersion": "v22_business_priority_v2",
+              "reasonCodes": [
+                "prerequisite_none",
+                "business_unknown",
+                "evidence_supported",
+                "execution_confirmation_required",
+                "severity_high",
+                "confidence_medium",
+                "return_unknown",
+                "stable_identity_tiebreak",
+                "capacity_unknown",
+                "publishing_unknown"
+              ],
+              "limits": [
+                "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+              ]
+            }
+          },
+          {
+            "id": "action-3",
+            "sequence": 3,
+            "title": "Match the query to the intended page",
+            "target": "declining query",
+            "steps": [
+              "Target: declining query",
+              "Review the named query and its date window in Search Console. Check its intent and the page currently serving that intent before proposing a page change. A query-level observation alone does not identify a landing page or justify building a new one."
+            ],
+            "completion": [
+              "The query intent and matching page are checked, or the unresolved page association is documented."
+            ],
+            "review": "Compare the same query and eligible scope on the next review; record unresolved page association rather than inventing one.",
+            "materials": [
+              {
+                "id": "action-3-material-1",
+                "kind": "technical_check",
+                "title": "Match the query to the intended page",
+                "body": "Observed: This query has meaningful Search Console visibility at an average position between 4 and 20, while its click-through rate is at least 20% below the site's current baseline.\n\nScope: current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test\n\nReview the named query and its date window in Search Console. Check its intent and the page currently serving that intent before proposing a page change. A query-level observation alone does not identify a landing page or justify building a new one.",
+                "target": "declining query",
+                "readiness": "instructions",
+                "evidence_ids": [
+                  "evidence-24",
+                  "evidence-31",
+                  "evidence-33",
+                  "evidence-35"
+                ],
+                "confirmation_items": []
+              }
+            ],
+            "whyNow": {
+              "explanation": "Business focus is not specified; order uses evidence and problem attributes, not assumed business value.",
+              "systemPosition": 3,
+              "systemTarget": "declining query",
+              "systemTitle": "Match the query to the intended page",
+              "deliveryChanged": false,
+              "prerequisites": [],
+              "business": "Business focus is unknown; evidence and problem attributes determine the order.",
+              "evidence": "Supported within the checked scope; this is not proof of cause. Issue severity: medium; confidence: medium.",
+              "execution": "Check instructions, not publish-ready content.",
+              "impactPaths": [
+                "Relevant search exposure can justify reviewing the current page, not a promise that an edit will increase rankings or enquiries."
+              ],
+              "comparisonScopes": [
+                "current · 2026-06-01 to 2026-08-29 · Confirmed gsc resource for example.test"
+              ],
+              "rulesVersion": "v22_business_priority_v2",
+              "reasonCodes": [
+                "prerequisite_none",
+                "business_unknown",
+                "evidence_supported",
+                "execution_instructions_only",
+                "severity_medium",
+                "confidence_medium",
+                "return_unknown",
+                "stable_identity_tiebreak",
+                "capacity_unknown",
+                "publishing_unknown"
+              ],
+              "limits": [
+                "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "diagnosis",
+      "label": "Diagnosis only",
+      "context": "Separate outcome · A complete diagnosis can contain no recommended action. A completed analysis still uses 1 credit; it is not refunded.",
+      "document": {
+        "title": "Plumber",
+        "summary": "No action is proposed from the available public evidence for https://example.test/. The eligible saved website fields below were checked. The supported public rules did not produce an actionable finding.",
+        "clientNote": null,
+        "actionState": "insufficient_basis",
+        "limitations": [
+          "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work.",
+          "Private Search Console, Analytics, lead and revenue data are not included in this public diagnosis.",
+          "v22_public.gbp_address_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_name_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_phone_alignment: gbp_alignment_not_implemented",
+          "v22_public.gbp_service_area_alignment: gbp_alignment_not_implemented",
+          "v22_public.market_confirmed_competitors_ahead: insufficient_sample",
+          "v22_public.market_site_domain_unobserved: insufficient_sample",
+          "v22_public.site_duplicate_title: insufficient_sample",
+          "Business return is unknown. This order is not a revenue forecast or evidence that SEO caused a change."
+        ],
+        "evidence": [
+          {
+            "id": "evidence-1",
+            "object": "https://example.test/",
+            "field_path": "/payload/completed_at\n/payload/pages",
+            "value": 0,
+            "unit": null,
+            "observed_at": "2026-08-28T08:00:00Z"
+          },
+          {
+            "id": "evidence-2",
+            "object": "https://example.test/",
+            "field_path": "/payload/deep_analyzed_count",
+            "value": 0,
+            "unit": null,
+            "observed_at": "2026-08-28T08:00:00Z"
+          },
+          {
+            "id": "evidence-3",
+            "object": "https://example.test/",
+            "field_path": "/payload/completed_at\n/payload/pages",
+            "value": 0,
+            "unit": null,
+            "observed_at": "2026-08-28T08:00:00Z"
+          }
+        ],
+        "findings": [
+          {
+            "id": "finding-1",
+            "target": "https://example.test/",
+            "observed_fact": "The eligible saved website fields below were checked. The supported public rules did not produce an actionable finding.",
+            "judgment": "No change is proposed from this evidence. Confirm the scope and unresolved checks before deciding what to investigate next.",
+            "impact_path": "No business impact or healthy-site conclusion is established.",
+            "comparison_scope": "Saved public sample only",
+            "observed_at": "2026-08-28T08:00:00Z",
+            "evidence_ids": [
+              "evidence-1",
+              "evidence-2",
+              "evidence-3"
+            ],
+            "limitations": [
+              "Saved public observations do not establish lost enquiries, a ranking cause or the effect of future work."
+            ]
+          }
+        ],
+        "actions": []
+      }
+    }
+  ]
+}

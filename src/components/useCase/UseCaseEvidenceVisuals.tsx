@@ -109,7 +109,7 @@ function PriorityStackVisual() {
         ))}
       </div>
       <div className={styles.priorityBasis}><span>Impact</span><span>Business value</span><span>Severity</span><span>Evidence</span><span>Dependencies</span></div>
-      <div className={styles.visualDecision}><span>Working decision</span><strong>Start with work the team can explain and verify.</strong></div>
+      <div className={styles.visualDecision}><span>Working decision</span><strong>Start with work you can explain and verify.</strong></div>
     </div>
   );
 }
@@ -122,8 +122,8 @@ function ReviewTimelineVisual() {
     ["Next decision", "Keep, adjust, pause or investigate", "SEO review"],
   ];
   return (
-    <div className={styles.evidenceVisual} role="img" aria-label="The report keeps planned, implemented, reviewed and next-decision states separate">
-      <div className={styles.visualHeader}><span>Action history</span><span className={styles.statusPill}>One object over time</span></div>
+    <div className={styles.evidenceVisual} role="img" aria-label="Illustrative SEO review record separating planned, implemented, reviewed and next-decision states">
+      <div className={styles.visualHeader}><span>SEO review record · method illustration</span><span className={styles.statusPill}>One object over time</span></div>
       <div className={styles.timeline}>
         {stages.map(([stage, action, status], index) => (
           <div className={styles.timelineItem} key={stage}>

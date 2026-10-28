@@ -1,0 +1,819 @@
+{
+  "fixture_version": "p0-quality-targets-2026-10-19",
+  "classification": "synthetic_acceptance_specification",
+  "runtime_contract": false,
+  "evaluated_at": "2026-08-29T00:00:00Z",
+  "warning": "Fixed input/expected targets, not executed end-to-end acceptance or real customer results. Linked tests cover only existing foundations.",
+  "quality_dimensions": [
+    "specific_object",
+    "traceable_fact",
+    "bounded_judgment",
+    "clear_action",
+    "usable_material",
+    "checkable_completion",
+    "explicit_limits",
+    "optional_editing"
+  ],
+  "issue_classes": [
+    "missing_data",
+    "missing_rule",
+    "generic_expression"
+  ],
+  "cases": [
+    {
+      "id": "Q01",
+      "title": "抓取与索引",
+      "phase": "P2",
+      "required_variants": [
+        "http_503",
+        "explicit_noindex",
+        "unobserved_response"
+      ],
+      "foundation_test": "BE:tests/test_v22_public_actions.py",
+      "meaning": "先说明目标 URL 与已观察到的响应；不可将采样失败写成永久不可达或已被搜索引擎除名。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "http_503",
+          "input": {
+            "url": "https://clinic.example.invalid/emergency",
+            "status_code": 503,
+            "check_status": "checked"
+          },
+          "expected": {
+            "observed": "HTTP 503",
+            "prerequisite": "check_access_before_content"
+          }
+        },
+        {
+          "variant": "explicit_noindex",
+          "input": {
+            "status_code": 200,
+            "meta_robots": [
+              "noindex"
+            ],
+            "actual_index_status": null
+          },
+          "expected": {
+            "observed": "explicit_noindex",
+            "actual_index_status": "unknown"
+          }
+        },
+        {
+          "variant": "unobserved_response",
+          "input": {
+            "status_code": null,
+            "check_status": "failed"
+          },
+          "expected": {
+            "result": "not_checked"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q02",
+      "title": "标题与服务意图",
+      "phase": "P2",
+      "required_variants": [
+        "duplicate_titles",
+        "intent_unconfirmed"
+      ],
+      "foundation_test": "BE:tests/test_v22_public_actions.py",
+      "meaning": "标题/内容建议必须引用具体页面和观察原文，不把重复标题等同重复正文。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "duplicate_titles",
+          "input": {
+            "urls": [
+              "https://clinic.example.invalid/emergency",
+              "https://clinic.example.invalid/checkup"
+            ],
+            "titles": [
+              "Dental services",
+              "Dental services"
+            ]
+          },
+          "expected": {
+            "target_count": 2,
+            "requires_specific_copy": true,
+            "duplicate_body_proven": false
+          }
+        },
+        {
+          "variant": "intent_unconfirmed",
+          "input": {
+            "service_priority": null,
+            "emergency_hours": null
+          },
+          "expected": {
+            "invent_hours": false,
+            "confirm_business_priority": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q03",
+      "title": "网站与 GBP",
+      "phase": "P2",
+      "required_variants": [
+        "match",
+        "partial",
+        "site_only",
+        "gbp_only",
+        "both_missing"
+      ],
+      "foundation_test": "BE:tests/test_v22_site_gbp_findings.py",
+      "meaning": "双方缺失不能变成通过；有效分店号/追踪号差异须确认，不能自动认定错误。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "match",
+          "input": {
+            "site_phone": "+12025550100",
+            "gbp_phone": "+12025550100"
+          },
+          "expected": {
+            "alignment": "match"
+          }
+        },
+        {
+          "variant": "partial",
+          "input": {
+            "site_areas": [
+              "North",
+              "South"
+            ],
+            "gbp_areas": [
+              "North"
+            ]
+          },
+          "expected": {
+            "alignment": "partial"
+          }
+        },
+        {
+          "variant": "site_only",
+          "input": {
+            "site_phone": "+12025550100",
+            "gbp_phone": null
+          },
+          "expected": {
+            "alignment": "gbp_missing"
+          }
+        },
+        {
+          "variant": "gbp_only",
+          "input": {
+            "site_phone": null,
+            "gbp_phone": "+12025550100"
+          },
+          "expected": {
+            "alignment": "site_missing"
+          }
+        },
+        {
+          "variant": "both_missing",
+          "input": {
+            "site_phone": null,
+            "gbp_phone": null
+          },
+          "expected": {
+            "alignment": "both_missing",
+            "passed": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q04",
+      "title": "竞品范围",
+      "phase": "P0",
+      "required_variants": [
+        "zero",
+        "one",
+        "three"
+      ],
+      "foundation_test": "BE:tests/test_v22_competitor_selection.py",
+      "meaning": "至少 1、最多 3；不足 3 不虚构额外竞品，单竞品不冒充完整行业比较。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "zero",
+          "input": {
+            "confirmed_competitors": []
+          },
+          "expected": {
+            "state": "needs_input",
+            "fabricated_comparison": false
+          }
+        },
+        {
+          "variant": "one",
+          "input": {
+            "confirmed_competitors": [
+              "https://other-clinic.example.invalid"
+            ]
+          },
+          "expected": {
+            "allowed": true,
+            "coverage": "limited"
+          }
+        },
+        {
+          "variant": "three",
+          "input": {
+            "confirmed_competitors": [
+              "https://a.example.invalid",
+              "https://b.example.invalid",
+              "https://c.example.invalid"
+            ]
+          },
+          "expected": {
+            "allowed": true,
+            "max_count": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q05",
+      "title": "GSC 与 GA4",
+      "phase": "P4",
+      "required_variants": [
+        "supporting",
+        "conflicting"
+      ],
+      "foundation_test": "BE:tests/test_v22_cross_source_pages.py",
+      "meaning": "仅在同目标可比范围解释支持或冲突；点击、会话不要求相等。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "supporting",
+          "input": {
+            "same_page": true,
+            "gsc_clicks": [
+              100,
+              150
+            ],
+            "ga4_sessions": [
+              80,
+              120
+            ],
+            "comparable": true
+          },
+          "expected": {
+            "interpretation": "supporting_observations",
+            "causation": false
+          }
+        },
+        {
+          "variant": "conflicting",
+          "input": {
+            "same_page": true,
+            "gsc_clicks": [
+              100,
+              150
+            ],
+            "ga4_sessions": [
+              80,
+              40
+            ],
+            "comparable": true
+          },
+          "expected": {
+            "interpretation": "investigate_measurement_and_scope",
+            "force_unified_story": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q06",
+      "title": "授权与就绪",
+      "phase": "P3",
+      "required_variants": [
+        "expired",
+        "mismatched",
+        "revoked"
+      ],
+      "foundation_test": "FE:src/lib/google-sync/service.test.ts",
+      "meaning": "授权、所有权、时效和范围校验在分析前完成，不能缓存成功状态掩盖撤销。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "expired",
+          "input": {
+            "snapshot_expires_at": "2026-08-28T00:00:00Z",
+            "evaluated_at": "2026-08-29T00:00:00Z"
+          },
+          "expected": {
+            "ready": false
+          }
+        },
+        {
+          "variant": "mismatched",
+          "input": {
+            "case_domain": "clinic.example.invalid",
+            "property_domain": "other.example.invalid"
+          },
+          "expected": {
+            "ready": false
+          }
+        },
+        {
+          "variant": "revoked",
+          "input": {
+            "connection_status": "revoked"
+          },
+          "expected": {
+            "ready": false,
+            "run_paid_analysis": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q07",
+      "title": "首次服务无 Prospect",
+      "phase": "P3",
+      "required_variants": [
+        "first_service"
+      ],
+      "foundation_test": "FE:src/lib/verified-analysis-v22/repository.test.ts",
+      "meaning": "这是后续目标；现有父报告守卫不得直接删掉以伪装支持。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "first_service",
+          "input": {
+            "mode": "first_service",
+            "prospect_id": null,
+            "public_evidence": "current",
+            "gsc": "ready",
+            "ga4": "ready",
+            "public_gbp": "ready",
+            "confirmed_competitors": 1,
+            "user_started": true
+          },
+          "expected": {
+            "report_type": "verified",
+            "analysis_credits": 1,
+            "hidden_prospect_charge": 0,
+            "historical_diff": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q08",
+      "title": "批准与交付一致性",
+      "phase": "P2",
+      "required_variants": [
+        "unchanged_approval",
+        "edited_approval"
+      ],
+      "foundation_test": "FE:src/lib/report-delivery/plan.test.ts",
+      "meaning": "原样批准合法；新全文编辑目标尚未实现，所有出口必须固定同一批准修订。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "unchanged_approval",
+          "input": {
+            "edited": false,
+            "approve": true
+          },
+          "expected": {
+            "allowed": true,
+            "force_edit": false,
+            "extra_credits": 0
+          }
+        },
+        {
+          "variant": "edited_approval",
+          "input": {
+            "approved_revision": 2,
+            "draft_revision": 3,
+            "requested_output": "existing_pinned_outputs"
+          },
+          "expected": {
+            "pdf_revision": 2,
+            "share_revision": 2,
+            "new_delivery": "blocked_until_approval",
+            "original_evidence_mutated": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q09",
+      "title": "并发编辑",
+      "phase": "P2",
+      "required_variants": [
+        "stale_revision"
+      ],
+      "foundation_test": "FE:src/lib/database/v22Migration.test.ts",
+      "meaning": "冲突必须可恢复，不能后写覆盖。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "stale_revision",
+          "input": {
+            "tab_a_revision": 2,
+            "tab_b_revision": 2,
+            "tab_a_saved_revision": 3
+          },
+          "expected": {
+            "tab_b_save": "conflict",
+            "silent_overwrite": false,
+            "reload_or_compare": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q10",
+      "title": "实施后变化",
+      "phase": "P5",
+      "required_variants": [
+        "positive",
+        "negative",
+        "flat"
+      ],
+      "foundation_test": "BE:tests/test_v22_cross_source_time.py",
+      "meaning": "现有时间比较不等于实施效果；P5 必须使用实施记录与固定窗口，不能认定因果。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "positive",
+          "input": {
+            "before": 100,
+            "after": 120
+          },
+          "expected": {
+            "absolute_delta": 20,
+            "relative_delta": 0.2,
+            "causation": false
+          }
+        },
+        {
+          "variant": "negative",
+          "input": {
+            "before": 100,
+            "after": 80
+          },
+          "expected": {
+            "absolute_delta": -20,
+            "relative_delta": -0.2,
+            "causation": false
+          }
+        },
+        {
+          "variant": "flat",
+          "input": {
+            "before": 100,
+            "after": 100
+          },
+          "expected": {
+            "absolute_delta": 0,
+            "relative_delta": 0,
+            "causation": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q11",
+      "title": "比较资格与分母",
+      "phase": "P5",
+      "required_variants": [
+        "insufficient",
+        "zero_denominator",
+        "incomplete_day",
+        "ctr"
+      ],
+      "foundation_test": "BE:tests/test_v22_first_party_findings.py",
+      "meaning": "数据不够显示无法判断；CTR 用百分点，零分母相对变化为空，不是无限增长。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "insufficient",
+          "input": {
+            "complete_days": 7,
+            "required_days": 28
+          },
+          "expected": {
+            "eligibility": "insufficient",
+            "effect": null
+          }
+        },
+        {
+          "variant": "zero_denominator",
+          "input": {
+            "before": 0,
+            "after": 10
+          },
+          "expected": {
+            "absolute_delta": 10,
+            "relative_delta": null
+          }
+        },
+        {
+          "variant": "incomplete_day",
+          "input": {
+            "post_complete": false
+          },
+          "expected": {
+            "eligibility": "insufficient",
+            "effect": null
+          }
+        },
+        {
+          "variant": "ctr",
+          "input": {
+            "before": 0.025,
+            "after": 0.03
+          },
+          "expected": {
+            "delta_percentage_points": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q12",
+      "title": "范围变动",
+      "phase": "P5",
+      "required_variants": [
+        "multiple_actions",
+        "url_changed",
+        "event_changed"
+      ],
+      "foundation_test": "BE:tests/test_v22_cross_source_pages.py",
+      "meaning": "变动未对齐时不能混合比较或归因到单一行动。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "multiple_actions",
+          "input": {
+            "implemented_actions": [
+              "a1",
+              "a2"
+            ]
+          },
+          "expected": {
+            "single_action_attribution": false
+          }
+        },
+        {
+          "variant": "url_changed",
+          "input": {
+            "before_url": "https://clinic.example.invalid/old",
+            "after_url": "https://clinic.example.invalid/new",
+            "mapping_confirmed": false
+          },
+          "expected": {
+            "eligibility": "not_comparable"
+          }
+        },
+        {
+          "variant": "event_changed",
+          "input": {
+            "event_definition_changed": true
+          },
+          "expected": {
+            "key_events_comparable": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q13",
+      "title": "计费幂等与恢复",
+      "phase": "P3",
+      "required_variants": [
+        "retry",
+        "restart",
+        "callback_replay",
+        "late_failure",
+        "technical_failure_replay"
+      ],
+      "foundation_test": "FE:src/lib/verified-credits-v22/handlers.test.ts",
+      "meaning": "同一工作流一次结算；内部重试不算新分析，失败返还最多一次。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "retry",
+          "input": {
+            "workflow": "wf-1",
+            "request_count": 3
+          },
+          "expected": {
+            "max_debits": 1
+          }
+        },
+        {
+          "variant": "restart",
+          "input": {
+            "workflow": "wf-1",
+            "worker_restart": true
+          },
+          "expected": {
+            "max_debits": 1,
+            "resumable": true
+          }
+        },
+        {
+          "variant": "callback_replay",
+          "input": {
+            "workflow": "wf-1",
+            "success_callbacks": 2
+          },
+          "expected": {
+            "max_settlements": 1
+          }
+        },
+        {
+          "variant": "late_failure",
+          "input": {
+            "workflow": "wf-1",
+            "terminal_state": "succeeded",
+            "later_callback": "failed"
+          },
+          "expected": {
+            "terminal_state": "succeeded",
+            "refunds": 0
+          }
+        },
+        {
+          "variant": "technical_failure_replay",
+          "input": {
+            "workflow": "wf-2",
+            "credits_debited": 1,
+            "technical_failure_callbacks": 3
+          },
+          "expected": {
+            "credits_returned": 1,
+            "cash_refund": false,
+            "terminal_state": "failed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q14",
+      "title": "跨用户隔离",
+      "phase": "P1",
+      "required_variants": [
+        "snapshot",
+        "report",
+        "revision",
+        "implementation"
+      ],
+      "foundation_test": "FE:src/lib/database/v22Migration.test.ts",
+      "meaning": "现有 RLS/所有权保护继续保留；新增实体必须同样验证。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "snapshot",
+          "input": {
+            "owner": "user-a",
+            "requester": "user-b"
+          },
+          "expected": {
+            "read": false,
+            "write": false
+          }
+        },
+        {
+          "variant": "report",
+          "input": {
+            "owner": "user-a",
+            "requester": "user-b"
+          },
+          "expected": {
+            "read": false,
+            "write": false
+          }
+        },
+        {
+          "variant": "revision",
+          "input": {
+            "owner": "user-a",
+            "requester": "user-b"
+          },
+          "expected": {
+            "read": false,
+            "write": false
+          }
+        },
+        {
+          "variant": "implementation",
+          "input": {
+            "owner": "user-a",
+            "requester": "user-b"
+          },
+          "expected": {
+            "read": false,
+            "write": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q15",
+      "title": "真实变化标记",
+      "phase": "P5",
+      "required_variants": [
+        "unchanged",
+        "changed"
+      ],
+      "foundation_test": "FE:src/lib/report-delivery/plan.test.ts",
+      "meaning": "输入刷新或新时间戳不等同建议发生变化。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "unchanged",
+          "input": {
+            "previous_title": "Clarify booking steps",
+            "current_title": "Clarify booking steps",
+            "new_snapshot": true
+          },
+          "expected": {
+            "recommendation_changed": false
+          }
+        },
+        {
+          "variant": "changed",
+          "input": {
+            "previous_title": "Build a page",
+            "current_title": "Improve the confirmed page"
+          },
+          "expected": {
+            "recommendation_changed": true,
+            "requires_reason": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q16",
+      "title": "行动数量不足",
+      "phase": "P1",
+      "required_variants": [
+        "zero_actions",
+        "one_action",
+        "two_actions"
+      ],
+      "foundation_test": "BE:tests/test_v22_public_actions.py",
+      "meaning": "D1 于 2026-10-20 经用户确认：分析正常完成但没有足够依据提出行动，仍交付诊断报告，消耗 1 点、不返还；技术失败仍返还。新增路径待实现验收，不足三项不凑数。",
+      "acceptance_status": "target_not_yet_accepted",
+      "variants": [
+        {
+          "variant": "zero_actions",
+          "input": {
+            "supported_actions": [],
+            "analysis_status": "succeeded",
+            "reason": "insufficient_evidence_for_actions"
+          },
+          "expected": {
+            "state": "insufficient_actions",
+            "filler_actions": 0,
+            "paid_path_enabled": false,
+            "settlement": "charge_one_credit",
+            "diagnostic_report_delivered": true,
+            "credits_consumed": 1,
+            "credits_returned": 0
+          }
+        },
+        {
+          "variant": "one_action",
+          "input": {
+            "supported_actions": [
+              "a1"
+            ]
+          },
+          "expected": {
+            "action_count": 1,
+            "filler_actions": 0
+          }
+        },
+        {
+          "variant": "two_actions",
+          "input": {
+            "supported_actions": [
+              "a1",
+              "a2"
+            ]
+          },
+          "expected": {
+            "action_count": 2,
+            "filler_actions": 0
+          }
+        }
+      ]
+    }
+  ]
+}

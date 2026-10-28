@@ -1,0 +1,13 @@
+# Paid review generation entry
+
+Default-off owner workflow over a saved evidence snapshot and an explicit decision revision. The owner entry is the read-only decision version in `/cases/[caseId]/reports/[reportId]/review-decisions`. The browser supplies only selection IDs/checksums, a stable request/job UUID and explicit one-credit confirmation; the BFF injects authenticated identity and route IDs.
+
+Frontend requires the existing capability/implementation/evidence/decision/delivery flags plus `V22_REVIEW_GENERATION_ENABLED=true`. Backend additionally requires its capability/evidence/decision flags and the same new generation flag. No actual environment values are changed by this implementation.
+
+Migration `20261027150000_start_v22_review_generation.sql` creates the job, one reserved Verified debit, immutable full generation input and persistent work record in one transaction. Lookup happens before preparation, and exact replay reuses the first committed input/time. A live or delivered selection cannot be charged again under another UUID; after compensated technical failure, a separately confirmed new attempt is allowed. A newer Verified report makes a new intake from the old base stale. The later multi-round migration also allows a completed 2.2.3 Verified report via its bounded current-plan basis. This requires the additional default-off multi-round flag; see `../review-reports/MULTI_ROUND.md`.
+
+The separate ARQ function `execute_v22_review_generation` receives IDs only. SQL dispatch and execution leases prevent duplicate work; each takeover increments the generation. The cron reconciler recovers lost enqueues and expired runs. Deterministic report assembly does not call providers or re-collect sources. The existing formal-report completion transaction saves 2.2.3 and consumes the original reservation, including no-action diagnoses. SQL-first terminal handling recognizes an already committed success after a lost acknowledgement. Technical failure, exhausted attempts, deadline or Case archival compensate an unfinished task once.
+
+The browser polls SQL-backed status. Lost start acknowledgements retain the same request in local storage; a fresh device can find the existing task by saved selection. Status responses contain no raw evidence, private reasons or tokens. Successful tasks link to the dedicated approval/PDF/share workspace. Editing and approval remain free.
+
+Tests cover real disposable PostgreSQL transactions and a real ARQ/Redis execution, plus owner BFF boundaries and browser confirmation/recovery. Browser auth/backend lifecycle are synthetic; production migration, real-account acceptance and deployment are not implied.

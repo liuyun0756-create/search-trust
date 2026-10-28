@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase";
 import { createAnalysisStatusHandler, createAnalysisStreamHandler, createAnalysisSubmitHandler, createLatestAnalysisHandler } from "./handlers";
 import { SupabaseAnalysisRepository } from "./repository";
+import {isPlanningSettingsEnabled} from "../planning-settings/config";
 
 function config() {
   const baseUrl = process.env.V22_API_BASE_URL?.trim();
@@ -20,6 +21,10 @@ const dependencies = {
   getConfig: config,
   fetcher: fetch,
   timeoutMs: 30_000,
+  isCapabilityReadEnabled: () => process.env.V22_CAPABILITY_DISPATCH_ENABLED === "true",
+  isPlanningEnabled:isPlanningSettingsEnabled,
+  isCapabilityIntakeEnabled: () => process.env.V22_CAPABILITY_DISPATCH_ENABLED === "true"
+    && process.env.V22_CAPABILITY_INTAKE_ENABLED === "true",
 };
 
 export const submitAnalysis = createAnalysisSubmitHandler(dependencies);

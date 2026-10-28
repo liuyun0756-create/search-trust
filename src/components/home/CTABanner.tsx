@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const productLinks = [
-  { href: "/framework", label: "Our Method" },
-  { href: "/sample-report", label: "Sample Report" },
-  { href: "/use-cases", label: "In Practice" },
-  { href: "/pricing", label: "Pricing" },
-];
+import { marketingProductLinks } from "@/components/layout/marketing-navigation";
 
 const accountLinks = [
   { href: "/cases/new", label: "Start a Case" },
@@ -39,14 +33,14 @@ export function CTABanner() {
 
           <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             {[
-              ["Product", productLinks],
+              ["Product", marketingProductLinks],
               ["Account", accountLinks],
               ["Legal", legalLinks],
             ].map(([heading, links]) => (
               <div key={String(heading)}>
                 <h2 className="text-xs font-black uppercase tracking-[0.16em] text-[#728078]">{String(heading)}</h2>
                 <ul className="mt-5 space-y-3">
-                  {(links as typeof productLinks).map((link) => (
+                  {(links as typeof marketingProductLinks).map((link) => (
                     <li key={link.href}>
                       <Link href={link.href} className="text-sm font-semibold text-[#36443a] transition-colors hover:text-[#6c8a16] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#86a91b]">{link.label}</Link>
                     </li>

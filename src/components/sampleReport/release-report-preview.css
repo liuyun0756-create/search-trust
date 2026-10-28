@@ -1,0 +1,49 @@
+.release-preview { --ink:#1e3b2e; --muted:#5b7064; max-width:1280px; margin:auto; padding:40px 32px; color:var(--ink); font-family:Arial,Helvetica,sans-serif; }
+.release-preview button { cursor:pointer; }
+.release-preview button:focus-visible, .release-document:focus-visible { outline:3px solid #56863c; outline-offset:4px; }
+.release-heading { text-align:center; max-width:760px; margin:0 auto 36px; }
+.release-brand { font-weight:700; font-size:14px; letter-spacing:.04em; }
+.release-brand > span { color:#669635; }
+.release-heading h1 { margin:24px 0 20px; font-size:clamp(32px,4vw,50px); line-height:1.12; letter-spacing:-.045em; font-weight:650; }
+.release-heading h1 > span { color:#60816c; }
+.release-heading > p { margin:auto; max-width:650px; color:var(--muted); font-size:16px; line-height:1.7; }
+.release-heading small { display:block; margin-top:20px; font-size:12px; color:var(--muted); }
+.release-tabs { display:flex; width:fit-content; border:1px solid #dbe5da; border-radius:36px; background:#eaf0e8; padding:6px; gap:6px; margin-bottom:20px; }
+.release-tabs button { border-radius:28px; padding:14px 24px; font-size:14px; font-weight:600; color:var(--muted); border:1px solid transparent; display:flex; align-items:center; gap:12px; }
+.release-tabs button[aria-selected=true] { background:#254a35; color:white; box-shadow:0 3px 7px #17332419; }
+.release-tabs button > span { font-size:11px; opacity:.75; }
+.release-context { display:flex; justify-content:space-between; gap:24px; align-items:center; padding:18px 22px; background:#eef4eb; border:1px solid #dbe5da; border-bottom:0; border-radius:20px 20px 0 0; }
+.release-context > p { max-width:650px; font-size:14px; line-height:1.65; }
+.release-context dl { display:flex; gap:24px; flex-shrink:0; text-align:center; }
+.release-context dt { color:var(--muted); font-size:10px; white-space:nowrap; }
+.release-context dd { font-size:21px; font-weight:600; margin-top:3px; }
+.release-reader { display:grid; grid-template-columns:190px minmax(0,1fr); border:1px solid #dbe5da; background:#eef2ec; border-radius:0 0 20px 20px; overflow:hidden; }
+.release-chapters { padding:26px 14px; background:#f6f8f3; }
+.release-chapters > p { padding:0 12px 14px; text-transform:uppercase; font-size:10px; letter-spacing:.15em; font-weight:700; }
+.release-chapters button { display:flex; gap:10px; text-align:left; width:100%; border-radius:8px; padding:12px; font-size:12px; line-height:1.5; }
+.release-chapters button:hover { background:#e6eee1; }
+.release-chapters button span { color:#6d8a65; font-size:10px; padding-top:2px; }
+.release-chapters aside { margin:30px 12px 0; padding-top:20px; border-top:1px solid #dbe5da; font-size:12px; line-height:1.75; color:var(--muted); }
+.release-document { height:74vh; min-height:420px; overflow-y:auto; padding:24px; scrollbar-gutter:stable; }
+.release-document article { box-shadow:0 12px 35px #1d38270a; }
+.release-footer { margin-top:20px; text-align:center; font-size:12px; color:var(--muted); }
+@media(max-width:700px) {
+  .release-preview { padding:28px 16px; }
+  .release-heading { margin-bottom:24px; }
+  .release-tabs { width:100%; border-radius:20px; gap:2px; padding:4px; }
+  .release-tabs button { flex:1; flex-direction:column; gap:4px; padding:10px 5px; border-radius:16px; font-size:12px; }
+  .release-context { align-items:stretch; flex-direction:column; gap:14px; padding:16px; }
+  .release-context dl { justify-content:flex-start; gap:24px; text-align:left; }
+  .release-reader { display:block; }
+  .release-chapters { display:flex; overflow-x:auto; padding:8px; gap:4px; }
+  .release-chapters > p, .release-chapters aside, .release-chapters button span { display:none; }
+  .release-chapters button { width:auto; flex-shrink:0; padding:9px; font-size:11px; }
+  .release-document { padding:10px; min-height:360px; height:72vh; }
+}
+@media print {
+  .release-heading, .release-tabs, .release-chapters, .release-footer { display:none; }
+  .release-preview { max-width:none; padding:0; }
+  .release-reader { display:block; border:0; }
+  .release-document { height:auto; overflow:visible; padding:0; }
+  .release-document article { box-shadow:none; border:0; }
+}

@@ -42,3 +42,8 @@ function canonicalJson(value: unknown, ancestors: WeakSet<object>): string {
 export function canonicalDigest(value: unknown): `sha256:${string}` {
   return `sha256:${createHash("sha256").update(canonicalJson(value, new WeakSet()), "utf8").digest("hex")}`;
 }
+
+/** Same canonical bytes for an immutable database binding; no encoding changes. */
+export function canonicalJsonText(value: unknown): string {
+  return canonicalJson(value, new WeakSet());
+}

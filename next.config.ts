@@ -7,8 +7,34 @@ export const SHARE_SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/api/share/pdf": [
+      "./public/fonts/capability/*.ttf",
+      "./public/fonts/capability/OFL.txt",
+    ],
+    "/api/v2/cases/*/reports/*/client-pdf": [
+      "./public/fonts/capability/*.ttf",
+      "./public/fonts/capability/OFL.txt",
+    ],
+    "/api/v2/cases/*/reports/*/review/client-pdf": [
+      "./public/fonts/capability/*.ttf",
+      "./public/fonts/capability/OFL.txt",
+    ],
+  },
   async headers() {
     return [
+      {
+        source: "/cases/:caseId/reports/:reportId/review-evidence",
+        headers: SHARE_SECURITY_HEADERS,
+      },
+      {
+        source: "/cases/:caseId/reports/:reportId/review-decisions",
+        headers: SHARE_SECURITY_HEADERS,
+      },
+      {
+        source: "/cases/:caseId/reports/:reportId/review",
+        headers: SHARE_SECURITY_HEADERS,
+      },
       { source: "/share", headers: SHARE_SECURITY_HEADERS },
       { source: "/share/:path*", headers: SHARE_SECURITY_HEADERS },
       { source: "/api/share/:path*", headers: SHARE_SECURITY_HEADERS },
@@ -21,9 +47,21 @@ const nextConfig: NextConfig = {
   },
   turbopack: {},
   webpack(config) {
+    const ignored = config.watchOptions?.ignored;
     config.watchOptions = {
       ...config.watchOptions,
-      ignored: "**/output/playwright/**",
+      // Keep Next's own exclusions: replacing them can watch generated chunks
+      // and cause a hot-update loop that resets interactive page state.
+      ignored:
+        ignored instanceof RegExp
+          ? new RegExp(
+              `(?:${ignored.source})|(?:^|[\\\\/])output[\\\\/]`,
+              ignored.flags,
+            )
+          : [
+              ...(Array.isArray(ignored) ? ignored : ignored ? [ignored] : []),
+              "**/output/**",
+            ],
     };
     config.module.rules.push({
       test: /\.svg$/i,

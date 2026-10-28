@@ -11,6 +11,7 @@ interface BusinessMatchStepProps {
   preflight: PreflightResponse;
   submittedGbpUrl: string | null;
   initialConfirmation?: BusinessConfirmation | null;
+  confirmLabel?: string;
   onConfirm(value: BusinessConfirmation): void;
   onEditSource(): void;
 }
@@ -28,7 +29,7 @@ function normalizedDomain(url: string) {
   try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; }
 }
 
-export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmation, onConfirm, onEditSource }: BusinessMatchStepProps) {
+export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmation, confirmLabel, onConfirm, onEditSource }: BusinessMatchStepProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const candidate = preflight.identity_candidates[selectedIndex];
   const discoveredMarket = preflight.market_candidates[0]?.market ?? candidate?.business.primary_location;
@@ -202,7 +203,7 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
 
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-xl text-xs leading-5 text-[#667266]">Changing this scope later invalidates earlier competitor results, so the next analysis never reuses evidence from a different business or market.</p>
-          <button type="submit" className="group inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#234b38] px-6 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/40">Confirm business scope <ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" /></button>
+          <button type="submit" className="group inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#234b38] px-6 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/40">{confirmLabel ?? "Confirm business scope"} <ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" /></button>
         </div>
       </form>
     </section>

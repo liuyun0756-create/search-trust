@@ -3,28 +3,29 @@ import { FAQAccordion } from "@/components/common/FAQAccordion";
 
 const useCasesFAQData = [
   {
-    question: 'Do I need client access before I can use SearchTrust?',
-    answer: 'No. The prospect stage uses the website, public business information and confirmed competitors to find specific questions worth discussing. Search Console and GA4 are added later when the client work requires performance verification.',
+    question: "Can I start without client analytics access?",
+    answer:
+      "Yes. The Prospect stage starts with the website, available public business information and a confirmed relevant competitor. Search Console and GA4 can be added later when you continue the Case with client access. Public observations remain separate from questions for the client.",
   },
   {
-    question: 'What if a competitor has a page that the client does not?',
-    answer: 'A competitor page is an observation, not proof that the client should copy it. SearchTrust helps check whether the client already has a relevant page, whether it receives related demand and whether a new page fits the business and evidence available.',
+    question: "Can I use it for a client I already serve?",
+    answer:
+      "Yes, through a completed Prospect Case. Continue that Case with client confirmation and eligible data access. Direct service-only setup is not available yet.",
   },
   {
-    question: 'Can it resolve conflicting website and business information automatically?',
-    answer: 'It can surface the exact fields and sources that disagree, but the business still needs to confirm the correct information. The result is a traceable confirmation and correction list, not an automatic change to a public profile.',
+    question: "What if I disagree with the proposed work?",
+    answer:
+      "You can adjust the action plan’s order, scope, steps, owner, timing, completion checks and review arrangements. Original observations remain unchanged. Save and approve the edited plan version before preparing a new client delivery.",
   },
   {
-    question: 'Does SearchTrust prove why a page is not generating enough enquiries?',
-    answer: 'No. Search Console and GA4 can show how users find and interact with a page, while data checks can reveal measurement limits. They narrow the next question without turning one metric into a guaranteed causal explanation.',
+    question: "Does this replace my other SEO tools?",
+    answer:
+      "SearchTrust organizes supported evidence, findings and proposed actions into a plan you can review. You still carry out specialist checks, client communication and the agreed optimization work.",
   },
   {
-    question: 'Can I change the recommended order of work?',
-    answer: 'Yes. SearchTrust organizes evidence into a recommended starting point, while the SEO decides how client goals, resources, dependencies and release timing change the final order.',
-  },
-  {
-    question: 'How should I explain the result to a client?',
-    answer: 'Keep planned, implemented and reviewed work separate. The report should show the problem, the supporting evidence, the next action and what still needs confirmation. Changes in a metric should be described with their limits and review context.',
+    question: "Does choosing a situation use a credit?",
+    answer:
+      "No. Exploring this page and choosing an entry do not start analysis or use a credit. Website entry and business confirmation are free. Starting competitor discovery and the full Prospect analysis uses 1 credit; generating or regenerating a Verified Action Plan uses 1 credit. See Pricing for the current details.",
   },
 ];
 import { createPageMetadata, pageSeo } from "@/lib/seo";
@@ -52,7 +53,11 @@ export default function UseCasesPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(useCasesJsonLd) }}
       />
       <UseCasesV22 />
-      <FAQAccordion tag="FAQ" title={"Frequently asked\nquestions"}  items={useCasesFAQData} />
+      <FAQAccordion
+        tag="BEFORE YOU START"
+        title={"A few things to know\nbefore you begin"}
+        items={useCasesFAQData}
+      />
     </>
   );
 }

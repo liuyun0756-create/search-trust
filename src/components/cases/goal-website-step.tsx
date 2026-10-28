@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, BriefcaseBusiness, ChevronDown, Globe2, Handshake, SearchCheck, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 import type { WorkGoal } from "@/lib/preflight-v22";
@@ -23,7 +24,7 @@ const goals = [
   {
     value: "work_existing_client" as const,
     title: "Serve a client",
-    detail: "Set up the right business scope before ongoing analysis.",
+    detail: "Open a completed Case and connect client evidence.",
     icon: BriefcaseBusiness,
   },
 ];
@@ -37,9 +38,9 @@ const goalContext = {
   },
   work_existing_client: {
     label: "Active client Case",
-    title: "Anchor ongoing work to the correct business scope.",
-    detail: "Confirm the public business, service and market before competitor evidence and ongoing analysis.",
-    action: "Check this client · free",
+    title: "Continue from an existing client Case.",
+    detail: "Choose a completed Prospect Case to add client evidence. Direct service onboarding for clients without a Prospect Case is not available yet.",
+    action: "Choose an existing Case",
   },
 } satisfies Record<WorkGoal, { label: string; title: string; detail: string; action: string }>;
 
@@ -52,6 +53,7 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
 
   function submit(event: FormEvent) {
     event.preventDefault();
+    if (goal !== "win_new_client") return;
     onSubmit({ goal, site_url: siteUrl.trim(), gbp_url: gbpUrl.trim() || null });
   }
 
@@ -63,8 +65,8 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
           <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[#9bad61]" />
           <span className="text-[#7b877b]">Free setup</span>
         </div>
-        <h1 className="max-w-2xl text-[clamp(2.35rem,5vw,4.4rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[#132015]">Start with one business.</h1>
-        <p className="mt-5 max-w-[680px] text-[15px] leading-7 text-[#5f6c60] sm:text-base">Tell us what stage of the client relationship you are in, then enter the business website. We’ll establish the public scope before any credit is used.</p>
+        <h1 className="max-w-2xl text-[clamp(2.35rem,5vw,4.4rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[#132015]">Choose where to begin.</h1>
+        <p className="mt-5 max-w-[680px] text-[15px] leading-7 text-[#5f6c60] sm:text-base">For a new prospect, enter the business website and check its public scope for free. For an existing client, choose a completed Case and continue the service work.</p>
       </div>
 
       <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[0.88fr_1.25fr] lg:gap-8">
@@ -94,7 +96,15 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
           </div>
         </fieldset>
 
-        <div className="rounded-[24px] bg-white p-5 shadow-[0_24px_70px_rgba(35,52,29,0.08)] ring-1 ring-[#dfe5da] sm:p-7">
+        {goal === "work_existing_client" ? (
+          <div className="flex flex-col justify-center rounded-[24px] bg-white p-5 shadow-[0_24px_70px_rgba(35,52,29,0.08)] ring-1 ring-[#dfe5da] sm:p-7">
+            <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#6d786d]">02 / Choose the client Case</p>
+            <h2 className="mt-5 text-2xl font-bold tracking-[-0.04em] text-[#1d2a22]">Keep the sales diagnosis and service work together.</h2>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-[#667267]">Select a Case with a completed Prospect report. You can then connect the client’s Search Console and GA4 data and decide when to generate the Verified plan.</p>
+            <Link href="/cases/service" className="mt-7 inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-[#234b38] px-6 text-sm font-bold text-white transition hover:bg-[#2c6348] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#234b38]">Choose an existing Case <ArrowRight aria-hidden="true" className="ml-2" size={16} /></Link>
+            <p className="mt-4 text-xs leading-5 text-[#798479]">Choosing a Case does not use a credit. A new client without a Prospect Case needs the separate direct-service workflow; this form will not create a fictional Prospect report for them.</p>
+          </div>
+        ) : <div className="rounded-[24px] bg-white p-5 shadow-[0_24px_70px_rgba(35,52,29,0.08)] ring-1 ring-[#dfe5da] sm:p-7">
           <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#6d786d]">02 / Add the business</p>
           <label htmlFor="client-site" className="mt-5 block text-sm font-bold text-[#263026]">Business website</label>
           <div className="relative mt-2.5">
@@ -120,9 +130,9 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
             <ShieldCheck className="mt-0.5 shrink-0 text-[#6f8f11]" size={15} />
             <span><strong className="text-[#344134]">No credit is used here.</strong> A credit is used only when you approve and start the complete analysis.</span>
           </div>
-        </div>
+        </div>}
 
-        <div aria-label="What the free setup returns" className="grid overflow-hidden rounded-2xl border border-[#e3eae2] bg-white text-[#1d2a22] sm:grid-cols-[1fr_1fr_1.15fr] lg:col-span-2">
+        {goal === "win_new_client" ? <div aria-label="What the free setup returns" className="grid overflow-hidden rounded-2xl border border-[#e3eae2] bg-white text-[#1d2a22] sm:grid-cols-[1fr_1fr_1.15fr] lg:col-span-2">
           <div className="px-5 py-5 sm:px-6">
             <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#668a50]"><SearchCheck size={14} />Free setup returns</p>
             <p className="mt-2 text-sm font-bold">A confirmed public business</p>
@@ -138,7 +148,7 @@ export function GoalWebsiteStep({ initialGoal, initialSiteUrl, initialGbpUrl, er
             <p className="mt-2 text-sm font-bold">Approve complete analysis · 1 credit</p>
             <p className="mt-1 text-xs leading-5 text-[#718073]">Competitor discovery starts only after the confirmed scope and clear credit boundary.</p>
           </div>
-        </div>
+        </div> : null}
       </form>
     </section>
   );

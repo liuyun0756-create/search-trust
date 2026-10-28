@@ -1,5 +1,6 @@
 import { FAQAccordion } from "@/components/common/FAQAccordion";
 import { HomepageV22 } from "@/components/home/HomepageV22";
+import { FirstCaseGuide } from "@/components/home/FirstCaseGuide";
 import { createPageMetadata, pageSeo, siteUrl } from "@/lib/seo";
 
 const homeFAQData = [
@@ -8,8 +9,12 @@ const homeFAQData = [
     answer: "One credit starts competitor discovery and one complete Prospect analysis, or one Verified Action Plan generation. Entering the website and confirming the business happens before the charge. A technical generation failure returns exactly one credit.",
   },
   {
-    question: "What is the difference between Prospect and Verified?",
-    answer: "Prospect uses public website, business profile, and competitor evidence to help you explain an opportunity before an engagement. Verified adds connected Search Console and Google Analytics data after the engagement so the action plan reflects owned performance evidence.",
+    question: "What does SearchTrust prepare, and what do I still review?",
+    answer: "SearchTrust organizes available evidence, findings and three proposed actions. You confirm the business context, check the supporting basis and adjust the action plan for the client. It does not automatically implement changes on the client's website.",
+  },
+  {
+    question: "Can I edit the report before sharing it?",
+    answer: "In the real workspace, you can reorder and edit the action plan: titles, targets, steps, completion standards, owners, timing and review arrangements. This is not a free-form editor for the entire report. Original observations stay unchanged, and a changed scope needs its own supporting evidence. Save and approve edited plans before client delivery.",
   },
   {
     question: "Do I need access to a Google Business Profile account?",
@@ -68,6 +73,7 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }} />
       <HomepageV22 />
       <FAQAccordion tag="FAQ" title="Straight answers before you spend a credit" items={homeFAQData} />
+      <FirstCaseGuide />
     </>
   );
 }

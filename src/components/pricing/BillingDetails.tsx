@@ -1,49 +1,14 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-
+import { ArrowRight, LockKeyhole } from "lucide-react";
+import { creditRules } from "./pricing-content";
 import styles from "./pricing-v22.module.css";
 
-const protections = [
-  {
-    title: "Payment",
-    detail: "$19 USD buys one additional permanent credit. It is a one-time purchase processed securely through Dodo Payments.",
-  },
-  {
-    title: "Delivery",
-    detail: "The credit is added after payment confirmation and joins the same account balance shared across all Cases.",
-  },
-  {
-    title: "Technical failure",
-    detail: "If a paid workflow fails for a technical reason, exactly one credit is returned automatically. A later new generation uses one credit again.",
-  },
-  {
-    title: "Refund review",
-    detail: "An unused purchased credit may be refunded after provider confirmation. A credit that has already been used requires manual review.",
-  },
-];
-
 export function BillingDetails() {
-  return (
-    <section className={`${styles.pricingBody} ${styles.protectionSection}`} aria-labelledby="billing-protection-title">
-      <div className={styles.sectionInner}>
-        <div className={styles.protectionPanel}>
-          <div>
-            <p className={styles.eyebrow}>Billing and protection</p>
-            <h2 id="billing-protection-title">Simple payment, clear failure protection.</h2>
-          </div>
-          <div>
-            <div className={styles.protectionRows}>
-              {protections.map((item) => (
-                <div className={styles.protectionRow} key={item.title}>
-                  <strong>{item.title}</strong>
-                  <p>{item.detail}</p>
-                </div>
-              ))}
-            </div>
-            <Link href="/refund-policy" className={styles.protectionLink}>Read the full Refund Policy<ArrowRight aria-hidden="true" /></Link>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+  return <section className={styles.section} aria-labelledby="credit-rules-title"><div className={styles.sectionInner}>
+    <div className={styles.rulesPanel}>
+      <header><p className={styles.eyebrow}>Clear from the start</p><h2 id="credit-rules-title">Simple credit rules.</h2><p>Credit use is shown before you start a charged analysis.</p></header>
+      <dl className={styles.rulesRows}>{creditRules.map(row => <div key={row.action}><dt>{row.action}</dt><dd>{row.rule}</dd></div>)}</dl>
+    </div>
+    <div className={styles.paymentNote}><p><LockKeyhole aria-hidden="true" />One-time purchases through Dodo Payments. Credits are added after payment confirmation.</p><Link className={styles.textLink} href="/refund-policy">Refund policy<ArrowRight aria-hidden="true" /></Link></div>
+  </div></section>;
 }

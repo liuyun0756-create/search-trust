@@ -1,0 +1,78 @@
+.section, .guideSection {
+  scroll-margin-top: 5.5rem;
+  padding: clamp(2.5rem, 4vw, 4rem) 1.5rem;
+  background: #f7faf7;
+  color: #233d2d;
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
+}
+.inner, .guide { max-width: 80rem; margin-inline: auto; }
+.header { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; }
+.eyebrow { color: #537150; font-size: 0.7rem; font-weight: 750; letter-spacing: 0.12em; line-height: 1.5; }
+.header h2 { margin-top: 0.75rem; font-size: clamp(1.9rem, 2.6vw, 2.65rem); font-weight: 650; line-height: 1.15; letter-spacing: -0.045em; text-wrap: balance; }
+.introduction { max-width: 29rem; color: #5d7062; font-size: 0.95rem; line-height: 1.75; }
+.workbench { margin-top: 2rem; padding: 0 1.75rem; border-radius: 1.25rem; background: #fff; box-shadow: 0 10px 36px #26432e05; }
+.columns { display: grid; grid-template-columns: 1fr 2fr 2fr; align-items: stretch; }
+.columns > * { padding: 1.4rem 1.5rem 1rem; color: #46654a; font-size: 0.8rem; font-weight: 650; }
+.columns > :first-child { padding-left: 0; color: #6d7b70; font-weight: 500; }
+.columns > :nth-child(2) { background: #eff5ef; }
+.responsibilities { padding: 0; margin: 0; list-style: none; }
+.responsibilities > li { display: grid; grid-template-columns: 1fr 4fr; }
+.responsibilities h3 { display: flex; gap: 0.65rem; align-items: flex-start; padding: 1.1rem 1rem 1.1rem 0; font-size: 0.9rem; font-weight: 650; line-height: 1.6; }
+.responsibilities h3 svg { flex: none; margin-top: 0.1rem; color: #668568; }
+.responsibilities dl { display: grid; grid-template-columns: 1fr 1fr; }
+.responsibilities dl > div { position: relative; padding: 1.1rem 1.5rem; }
+.product { background: #eff5ef; }
+.responsibilities dt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.responsibilities dd { max-width: 39ch; color: #536859; font-size: 0.92rem; line-height: 1.7; }
+.boundary { display: flex; align-items: flex-start; gap: 0.6rem; padding: 1.2rem 0; color: #657669; font-size: 0.8rem; line-height: 1.6; }
+.boundary svg { flex: none; margin-top: 0.12rem; }
+.boundary strong { color: #3f5b45; font-weight: 650; }
+.guideSection { padding-top: 1.5rem; padding-bottom: 5rem; }
+.guide { padding: clamp(1.5rem, 3vw, 3rem); border-radius: 1.5rem; background: radial-gradient(ellipse at 100% 0, #dcecd6, transparent 60%), #edf4e9; }
+.guide .introduction { max-width: 27rem; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; margin: 2rem 0; padding: 0; list-style: none; }
+.stepNumber { display: block; color: #68835d; font-size: 0.8rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.steps h3 { margin-top: 0.5rem; font-size: 1rem; font-weight: 650; line-height: 1.4; }
+.steps p { margin-top: 0.5rem; max-width: 37ch; color: #566c57; font-size: 0.9rem; line-height: 1.7; }
+.guideFooter { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.assurance { font-size: 0.9rem; font-weight: 650; }
+.note, .serviceNote { margin-top: 0.4rem; color: #5b705d; font-size: 0.78rem; line-height: 1.6; }
+.serviceNote { margin-top: 1rem; text-align: right; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.primary, .secondary { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 3.2rem; padding: 0.85rem 1.2rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 650; line-height: 1.4; text-decoration: none; cursor: pointer; transition: background 160ms ease; }
+.primary { background: #26432e; color: #fff; }
+.primary:hover { background: #365d40; }
+.secondary { background: #fff; color: #26432e; box-shadow: inset 0 0 0 1px #d1decd; }
+.secondary:hover { background: #f5f9f3; }
+.primary:focus-visible, .secondary:focus-visible { outline: 2px solid #397449; outline-offset: 4px; }
+.actions svg { flex: none; }
+@media (max-width: 1100px) {
+  .header { align-items: flex-start; flex-direction: column; gap: 1rem; }
+  .introduction, .guide .introduction { max-width: 44rem; }
+  .guideFooter { align-items: flex-start; flex-direction: column; }
+  .serviceNote { text-align: left; }
+}
+@media (max-width: 760px) {
+  .section, .guideSection { padding-inline: 1rem; }
+  .section { padding-block: 2rem; }
+  .workbench { padding: 0 1rem; margin-top: 1.5rem; }
+  .columns { display: none; }
+  .responsibilities > li { grid-template-columns: 1fr; padding-top: 0.75rem; }
+  .responsibilities h3 { padding: 0 0 0.5rem; }
+  .responsibilities dl { grid-template-columns: 1fr; gap: 0.6rem; }
+  .responsibilities dl > div { padding: 0.45rem 0.65rem; border-radius: 0.5rem; }
+  .responsibilities dl > div:last-child { padding-top: 0; }
+  .responsibilities dt { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; color: #46654a; font-size: 0.75rem; font-weight: 650; margin-bottom: 0.25rem; }
+  .responsibilities dd { max-width: none; line-height: 1.6; }
+  .steps { grid-template-columns: 1fr; gap: 1.2rem; margin-block: 1.5rem; }
+  .steps li { display: grid; grid-template-columns: 1.7rem 1fr; align-items: baseline; }
+  .stepNumber { grid-column: 1; }
+  .steps h3 { margin-top: 0; }
+  .steps p { grid-column: 1 / -1; max-width: none; line-height: 1.6; }
+  .actions { width: 100%; }
+  .actions > * { flex: 1 1 100%; }
+  .guideFooter { gap: 1rem; }
+  .guide { padding: 1.25rem; }
+  .guideSection { padding-bottom: 3rem; }
+}
+@media (prefers-reduced-motion: reduce) { .primary, .secondary { transition: none; } }

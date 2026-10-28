@@ -2,7 +2,9 @@ import { SignIn } from "@clerk/nextjs";
 import { SignInExperience } from "@/components/auth/sign-in-experience";
 import { isLocalE2ETestMode } from "@/lib/e2e-v22/config";
 
-export default function SignInPage() {
+export default async function SignInPage({ searchParams }: { searchParams: Promise<{ redirect_url?: string }> }) {
+  const { redirect_url: redirectUrl } = await searchParams;
+  const fallback = redirectUrl === "/cases/service" ? "/cases/service" : "/cases/new";
   const authPanel = isLocalE2ETestMode() ? (
     <div data-testid="synthetic-sign-in" className="rounded-[22px] border border-[#dce1d7] bg-white p-5 shadow-[0_12px_35px_rgba(35,48,36,0.06)]">
       <h3 className="text-xl font-black tracking-[-0.035em] text-[#172019]">Sign in to SearchTrust</h3>
@@ -15,8 +17,8 @@ export default function SignInPage() {
     </div>
   ) : (
     <SignIn
-      fallbackRedirectUrl="/cases/new"
-      signUpFallbackRedirectUrl="/cases/new"
+      fallbackRedirectUrl={fallback}
+      signUpFallbackRedirectUrl={fallback}
       appearance={{
         variables: {
           colorPrimary: "#172019",

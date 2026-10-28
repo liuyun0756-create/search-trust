@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const baseURL = "http://127.0.0.1:3100";
 
 export default defineConfig({
+  globalSetup: "./e2e/support/warm-method-routes.ts",
   testDir: "./e2e",
   testMatch: "**/*.spec.ts",
   fullyParallel: true,

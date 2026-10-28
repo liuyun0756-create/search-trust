@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
-import type { TaskStatusResponse } from "@/lib/analysis-v22";
+import { completedReportId, parseVersionedTaskStatus, type VersionedTaskStatus } from "@/lib/analysis-v22/versioned-status";
 import { useAppUser } from "@/lib/client-auth";
 import {
   clearDraft,
@@ -31,6 +31,7 @@ import { GoalWebsiteStep } from "./goal-website-step";
 import { NewCaseStepper } from "./new-case-stepper";
 import { PreflightStatus } from "./preflight-status";
 import { ProspectStartStep } from "./prospect-start-step";
+import {PlanningSettings,type PlanningStatus} from "./PlanningSettings";
 
 function normalizeWebInput(value: string) {
   const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
@@ -51,9 +52,10 @@ function apiError(error: unknown) {
     : { code: "UNEXPECTED_ERROR", message: "Something interrupted the request. Your draft is still safe." };
 }
 
-export function NewCaseWorkspace() {
+export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boolean}={}) {
   const [draft, setDraft] = useState<NewCaseDraft>(() => createNewCaseDraft());
   const [hydrated, setHydrated] = useState(false);
+  const [planning,setPlanning]=useState<PlanningStatus>({ready:false,revision:null});
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
   const [paymentHandoff, setPaymentHandoff] = useState<{
     status: PaymentHandoffStatus;
@@ -67,7 +69,7 @@ export function NewCaseWorkspace() {
   const { isLoaded, isSignedIn } = useAppUser();
   const { openLogin } = useAuditModal();
   const authenticatedFetch = useAuthenticatedFetch();
-  const [analysisStatus, setAnalysisStatus] = useState<TaskStatusResponse | null>(null);
+  const [analysisStatus, setAnalysisStatus] = useState<VersionedTaskStatus | null>(null);
   const [latestAnalysisChecked, setLatestAnalysisChecked] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const needsGbpRepair = analysisStatus?.status === "failed"
@@ -212,7 +214,7 @@ export function NewCaseWorkspace() {
     const confirmation = draft.business_confirmation;
     const jobId = draft.analysis_job_id;
     const idempotencyKey = draft.analysis_idempotency_key;
-    if (submittingAnalysis.current || !paymentHandoff.caseId || !draft.prospect_workflow_id || !discovery || !confirmation || !jobId || !idempotencyKey) return;
+    if (submittingAnalysis.current || !paymentHandoff.caseId || !draft.prospect_workflow_id || !discovery || !confirmation || !jobId || !idempotencyKey || (planningEnabled&&!planning.ready)) return;
     const selected = new Set(draft.selected_competitor_ids);
     const competitors = discovery.candidates
       .filter((candidate) => selected.has(candidate.competitor_id))
@@ -234,6 +236,7 @@ export function NewCaseWorkspace() {
           "x-searchtrust-discovery-id": discovery.discovery_id,
           "x-searchtrust-workflow-id": draft.prospect_workflow_id,
           "idempotency-key": idempotencyKey,
+          ...(planningEnabled&&planning.revision!==null?{"x-searchtrust-planning-revision":String(planning.revision)}:{}),
           ...(draft.previous_analysis_job_id
             ? { "x-searchtrust-previous-job-id": draft.previous_analysis_job_id }
             : {}),
@@ -251,6 +254,11 @@ export function NewCaseWorkspace() {
         }),
       });
       const payload = await response.json().catch(() => null);
+      if(planningEnabled&&response.status===409){
+        setDraft(current=>reduceWorkspaceState(current,{type:"RETURN_TO_COVERAGE"}));
+        setPaymentHandoff(current=>({...current,status:"unlocked",message:"Scope or planning settings changed. Review the saved settings and confirm again. The same report task and reserved credit are retained."}));
+        return;
+      }
       if (!response.ok) throw new Error(payload?.error?.message || "The report task could not be started yet.");
       setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: "The task is queued. We’ll open the report automatically when its evidence has been validated." }));
     } catch (error) {
@@ -267,7 +275,7 @@ export function NewCaseWorkspace() {
     } finally {
       submittingAnalysis.current = false;
     }
-  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId]);
+  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId,planningEnabled,planning.ready,planning.revision]);
 
   useEffect(() => {
     const caseId = paymentHandoff.caseId;
@@ -323,13 +331,17 @@ export function NewCaseWorkspace() {
     let lastRevision = analysisStatus?.revision ?? 0;
     let events: EventSource | null = null;
 
-    const applyStatus = (payload: TaskStatusResponse) => {
+    const applyStatus = (raw: unknown) => {
+      const parsed = parseVersionedTaskStatus(raw, jobId, caseId);
+      if (!parsed.ok) throw new Error("Reconnecting to the report task…");
+      const payload = parsed.value;
       if (payload.revision < lastRevision) return false;
       lastRevision = payload.revision;
       setAnalysisStatus(payload);
-      if (payload.status === "succeeded" && payload.database_report_id) {
+      const reportId = completedReportId(payload);
+      if (reportId) {
         clearDraft(sessionStorage);
-        window.location.assign(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(payload.database_report_id)}`);
+        window.location.assign(`/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(reportId)}`);
         stopped = true;
         return false;
       }
@@ -350,7 +362,7 @@ export function NewCaseWorkspace() {
       if (stopped || controller.signal.aborted) return;
       try {
         const response = await authenticatedFetch(`/api/v2/tasks/${jobId}`, { signal: controller.signal });
-        const payload = await response.json().catch(() => null) as TaskStatusResponse | null;
+        const payload: unknown = await response.json().catch(() => null);
         if (!response.ok || !payload) throw new Error("Reconnecting to the report task…");
         applyStatus(payload);
       } catch (error) {
@@ -368,7 +380,7 @@ export function NewCaseWorkspace() {
     events = new EventSource(`/api/v2/tasks/${encodeURIComponent(jobId)}/stream`);
     events.addEventListener("state", (event) => {
       try {
-        const payload = JSON.parse((event as MessageEvent<string>).data) as TaskStatusResponse;
+        const payload = JSON.parse((event as MessageEvent<string>).data);
         if (!applyStatus(payload)) events?.close();
         if (payload.status === "succeeded") void poll();
       } catch {
@@ -518,6 +530,7 @@ export function NewCaseWorkspace() {
   }
 
   function continueAfterCoverage() {
+    if(planningEnabled&&!planning.ready)return;
     setPaymentHandoff((current) => ({
       ...current,
       status: "unlocked",
@@ -567,6 +580,7 @@ export function NewCaseWorkspace() {
         </aside>
         <main className="relative overflow-hidden bg-[#f7faf7] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-[72px] xl:py-16">
           <div className="relative mx-auto max-w-[980px]">
+            {planningEnabled&&paymentHandoff.caseId&&(draft.stage==="coverage"||draft.stage==="auth_handoff") ? <PlanningSettings key={`${paymentHandoff.caseId}:${draft.stage}`} caseId={paymentHandoff.caseId} onStatus={setPlanning} locked={draft.stage==="auth_handoff"}/> : null}
             {draft.stage === "goal_website" && <GoalWebsiteStep key={draft.draft_case_id} initialGoal={draft.goal} initialSiteUrl={draft.site_url} initialGbpUrl={draft.gbp_url} onSubmit={startPreflight} />}
             {draft.stage === "preflight_running" && <PreflightStatus kind="loading" title="Checking the public evidence surface" message="We’re resolving the business website, public profile, service, market, and available analysis modules." />}
             {draft.stage === "preflight_failed" && <PreflightStatus kind="error" title="Preflight needs attention" message={draft.preflight_error?.message ?? "The public data check could not be completed."} onRetry={() => void startPreflight({ goal: draft.goal, site_url: draft.site_url, gbp_url: draft.gbp_url })} />}
@@ -587,7 +601,7 @@ export function NewCaseWorkspace() {
             {draft.stage === "competitor_discovery_running" && <PreflightStatus kind="loading" title="Finding qualified local competitors" message={draft.discovery_status?.message ?? "The durable discovery task is checking market results and validating candidate websites."} progress={draft.discovery_status?.progress} />}
             {draft.stage === "competitor_discovery_failed" && <PreflightStatus kind="error" title="Competitor discovery needs attention" message={draft.discovery_error?.message ?? "The competitor search could not be completed."} onRetry={draft.discovery_error?.retryable === false ? undefined : () => void retryDiscovery()} onEdit={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} editLabel="Edit business scope" />}
             {draft.stage === "competitor_confirmation" && draft.discovery_status?.result && <CompetitorConfirmationStep status={draft.discovery_status} selectedIds={draft.selected_competitor_ids} onSelectionChange={(competitor_ids) => setDraft((current) => reduceWorkspaceState(current, { type: "SELECT_COMPETITORS", competitor_ids }))} onConfirm={() => setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_COMPETITORS" }))} onRerun={(urls) => draft.business_confirmation && void startDiscovery(draft.business_confirmation, urls)} onEditScope={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} />}
-            {draft.stage === "coverage" && <CoverageStep draft={draft} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
+            {draft.stage === "coverage" && <CoverageStep draft={draft} continueDisabled={planningEnabled&&!planning.ready} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
             {draft.stage === "auth_handoff" && (
               isSignedIn ? (
                 <CasePaymentHandoff

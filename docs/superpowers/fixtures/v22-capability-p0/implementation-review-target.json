@@ -1,0 +1,201 @@
+{
+  "fixture_version": "p0-report-target-2026-10-19",
+  "classification": "synthetic_quality_target",
+  "runtime_contract": false,
+  "acceptance_status": "target_not_yet_accepted",
+  "identity": {
+    "case_id": "p0-clinic-001",
+    "business": "Northside Dental (synthetic)",
+    "site": "https://clinic.example.invalid",
+    "service": "Emergency dental appointments",
+    "market": "Northside",
+    "business_priority": {
+      "value": "Emergency appointments",
+      "origin": "client_confirmation",
+      "version": 1
+    }
+  },
+  "evaluated_at": "2026-08-29T00:00:00Z",
+  "optional_editing": true,
+  "original_evidence_immutable": true,
+  "limitations": [
+    "Synthetic fixed review material, not collected evidence or a customer outcome.",
+    "Proposed semantic target; not a ReportV22 payload, P1 schema or enabled product workflow."
+  ],
+  "id": "implementation-review-target",
+  "mode": "review",
+  "report_type": "verified",
+  "source_policy": "current_evidence_plus_previous_report_plus_implementation",
+  "previous_report_id": "verified-fixture-v1",
+  "related_cases": [
+    "Q10",
+    "Q11",
+    "Q12",
+    "Q13",
+    "Q14",
+    "Q15"
+  ],
+  "implementation": {
+    "id": "impl-1",
+    "revision": 1,
+    "action_id": "a-booking",
+    "target": "https://clinic.example.invalid/emergency#contact",
+    "date": "2026-07-29",
+    "timezone": "UTC",
+    "status": "user_marked_implemented",
+    "origin": "seo_confirmation",
+    "changes": "Replaced Contact us with approved urgent-enquiry wording.",
+    "page_check": "not_performed",
+    "other_changes": "unknown"
+  },
+  "comparison": {
+    "status": "eligibility_pending",
+    "eligibility_rule_version": null,
+    "threshold_policy": "Must be frozen from representative data in P5; these counts do not establish qualification.",
+    "before": {
+      "start": "2026-07-01",
+      "end": "2026-07-28"
+    },
+    "after": {
+      "start": "2026-07-30",
+      "end": "2026-08-26"
+    },
+    "days_per_window": 28,
+    "excluded_date": "2026-07-29",
+    "cutoff": "2026-08-29T00:00:00Z",
+    "page": "https://clinic.example.invalid/emergency",
+    "metrics": [
+      {
+        "source": "gsc",
+        "metric": "clicks",
+        "unit": "count",
+        "before": 100,
+        "after": 120,
+        "absolute_delta": 20,
+        "relative_delta": 0.2
+      },
+      {
+        "source": "gsc",
+        "metric": "impressions",
+        "unit": "count",
+        "before": 4000,
+        "after": 4800,
+        "absolute_delta": 800,
+        "relative_delta": 0.2
+      },
+      {
+        "source": "gsc",
+        "metric": "ctr",
+        "unit": "ratio",
+        "before": 0.025,
+        "after": 0.025,
+        "delta_percentage_points": 0
+      },
+      {
+        "source": "ga4",
+        "metric": "organic_sessions",
+        "unit": "count",
+        "before": 80,
+        "after": 92,
+        "absolute_delta": 12,
+        "relative_delta": 0.15
+      },
+      {
+        "source": "ga4",
+        "metric": "contact_submit",
+        "unit": "count",
+        "before": 4,
+        "after": 5,
+        "absolute_delta": 1,
+        "relative_delta": 0.25
+      }
+    ],
+    "event_definition": "confirmation_required",
+    "causal_attribution": false,
+    "effect_conclusion": null
+  },
+  "sources": [
+    {
+      "id": "e-impl",
+      "case_id": "p0-clinic-001",
+      "kind": "seo_confirmation",
+      "observed_at": "2026-08-28T09:00:00Z",
+      "observations": {
+        "implementation_record_id": "impl-1",
+        "implementation_revision": 1
+      }
+    },
+    {
+      "id": "e-periods",
+      "case_id": "p0-clinic-001",
+      "kind": "synthetic_comparable_periods",
+      "observed_at": "2026-08-29T00:00:00Z",
+      "observations": {
+        "before_days": 28,
+        "after_days": 28
+      },
+      "limitations": [
+        "Raw target metrics only; comparison qualification is pending P5 rules."
+      ]
+    }
+  ],
+  "summary": {
+    "title": "Check implementation and comparability before judging the outcome.",
+    "client_copy": "The SEO recorded the contact update on 29 July. The supplied periods contain 100 and 120 search clicks, but the live change has not been checked and comparison eligibility is still pending. These numbers do not establish that the update worked. Confirm the published change, event definition and any concurrent changes before deciding whether to keep or revise the plan.",
+    "evidence_ids": [
+      "e-impl",
+      "e-periods"
+    ]
+  },
+  "findings": [
+    {
+      "id": "f-review",
+      "object": "impl-1@revision-1",
+      "observation": "Implementation is user-reported, not independently checked.",
+      "classification": "fact",
+      "judgment": "Separate the implementation check from the later outcome interpretation.",
+      "impact": "Avoid changing the next plan based on an unqualified comparison.",
+      "evidence_ids": [
+        "e-impl",
+        "e-periods"
+      ],
+      "limits": [
+        "No causal conclusion.",
+        "Concurrent changes and event definition remain unconfirmed."
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "a-verify",
+      "target": "https://clinic.example.invalid/emergency#contact",
+      "title": "Confirm the recorded change and comparison basis.",
+      "evidence_ids": [
+        "e-impl",
+        "e-periods"
+      ],
+      "steps": [
+        "Check the live contact wording and route against implementation revision 1.",
+        "Confirm whether other page, tracking or campaign changes occurred.",
+        "Evaluate the fixed windows against the approved P5 metric eligibility rules."
+      ],
+      "material": {
+        "kind": "review_checklist",
+        "text": "Live change checked? Same URL and scope? Event definition unchanged? Concurrent changes recorded? Complete equal windows?"
+      },
+      "done": [
+        "Page-check result is distinct from the SEO's implementation assertion.",
+        "The comparison is qualified or explicitly marked insufficient/not comparable."
+      ],
+      "review": "Keep outcome judgment open until qualification; do not regenerate automatically."
+    }
+  ],
+  "recommendation_change": {
+    "changed": false,
+    "reason": "Evidence refresh alone is not a changed recommendation."
+  },
+  "client_inputs": [
+    "Confirm concurrent business or campaign changes."
+  ],
+  "conclusion_boundary": "Observed movement, confirmed implementation and attributed effect remain separate."
+}

@@ -10,6 +10,9 @@ import {
   createContext,
   useContext,
   useMemo,
+  useEffect,
+  useRef,
+  useState,
   type ReactNode,
 } from "react";
 
@@ -28,7 +31,7 @@ type AppAuthValue = {
   user: AppUser | null;
   getToken(): Promise<string | null>;
   signOut(): Promise<void>;
-  openSignIn(): void;
+  openSignIn(options?: { returnTo?: string }): void;
 };
 
 const AppAuthContext = createContext<AppAuthValue | null>(null);
@@ -71,8 +74,13 @@ function ClerkAuthBridge({ children }: { children: ReactNode }) {
       signOut: async () => {
         await signOut();
       },
-      openSignIn: () => {
-        void openSignIn();
+      openSignIn: (options) => {
+        const returnTo = options?.returnTo;
+        if (returnTo?.startsWith("/") && !returnTo.startsWith("//")) {
+          void openSignIn({ forceRedirectUrl: returnTo, signUpForceRedirectUrl: returnTo });
+        } else {
+          void openSignIn();
+        }
       },
     }),
     [getToken, isLoaded, isSignedIn, openSignIn, signOut, user],
@@ -80,9 +88,32 @@ function ClerkAuthBridge({ children }: { children: ReactNode }) {
   return <AppAuthContext.Provider value={value}>{children}</AppAuthContext.Provider>;
 }
 
+// Only mounted behind the existing loopback-only E2E guard; never used by Clerk.
+function LocalE2EAuthProvider({ children }: { children: ReactNode }) {
+  const base = useMemo(syntheticAppAuthValue, []);
+  const [guest, setGuest] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [prompt, setPrompt] = useState(false);
+  const trigger = useRef<HTMLElement | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => { setGuest(window.sessionStorage.getItem("searchtrust:e2e:auth") === "guest"); setReady(true); }, []);
+  useEffect(() => { if (prompt) dialog.current?.showModal(); }, [prompt]);
+  const close = () => { dialog.current?.close(); setPrompt(false); trigger.current?.focus(); };
+  const value = useMemo<AppAuthValue>(() => ({ ...base, isLoaded: ready, isSignedIn: ready && !guest, user: !ready || guest ? null : base.user,
+    openSignIn: () => { trigger.current = document.activeElement as HTMLElement; setPrompt(true); },
+  }), [base, guest, ready]);
+  return <AppAuthContext.Provider value={value}>{children}
+    {prompt && <dialog ref={dialog} aria-label="Local test sign in" onCancel={close} className="fixed inset-0 m-auto rounded-xl border bg-white p-8 backdrop:bg-black/20">
+      <p>Local identity fixture</p>
+      <button type="button" className="m-3 rounded border p-3" onClick={() => { window.sessionStorage.removeItem("searchtrust:e2e:auth"); setGuest(false); close(); }}>Continue with test account</button>
+      <button type="button" className="m-3 rounded border p-3" onClick={close}>Cancel</button>
+    </dialog>}
+  </AppAuthContext.Provider>;
+}
+
 export function AppAuthProvider({ children }: { children: ReactNode }) {
   if (isLocalE2ETestMode()) {
-    return <AppAuthContext.Provider value={syntheticAppAuthValue()}>{children}</AppAuthContext.Provider>;
+    return <LocalE2EAuthProvider>{children}</LocalE2EAuthProvider>;
   }
   return (
     <ClerkProvider>

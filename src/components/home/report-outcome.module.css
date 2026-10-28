@@ -1,0 +1,71 @@
+.section { scroll-margin-top: 5.5rem; padding: clamp(3.5rem, 6vw, 6rem) 1.5rem 4rem; background: #f7faf7; color: #233c30; }
+.inner { max-width: 80rem; margin: 0 auto; }
+.eyebrow, .chapter { font-size: 0.65rem; font-weight: 750; letter-spacing: 0.12em; line-height: 1.5; color: #607b60; }
+.intro { max-width: 45rem; margin-bottom: 2rem; }
+.intro h2 { margin: 0.8rem 0 1rem; font-size: clamp(1.9rem, 3vw, 2.8rem); line-height: 1.15; letter-spacing: -0.05em; font-weight: 650; }
+.intro > p:last-child { max-width: 41rem; color: #5a6e60; font-size: 0.97rem; line-height: 1.65; }
+.reader { padding: 1.1rem clamp(1rem, 3vw, 2.5rem) 1.5rem; border-radius: 1.2rem; background: linear-gradient(130deg, #eaf0e8, #eff3f0 65%, #e8eeea); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; max-width: 62rem; margin: 0 auto 1rem; }
+.tab { min-width: 0; display: flex; align-items: center; gap: 0.8rem; min-height: 4rem; padding: 0.75rem 1rem; border: 1px solid transparent; border-radius: 0.65rem; background: transparent; text-align: left; color: #536a5b; cursor: pointer; transition: background 160ms, box-shadow 160ms; }
+.tab:hover { background: #ffffff80; }
+.tab[aria-selected="true"] { background: #fff; color: #254632; border-color: #e0e8de; box-shadow: 0 3px 12px #25463208; }
+.tabNumber { display: grid; flex: none; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 0.45rem; background: #dce7d9; color: #49684f; font-size: 0.74rem; font-variant-numeric: tabular-nums; }
+.tab[aria-selected="true"] .tabNumber { background: #294e36; color: #fff; }
+.tab strong { display: block; font-size: 0.93rem; font-weight: 650; line-height: 1.35; letter-spacing: -0.015em; }
+.tab small { display: block; margin-top: 0.18rem; font-size: 0.72rem; line-height: 1.4; color: #637a69; }
+.tab > svg { flex: none; margin-left: auto; color: #719076; }
+.tab:disabled { cursor: default; }
+.tab:focus-visible, .panel:focus-visible, .readLink:focus-visible { outline: 2px solid #3f7c50; outline-offset: 4px; }
+.panel { max-width: 62rem; margin: 0 auto; min-width: 0; animation: appear 180ms ease-out; }
+.panel[hidden] { display: none; }
+.paper { background: #fff; border: 1px solid #e0e7df; border-radius: 0.35rem; box-shadow: 0 4px 8px #243c2c04, 0 22px 36px -20px #243c2c26; }
+.paperHeader { padding: 1.5rem clamp(1.5rem, 3.3vw, 3rem) 0; }
+.topline { display: flex; justify-content: space-between; align-items: center; gap: 1rem; color: #5a715e; font-size: 0.72rem; line-height: 1.5; }
+.topline > span:first-child { display: inline-flex; gap: 0.5rem; align-items: center; font-size: 0.63rem; font-weight: 750; letter-spacing: 0.1em; }
+.topline svg { flex: none; }
+.identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.9rem; margin-top: 0.75rem; }
+.identity h3 { font-size: 0.81rem; line-height: 1.5; font-weight: 650; color: #3a5542; }
+.identity > span { color: #697b6d; font-size: 0.77rem; line-height: 1.5; }
+.body { padding: 1.6rem clamp(1.5rem, 3.3vw, 3rem) 1.3rem; }
+.summary h4 { margin-top: 0.55rem; max-width: 33ch; font-size: clamp(1.5rem, 2.35vw, 2rem); font-weight: 650; line-height: 1.25; letter-spacing: -0.035em; text-wrap: balance; }
+.details { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: clamp(1.5rem, 4vw, 3.5rem); margin-top: 1.8rem; }
+.evidence, .plan ol { display: grid; gap: 1rem; list-style: none; margin-top: 0.9rem; }
+.evidence li { display: grid; grid-template-columns: 2rem 1fr; gap: 0.65rem; align-items: start; }
+.evidenceIcon { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 0.6rem; background: #eef4ec; color: #5b7f61; }
+.evidence strong, .plan strong { display: block; font-size: 0.89rem; line-height: 1.45; font-weight: 650; color: #2f4d39; }
+.evidence p, .plan li p { margin-top: 0.2rem; font-size: 0.8rem; line-height: 1.55; color: #5c7061; }
+.plan li { display: grid; grid-template-columns: 1.65rem minmax(0, 1fr); gap: 0.7rem; align-items: baseline; }
+.plan li > span { font-size: 0.75rem; color: #7a9b73; font-weight: 650; font-variant-numeric: tabular-nums; }
+.boundaries { display: grid; gap: 0.5rem; margin-top: 1.5rem; padding: 0.85rem 1rem; border-radius: 0.4rem; background: #f7f9f5; }
+.boundaries > div { display: grid; grid-template-columns: 7.1rem minmax(0, 1fr); gap: 0.7rem; font-size: 0.76rem; line-height: 1.55; }
+.boundaries dt { color: #4b6651; font-weight: 650; }
+.boundaries dd { color: #5e7163; }
+.paperFooter { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.2rem clamp(1.5rem, 3.3vw, 3rem) 1.5rem; }
+.paperFooter > div { display: flex; align-items: baseline; gap: 0.5rem; }
+.statusDot { flex: none; width: 0.35rem; height: 0.35rem; border-radius: 50%; background: #86a577; }
+.paperFooter strong { display: block; font-size: 0.72rem; font-weight: 600; color: #526b57; }
+.paperFooter p > span { display: block; margin-top: 0.2rem; font-size: 0.68rem; color: #6a7e6d; }
+.readLink { display: inline-flex; flex: none; align-items: center; justify-content: center; gap: 0.65rem; min-height: 2.75rem; padding: 0.7rem 0.9rem; border-radius: 0.6rem; background: #284e36; color: #fff; font-size: 0.8rem; font-weight: 650; text-decoration: none; }
+.readLink:hover { background: #193c26; }
+.editNote { margin: 0.8rem auto 0; max-width: 62rem; font-size: 0.73rem; line-height: 1.6; color: #687e6c; }
+@keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 750px) {
+  .section { padding: 3.5rem 1rem; }
+  .reader { padding: 0.7rem 0.6rem 0.8rem; border-radius: 0.85rem; }
+  .tab { padding: 0.65rem; gap: 0.5rem; }
+  .tab strong { font-size: 0.8rem; }
+  .tab small, .tab > svg { display: none; }
+  .tabNumber { width: 1.4rem; height: 1.4rem; font-size: 0.62rem; }
+  .paperHeader { padding: 1.1rem 1rem 0; }
+  .topline { flex-wrap: wrap; gap: 0.25rem 0.7rem; font-size: 0.65rem; }
+  .identity { margin-top: 0.65rem; }
+  .identity > span { font-size: 0.73rem; }
+  .body { padding: 1.25rem 1rem 1rem; }
+  .summary h4 { font-size: 1.5rem; }
+  .details { grid-template-columns: 1fr; gap: 1.4rem; margin-top: 1.4rem; }
+  .evidence, .plan ol { gap: 0.85rem; }
+  .boundaries { margin-top: 1.3rem; padding: 0.8rem; gap: 0.65rem; }
+  .boundaries > div { grid-template-columns: 1fr; gap: 0.2rem; }
+  .paperFooter { align-items: stretch; flex-direction: column; padding: 0 1rem 1.1rem; }
+}
+@media (prefers-reduced-motion: reduce) { .panel { animation: none; } .tab { transition: none; } }

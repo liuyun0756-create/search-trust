@@ -32,6 +32,7 @@ export function GoogleResourceSelector({
   ga4SyncEnabled = false,
   gbpSyncEnabled = false,
   embedded = false,
+  returnTo = "connections",
   onStateChanged,
 }: {
   caseId: string;
@@ -41,6 +42,7 @@ export function GoogleResourceSelector({
   ga4SyncEnabled?: boolean;
   gbpSyncEnabled?: boolean;
   embedded?: boolean;
+  returnTo?: "connections" | "service-setup";
   onStateChanged?: () => void;
 }) {
   const endpoint = `/api/v2/cases/${caseId}/google-resources`;
@@ -104,7 +106,7 @@ export function GoogleResourceSelector({
     await action(async () => {
       const path = newAccount ? "/api/v2/google/connections/authorize" : `/api/v2/google/connections/${connection}/authorize`;
       const result = await api<{ authorization_url: string }>(path, { method: "POST", body: JSON.stringify({
-        case_id: caseId, sources: [source], return_path: `/cases/${caseId}/connections`,
+        case_id: caseId, sources: [source], return_path: `/cases/${caseId}/${returnTo}`,
       }) });
       const url = new URL(result.authorization_url);
       const localConsent = isLocalE2ETestMode()

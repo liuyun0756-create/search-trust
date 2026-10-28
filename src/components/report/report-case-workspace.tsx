@@ -11,6 +11,8 @@ export type ReportWorkspaceItem = {
   type: "prospect" | "verified_execution";
   version: number;
   generatedAt: string;
+  deliveryRevision?: number;
+  deliveryStatus?: "original" | "draft" | "approved";
 };
 
 export type ReportCaseGroup = {
@@ -132,6 +134,11 @@ export function ReportCaseWorkspace({ cases }: { cases: ReportCaseGroup[] }) {
                 <h2 className="mt-5 text-balance text-2xl font-bold tracking-[-0.045em] text-[#1d2a22] sm:text-[30px]">{item.businessName}</h2>
                 <p className="mt-2 text-sm font-medium leading-6 text-[#647466]">{item.service} · {item.market}</p>
                 <p className="mt-0.5 break-all text-xs text-[#8b998d]">{item.siteUrl}</p>
+                {item.latestReport.deliveryStatus ? <p className="mt-3 text-xs font-semibold text-[#42614a]">
+                  {item.latestReport.deliveryStatus === "original" ? "Ready for your review" : item.latestReport.deliveryStatus === "draft"
+                    ? `Delivery draft · revision ${item.latestReport.deliveryRevision} · approval needed`
+                    : `Approved delivery · revision ${item.latestReport.deliveryRevision}`}
+                </p> : null}
 
                 <div className="mt-6 rounded-xl bg-[#f2f7f1] px-5 py-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#59805d]">Current working point</p>

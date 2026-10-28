@@ -1,0 +1,234 @@
+{
+  "fixture_version": "p0-report-target-2026-10-19",
+  "classification": "synthetic_quality_target",
+  "runtime_contract": false,
+  "acceptance_status": "target_not_yet_accepted",
+  "identity": {
+    "case_id": "p0-clinic-001",
+    "business": "Northside Dental (synthetic)",
+    "site": "https://clinic.example.invalid",
+    "service": "Emergency dental appointments",
+    "market": "Northside",
+    "business_priority": {
+      "value": "Emergency appointments",
+      "origin": "client_confirmation",
+      "version": 1
+    }
+  },
+  "evaluated_at": "2026-08-29T00:00:00Z",
+  "optional_editing": true,
+  "original_evidence_immutable": true,
+  "limitations": [
+    "Synthetic fixed review material, not collected evidence or a customer outcome.",
+    "Proposed semantic target; not a ReportV22 payload, P1 schema or enabled product workflow."
+  ],
+  "id": "first-service-target",
+  "mode": "first_service",
+  "report_type": "verified",
+  "source_policy": "current_public_plus_authorized",
+  "previous_report_id": null,
+  "prospect_report_id": null,
+  "historical_diff": false,
+  "analysis_credits": 1,
+  "hidden_prospect_charge": 0,
+  "related_cases": [
+    "Q05",
+    "Q06",
+    "Q07",
+    "Q08",
+    "Q09",
+    "Q14",
+    "Q16"
+  ],
+  "readiness": {
+    "confirmed_competitors": 1,
+    "gsc": "assumed_healthy_matched_fresh",
+    "ga4": "assumed_healthy_matched_fresh",
+    "public_gbp": "assumed_healthy_matched_fresh",
+    "official_gbp_performance": "optional"
+  },
+  "sources": [
+    {
+      "id": "e-page-v2",
+      "case_id": "p0-clinic-001",
+      "kind": "site",
+      "url": "https://clinic.example.invalid/emergency",
+      "observed_at": "2026-08-28T09:00:00Z",
+      "observations": {
+        "status_code": 200,
+        "booking_copy": "Contact us"
+      }
+    },
+    {
+      "id": "e-gsc",
+      "case_id": "p0-clinic-001",
+      "kind": "gsc",
+      "url": "https://clinic.example.invalid/emergency",
+      "observed_at": "2026-08-29T00:00:00Z",
+      "scope": {
+        "start": "2026-07-30",
+        "end": "2026-08-26",
+        "search_type": "web",
+        "device": "all",
+        "country": "all"
+      },
+      "observations": {
+        "impressions": 4800,
+        "clicks": 120,
+        "ctr": 0.025
+      },
+      "limitations": [
+        "Query coverage may be incomplete; clicks are not enquiries."
+      ]
+    },
+    {
+      "id": "e-ga4",
+      "case_id": "p0-clinic-001",
+      "kind": "ga4",
+      "url": "https://clinic.example.invalid/emergency",
+      "observed_at": "2026-08-29T00:00:00Z",
+      "scope": {
+        "start": "2026-07-30",
+        "end": "2026-08-26",
+        "channel": "organic_search",
+        "timezone": "UTC"
+      },
+      "observations": {
+        "sessions": 92,
+        "key_event_name": "contact_submit",
+        "key_events": 5
+      },
+      "limitations": [
+        "Client must confirm event meaning; event count is not qualified leads."
+      ]
+    },
+    {
+      "id": "e-gbp",
+      "case_id": "p0-clinic-001",
+      "kind": "public_gbp",
+      "observed_at": "2026-08-28T09:00:00Z",
+      "observations": {
+        "identity_match": "assumed_confirmed_for_target",
+        "business_name": "Northside Dental (synthetic)",
+        "website": "https://clinic.example.invalid",
+        "phone": "+12025550100"
+      },
+      "limitations": ["Synthetic public-profile facts; not official GBP Performance."]
+    },
+    {
+      "id": "e-comp",
+      "case_id": "p0-clinic-001",
+      "kind": "confirmed_competitor",
+      "url": "https://other-clinic.example.invalid/emergency",
+      "observed_at": "2026-08-28T09:10:00Z",
+      "observations": {
+        "same_service_confirmed": true,
+        "urgent_booking_copy": "Call the practice to discuss an urgent appointment"
+      },
+      "limitations": ["One confirmed competitor; not a complete market comparison."]
+    },
+    {
+      "id": "e-confirm",
+      "case_id": "p0-clinic-001",
+      "kind": "client_confirmation",
+      "observed_at": "2026-08-28T09:20:00Z",
+      "observations": {
+        "service_priority": "Emergency appointments",
+        "current_service_page": "https://clinic.example.invalid/emergency"
+      }
+    }
+  ],
+  "summary": {
+    "title": "Improve the page receiving relevant search visits before adding another.",
+    "client_copy": "The existing emergency-care page recorded 120 Search Console clicks and 92 organic landing sessions in the checked period. Its contact instruction remains generic. First clarify the confirmed enquiry route on this page. Verify what contact_submit records before using its five events to discuss enquiries.",
+    "evidence_ids": [
+      "e-page-v2",
+      "e-gsc",
+      "e-ga4",
+      "e-confirm"
+    ]
+  },
+  "findings": [
+    {
+      "id": "f-existing",
+      "object": "https://clinic.example.invalid/emergency",
+      "observation": "The page has search clicks and organic landing sessions; the saved contact label is generic.",
+      "classification": "fact",
+      "judgment": "The current page deserves specific contact improvements; a new page is not justified by these observations.",
+      "impact": "Align the existing contact step with the confirmed service and enquiry route.",
+      "evidence_ids": [
+        "e-page-v2",
+        "e-gsc",
+        "e-ga4",
+        "e-confirm"
+      ],
+      "limits": [
+        "Different source metrics measure different things.",
+        "This first service report has no previous report to compare."
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "a-booking",
+      "target": "https://clinic.example.invalid/emergency#contact",
+      "title": "Clarify the urgent appointment enquiry.",
+      "evidence_ids": [
+        "e-page-v2",
+        "e-gsc",
+        "e-ga4",
+        "e-confirm"
+      ],
+      "steps": [
+        "Confirm who receives urgent enquiries and which contact method the practice supports.",
+        "Replace the generic contact label using the confirmed route.",
+        "Test the contact destination on mobile and desktop."
+      ],
+      "material": {
+        "kind": "conditional_copy",
+        "text": "Need an urgent dental appointment? Contact the practice to ask about availability.",
+        "precondition": "Client confirms urgent enquiries are accepted; do not add same-day availability or opening hours without confirmation."
+      },
+      "done": [
+        "Approved wording is live on the existing page.",
+        "The contact link reaches the confirmed destination."
+      ],
+      "review": "Check the published page and contact route; assess search and on-site evidence only after eligible client access."
+    },
+    {
+      "id": "a-event",
+      "target": "GA4 contact_submit on https://clinic.example.invalid/emergency",
+      "title": "Verify the contact event before interpreting enquiries.",
+      "evidence_ids": [
+        "e-ga4"
+      ],
+      "steps": [
+        "Confirm the event definition and intended successful submission trigger.",
+        "Test one controlled successful submission and a failed submission.",
+        "Document which event is observed and whether duplicate triggers occur."
+      ],
+      "material": {
+        "kind": "test_checklist",
+        "text": "Successful submission → one intended event. Failed validation → no success event. Record the event name and test time."
+      },
+      "done": [
+        "Event semantics and test outcome are recorded.",
+        "Unresolved tracking limitations remain visible in the report."
+      ],
+      "review": "Only compare the event after its definition and collection are stable."
+    }
+  ],
+  "client_inputs": [
+    "Confirm the urgent enquiry route and service details.",
+    "Confirm the intended meaning of contact_submit."
+  ],
+  "delivery": {
+    "approved_revision": 1,
+    "draft_revision": null,
+    "edited": false,
+    "client_revision": 1,
+    "pdf_revision": 1,
+    "share_revision": 1
+  },
+  "conclusion_boundary": "No earlier recommendation or implementation effect is claimed."
+}

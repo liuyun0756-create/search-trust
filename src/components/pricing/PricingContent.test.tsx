@@ -1,55 +1,44 @@
 // @vitest-environment jsdom
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { BillingDetails } from "./BillingDetails";
-import { PricingCTA } from "./PricingCTA";
 import { WhatOneCreditStarts } from "./WhatOneCreditStarts";
+import { pricingFAQData, pricingJsonLd } from "./pricing-content";
+import { FAQAccordion } from "@/components/common/FAQAccordion";
+import { clientWorkExample } from "@/components/useCase/client-work-example";
 
-vi.mock("@/lib/client-auth", () => ({ useAppUser: () => ({ isLoaded: true, isSignedIn: false }) }));
-vi.mock("@/components/common/RunAuditButton", () => ({
-  RunAuditButton: ({ children, className }: { children: React.ReactNode; className?: string }) => <button className={className}>{children}</button>,
-}));
-vi.mock("./CreditPurchaseButton", () => ({
-  CreditPurchaseButton: ({ children, className }: { children: React.ReactNode; className?: string }) => <button className={className}>{children}</button>,
-}));
-
-describe("pricing credit explanation", () => {
-  it("shows the complete Case journey with charges only on the two generation steps", () => {
+describe("pricing deliverables and rules", () => {
+  it("shows concrete stage-appropriate excerpts with shared evidence and links", () => {
     render(<WhatOneCreditStarts />);
-    const journey = screen.getByLabelText("How credits are used through one client Case");
-
-    expect(within(journey).getAllByText("1 credit")).toHaveLength(2);
-    expect(within(journey).getAllByText("Free")).toHaveLength(3);
-    expect(within(journey).getByRole("heading", { name: "Prospect Analysis" })).toBeVisible();
-    expect(within(journey).getByRole("heading", { name: "Verified Action Plan" })).toBeVisible();
+    const cards = screen.getAllByRole("article");
+    expect(cards).toHaveLength(2);
+    expect(screen.getAllByText("1 credit")).toHaveLength(2);
+    expect(within(cards[0]).getByText(/Fast, reliable cooling solutions/)).toBeVisible();
+    expect(within(cards[0]).queryByText(/12,400/)).not.toBeInTheDocument();
+    expect(within(cards[1]).getByText(new RegExp(clientWorkExample.metrics.impressions.toLocaleString("en-US")))).toBeVisible();
+    expect(within(cards[1]).getByText(/completed Prospect Case with eligible client data/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Read the sample report" })).toHaveAttribute("href", "/sample-report#sample-prospect");
+    expect(screen.getByRole("link", { name: "Read the sample plan" })).toHaveAttribute("href", "/sample-report#sample-verified");
+    expect(screen.queryByText(/five credits can follow/i)).not.toBeInTheDocument();
   });
-
-  it("explains the two continuous workflows, five-credit mixes and usage boundary", () => {
-    render(<WhatOneCreditStarts />);
-
-    expect(screen.getByRole("heading", { name: /win the work, then continue/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /five credits can follow/i })).toBeVisible();
-    expect(screen.getByText("5 × Prospect Analysis")).toBeVisible();
-    expect(screen.getByText("2 × Verified")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Uses one credit" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Does not use another credit" })).toBeVisible();
-    expect(screen.getByText(/do not promise clients, rankings, traffic/i)).toBeVisible();
-  });
-
-  it("keeps payment, delivery, failure and refund rules together", () => {
+  it("keeps four rules and the real refund policy link", () => {
     render(<BillingDetails />);
-
-    expect(screen.getByRole("heading", { name: /simple payment, clear failure protection/i })).toBeVisible();
-    for (const label of ["Payment", "Delivery", "Technical failure", "Refund review"]) {
-      expect(screen.getByText(label)).toBeVisible();
-    }
-    expect(screen.getByRole("link", { name: /full refund policy/i })).toHaveAttribute("href", "/refund-policy");
+    expect(screen.getAllByRole("term")).toHaveLength(4);
+    expect(screen.getByText("1 additional credit")).toBeVisible();
+    expect(screen.getByText("No additional credit")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Refund policy" })).toHaveAttribute("href", "/refund-policy");
   });
-
-  it("keeps account creation primary and the additional credit available", () => {
-    render(<PricingCTA />);
-    expect(screen.getByRole("button", { name: /create account — get 5 credits/i })).toBeVisible();
-    expect(screen.getByRole("button", { name: /add 1 credit · \$19/i })).toBeVisible();
+  it("uses the same seven answers for schema and accessible, fully collapsible FAQ", () => {
+    render(<FAQAccordion items={pricingFAQData} initialOpenIndex={null} collapsible />);
+    expect(pricingJsonLd.mainEntity).toHaveLength(7);
+    pricingFAQData.forEach((item, i) => {
+      expect(pricingJsonLd.mainEntity[i].acceptedAnswer.text).toBe(item.answer);
+      const button = screen.getByRole("button", { name: item.question });
+      expect(button).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(button);
+      expect(screen.getByRole("region", { name: item.question })).toHaveTextContent(item.answer);
+      fireEvent.click(button);
+      expect(button).toHaveAttribute("aria-expanded", "false");
+    });
   });
 });

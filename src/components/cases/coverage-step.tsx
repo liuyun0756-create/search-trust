@@ -28,6 +28,7 @@ interface CoverageStepProps {
   draft: NewCaseDraft;
   onContinue(): void;
   onBack(): void;
+  continueDisabled?:boolean;
 }
 
 const evidenceGroups = [
@@ -103,7 +104,7 @@ const statusPresentation = {
   blocked: { label: "Needs attention", className: "bg-[#ffe3dd] text-[#8e3024]", icon: TriangleAlert },
 };
 
-export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
+export function CoverageStep({ draft, onContinue, onBack,continueDisabled=false }: CoverageStepProps) {
   const preflight = draft.preflight;
   const business = draft.business_confirmation;
   const selected = draft.selected_competitor_ids.length;
@@ -216,7 +217,7 @@ export function CoverageStep({ draft, onContinue, onBack }: CoverageStepProps) {
           <h2 className="mt-2 max-w-xl text-xl font-semibold tracking-[-0.025em] text-[#202a20]">{action.title}</h2>
           <p className="mt-2 max-w-2xl text-xs leading-5 text-[#69745a]">{action.detail}</p>
         </div>
-        <button type="button" onClick={onContinue} className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#234b38] px-6 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/45">
+        <button type="button" onClick={onContinue} disabled={continueDisabled} className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#234b38] px-6 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/45">
           {action.button}<ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" />
         </button>
       </div>

@@ -1,0 +1,372 @@
+.section {
+  padding: 76px 0 10px;
+  scroll-margin-top: 100px;
+}
+.heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 35px;
+  margin-bottom: 28px;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 750;
+  color: #597e54;
+}
+.heading h2 {
+  font-size: clamp(28px, 3vw, 36px);
+  line-height: 1.2;
+  letter-spacing: -0.045em;
+  margin: 13px 0 16px;
+}
+.heading h2 span {
+  color: #63816b;
+}
+.heading > div > p:last-child {
+  max-width: 60ch;
+  color: #63766c;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.notice {
+  flex-shrink: 0;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #758472;
+  max-width: 250px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.card {
+  min-width: 0;
+  background: #f0f4ee;
+  border: 1px solid #dfe7dd;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px #203c3204;
+}
+.cardHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 22px 20px 19px;
+  border-bottom: 1px solid #e1e8dc;
+}
+.caseNumber {
+  font-size: 10px;
+  color: #698c5c;
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.cardHeading > svg {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: #92aa85;
+  margin-top: 2px;
+}
+.cardHeading p {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #71836b;
+  margin-bottom: 6px;
+}
+.cardHeading h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.thread {
+  padding: 20px 16px 16px;
+}
+.speaker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 650;
+  color: #647960;
+  margin-bottom: 9px;
+}
+.clientMessage {
+  margin-right: 26px;
+}
+.clientMessage > p {
+  margin: 0;
+  padding: 13px 15px;
+  border-radius: 3px 13px 13px 13px;
+  border: 1px solid #e1e7dd;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #324c3b;
+}
+.seoMessage {
+  margin: 19px 0 0 22px;
+}
+.seoMessage .speaker {
+  justify-content: flex-end;
+}
+.seoAvatar {
+  width: 17px;
+  height: 17px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 5px;
+  background: #416748;
+  color: #f1f6eb;
+  font-size: 9px;
+}
+.seoMessage > p,
+.reply > p {
+  padding: 14px 15px;
+  background: #e1ecd9;
+  border-radius: 13px 3px 13px 13px;
+  font-size: 12px;
+  line-height: 1.85;
+  color: #36503d;
+}
+.excerpt {
+  margin: 14px 0 20px 22px;
+  padding: 18px 16px 16px;
+  background: white;
+  border: 1px solid #e1e7dc;
+  border-radius: 4px 4px 10px 10px;
+  box-shadow: 0 5px 12px #25463106;
+}
+.documentLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 650;
+  color: #567751;
+  margin-bottom: 14px;
+}
+.documentLabel > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.documentLabel > svg:last-child {
+  margin-left: auto;
+  color: #a0b098;
+}
+.documentLabel small {
+  display: block;
+  font-size: 9px;
+  color: #85917e;
+  font-weight: 400;
+  margin-top: 4px;
+}
+.excerpt h4 {
+  margin: 0 0 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.025em;
+}
+.excerpt dl {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+.excerpt dt {
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.6;
+  color: #37593b;
+}
+.excerpt dd {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.8;
+  color: #66755f;
+}
+.rowNumber {
+  color: #819f71;
+  font-size: 9px;
+  margin-right: 6px;
+}
+.limit {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid #e7ecdf;
+}
+.limit > svg {
+  flex-shrink: 0;
+  color: #82956c;
+  margin-top: 3px;
+}
+.limit p {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #748267;
+}
+.limit strong {
+  display: block;
+  color: #5e7253;
+  font-weight: 650;
+  margin-bottom: 3px;
+}
+.followUp {
+  border-top: 1px solid #dce6d5;
+  padding-top: 17px;
+}
+.followUpLabel {
+  font-size: 10px;
+  color: #738869;
+  display: block;
+  margin-bottom: 8px;
+}
+.followUp button {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fafcf8;
+  border: 1px solid #d4e1cb;
+  border-radius: 3px 12px 12px 12px;
+  padding: 13px;
+  min-height: 44px;
+  color: #375b3d;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.followUp button:hover {
+  background: #e9f0e2;
+  border-color: #9db88c;
+}
+.followUp button > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  transition: transform 0.18s ease;
+}
+.followUp button[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.reply {
+  margin: 17px 0 0 22px;
+  animation: enter 0.18s ease-out;
+}
+.reply .speaker {
+  justify-content: flex-end;
+}
+.reply[hidden] {
+  display: none;
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 1050px) {
+  .cards {
+    gap: 12px;
+  }
+  .cardHeading {
+    padding: 20px 14px;
+  }
+  .thread {
+    padding: 16px 12px 12px;
+  }
+  .seoMessage,
+  .excerpt,
+  .reply {
+    margin-left: 10px;
+  }
+  .excerpt {
+    padding: 16px 13px;
+  }
+  .notice {
+    max-width: 210px;
+  }
+}
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    max-width: 620px;
+    margin-inline: auto;
+  }
+  .heading {
+    display: block;
+  }
+  .notice {
+    margin-top: 14px !important;
+    max-width: none;
+  }
+  .cardHeading {
+    padding: 21px;
+  }
+  .thread {
+    padding: 20px;
+  }
+  .seoMessage,
+  .excerpt,
+  .reply {
+    margin-left: 30px;
+  }
+  .seoMessage > p,
+  .reply > p {
+    font-size: 14px;
+  }
+  .clientMessage > p {
+    font-size: 14px;
+  }
+  .excerpt {
+    padding: 20px;
+  }
+  .excerpt dd {
+    font-size: 13px;
+  }
+  .excerpt dt {
+    font-size: 12px;
+  }
+  .limit p {
+    font-size: 12px;
+  }
+  .followUp button {
+    font-size: 13px;
+  }
+}
+@media (max-width: 460px) {
+  .section {
+    padding-top: 52px;
+  }
+  .thread {
+    padding: 16px 12px;
+  }
+  .seoMessage,
+  .excerpt,
+  .reply {
+    margin-left: 15px;
+  }
+  .excerpt {
+    padding: 18px 15px;
+  }
+  .cardHeading h3 {
+    font-size: 19px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reply {
+    animation: none;
+  }
+  .followUp button > svg {
+    transition: none;
+  }
+}

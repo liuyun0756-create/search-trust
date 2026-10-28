@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "purpose": "release_candidate_synthetic_sources_v1",
+  "displaySha256": "72d9b6899d340dabb3aa9bb807cead7ae12ef0f8b45e7bec31c91cedd89249a6",
+  "reports": [
+    {
+      "id": "prospect",
+      "schemaVersion": "2.2.2",
+      "ruleset": "v22_capability_public_v3",
+      "sourceSha256": "eb9bbf5284d7aaf31784f572ad093366f4d6c888f51ad974caceb149af01c0ad",
+      "displaySha256": "586c3bb56db70d247ef53217dd56187de848943dc62df7fe11412a0f1d264cba",
+      "actions": 1,
+      "findings": 1,
+      "evidence": 2
+    },
+    {
+      "id": "verified",
+      "schemaVersion": "2.2.2",
+      "ruleset": "v22_capability_service_v3",
+      "sourceSha256": "7cfd3fa78e79f4cea967ce395edab152ad0276874f79f8f4b1288dd2f40aa6c6",
+      "displaySha256": "823ef4e0e97dde3f0e5a9f135b0553338aabdd4907c4c40c6deacbded0a2984c",
+      "actions": 3,
+      "findings": 12,
+      "evidence": 38
+    },
+    {
+      "id": "diagnosis",
+      "schemaVersion": "2.2.2",
+      "ruleset": "v22_capability_public_v3",
+      "sourceSha256": "8a2e140fddf550b7fe22b3ba6c2fea7ec03df9d5d9afa90c957b63ff6d24f8ee",
+      "displaySha256": "7b74b9bee2520b46deecf8bd51e08f7bbb2cfff5ce201e1e314c95bf78a86529",
+      "actions": 0,
+      "findings": 1,
+      "evidence": 3
+    }
+  ]
+}

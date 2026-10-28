@@ -10,6 +10,7 @@ export interface AnalysisRepository {
   start(userId: string, caseId: string, workflowId: string, jobId: string, idempotencyKey: string, previousJobId?: string | null): Promise<void>;
   getOwned(userId: string, jobId: string): Promise<OwnedAnalysisJob | null>;
   getLatestOwnedForCase?(userId: string, caseId: string): Promise<OwnedAnalysisJob | null>;
+  getAcquisitionStatus?(userId: string, jobId: string): Promise<unknown | null>;
 }
 
 export class AnalysisPersistenceError extends Error {
@@ -21,6 +22,12 @@ export class AnalysisPersistenceError extends Error {
 
 export class SupabaseAnalysisRepository implements AnalysisRepository {
   constructor(private readonly supabase: SupabaseClient) {}
+
+  async getAcquisitionStatus(userId: string, jobId: string): Promise<unknown | null> {
+    const {data,error}=await this.supabase.rpc("get_v22_acquisition_status",{p_user_id:userId,p_job_id:jobId});
+    if(error) throw new AnalysisPersistenceError();
+    return data;
+  }
 
   async start(userId: string, caseId: string, workflowId: string, jobId: string, idempotencyKey: string, previousJobId: string | null = null): Promise<void> {
     const { data, error } = await this.supabase.rpc("bind_v22_prospect_analysis", {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Download, Link2, LoaderCircle, RotateCcw, X } from "lucide-react";
 import type { ReportV22Mode } from "@/lib/report-v22/view-model";
 
@@ -17,6 +17,8 @@ export function ReportV22Actions({ caseId, reportId, mode, versionNumber, delive
   const [error, setError] = useState("");
   const [share, setShare] = useState<{ id: string; url: string; expiresAt: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [interactive, setInteractive] = useState(false);
+  useEffect(() => { setInteractive(true); }, []);
   const logoRef = useRef<HTMLInputElement>(null);
   const shareEndpoint = `/api/v2/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(reportId)}/shares`;
 
@@ -94,9 +96,9 @@ export function ReportV22Actions({ caseId, reportId, mode, versionNumber, delive
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={() => { setPdfMode(mode); setDialog("pdf"); }} className="inline-flex items-center gap-2 rounded-lg border border-[#dfe7dd] bg-white px-3 py-2 text-xs font-bold text-[#4f6554] transition-colors hover:border-[#b9ccb4] hover:bg-[#f7faf5]"><Download className="h-4 w-4" /> PDF</button>
-        <button type="button" onClick={() => setDialog("share")} className="inline-flex items-center gap-2 rounded-lg bg-[#26432e] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#365d40]"><Link2 className="h-4 w-4" /> Share</button>
+      <div className="flex items-center gap-2" aria-busy={!interactive}>
+        <button type="button" disabled={!interactive} onClick={() => { setPdfMode(mode); setDialog("pdf"); }} className="inline-flex items-center gap-2 rounded-lg border border-[#dfe7dd] bg-white px-3 py-2 text-xs font-bold text-[#4f6554] transition-colors hover:border-[#b9ccb4] hover:bg-[#f7faf5] disabled:opacity-50"><Download className="h-4 w-4" /> PDF</button>
+        <button type="button" disabled={!interactive} onClick={() => setDialog("share")} className="inline-flex items-center gap-2 rounded-lg bg-[#26432e] px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-[#365d40] disabled:opacity-50"><Link2 className="h-4 w-4" /> Share</button>
       </div>
 
       {dialog ? <div className="fixed inset-0 z-[110] flex items-end justify-center bg-[#1d2a22]/45 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-label={dialog === "pdf" ? "Export PDF" : "Share client report"}>

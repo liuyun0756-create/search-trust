@@ -3,6 +3,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import { E2E_IDS } from "../../../../e2e/fixtures/ids";
 import { createdShareFixture } from "../../../../e2e/fixtures/share";
@@ -11,6 +12,14 @@ import { ReportV22Actions } from "./report-v22-actions";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ReportV22Actions interactions", () => {
+  it("does not accept toolbar clicks before the client has attached handlers", () => {
+    const html = renderToStaticMarkup(<ReportV22Actions caseId={E2E_IDS.caseId} reportId={E2E_IDS.reportId} mode="advisor" versionNumber={3} deliveryStatus="original" />);
+    const container = document.createElement("div"); container.innerHTML = html;
+    const buttons = container.querySelectorAll("button");
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) expect(button.disabled).toBe(true);
+    expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
+  });
   it("creates and revokes a fragment-only client share", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {

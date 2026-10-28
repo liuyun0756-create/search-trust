@@ -1,0 +1,35 @@
+# P5 GA4 durable collection — local verification
+
+## Scope completed
+
+Continues the approved exact-GA4 foundation with **internal durable requests, single-attempt execution, immutable result storage and recovery**. Design: [GA4 durable collection](../specs/2026-10-23-p5-ga4-durable-collection-design.md). Brainstorming scope review kept this batch separate from public activation; writing-plans was unavailable, so the design records execution and acceptance steps. The initial next-step description included owner UI/status; those are explicitly **not delivered in this persistence slice** and remain the next integration step.
+
+- Explicit selection binds owner/Case, saved implementation revision/checksum, action, 7/14/28/90-day window, confirmed GA4 binding, current scope-snapshot ID and optional exact landing path. It does not accept arbitrary property, hosts, timezone or provider endpoints.
+- An authorized, fresh, latest ordinary GA4 snapshot supplies **scope provenance only**, not the comparison values. Its immutable payload/checksum, property, confirmed business hosts and all report-view timezones are checked. Missing/expired/unconfirmed/disconnected/wrong-host or inconsistent-timezone sources fail before a job is created. A usable ordinary GA4 sync is therefore required first.
+- SQL independently derives scope and recalculates the full implementation-calendar exclusion in the observed property's timezone. This is not hardcoded to the GSC timezone. Window not elapsed means no job/provider call. Backend and SQL agree for cross-timezone implementation dates, property timezones and exact landing-page filters.
+- New `capability_ga4_collection_jobs` and `capability_ga4_collections` are isolated from ordinary snapshots, existing GSC collections and frozen comparisons. Repeated identical request IDs return the original task; differing selections conflict. One active task per GA4 binding. Read and pending-list operations do not create tasks or fetch data.
+- Connection → Case → binding → job locks follow existing order. Claim and finish recheck permission, confirmed resource, Case version, latest implementation revision and scope-snapshot currency. A newer scope snapshot invalidates pending work conservatively. Old terminal results remain readable under owner/report access after source revocation or record revision.
+- Five-minute single-use lease encloses one bounded provider attempt with a 240-second limit and the same logical-job Redis ledger. Concurrent workers cannot fetch twice. Lost request/save acknowledgements recover the existing result. Lost claim acknowledgement/cancellation leaves a lease that expires to `SYNC_INTERRUPTED`; it never permits another automatic provider attempt. Failure needs a newly confirmed request.
+- Partial failures publish no observation. Error codes are allowlisted; no raw provider/broker error or token is stored. Duplicate successful saves return the original immutable payload; wrong leases or altered material are rejected. SQL checks source/window/version/hash and forbids effect/causal/finality claims; backend read replays all qualification checks, so re-signing cannot remove blockers.
+- Qualification remains `not_comparable`, processing completeness `not_attested`, event history `unverified`, effect conclusion null. No deltas, conversion-to-qualified-comparison, paid review, evidence of improved results or credit operation is introduced. D1 remains unchanged: completed diagnosis with zero actions consumes one point without refund.
+
+## Verification
+
+- **40 new unit tests passed** for strict job/selection shape, wrong owner/Case/source/plan, missing or mismatched logical-job budget, broker errors, read-only behavior and malformed/re-signed qualification. Combined with existing GA4 foundation: **109 passed**.
+- **32 new native integration tests passed** inside the full **90 passed** PostgreSQL 17.10 / Redis / ARQ run, with **65 migrations**, 99.86 seconds. Only disposable local services and controlled Google responses were used. Covers concurrent confirmation/claim, ID-selection races, idempotent saves, source/record/Case/permission changes at claim and finish, lost acknowledgements, cancellation/expiry/late-worker fencing, immutable history, role isolation, page filters and observed property timezones. Ordinary sources, reports and credits remain unchanged.
+- Backend full fast suite: **2,614 passed**, external sockets disabled. Frontend regression: **1,995 passed / 183 files**. Frontend typecheck passed.
+- All **nine existing dual-end contract/example export checks** passed without drift. Both repositories passed `git diff --check`.
+- The first expanded native run exposed six invalid negative-test fixtures: they attempted to mutate immutable snapshots or violate binding-state constraints before exercising the new resolver. Fixtures were corrected to insert a controlled new snapshot or use valid disconnected/unconfirmed states. Production snapshot immutability and constraints were not weakened. The final complete native run is green.
+- Existing ARQ Redis `close` deprecation warning remains non-blocking. No browser run, new UI acceptance or new frontend production build is claimed: application UI is unchanged in this batch. No real Google account/provider call, remote migration, deployment, actual flag changes, commit or unrelated cleanup.
+
+## Next integration / release boundary
+
+Connect owner-authenticated confirmation/context/status, expose the derived scope/windows clearly, register bounded dispatch and preserve the same request ID for uncertain responses. The future UI must distinguish collection success from qualification, and must not pass the new GA4 envelope to the old GSC comparison parser. No new route, registered scheduler or user-facing GA4 button exists yet.
+
+Processing completeness/history verification, qualified descriptive values, empirical metric calibration, controlled page checks, attachments and the new paid Verified review remain outstanding. Do not close P5-02/P5/P6 or claim the overall execution plan is complete.
+
+## Recovery baseline
+
+Before this batch: `.v22-capability-baselines/baseline-cueI5X`, manifest SHA256 `43f464add5a043d67eca124132619b182260096558d80158420f6a4a604f0694`; FE 440 captured / 33 excluded, BE 176 captured / 1 excluded. HEADs unchanged at FE `88890cd484ad1a5f9294b1f21bb5a47bc27f5b7a`, BE `9bf2090b91d5ee036f8ea7e470797761b8cf838c`. Pre-existing unrelated dirty files were preserved; generated/private files are excluded from recovery capture.
+
+After acceptance, before this audit paragraph: `.v22-capability-baselines/baseline-HVO6ZQ`, manifest SHA256 `d8b896f55e4697581436895c2f628706677480223a33ec913aa58c344d36795e`; FE 443 captured / 33 excluded, BE 180 captured / 1 excluded. Comparison confirms unchanged HEADs, no missing captured files and changes confined to five FE documentation/migration paths and six BE implementation/test paths. The existing collector's only change is its now-outdated internal documentation comment; its behavior is unchanged.

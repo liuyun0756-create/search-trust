@@ -6,6 +6,9 @@ describe("report share response policy", () => {
   it("applies no-store, no-referrer and noindex to pages and PDFs", async () => {
     const rules = await nextConfig.headers!();
     expect(rules).toEqual([
+      { source: "/cases/:caseId/reports/:reportId/review-evidence", headers: SHARE_SECURITY_HEADERS },
+      { source: "/cases/:caseId/reports/:reportId/review-decisions", headers: SHARE_SECURITY_HEADERS },
+      { source: "/cases/:caseId/reports/:reportId/review", headers: SHARE_SECURITY_HEADERS },
       { source: "/share", headers: SHARE_SECURITY_HEADERS },
       { source: "/share/:path*", headers: SHARE_SECURITY_HEADERS },
       { source: "/api/share/:path*", headers: SHARE_SECURITY_HEADERS },

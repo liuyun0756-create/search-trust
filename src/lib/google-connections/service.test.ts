@@ -233,6 +233,15 @@ async function expectGoogleError(operation: Promise<unknown>, code: string) {
 }
 
 describe("Google connection lifecycle service", () => {
+  it("preserves the first-service preparation return path through the one-time OAuth callback", async () => {
+    const h = harness();
+    const auth = await h.service.startAuthorization({ userId: userA, caseId: caseA, sources: ["ga4"],
+      returnPath: `/cases/${caseA}/service-setup`, requestId: "first-service-prepare" });
+    const result = await h.service.completeAuthorization({ userId: userA,
+      state: new URL(auth.authorizationUrl).searchParams.get("state")!, cookieBinding: auth.cookieBinding,
+      code: "fake-code", requestId: "first-service-return" });
+    expect(result.returnPath).toBe(`/cases/${caseA}/service-setup`);
+  });
   it("creates an owned, encrypted, one-time OAuth session", async () => {
     const h = harness();
     const result = await start(h, ["ga4", "gsc"]);

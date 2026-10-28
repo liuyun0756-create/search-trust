@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface FAQItem {
@@ -13,14 +13,19 @@ interface FAQAccordionProps {
   title?: string;
   items: FAQItem[];
   className?: string;
+  initialOpenIndex?: number | null;
+  collapsible?: boolean;
 }
 
 export function FAQAccordion({
   title = 'Frequently asked questions',
   items,
   className = '',
+  initialOpenIndex = 0,
+  collapsible = false,
 }: FAQAccordionProps) {
-  const [openIndex, setOpenIndex] = useState(0);
+  const [openIndex, setOpenIndex] = useState<number | null>(initialOpenIndex);
+  const id = useId();
   const titleWords = title.replace(/\n/g, ' ').split(' ');
   const accentWord = titleWords.pop();
   const leadingTitle = titleWords.join(' ');
@@ -46,8 +51,11 @@ export function FAQAccordion({
                 className="relative"
               >
                 <button
-                  onClick={() => setOpenIndex(index)}
+                  type="button"
+                  id={`${id}-question-${index}`}
+                  onClick={() => setOpenIndex(collapsible && openIndex === index ? null : index)}
                   aria-expanded={openIndex === index}
+                  aria-controls={`${id}-answer-${index}`}
                   className="flex w-full items-center justify-between gap-4 py-6 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#477c60]"
                 >
                   <span className="pr-4 text-[16px] font-semibold text-[#1d3127]">
@@ -60,9 +68,7 @@ export function FAQAccordion({
                   </span>
                 </button>
 
-                <div className={`overflow-hidden transition-all duration-500 ease-out ${
-                  openIndex === index ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
-                }`}>
+                <div id={`${id}-answer-${index}`} role="region" aria-labelledby={`${id}-question-${index}`} hidden={openIndex !== index}>
                   <div className="min-h-[46px] pb-6 pr-9">
                     <p className="text-[14px] font-medium leading-[1.7] text-[#5d6f62]">
                       {faq.answer}

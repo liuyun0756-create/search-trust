@@ -7,14 +7,18 @@ import type { ClientReportV22ViewModel } from "@/lib/report-v22/view-model";
 import { isReportShareToken } from "@/lib/report-shares/token-format";
 
 import { SharedClientReportShell } from "./shared-client-report-shell";
+import { CapabilitySharedReport } from "../CapabilitySharedReport";
+import type { ApprovedCapabilityDelivery } from "@/lib/report-capability/delivery";
+import {ReviewSharedReport} from "../review-delivery/ReviewSharedReport";
+import type {ReviewClientDocument} from "@/lib/review-reports/projection";
 
-type ResolvedShare = { report: ClientReportV22ViewModel };
+type ResolvedShare = { report: ClientReportV22ViewModel;schemaVersion?:never } | {schemaVersion:"2.2.2";delivery:ApprovedCapabilityDelivery} | {schemaVersion:"2.2.3";delivery:ReviewClientDocument};
 
 export function SharedReportEntry() {
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "error" }
-    | { status: "ready"; report: ClientReportV22ViewModel; token: string }
+    | { status: "ready"; value:ResolvedShare; token: string }
   >({ status: "loading" });
 
   useEffect(() => {
@@ -37,7 +41,7 @@ export function SharedReportEntry() {
         if (!response.ok) throw new Error("SHARE_NOT_FOUND");
         return response.json() as Promise<ResolvedShare>;
       })
-      .then(({ report }) => setState({ status: "ready", report, token }))
+      .then(value => setState({ status: "ready", value, token }))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         setState({ status: "error" });
@@ -47,7 +51,9 @@ export function SharedReportEntry() {
   }, []);
 
   if (state.status === "ready") {
-    return <SharedClientReportShell report={state.report} token={state.token} />;
+    if(state.value.schemaVersion==="2.2.3")return <ReviewSharedReport delivery={state.value.delivery} token={state.token}/>;
+    if(state.value.schemaVersion==="2.2.2")return <CapabilitySharedReport delivery={state.value.delivery} token={state.token}/>;
+    return <SharedClientReportShell report={state.value.report} token={state.token} />;
   }
 
   return (

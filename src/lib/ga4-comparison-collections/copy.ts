@@ -1,0 +1,20 @@
+const reasons: Record<string, string> = {
+  GA4_COMPLETENESS_NOT_ATTESTED: "Processing completeness has not been verified.",
+  GA4_DAILY_OBSERVATIONS_INCOMPLETE: "Some requested dates were not returned.",
+  GA4_AGGREGATE_NOT_OBSERVED: "A period total was not returned.",
+  GA4_EVENT_HISTORY_NOT_VERIFIED: "Historical key-event settings have not been verified.",
+  GA4_EVENT_CONFIGURATION_CHANGED: "Key-event settings changed during collection.",
+  GA4_NO_CONFIGURED_KEY_EVENTS: "No configured key events were observed.",
+  GA4_EVENT_COUNTING_METHOD_UNKNOWN: "A key-event counting method is unknown.",
+  GA4_EVENT_CREATION_TIME_UNKNOWN: "A key-event creation date is unknown.",
+  GA4_EVENT_NOT_PRESENT_FOR_FULL_BASELINE: "A key event was not configured for the full baseline.",
+  GA4_KEY_EVENT_TRUNCATED: "The returned key-event list was truncated.",
+  GA4_DATA_TRUNCATION_REPORTED: "Google reported data truncation for a required report view.",
+  GA4_EVENT_ACTIVITY_NOT_OBSERVED: "No key-event activity was returned for a period.",
+  GA4_REPORTED_EVENT_NOT_IN_CURRENT_CONFIGURATION: "A reported event does not match the current settings.",
+  GA4_REPORT_RESTRICTED: "Sampling, privacy thresholds or grouped rows limit the report.",
+  GA4_PROVIDER_EMPTY_REASON: "GA4 supplied a reason for an empty response.",
+  GA4_METRIC_RESTRICTED: "GA4 restricted a required metric.",
+  GA4_ZERO_SESSION_DENOMINATOR: "A period has zero sessions, so a rate comparison is undefined.",
+};
+export const ga4QualificationReason = (code: string) => reasons[code] ?? "An additional qualification requirement has not been met.";

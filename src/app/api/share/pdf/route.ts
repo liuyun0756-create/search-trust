@@ -5,7 +5,9 @@ import { NextResponse } from "next/server";
 import { ReportV22PDFDocument } from "@/components/report/pdf/ReportV22PDFDocument";
 import { readShareToken } from "@/lib/report-shares/public-request";
 import { ReportShareNotFoundError } from "@/lib/report-shares/service";
-import { createServerReportShareService } from "@/lib/report-shares/server";
+import { resolveVersionedShare } from "@/lib/report-shares/versioned";
+import { capabilityPdfResponse } from "@/lib/report-capability/pdf";
+import {reviewPdfResponse} from "@/lib/review-reports/pdf";
 
 export const runtime = "nodejs";
 
@@ -20,7 +22,10 @@ export async function POST(request: Request) {
   if (!token) return NextResponse.json({ error: "Report share not found" }, { status: 404, headers: HEADERS });
 
   try {
-    const resolved = await createServerReportShareService().resolve(token);
+    const selected = await resolveVersionedShare(token);
+    if(selected.kind === "review")return await reviewPdfResponse(selected.value.delivery);
+    if(selected.kind === "capability")return await capabilityPdfResponse(selected.value.delivery);
+    const resolved = selected.value;
     const document = React.createElement(ReportV22PDFDocument, { report: resolved.report }) as React.ReactElement<any>;
     const buffer = await renderToBuffer(document);
     return new NextResponse(new Uint8Array(buffer), {
@@ -31,6 +36,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if(error instanceof Error && error.message === "CAPABILITY_PDF_UNSUPPORTED_TEXT") return NextResponse.json({error:"This report contains characters not supported by the PDF font. The online report remains available."},{status:422,headers:HEADERS});
     if (error instanceof ReportShareNotFoundError) {
       return NextResponse.json({ error: "Report share not found" }, { status: 404, headers: HEADERS });
     }

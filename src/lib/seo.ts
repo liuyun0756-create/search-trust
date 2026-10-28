@@ -60,7 +60,8 @@ export function createPageMetadata({
 
 export const pageSeo = {
   home: {
-    title: "SearchTrust | Win Clients With Evidence. Improve With Verified Data.",
+    title:
+      "SearchTrust | Win Clients With Evidence. Improve With Verified Data.",
     description:
       "Build evidence-backed local SEO Prospect reports, then connect GSC and GA4 to generate Verified Action Plans. New accounts receive 5 permanent credits.",
     path: "/",
@@ -78,15 +79,15 @@ export const pageSeo = {
     path: "/sample-report",
   },
   useCases: {
-    title: "In Practice: Six Local SEO Decisions | SearchTrust",
+    title: "Client Scenarios for Independent Local SEOs | SearchTrust",
     description:
-      "See six practical moments when local SEO teams use SearchTrust to turn public evidence, client data and business context into defensible decisions.",
+      "Explore client-work situations from prospect conversations and scope planning to execution briefs, evidence reviews and next-stage priorities.",
     path: "/use-cases",
   },
   pricing: {
-    title: "Pricing | Permanent SearchTrust Credits",
+    title: "Pricing: 5 Free Credits, Then $19 per Credit | SearchTrust",
     description:
-      "Every new SearchTrust account receives 5 permanent credits. Additional credits are $19 each, with no subscription and no expiration.",
+      "Try SearchTrust with five free credits. Generate Prospect reports or eligible Verified Action Plans, then buy more credits for $19 each. No subscription or expiration.",
     path: "/pricing",
   },
   terms: {

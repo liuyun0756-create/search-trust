@@ -1,0 +1,46 @@
+export const checkStates = {waiting: "Waiting for dates or data", insufficient: "More data needed", not_comparable: "Not comparable", comparable: "Values aligned for comparison"};
+const reasons: Record<string, string> = {
+  SNAPSHOT_MISSING: "Select saved data for both periods. This check does not collect new data.",
+  SOURCE_BINDING_CHANGED: "The two observations belong to different connections or properties. Select the same source for both periods.",
+  IDENTITY_NOT_MATCHED: "The data source has not been matched to this client.",
+  SOURCE_UNHEALTHY: "A selected source has a health issue. Review Evidence & connections before checking again.",
+  CURRENT_SNAPSHOT_EXPIRED: "The current observation is no longer fresh. Review your saved data sources.",
+  COMBINED_DIMENSIONS_NOT_OBSERVED: "These combined filters were not collected together; separate totals cannot reconstruct them.",
+  ORGANIC_CHANNEL_NOT_OBSERVED: "The saved GA4 data does not isolate organic search traffic.",
+  HOST_SCOPE_CHANGED: "The website filters changed between observations.",
+  SOURCE_TIMEZONE_CHANGED: "The source timezones do not match.",
+  GA4_REPORT_RESTRICTED: "Sampling, thresholding or other restrictions prevent a reliable GA4 comparison.",
+  GA4_EVENT_CONFIGURATION_CHANGED: "The configured GA4 events changed between observations.",
+  GA4_COMPLETENESS_NOT_ATTESTED: "GA4 period completeness has not been verified. No before-and-after values are published.",
+  GA4_EVENT_HISTORY_NOT_VERIFIED: "GA4 event collection history still needs verification.",
+  DIMENSION_NOT_OBSERVED: "The selected dimension is not available in these observations.",
+  AFTER_WINDOW_NOT_ELAPSED: "The after period has not ended yet. A later check can use completed dates.",
+  AFTER_COLLECTION_NOT_AVAILABLE: "The saved current data does not yet cover the full after period.",
+  BEFORE_WINDOW_NOT_COVERED: "The baseline does not cover the full before period.",
+  FINAL_DATE_COVERAGE_UNCONFIRMED: "Final daily coverage has not been confirmed for both periods.",
+  DAILY_COVERAGE_INCOMPLETE: "One or more daily rows are missing. Missing rows are not treated as zero.",
+  EXACT_WINDOW_AGGREGATE_REQUIRED: "This dimension requires saved totals matching both date windows exactly.",
+  DETAIL_TRUNCATED: "The saved detail is truncated and cannot support this comparison.",
+  AGGREGATION_NOT_SUPPORTED: "The collected aggregation does not match this comparison scope.",
+  TARGET_NOT_OBSERVED_IN_BOTH_WINDOWS: "The selected target was not observed in both periods. Absence is not zero.",
+  ZERO_BASELINE_NO_RELATIVE_CHANGE: "The baseline is zero, so a percentage change is not defined.",
+  ZERO_IMPRESSIONS_NO_CTR: "CTR is unavailable for a period with zero impressions.",
+};
+export const checkReason = (code: string) => reasons[code] ?? "This source does not meet a required comparison check. Review the saved evidence before trying again.";
+const sourceLimits: Record<string, string> = {
+  GSC_TOP_ROWS_ONLY: "Search Console detail includes only the collected top rows, not every search or page.",
+  GSC_QUERY_PRIVACY_FILTERING: "Search Console hides some queries for privacy; query detail may not account for all activity.",
+  GSC_WEB_ONLY: "These Search Console observations cover web search only.",
+  GSC_SELECTED_PROPERTY_SCOPE: "Search Console data is limited to the selected property.",
+  GSC_BREAKDOWNS_NOT_ADDITIVE: "Separate Search Console breakdowns cannot be added together to reconstruct a combined scope.",
+  GSC_DETAIL_TRUNCATED: "Some Search Console detail was truncated during collection.",
+  GA4_HOST_FILTERED: "GA4 data is limited to the selected website host filters.",
+  GA4_TOP_ROWS_ONLY: "GA4 detail includes only the collected top rows.",
+  GA4_BREAKDOWNS_NOT_ADDITIVE: "Separate GA4 breakdowns cannot be added together to reconstruct a combined scope.",
+  GA4_ESTIMATED_COUNTS: "GA4 counts are estimates; daily session values must not be summed into period totals.",
+  GA4_PROCESSING_DELAY_2_DAYS: "GA4 collection leaves a two-day processing buffer; that alone does not prove data is final.",
+  GA4_LANDING_PAGE_TRUNCATED: "Some GA4 landing-page detail was truncated during collection.",
+  GA4_KEY_EVENT_TRUNCATED: "Some GA4 key-event detail was truncated during collection.",
+};
+export const checkLimitation = (value: string) => sourceLimits[value] ?? (/^[A-Z][A-Z0-9_]+$/.test(value)
+  ? "An additional source limitation applies. Review the source evidence before interpreting these values." : value);
