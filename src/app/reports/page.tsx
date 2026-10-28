@@ -10,6 +10,9 @@ import { CapabilityRepository } from "@/lib/report-capability/repository";
 import {ReviewDeliveryRepository} from "@/lib/review-reports/repository";
 import {isReviewDeliveryEnabled} from "@/lib/review-reports/config";
 
+// Private user data is resolved per request, including in the isolated browser build.
+export const dynamic = "force-dynamic";
+
 export default async function ReportsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");

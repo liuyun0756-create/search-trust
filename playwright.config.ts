@@ -33,10 +33,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev:e2e",
+    // CI needs a fresh, complete CSS build and a stable server. Next's dev
+    // compiler can reload a sibling journey and erase interactive state.
+    command: process.env.CI
+      ? "npm run build && npm run start -- -H 127.0.0.1 -p 3100"
+      : "npm run dev:e2e",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
     env: {
       VERCEL_ENV: "",
       V22_PUBLIC_ENTRY_ENABLED: "true",

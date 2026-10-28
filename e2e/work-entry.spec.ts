@@ -1,15 +1,26 @@
+import type { Locator } from "@playwright/test";
 import { E2E_IDS } from "./fixtures/ids";
 import { sampleReports } from "../src/components/sampleReport/sample-report-data";
 import { expect, test } from "./support/journey-test";
+
+// Compare document coordinates so smooth anchor movement between reads cannot
+// masquerade as overlapping content. Viewport/pinned checks below retain boundingBox.
+async function documentBox(locator: Locator) {
+  return locator.evaluate((element) => {
+    if (!element.getClientRects().length) return null;
+    const rect = element.getBoundingClientRect();
+    return { x: rect.x + scrollX, y: rect.y + scrollY, width: rect.width, height: rect.height };
+  });
+}
 
 test.describe("homepage work entry", () => {
   test("places the introduction above two desktop paths and stacks them on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/#choose-work");
 
-    const heading = await page.getByRole("heading", { name: "Choose your next move." }).boundingBox();
-    const prospect = await page.getByRole("link", { name: "Start a Prospect Case" }).boundingBox();
-    const service = await page.getByRole("link", { name: "Choose a client Case" }).boundingBox();
+    const heading = await documentBox(page.getByRole("heading", { name: "Choose your next move." }));
+    const prospect = await documentBox(page.getByRole("link", { name: "Start a Prospect Case" }));
+    const service = await documentBox(page.getByRole("link", { name: "Choose a client Case" }));
     if (!heading || !prospect || !service) throw new Error("Work-entry layout is not visible");
 
     expect(heading.y + heading.height).toBeLessThan(prospect.y);
@@ -17,8 +28,8 @@ test.describe("homepage work entry", () => {
     expect(prospect.x + prospect.width).toBeLessThanOrEqual(service.x);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    const mobileProspect = await page.getByRole("link", { name: "Start a Prospect Case" }).boundingBox();
-    const mobileService = await page.getByRole("link", { name: "Choose a client Case" }).boundingBox();
+    const mobileProspect = await documentBox(page.getByRole("link", { name: "Start a Prospect Case" }));
+    const mobileService = await documentBox(page.getByRole("link", { name: "Choose a client Case" }));
     if (!mobileProspect || !mobileService) throw new Error("Mobile work-entry paths are not visible");
 
     expect(mobileProspect.y + mobileProspect.height).toBeLessThan(mobileService.y);
@@ -56,9 +67,9 @@ test.describe("homepage work entry", () => {
     await expect(section.getByRole("heading", { name: "Turn your research into a client decision." })).toBeVisible();
     await expect(section.getByRole("tabpanel").getByText("Which service matters, and what should we tackle first?")).toBeVisible();
     await expect(section.getByRole("tabpanel").getByText("A first scope to discuss")).toBeVisible();
-    const start = await section.getByRole("tabpanel").getByRole("heading", { name: "You have findings. Which belong in the first proposal?" }).boundingBox();
-    const brief = await section.getByRole("article").boundingBox();
-    const outcome = await section.getByRole("heading", { name: "A first discussion scope" }).boundingBox();
+    const start = await documentBox(section.getByRole("tabpanel").getByRole("heading", { name: "You have findings. Which belong in the first proposal?" }));
+    const brief = await documentBox(section.getByRole("article"));
+    const outcome = await documentBox(section.getByRole("heading", { name: "A first discussion scope" }));
     if (!start || !brief || !outcome) throw new Error("Conversation canvas is not visible");
     expect(start.x + start.width).toBeLessThan(brief.x);
     expect(brief.x + brief.width).toBeLessThan(outcome.x);
@@ -83,9 +94,9 @@ test.describe("homepage work entry", () => {
       await tab.click();
       await expect(section.getByRole("tabpanel")).toHaveCount(1);
       await expect(section.getByRole("tabpanel").getByText("For SEO review · not a completed task")).toBeVisible();
-      const mobileStart = await section.getByRole("tabpanel").locator("h3").first().boundingBox();
-      const mobileBrief = await section.getByRole("article").boundingBox();
-      const mobileOutcome = await section.getByRole("tabpanel").locator("h4").first().boundingBox();
+      const mobileStart = await documentBox(section.getByRole("tabpanel").locator("h3").first());
+      const mobileBrief = await documentBox(section.getByRole("article"));
+      const mobileOutcome = await documentBox(section.getByRole("tabpanel").locator("h4").first());
       if (!mobileStart || !mobileBrief || !mobileOutcome) throw new Error("Mobile canvas is not visible");
       expect(mobileStart.y + mobileStart.height).toBeLessThan(mobileBrief.y);
       expect(mobileBrief.y + mobileBrief.height).toBeLessThan(mobileOutcome.y);

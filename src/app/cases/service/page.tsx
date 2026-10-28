@@ -9,6 +9,8 @@ import { createServerClient } from "@/lib/supabase";
 import { isFirstServiceSetupEnabled } from "@/lib/first-service-setup/config";
 import { E2E_IDS } from "../../../../e2e/fixtures/ids";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Continue client work | SearchTrust",
   robots: { index: false, follow: false },
