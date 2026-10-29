@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: liuyun0756-create/SearchTrust-RD
-          ref: 5343ac4dc85f53ec0aa8500bd69a9d21d486c72c
+          ref: 1e798883fd72be6aeaefdd87dd753ba916537471
           path: output/e2e-backend
           persist-credentials: false
       - uses: actions/setup-python@v7

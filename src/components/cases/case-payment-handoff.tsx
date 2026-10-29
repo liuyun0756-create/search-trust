@@ -69,14 +69,6 @@ function phaseIndex(key: BuildStageKey) {
   return buildStages.findIndex((stage) => stage.key === key);
 }
 
-function progressValue(status: PaymentHandoffStatus, progress?: number) {
-  if (status === "saving_case") return 5;
-  if (["ready", "creating_checkout", "confirming_payment", "unlocked"].includes(status)) return 12;
-  if (status === "starting_analysis") return 18;
-  if (status === "analysis_failed" || status === "error") return Math.min(96, Math.max(18, progress ?? 35));
-  return Math.min(99, Math.max(18, progress ?? 35));
-}
-
 function stateCopy(status: PaymentHandoffStatus) {
   if (status === "analysis_failed") return { eyebrow: "Report task needs attention", title: "This attempt stopped safely.", detail: "The failed attempt did not leave a partial report available for delivery." };
   if (status === "error") return { eyebrow: "Case setup needs attention", title: "The confirmed scope is still safe.", detail: "Resolve the issue below, then continue from the same Case." };
@@ -93,7 +85,6 @@ export function CasePaymentHandoff({
   businessName = "Confirmed Prospect Case",
   scopeLine = "Confirmed business, market and competitor scope",
   analysisStage,
-  progress,
   onCheckout,
   onRetryAnalysis = () => undefined,
   retryLabel = "Generate again · uses 1 credit",
@@ -101,10 +92,23 @@ export function CasePaymentHandoff({
 }: CasePaymentHandoffProps) {
   const busy = status === "saving_case" || status === "creating_checkout" || status === "confirming_payment" || status === "starting_analysis" || status === "analyzing";
   const building = status === "starting_analysis" || status === "analyzing";
-  const covered = ["unlocked", "starting_analysis", "analyzing", "analysis_failed"].includes(status);
+  const covered = ["unlocked", "starting_analysis", "analyzing"].includes(status);
   const active = activeBuildStage(status, analysisStage);
   const activeIndex = phaseIndex(active);
-  const percent = progressValue(status, progress);
+  const failed = status === "analysis_failed" || status === "error";
+  const stageLabel = analysisStage ? {
+    queued: "Waiting for the report worker",
+    collecting_market: "Checking the saved search context",
+    collecting_site: "Checking website pages and the public business profile",
+    collecting_competitors: "Collecting confirmed competitor evidence",
+    building_evidence: "Organising collected evidence",
+    evaluating: "Evaluating findings and supported actions",
+    generating_copy: "Preparing report wording",
+    validating: "Validating the report and source references",
+    persisting: "Saving the validated report",
+    completed: "Report saved",
+    failed: "Task stopped",
+  }[analysisStage] : "Connecting to the report task";
   const copy = stateCopy(status);
 
   return (
@@ -127,20 +131,21 @@ export function CasePaymentHandoff({
                 <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em]">{businessName}</h2>
                 <p className="mt-2 text-xs leading-5 text-[#718073]">{scopeLine}</p>
               </div>
-              {covered && <span className="rounded-full bg-[#dff1ab] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#405c00]">Covered · no extra credit</span>}
+              {status === "analysis_failed" ? <span className="rounded-full bg-[#fff2e7] px-3 py-1.5 text-[10px] font-bold uppercase text-[#963b27]">Credit returned</span> : covered && <span className="rounded-full bg-[#dff1ab] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#405c00]">Covered · no extra credit</span>}
             </div>
 
-            <div className="mt-8" role="progressbar" aria-label="Report generation progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
-              <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em]"><span className="text-[#718073]">Report build</span><span className="text-[#57805b]">{percent}%</span></div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[#e3eae2]"><div className="h-full rounded-full bg-[#69a26e] transition-[width] duration-700" style={{ width: `${percent}%` }} /></div>
+            <div className="mt-8 rounded-xl border border-[#e3eae2] p-4" role="status" aria-label="Report generation stage">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#718073]">Report build · {failed ? "Needs attention" : `Stage ${activeIndex + 1} of ${buildStages.length}`}</p>
+              <p className="mt-2 text-sm font-semibold text-[#26432e]">{failed ? "Review the task status below before restarting." : building ? stageLabel : "Confirmed scope ready"}</p>
+              <p className="mt-1 text-xs leading-5 text-[#647466]">Stage indicators show the current work, not time remaining. Timing varies with source availability.</p>
             </div>
 
             <ol className="mt-8 grid gap-2 sm:grid-cols-2">
               {buildStages.map((step, index) => {
-                const done = index < activeIndex;
-                const isActive = index === activeIndex;
+                const done = !failed && index < activeIndex;
+                const isActive = !failed && index === activeIndex;
                 return (
-                  <li key={step.key} className={`grid grid-cols-[36px_1fr] gap-3 rounded-xl px-4 py-4 transition-colors ${isActive ? "bg-[#eaf3e8]" : "bg-[#f7faf7]"}`}>
+                  <li key={step.key} aria-current={isActive ? "step" : undefined} className={`grid grid-cols-[36px_1fr] gap-3 rounded-xl px-4 py-4 transition-colors ${isActive ? "bg-[#eaf3e8]" : "bg-[#f7faf7]"}`}>
                     <span className={`grid h-8 w-8 place-items-center rounded-lg font-mono text-[9px] font-bold ${done ? "bg-[#dcefd4] text-[#356b3c]" : isActive ? "bg-[#26432e] text-white" : "bg-white text-[#a0aca0]"}`}>{done ? <Check size={14} /> : step.number}</span>
                     <div><p className={`text-xs font-semibold ${done || isActive ? "text-[#26432e]" : "text-[#8b998d]"}`}>{step.title}</p><p className={`mt-1 text-[10px] leading-4 ${done || isActive ? "text-[#647466]" : "text-[#a0aca0]"}`}>{step.detail}</p></div>
                   </li>
@@ -190,7 +195,7 @@ export function CasePaymentHandoff({
 
       <div className="mt-5 flex flex-col gap-3 text-xs text-[#758075] sm:flex-row sm:items-center sm:justify-between">
         {!building && !busy ? <button type="button" onClick={onBack} className="flex w-fit items-center gap-2 rounded-lg px-1 py-2 font-bold outline-none transition hover:text-[#1f291f] focus-visible:ring-4 focus-visible:ring-[#A5D020]/30"><ArrowLeft size={14} />Return to evidence boundary</button> : <span className="flex items-center gap-2"><CircleDashed size={13} />You may leave this page; the server-owned task continues.</span>}
-        <div className="flex flex-wrap gap-4"><span className="flex items-center gap-1.5"><LockKeyhole size={13} />No second charge</span><span className="flex items-center gap-1.5"><ShieldCheck size={13} />No report is delivered automatically</span></div>
+        <div className="flex flex-wrap gap-4"><span className="flex items-center gap-1.5"><LockKeyhole size={13} />{status === "analysis_failed" ? "New attempt uses 1 credit" : covered ? "No second charge" : "Starting uses 1 credit"}</span><span className="flex items-center gap-1.5"><ShieldCheck size={13} />No report is delivered automatically</span></div>
       </div>
     </section>
   );

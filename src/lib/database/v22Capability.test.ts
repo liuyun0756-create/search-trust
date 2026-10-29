@@ -466,6 +466,43 @@ describe.sequential("P1 isolated capability persistence", () => {
     return {...f,token,claim,pulse,freeze};
   }
 
+  it("persists owner-readable preparation milestones under the same lease without changing the credit or deadline", async () => {
+    const f = await queuedPreparation(); await f.claim();
+    const before = (await db.query<{deadline_at:string;progress:number;state_revision:number}>("select deadline_at,progress,state_revision from analysis_jobs where id=$1",[f.job])).rows[0];
+    const advance = (stage:string, lease=f.token, generation=1) => db.query<{value:boolean}>(
+      "select advance_v22_acquisition_stage($1,$2,$3,$4) value", [f.job,generation,lease,stage]);
+    expect((await advance("collecting_site",randomUUID())).rows[0].value).toBe(false);
+    expect((await advance("collecting_site",f.token,2)).rows[0].value).toBe(false);
+    expect((await advance("completed")).rows[0].value).toBe(false);
+    await db.exec("set role service_role");
+    try { expect((await advance("collecting_market")).rows[0].value).toBe(true); } finally { await db.exec("reset role"); }
+    for (const stage of ["collecting_market","collecting_site","collecting_competitors","building_evidence"]) {
+      expect((await advance(stage)).rows[0].value).toBe(true);
+      const status = (await db.query<{value:Record<string,unknown>}>("select get_v22_acquisition_status($1,$2) value",[f.owner,f.job])).rows[0].value;
+      expect(status.stage).toBe(stage);
+      expect(status.progress).toBe(before.progress);
+      if (stage === "collecting_competitors") expect(status.message).toContain("competitors");
+    }
+    const after = (await db.query<{deadline_at:string;state_revision:number}>("select deadline_at,state_revision from analysis_jobs where id=$1",[f.job])).rows[0];
+    expect(after.deadline_at).toEqual(before.deadline_at);
+    expect(after.state_revision).toBeGreaterThan(before.state_revision);
+    expect((await db.query("select delta from credit_ledger where workflow_charge_id=$1",[f.job])).rows).toEqual([{delta:-1}]);
+    expect((await db.query<{value:unknown}>("select get_v22_acquisition_status($1,$2) value",[randomUUID(),f.job])).rows[0].value).toBeNull();
+    await f.freeze();
+    expect((await advance("collecting_site")).rows[0].value).toBe(false);
+    await f.complete();
+    expect((await advance("collecting_site")).rows[0].value).toBe(false);
+  });
+
+  it("rejects expired preparation milestone writers and restricts the function to the worker role", async () => {
+    const f = await queuedPreparation(); await f.claim();
+    await db.query("update capability_acquisition_runs set lease_until=now()-interval '1 second' where job_id=$1",[f.job]);
+    expect((await db.query<{value:boolean}>("select advance_v22_acquisition_stage($1,1,$2,'collecting_site') value",[f.job,f.token])).rows[0].value).toBe(false);
+    for (const role of ["anon","authenticated","service_role"]) {
+      expect((await db.query<{allowed:boolean}>("select has_function_privilege($1,'public.advance_v22_acquisition_stage(uuid,integer,uuid,text)','execute') allowed",[role])).rows[0].allowed).toBe(role === "service_role");
+    }
+  });
+
   it("claims preparation once and preserves the original task, charge and deadline",async()=>{
     const f=await queuedPreparation();
     const original=(await f.begin()).rows[0].value;

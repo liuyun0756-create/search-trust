@@ -35,6 +35,10 @@ test.describe("existing paid workflow refresh", () => {
       analysis_job_id: E2E_IDS.analysisJobId, analysis_idempotency_key: "original-reserved-analysis" });
     await page.goto("/cases/new");
     await expect(page.getByText(`Case ${E2E_IDS.caseId}`, { exact: true })).toBeVisible();
+    await expect(page.getByRole("status", {name:"Report generation stage"})).toContainText("Organising collected evidence");
+    await expect(page.getByRole("progressbar")).toHaveCount(0);
+    await expect(page.getByText("Before any credit", {exact:true})).toHaveCount(0);
+    await expect(page.getByText("1 credit covered · no extra charge", {exact:true}).first()).toBeVisible();
     allowComplete = true;
     await page.reload();
     await expect(page).toHaveURL(new RegExp(`/cases/${E2E_IDS.caseId}/reports/${E2E_IDS.reportId}`), { timeout: 20000 });

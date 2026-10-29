@@ -88,6 +88,9 @@ describe("paid workflow recovery", () => {
     await act(async () => { render(<NewCaseWorkspace />); });
     await act(async () => { await vi.advanceTimersByTimeAsync(20); });
     expect(screen.getByText(actualCase)).toBeVisible();
+    expect(screen.getAllByText("1 credit covered · no extra charge").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Before any credit")).not.toBeInTheDocument();
+    expect(screen.queryByText(/20% complete/)).not.toBeInTheDocument();
     expect(screen.getByText(/Collecting the existing task/)).toBeVisible();
     expect(mocks.fetch.mock.calls.some(([url]) => url.includes("/tasks/latest"))).toBe(false);
     expect(mocks.fetch.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
@@ -100,6 +103,7 @@ describe("paid workflow recovery", () => {
     await act(async () => { render(<NewCaseWorkspace />); });
     await act(async () => { await vi.advanceTimersByTimeAsync(20000); });
     expect(screen.getByText(/The saved workflow could not be checked/)).toBeVisible();
+    expect(screen.queryByText("1 credit covered · no extra charge")).not.toBeInTheDocument();
     expect(mocks.fetch.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
     expect(mocks.discovery).not.toHaveBeenCalled();
   });

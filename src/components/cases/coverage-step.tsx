@@ -225,7 +225,7 @@ export function CoverageStep({ draft, onContinue, onBack,continueDisabled=false 
       <div className="mt-5 flex flex-col gap-3 text-xs text-[#758075] sm:flex-row sm:items-center sm:justify-between">
         <button type="button" onClick={onBack} className="flex w-fit items-center gap-2 rounded-lg px-1 py-2 font-bold outline-none transition hover:text-[#1f291f] focus-visible:ring-4 focus-visible:ring-[#A5D020]/30"><ArrowLeft size={14} />Edit competitors</button>
         <div className="flex flex-wrap gap-4">
-          <span className="flex items-center gap-1.5"><Clock3 size={13} />{preflight.estimated_duration_bucket.replaceAll("_", " ")}</span>
+          <span className="flex items-center gap-1.5"><Clock3 size={13} />Timing varies with source availability</span>
           <span className="flex items-center gap-1.5"><LockKeyhole size={13} />No additional credit</span>
           <span className="flex items-center gap-1.5"><Sparkles size={13} />No OAuth required</span>
         </div>

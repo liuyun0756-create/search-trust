@@ -47,8 +47,33 @@ describe("CasePaymentHandoff", () => {
     );
     expect(html).toContain("Building your evidence-backed Prospect report");
     expect(html).toContain("Judgment synthesis");
-    expect(html).toContain("aria-valuenow=\"55\"");
+    expect(html).toContain("Organising collected evidence");
+    expect(html).toContain("Stage 3 of 4");
+    expect(html).not.toContain("aria-valuenow");
+    expect(html).not.toContain("55%");
     expect(html).toContain("server-owned task continues");
     expect(html).not.toContain("Return to evidence boundary");
   });
+});
+
+ it.each([
+   ["collecting_site", "Checking website pages and the public business profile"],
+   ["collecting_competitors", "Collecting confirmed competitor evidence"],
+   ["persisting", "Saving the validated report"],
+ ] as const)("shows the actual %s milestone without inventing a total percentage", (analysisStage, label) => {
+   const html = renderToStaticMarkup(<CasePaymentHandoff status="analyzing" message="Server stage" caseId="case"
+     analysisStage={analysisStage} progress={0} onCheckout={()=>undefined} onBack={()=>undefined}/>);
+   expect(html).toContain(label);
+   expect(html).not.toContain("0%");
+   expect(html).not.toContain('role="progressbar"');
+   expect(html).toContain('aria-current="step"');
+   expect(html).toContain("not time remaining");
+ });
+
+it("does not present a refunded failed workflow as still covered", () => {
+  const html = render("analysis_failed");
+  expect(html).toContain("Credit returned");
+  expect(html).toContain("New attempt uses 1 credit");
+  expect(html).not.toContain("Covered · no extra credit");
+  expect(html).not.toContain("No second charge");
 });

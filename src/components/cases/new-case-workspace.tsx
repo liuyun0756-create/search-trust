@@ -24,6 +24,7 @@ import {
   type NewCaseDraft,
 } from "@/lib/preflight-v22";
 
+import { workflowCreditCopy, type WorkflowCreditState } from "./workflow-credit-copy";
 import { BusinessMatchStep } from "./business-match-step";
 import { CasePaymentHandoff, type PaymentHandoffStatus } from "./case-payment-handoff";
 import { CompetitorConfirmationStep } from "./competitor-confirmation-step";
@@ -350,7 +351,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
         stopped = true;
         return false;
       }
-      setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: `${payload.message} ${payload.progress}% complete.` }));
+      setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: payload.message }));
       return true;
     };
 
@@ -548,6 +549,13 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving this confirmed Case before analysis…" });
   }
 
+  const creditState: WorkflowCreditState = !draft.prospect_workflow_id ? "free"
+    : discoverySubmitting ? "reserving"
+    : paymentHandoff.status === "analysis_failed" ? "returned"
+    : paymentHandoff.status === "error" || draft.stage === "competitor_discovery_failed" ? "attention"
+    : paymentHandoff.caseId ? "covered" : "checking";
+  const creditCopy = workflowCreditCopy[creditState];
+
   if (!hydrated) return <div className="min-h-screen bg-[#f7faf7]" />;
 
   return (
@@ -555,20 +563,19 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
       <header className="border-b border-[#e3eae2] bg-white">
         <div className="mx-auto flex h-[68px] max-w-[1500px] items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3 text-[#26432e] outline-none focus-visible:rounded-lg"><img src="/images/small-logo.png" alt="" className="h-8 w-8 rounded-lg" /><span className="text-sm font-bold tracking-[-0.03em]">Search<span className="text-[#68a44d]">Trust</span></span><span className="hidden text-[#c9d7ca] sm:inline">/</span><span className="hidden text-xs font-semibold text-[#7e9081] sm:inline">New Case</span></Link>
-          <div className="flex items-center gap-4"><span className="hidden items-center gap-1.5 rounded-lg bg-[#f2f7f1] px-3 py-1.5 text-[11px] font-semibold text-[#527557] sm:flex"><ShieldCheck size={13} />Public setup is free</span><button type="button" onClick={reset} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-[#718073] outline-none transition hover:bg-[#f2f7f1] hover:text-[#26432e]">Clear draft</button></div>
+          <div className="flex items-center gap-4"><span className="hidden items-center gap-1.5 rounded-lg bg-[#f2f7f1] px-3 py-1.5 text-[11px] font-semibold text-[#527557] sm:flex"><ShieldCheck size={13} />{creditCopy.badge}</span><button type="button" onClick={reset} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-[#718073] outline-none transition hover:bg-[#f2f7f1] hover:text-[#26432e]">Clear draft</button></div>
         </div>
       </header>
+      <p role="status" className="border-b border-[#e3eae2] bg-[#f2f7f1] px-5 py-3 text-xs font-semibold text-[#527557] sm:hidden">{creditCopy.badge}</p>
 
       <div className="mx-auto grid min-h-[calc(100vh-68px)] max-w-[1500px] lg:grid-cols-[264px_1fr]">
         <aside className="border-[#e3eae2] bg-white lg:flex lg:flex-col lg:border-r lg:px-6 lg:py-9">
           <NewCaseStepper stage={draft.stage} />
           <div className="hidden px-3 lg:mt-auto lg:block">
             <div className="border-t border-[#e3eae2] pt-5">
-              <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#668a50]"><LockKeyhole size={13} />Before any credit</p>
+              <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#668a50]"><LockKeyhole size={13} />{creditCopy.title}</p>
               <ul className="mt-3 space-y-2 text-[11px] leading-4 text-[#718073]">
-                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#67a16e]" />Check the primary website</li>
-                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#67a16e]" />Confirm the public business</li>
-                <li className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#67a16e]" />Review service and market scope</li>
+                {creditCopy.details.map(detail => <li key={detail} className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#678850]" />{detail}</li>)}
               </ul>
             </div>
             <p className="mt-5 text-[10px] leading-4 text-[#9aa79a]">Session draft<br /><span className="break-all">{draft.draft_case_id}</span></p>
@@ -587,7 +594,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
                 status={paymentHandoff.status}
                 message={paymentHandoff.message}
                 caseReady={Boolean(paymentHandoff.caseId)}
-                covered={Boolean(draft.prospect_workflow_id)}
+                covered={creditState === "covered"}
                 creditBalance={creditBalance}
                 signedIn={Boolean(isSignedIn)}
                 onStart={() => void startDiscovery(draft.business_confirmation!)}

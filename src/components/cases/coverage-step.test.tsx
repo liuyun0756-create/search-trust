@@ -90,3 +90,9 @@ describe("CoverageStep", () => {
     expect(html).toContain("No additional credit");
   });
 });
+
+ it("does not present the preflight duration bucket as a report completion promise", () => {
+   const html = renderToStaticMarkup(<CoverageStep draft={coverageDraft()} onContinue={()=>undefined} onBack={()=>undefined}/>);
+   expect(html).toContain("Timing varies with source availability");
+   expect(html).not.toContain("under 5 minutes");
+ });
