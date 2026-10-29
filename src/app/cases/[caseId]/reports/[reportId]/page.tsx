@@ -78,12 +78,13 @@ export default async function ReportV22Page({
           {capability.approvedRevision ? `Approved client report · Revision ${capability.approvedRevision}` : `System report · Version ${capability.version}`}
         </p>
         {capability.pendingDraft ? <p className="text-sm">A delivery draft is awaiting approval. The system report below retains the original findings and recommendations.</p> : null}
+        {capability.observationWarnings.map((warning, index) => <p key={index} role="note" className="rounded-xl border border-[#e0c786] bg-[#fff8e6] p-4 text-sm leading-6 text-[#70541f]">{warning}</p>)}
         {capability.hasApproved ? <nav aria-label="Report reading view" className="flex flex-wrap gap-4 text-sm">
           <Link href={base} aria-current={!capability.approvedRevision ? "page" : undefined} className="underline underline-offset-4">System report</Link>
           <Link href={`${base}?view=client`} aria-current={capability.approvedRevision ? "page" : undefined} className="underline underline-offset-4">Approved client report</Link>
         </nav> : null}
       </div>
-      <CapabilityReportDocument document={capability.document} />
+      <CapabilityReportDocument document={capability.document} technicalDetails={!capability.approvedRevision} />
       <CapabilityDeliveryActions caseId={caseId} reportId={reportId} revision={capability.deliveryRevision} approved={capability.hasApproved}/>
       <CapabilityOwnerEditor key={reportId} initial={capability.editable} orderConstraints={capability.orderConstraints} />
       {implementationVersions.length ? <>

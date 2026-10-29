@@ -1,6 +1,7 @@
 import type { CapabilityReadingDocument as Document } from "@/lib/report-capability/reading-document";
+import { evidenceFieldLabel, evidenceValue, readerLimits } from "@/lib/report-capability/reader-copy";
 
-export function CapabilityReportDocument({ document }: { document: Document }) {
+export function CapabilityReportDocument({ document, technicalDetails = false }: { document: Document; technicalDetails?: boolean }) {
   return <article className="mx-auto max-w-4xl space-y-8 rounded-2xl border border-[#dce6d9] bg-white p-5 text-[#1d2a22] sm:p-10">
     <header><h1 className="break-words text-3xl font-semibold tracking-tight">{document.title}</h1>
       <p className="mt-4 whitespace-pre-wrap break-words leading-7">{document.summary}</p>
@@ -11,9 +12,12 @@ export function CapabilityReportDocument({ document }: { document: Document }) {
       <p className="mt-2 break-words text-sm">{finding.impact_path}</p>
       <p className="mt-3 break-words text-sm">{finding.comparison_scope} · {finding.observed_at}</p>
       <dl className="mt-4 space-y-2 text-sm">{document.evidence.filter((e) => finding.evidence_ids.includes(e.id)).map((e) => <div key={e.id}>
-        <dt className="break-all font-semibold">{e.object} · {e.field_path}</dt><dd className="break-words">{e.value === null ? "Not observed" : String(e.value)}{e.unit ? ` ${e.unit}` : ""} · {e.observed_at}</dd>
+        <dt className="break-all font-semibold">{evidenceFieldLabel(e.field_path)} · {e.object}</dt><dd className="break-words">{evidenceValue(e.value)}{e.unit ? ` ${e.unit}` : ""} · {e.observed_at}</dd>
       </div>)}</dl>
-      {finding.limitations.length ? <ul aria-label="Finding limits" className="mt-3 list-inside list-disc space-y-1 text-sm">{finding.limitations.map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul> : null}
+      {technicalDetails ? <details className="mt-4 text-sm"><summary className="cursor-pointer font-medium">Inspect source references</summary>
+        <dl className="mt-3 space-y-3">{document.evidence.filter(e => finding.evidence_ids.includes(e.id)).map(e => <div key={e.id}><dt className="break-all">{e.object}</dt><dd className="whitespace-pre-wrap break-all font-mono text-xs">{e.field_path}</dd></div>)}</dl>
+      </details> : null}
+      {finding.limitations.length ? <ul aria-label="Finding limits" className="mt-3 list-inside list-disc space-y-1 text-sm">{readerLimits(finding.limitations).map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul> : null}
     </div>)}</section>
     <section aria-label="Action plan" className="space-y-5">
       <h2 className="text-xl font-semibold">{document.actions.length ? "Action plan" : "No action proposed yet"}</h2>
@@ -38,7 +42,7 @@ export function CapabilityReportDocument({ document }: { document: Document }) {
             <p className="mt-4 font-semibold">Checked scope</p>
             {action.whyNow.comparisonScopes.map((scope,i) => <p key={i} className="mt-1 break-words leading-6">{scope}</p>)}
             {action.whyNow.limits.map((limit,i) => <p key={i} className="mt-4 leading-6 text-[#52685b]">{limit}</p>)}
-            <p className="mt-3 break-words text-xs text-[#52685b]">Rule: {action.whyNow.rulesVersion} · {action.whyNow.reasonCodes.join(" · ")}</p>
+            {technicalDetails ? <p className="mt-3 break-words text-xs text-[#52685b]">Rule: {action.whyNow.rulesVersion} · {action.whyNow.reasonCodes.join(" · ")}</p> : null}
           </details>
         </aside> : null}
         <ol className="mt-4 list-inside list-decimal space-y-2">{action.steps.map((step, i) => <li key={i} className="break-words">{step}</li>)}</ol>
@@ -54,6 +58,6 @@ export function CapabilityReportDocument({ document }: { document: Document }) {
       </section>)}
     </section>
     {document.clientNote ? <aside className="rounded-xl bg-[#f3f7f2] p-5"><h2 className="font-semibold">Note from your SEO</h2><p className="mt-2 whitespace-pre-wrap break-words">{document.clientNote}</p></aside> : null}
-    <footer><h2 className="font-semibold">Review limits</h2><ul className="mt-2 space-y-2">{document.limitations.map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul></footer>
+    <footer><h2 className="font-semibold">Review limits</h2><ul className="mt-2 space-y-2">{readerLimits(document.limitations).map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul></footer>
   </article>;
 }

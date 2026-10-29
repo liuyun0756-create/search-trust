@@ -96,10 +96,10 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
       if (!m.previous_report || !findings.has(c.finding_id) || c.previous_fingerprint === c.current_fingerprint
         || c.current_fingerprint !== canonicalDigest(findings.get(c.finding_id))) return invalid;
     }
-    const ranked = ["v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3"].includes(m.ruleset_version);
+    const ranked = ["v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4"].includes(m.ruleset_version);
     if (Object.hasOwn(r, "prioritization") && r.prioritization == null) return invalid;
     if (ranked !== Boolean(r.prioritization) || (r.prioritization && !priorityMatches(r.prioritization, r))) return invalid;
-    if (r.prioritization && r.prioritization.rules_version !== (m.ruleset_version.endsWith("_v3") ? "v22_business_priority_v2" : "v22_business_priority_v1")) return invalid;
+    if (r.prioritization && r.prioritization.rules_version !== (/_v[34]$/.test(m.ruleset_version) ? "v22_business_priority_v2" : "v22_business_priority_v1")) return invalid;
     return { ok: true, report: r };
   } catch { return invalid; }
 }

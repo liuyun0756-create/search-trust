@@ -3,6 +3,7 @@ import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/render
 import type { ApprovedCapabilityDelivery } from "@/lib/report-capability/delivery";
 import type { EffectiveBranding } from "@/lib/report-pdf/branding";
 import { assertCapabilityPdfText } from "@/lib/report-pdf/capability-fonts";
+import { evidenceFieldLabel, evidenceValue, readerLimits } from "@/lib/report-capability/reader-copy";
 
 const styles = StyleSheet.create({
   page: { padding: 38, paddingBottom: 72, fontFamily: "CapabilitySans", fontSize: 9, color: "#213D32", lineHeight: 1.5 },
@@ -53,6 +54,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
     <Page size="A4" style={styles.page} wrap>
       <View style={styles.brand}><Copy style={styles.kicker}>SEARCHTRUST / CLIENT DELIVERY</Copy>{brand?.agencyLogoData ? <Image src={brand.agencyLogoData} style={styles.logo} /> : null}</View>
       <Copy style={styles.meta}>{`${reportLabel} | Report version ${delivery.reportVersion} | Approved revision ${delivery.revision}`}</Copy>
+      <Copy style={styles.meta}>{`Source report ${delivery.reportId} | Approved revision ${delivery.revisionId} | ${delivery.contentChecksum}`}</Copy>
       <Copy style={styles.heading}>{d.title}</Copy>
       {brand?.agencyName ? <Copy style={styles.meta}>{`Prepared by ${brand.agencyName}`}</Copy> : null}
       {brand?.clientName ? <Copy style={styles.meta}>{`Prepared for ${brand.clientName}`}</Copy> : null}
@@ -75,11 +77,11 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
         <Copy>{finding.judgment}</Copy><Copy>{finding.impact_path}</Copy>
         <Copy style={styles.meta}>{`${finding.comparison_scope} | ${finding.observed_at}`}</Copy>
         {finding.evidence_ids.map((id) => { const item = evidence.get(id)!; return <View key={id} style={styles.row} wrap={item.object.length + item.field_path.length + String(item.value).length > 1000}>
-          <Copy style={styles.meta}>{`${item.object} | ${item.field_path}`}</Copy>
-          <Copy>{`${item.value === null ? "Not observed" : String(item.value)}${item.unit ? ` ${item.unit}` : ""}`}</Copy>
+          <Copy style={styles.meta}>{`${evidenceFieldLabel(item.field_path)} | ${item.object}`}</Copy>
+          <Copy>{`${evidenceValue(item.value)}${item.unit ? ` ${item.unit}` : ""}`}</Copy>
           <Copy style={styles.meta}>{`${item.comparison_scope} | ${item.observed_at}`}</Copy>
         </View>; })}
-        {finding.limitations.map((limit, index) => <Copy key={index} style={styles.meta}>{`Limit: ${limit}`}</Copy>)}
+        {readerLimits(finding.limitations).map((limit, index) => <Copy key={index} style={styles.meta}>{`Limit: ${limit}`}</Copy>)}
       </View>)}
       <Footer delivery={delivery} note={brand?.footerNote} />
     </Page>
@@ -96,12 +98,11 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
         {action.whyNow.impactPaths.map((path,i) => <Copy key={`impact-${i}`}>{`Potential impact path: ${path}`}</Copy>)}
         {action.whyNow.comparisonScopes.map((scope,i) => <Copy key={`scope-${i}`} style={styles.meta}>{`Checked scope: ${scope}`}</Copy>)}
         {action.whyNow.limits.map((limit,i) => <Copy key={`limit-${i}`} style={styles.meta}>{limit}</Copy>)}
-        <Copy style={styles.meta}>{`Rule: ${action.whyNow.rulesVersion} | ${action.whyNow.reasonCodes.join(" | ")}`}</Copy>
       </View> : null}
       <Copy style={styles.section}>Execution steps</Copy>{action.steps.map((step, i) => <Copy key={i}>{`${i + 1}. ${step}`}</Copy>)}
       <Copy style={styles.section}>Completion checks</Copy>{action.completion.map((item, i) => <Copy key={i}>{`- ${item}`}</Copy>)}
       <Copy style={styles.section}>Review basis</Copy><Copy>{action.review}</Copy>
-      {action.materials.map((material) => <View key={material.id} style={styles.card}>
+      {action.materials.map((material) => <View key={material.id} style={styles.card} wrap={material.body.length + material.target.length >= 1500}>
         <Copy style={styles.title}>{material.title}</Copy>
         <Copy style={styles.kicker}>{material.readiness === "requires_confirmation" ? "CONFIRM BEFORE PUBLISHING" : material.readiness === "ready_to_use" ? "READY FOR YOUR REVIEW" : "EXECUTION INSTRUCTIONS"}</Copy>
         <Copy style={styles.meta}>{`Material target: ${material.target}`}</Copy><Copy>{material.body}</Copy>
@@ -110,8 +111,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
       <Footer delivery={delivery} note={brand?.footerNote} />
     </Page>)}
     <Page size="A4" style={styles.page} wrap><Copy style={styles.kicker}>SCOPE AND LIMITS</Copy><Copy style={styles.heading}>What this report does not establish</Copy>
-      {d.limitations.map((limit, index) => <Copy key={index}>{`- ${limit}`}</Copy>)}
-      <Copy style={styles.meta}>{`Source report ${delivery.reportId} | Approved revision ${delivery.revisionId} | ${delivery.contentChecksum}`}</Copy>
+      {readerLimits(d.limitations).map((limit, index) => <Copy key={index}>{`- ${limit}`}</Copy>)}
       <Footer delivery={delivery} note={brand?.footerNote} />
     </Page>
   </Document>;

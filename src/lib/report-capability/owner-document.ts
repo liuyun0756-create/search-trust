@@ -2,6 +2,7 @@ import { projectCapabilityReport } from "./projection";
 import type { CapabilityRepository } from "./repository";
 import { initialCapabilityRevision } from "./revision";
 import { deliveryOrderConstraints } from "./order";
+import { observationWarnings } from "./reader-copy";
 
 /** Completed entitlement precedes any report or revision content read. */
 export async function loadCapabilityOwnerDocument(
@@ -14,6 +15,7 @@ export async function loadCapabilityOwnerDocument(
   const approved = clientView && revision?.status === "approved" ? revision : null;
   return {
     document: projectCapabilityReport(report, approved?.content),
+    observationWarnings: observationWarnings(report),
     version: report.version,
     generatedAt: report.generated_at,
     approvedRevision: approved?.revision ?? null,
