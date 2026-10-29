@@ -8,6 +8,7 @@ import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
 import { completedReportId, parseVersionedTaskStatus, type VersionedTaskStatus } from "@/lib/analysis-v22/versioned-status";
 import { useAppUser } from "@/lib/client-auth";
+import { isUuid, parseProspectWorkflowRecovery } from "@/lib/prospect-workflow-v22/contracts";
 import {
   clearDraft,
   createNewCaseDraft,
@@ -66,12 +67,10 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   const savingCase = useRef(false);
   const submittingAnalysis = useRef(false);
   const skipNextSave = useRef(false);
-  const latestLookupCase = useRef<string | null>(null);
   const { isLoaded, isSignedIn } = useAppUser();
   const { openLogin } = useAuditModal();
   const authenticatedFetch = useAuthenticatedFetch();
   const [analysisStatus, setAnalysisStatus] = useState<VersionedTaskStatus | null>(null);
-  const [latestAnalysisChecked, setLatestAnalysisChecked] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const needsGbpRepair = analysisStatus?.status === "failed"
     && analysisStatus.error?.error_code.startsWith("V22_CUSTOMER_PUBLIC_GBP_");
@@ -91,13 +90,38 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   }, [draft, hydrated]);
 
   useEffect(() => {
-    if (!hydrated || !draft.prospect_workflow_id || paymentHandoff.caseId) return;
-    setPaymentHandoff({
-      status: "unlocked",
-      caseId: draft.draft_case_id,
-      message: "This Prospect Case is already covered. Refreshing or resuming will not use another credit.",
-    });
-  }, [draft.draft_case_id, draft.prospect_workflow_id, hydrated, paymentHandoff.caseId]);
+    if (!hydrated || !isLoaded || !isSignedIn || !draft.prospect_workflow_id || paymentHandoff.caseId) return;
+    const controller = new AbortController();
+    const workflowId = draft.prospect_workflow_id;
+    void (async () => {
+      try {
+        const response = await authenticatedFetch(`/api/v2/prospect-workflows/${encodeURIComponent(workflowId)}`, { signal: controller.signal });
+        const payload = await response.json().catch(() => null);
+        const restored = response.ok ? parseProspectWorkflowRecovery(payload) : null;
+        if (controller.signal.aborted) return;
+        if (!restored || restored.workflow_id !== workflowId) {
+          setPaymentHandoff({ status: "error", caseId: null,
+            message: "The saved workflow could not be checked. Refresh to reconnect or open Cases & reports. No new analysis has been started." });
+          return;
+        }
+        if (restored.analysis_job_id) {
+          setDraft((current) => reduceWorkspaceState(current, { type: "RESUME_ANALYSIS", job_id: restored.analysis_job_id! }));
+          setPaymentHandoff({ status: "analyzing", caseId: restored.case_id,
+            message: "Reconnecting to your existing report task. No new analysis or charge is needed." });
+        } else if (restored.state !== "reserved") {
+          setPaymentHandoff({ status: "error", caseId: null,
+            message: "This workflow is closed. Open Cases & reports to review its result before starting another analysis." });
+        } else {
+          setPaymentHandoff({ status: "unlocked", caseId: restored.case_id,
+            message: "This Prospect Case is already covered. Refreshing or resuming will not use another credit." });
+        }
+      } catch {
+        if (!controller.signal.aborted) setPaymentHandoff({ status: "error", caseId: null,
+          message: "The saved workflow could not be checked. Refresh to reconnect; no new analysis has been started." });
+      }
+    })();
+    return () => controller.abort();
+  }, [authenticatedFetch, hydrated, isLoaded, isSignedIn, draft.prospect_workflow_id, paymentHandoff.caseId]);
 
   useEffect(() => {
     if (!hydrated || discoverySubmitting || draft.stage !== "competitor_discovery_running" || !draft.discovery_job_id) return;
@@ -160,7 +184,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
           });
           const updatePayload = await updateResponse.json().catch(() => null);
           if (!updateResponse.ok) {
-            setPaymentHandoff({ status: "error", caseId: draft.draft_case_id, message: updatePayload?.error?.message || "The confirmed Case could not be updated yet." });
+            setPaymentHandoff({ status: "error", caseId: null, message: updatePayload?.error?.message || "The confirmed Case could not be updated yet." });
             return null;
           }
           setPaymentHandoff({
@@ -170,10 +194,15 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
           });
           return draft.draft_case_id;
         }
+        if (payload?.error?.code === "CASE_ALREADY_EXISTS" && payload.error.status === "active" && isUuid(payload.error.case_id)) {
+          setPaymentHandoff({ status: "ready", caseId: payload.error.case_id,
+            message: "Existing Case found for this business. Starting a new Prospect workflow uses 1 credit." });
+          return payload.error.case_id;
+        }
         const message = payload?.error?.code === "CASE_ALREADY_EXISTS"
           ? "This client already has a Case. Open the existing Case instead of creating a duplicate."
           : payload?.error?.message || "The Case could not be saved yet.";
-        setPaymentHandoff({ status: "error", caseId: payload?.error?.case_id ?? null, message });
+        setPaymentHandoff({ status: "error", caseId: null, message });
         return null;
       }
       setPaymentHandoff({
@@ -192,9 +221,9 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   }, [authenticatedFetch, draft.business_confirmation, draft.draft_case_id, draft.goal]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || draft.stage !== "prospect_start") return;
+    if (!isLoaded || !isSignedIn || draft.stage !== "prospect_start" || draft.prospect_workflow_id) return;
     if (!paymentHandoff.caseId && paymentHandoff.status === "saving_case") void saveCase();
-  }, [draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId, paymentHandoff.status, saveCase]);
+  }, [draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId, paymentHandoff.status, draft.prospect_workflow_id, saveCase]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || draft.stage !== "prospect_start") return;
@@ -279,48 +308,14 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId,planningEnabled,planning.ready,planning.revision]);
 
   useEffect(() => {
-    const caseId = paymentHandoff.caseId;
-    if (!caseId || draft.goal !== "win_new_client" || draft.analysis_job_id) {
-      if (draft.analysis_job_id) setLatestAnalysisChecked(true);
-      return;
-    }
-    if (latestLookupCase.current === caseId) {
-      setLatestAnalysisChecked(true);
-      return;
-    }
-    latestLookupCase.current = caseId;
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        const response = await authenticatedFetch(`/api/v2/cases/${encodeURIComponent(caseId)}/tasks/latest`, {
-          signal: controller.signal,
-        });
-        if (response.status === 204) return;
-        const latest = await response.json().catch(() => null) as { id?: string } | null;
-        if (response.ok && latest?.id) {
-          setDraft((current) => reduceWorkspaceState(current, {
-            type: "START_ANALYSIS",
-            job_id: latest.id!,
-            idempotency_key: `resume:${latest.id}`,
-          }));
-          setPaymentHandoff((current) => ({ ...current, status: "analyzing", message: "Reconnected to the latest server-owned report task…" }));
-        }
-      } finally {
-        if (!controller.signal.aborted) setLatestAnalysisChecked(true);
-      }
-    })();
-    return () => controller.abort();
-  }, [authenticatedFetch, draft.analysis_job_id, draft.goal, paymentHandoff.caseId]);
-
-  useEffect(() => {
-    if (draft.stage !== "auth_handoff" || paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client" || !latestAnalysisChecked) return;
+    if (draft.stage !== "auth_handoff" || paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client") return;
     if (!draft.analysis_job_id) {
       const jobId = crypto.randomUUID();
       setDraft((current) => reduceWorkspaceState(current, { type: "START_ANALYSIS", job_id: jobId, idempotency_key: `analyze:${current.draft_case_id}:${jobId}` }));
       return;
     }
     void submitAnalysis();
-  }, [draft.analysis_job_id, draft.goal, draft.stage, latestAnalysisChecked, paymentHandoff.status, submitAnalysis]);
+  }, [draft.analysis_job_id, draft.goal, draft.stage, paymentHandoff.status, submitAnalysis]);
 
   useEffect(() => {
     const jobId = draft.analysis_job_id;
@@ -404,8 +399,6 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   function retryAnalysis() {
     if (needsGbpRepair) {
       setAnalysisStatus(null);
-      setLatestAnalysisChecked(false);
-      latestLookupCase.current = null;
       setPaymentHandoff({ status: "saving_case", caseId: null, message: "Add and confirm the client’s public Google Business Profile before restarting analysis." });
       setDraft((current) => reduceWorkspaceState(current, { type: "REPAIR_BUSINESS" }));
       return;
@@ -550,8 +543,6 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     skipNextSave.current = true;
     setDraft(createNewCaseDraft());
     setAnalysisStatus(null);
-    setLatestAnalysisChecked(false);
-    latestLookupCase.current = null;
     setHandoffMessage(null);
     setCreditBalance(null);
     setPaymentHandoff({ status: "saving_case", caseId: null, message: "Saving this confirmed Case before analysis…" });

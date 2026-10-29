@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 
 import { isLocalE2ETestMode } from "@/lib/e2e-v22/config";
 import type { BusinessIdentity, TargetMarket } from "@/lib/report-v22/generated/types";
-import type { BusinessConfirmation, IdentityComparisonStatus, PreflightResponse } from "@/lib/preflight-v22";
+import type { BusinessConfirmation, IdentityComparisonStatus, IdentityFieldComparison, PreflightResponse } from "@/lib/preflight-v22";
 
 interface BusinessMatchStepProps {
   preflight: PreflightResponse;
@@ -19,9 +19,13 @@ interface BusinessMatchStepProps {
 const statusMeta: Record<IdentityComparisonStatus, { label: string; className: string; icon: typeof CheckCircle2 }> = {
   exact_match: { label: "Exact match", className: "bg-[#edf7d5] text-[#56720c]", icon: CheckCircle2 },
   partial_match: { label: "Partial match", className: "bg-[#fff6d9] text-[#8a6500]", icon: HelpCircle },
-  not_matched: { label: "Not matched", className: "bg-[#fff0e8] text-[#a44328]", icon: MinusCircle },
-  error: { label: "Missing / error", className: "bg-[#fbe9e7] text-[#a3332b]", icon: AlertCircle },
+  not_matched: { label: "Different observed values", className: "bg-[#fff0e8] text-[#a44328]", icon: MinusCircle },
+  error: { label: "Not verified", className: "bg-[#fff6d9] text-[#8a6500]", icon: AlertCircle },
 };
+
+function displayStatus(comparison: IdentityFieldComparison): IdentityComparisonStatus {
+  return !comparison.site_value?.trim() || !comparison.gbp_value?.trim() ? "error" : comparison.status;
+}
 
 const fieldLabel = { business_name: "Business name", phone: "Phone", address: "Address", service_area: "Service area" };
 
@@ -46,16 +50,16 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
   const primaryLocationBase = initialPrimaryLocation;
   const targetMarketBase = initialTargetMarket;
   const comparisons = candidate?.field_comparisons ?? [];
-  const exactMatches = comparisons.filter((comparison) => comparison.status === "exact_match").length;
-  const hasMissingEvidence = comparisons.some((comparison) => comparison.status === "error");
-  const hasConflict = comparisons.some((comparison) => comparison.status === "not_matched");
-  const hasPartialMatch = comparisons.some((comparison) => comparison.status === "partial_match");
+  const exactMatches = comparisons.filter((comparison) => displayStatus(comparison) === "exact_match").length;
+  const hasMissingEvidence = comparisons.some((comparison) => displayStatus(comparison) === "error");
+  const hasConflict = comparisons.some((comparison) => displayStatus(comparison) === "not_matched");
+  const hasPartialMatch = comparisons.some((comparison) => displayStatus(comparison) === "partial_match");
   const verdict = !candidate
     ? { label: "Manual confirmation required", detail: "No complete public identity was formed automatically. Confirm every Case field below and provide a traceable GBP listing.", tone: "attention" as const }
-    : hasMissingEvidence
-      ? { label: "Public evidence is incomplete", detail: "At least one identity field is missing on both sources or could not be checked. Keep that limitation visible while confirming the Case.", tone: "attention" as const }
-      : hasConflict
-        ? { label: "Identity conflict needs review", detail: "The website and public GBP disagree on at least one business field. Resolve the scope before competitor discovery begins.", tone: "conflict" as const }
+    : hasConflict
+      ? { label: "Identity conflict needs review", detail: "Observed website and public GBP values differ for at least one business field. Confirm the correct business and branch before continuing.", tone: "conflict" as const }
+      : hasMissingEvidence
+        ? { label: "Public evidence is incomplete", detail: "At least one field was not observed on one or both sources, or could not be checked. A missing observation does not establish a business mismatch. Confirm the Case details below.", tone: "attention" as const }
         : hasPartialMatch
           ? { label: "Identity partially overlaps", detail: "The sources appear related, but at least one field is not identical. Check the details before confirming the Case.", tone: "attention" as const }
           : { label: "Public identity is aligned", detail: "The checked website and GBP fields point to the same business. You still set the service and market the report should cover.", tone: "aligned" as const };
@@ -158,7 +162,7 @@ export function BusinessMatchStep({ preflight, submittedGbpUrl, initialConfirmat
           <div className="hidden grid-cols-[160px_1fr_1fr_165px] gap-5 px-4 pb-3 text-[10px] font-bold uppercase tracking-[0.13em] text-[#929b92] sm:grid"><span>Identity field</span><span>Website evidence</span><span>Public GBP evidence</span><span>Result</span></div>
           <div className="divide-y divide-[#e9ede5]">
             {comparisons.map((comparison) => {
-              const meta = statusMeta[comparison.status];
+              const meta = statusMeta[displayStatus(comparison)];
               const Icon = meta.icon;
               return (
                 <div key={comparison.field} className="grid gap-4 px-1 py-5 first:pt-4 sm:grid-cols-[160px_1fr_1fr_165px] sm:items-start sm:gap-5 sm:px-4">

@@ -182,7 +182,7 @@ export function CasePaymentHandoff({
           <div><p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#668a50]"><Sparkles size={13} />When complete</p><p className="mt-2 text-sm font-semibold">A reviewable report—not an automatic client send.</p></div>
           <div className="grid gap-3 text-[11px] text-[#647466] sm:grid-cols-3">
             <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#57805b]" />Specific findings tied to evidence</p>
-            <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#57805b]" />Three prioritized actions</p>
+            <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#57805b]" />0–3 evidence-backed actions</p>
             <p className="flex gap-2"><Check size={13} className="mt-0.5 shrink-0 text-[#57805b]" />Limits and client confirmations retained</p>
           </div>
         </div>

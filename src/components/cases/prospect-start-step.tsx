@@ -21,7 +21,7 @@ interface ProspectStartStepProps {
 const workflow = [
   ["01", "Discover", "Find and qualify real local competitors."],
   ["02", "Analyze", "Connect public evidence to specific problems."],
-  ["03", "Prepare", "Produce findings and three priority actions."],
+  ["03", "Prepare", "Produce findings and up to three supported actions."],
 ] as const;
 
 export function ProspectStartStep({ business, status, message, caseReady, covered, creditBalance, signedIn, onStart, onSignIn }: ProspectStartStepProps) {

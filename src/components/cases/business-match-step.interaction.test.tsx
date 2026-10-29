@@ -147,3 +147,29 @@ describe("BusinessMatchStep interactions", () => {
     }));
   });
 });
+
+
+describe("missing observations and real identity conflicts", () => {
+  it("shows missing source fields as unverified instead of a conflict", () => {
+    const preflight = structuredClone(preflightFixture);
+    preflight.identity_candidates[0].field_comparisons[2] = {
+      field: "address", site_value: null, gbp_value: "123 Main St", status: "not_matched", reason: "Website address not observed.",
+    };
+    render(<BusinessMatchStep preflight={preflight} submittedGbpUrl={TRACEABLE_GBP_URL} onConfirm={vi.fn()} onEditSource={vi.fn()} />);
+    expect(screen.getByRole("heading", { name: "Public evidence is incomplete" })).toBeVisible();
+    expect(screen.getByText("Not verified")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Identity conflict needs review" })).not.toBeInTheDocument();
+  });
+  it("does not hide an observed conflict when another field is missing", () => {
+    const preflight = structuredClone(preflightFixture);
+    preflight.identity_candidates[0].field_comparisons[0] = {
+      field: "business_name", site_value: "Business A", gbp_value: "Business B", status: "not_matched", reason: "Different observed names.",
+    };
+    preflight.identity_candidates[0].field_comparisons[2] = {
+      field: "address", site_value: null, gbp_value: "123 Main St", status: "error", reason: "Address not observed.",
+    };
+    render(<BusinessMatchStep preflight={preflight} submittedGbpUrl={TRACEABLE_GBP_URL} onConfirm={vi.fn()} onEditSource={vi.fn()} />);
+    expect(screen.getByRole("heading", { name: "Identity conflict needs review" })).toBeVisible();
+    expect(screen.getByText("Different observed values")).toBeVisible();
+  });
+});

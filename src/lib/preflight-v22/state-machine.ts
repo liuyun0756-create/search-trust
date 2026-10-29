@@ -70,6 +70,7 @@ export type WorkspaceEvent =
   | { type: "RETURN_TO_COVERAGE" }
   | { type: "BEGIN_AUTH_HANDOFF" }
   | { type: "START_ANALYSIS"; job_id: string; idempotency_key: string }
+  | { type: "RESUME_ANALYSIS"; job_id: string }
   | { type: "RESET_ANALYSIS" }
   | { type: "RESTART_PROSPECT" }
   | { type: "REPAIR_BUSINESS" }
@@ -241,6 +242,10 @@ export function reduceWorkspaceState(
       return state.stage === "auth_handoff" && !state.analysis_job_id
         ? touch(state, { analysis_job_id: event.job_id, analysis_idempotency_key: event.idempotency_key }, now)
         : state;
+    case "RESUME_ANALYSIS":
+      return touch(state, { stage: "auth_handoff", analysis_job_id: event.job_id,
+        analysis_idempotency_key: state.analysis_job_id === event.job_id
+          ? state.analysis_idempotency_key : `resume:${event.job_id}` }, now);
     case "RESET_ANALYSIS":
       return touch(state, {
         previous_analysis_job_id: state.analysis_job_id,

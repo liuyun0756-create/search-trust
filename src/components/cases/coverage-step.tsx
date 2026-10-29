@@ -66,7 +66,7 @@ const moduleLabels = {
 const resultItems = [
   ["Specific findings", "What was observed on this business, not a generic audit score."],
   ["Traceable evidence", "The public source and scope behind each material judgment."],
-  ["Three priority actions", "What to discuss first, why it matters and what still needs confirmation."],
+  ["Up to three supported actions", "Specific next steps where evidence supports them. With insufficient evidence, the report records the diagnosis without proposing a change."],
 ] as const;
 
 function cta(goal: WorkGoal, workflowReserved: boolean) {

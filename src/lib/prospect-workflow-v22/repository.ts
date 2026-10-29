@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { parseProspectWorkflowReservation, type ProspectWorkflowReservation } from "./contracts";
+import { parseProspectWorkflowReservation, parseProspectWorkflowRecovery, type ProspectWorkflowReservation } from "./contracts";
 
 export interface ProspectWorkflowRepository {
   reserve(input: {
@@ -25,6 +25,17 @@ export class ProspectWorkflowPersistenceError extends Error {
 
 export class SupabaseProspectWorkflowRepository implements ProspectWorkflowRepository {
   constructor(private readonly db: SupabaseClient) {}
+
+  async recover(userId: string, workflowId: string) {
+    const { data, error } = await this.db.from("workflow_charges")
+      .select("id,case_id,discovery_job_id,analysis_job_id,state")
+      .eq("id", workflowId).eq("user_id", userId).eq("workflow_kind", "prospect").maybeSingle();
+    if (error) throw new ProspectWorkflowPersistenceError();
+    if (!data) return null;
+    const parsed = parseProspectWorkflowRecovery({ ...data, workflow_id: data.id });
+    if (!parsed) throw new ProspectWorkflowPersistenceError();
+    return parsed;
+  }
 
   async reserve(input: {
     userId: string;
