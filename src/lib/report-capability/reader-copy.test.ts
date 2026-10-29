@@ -39,6 +39,7 @@ describe("client-facing report copy", () => {
     expect(readerLimit("SERP_LOCAL_PACK_SECTION_INVALID")).toContain("not evidence that the business is absent");
     expect(readerLimit("v22_public.market_site_domain_unobserved: identity_unresolved")).toContain("remain unverified");
     expect(readerLimit("candidate_exhausted")).toContain("Confirm it directly");
+    expect(readerLimit("V22.CROSS_SOURCE.GSC_GA4.PAGE_DIRECTION_CONFLICT: page_identity_ambiguous")).toBe("The search console analytics page direction conflict check remains unverified: page identity ambiguous.");
     expect(readerLimit("Confirmed-identity site/GBP alignment evidence was added for this offline evaluation.")).not.toContain("offline");
   });
   it("retains substantive limits and deduplicates equivalent explanations", () => {

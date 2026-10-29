@@ -25,7 +25,7 @@ export function readerLimit(value: string): string {
     if (value.includes("competitor_")) return "The saved page samples do not establish a service-page gap. Check the existing pages before proposing a new one.";
     return "Some search comparisons remain unverified because the sample or business identity was insufficient. This does not establish a ranking problem.";
   }
-  const privateRule = value.match(/^V22\.(?:FIRST_PARTY|CROSS_SOURCE)\.([A-Z_.]+): ([a-z_]+)$/);
+  const privateRule = value.match(/^V22\.(?:FIRST_PARTY|CROSS_SOURCE)\.([A-Z0-9_.]+): ([a-z_]+)$/);
   if (privateRule) {
     const check = privateRule[1].replaceAll("GSC", "Search Console").replaceAll("GA4", "Analytics").replaceAll("GBP", "Business Profile").replace(/[_.]/g, " ").toLowerCase();
     return privateRule[2] === "no_issue" ? `No finding was produced for the ${check} check.`
