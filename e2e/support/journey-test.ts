@@ -1,5 +1,6 @@
 import { expect, test as base, type Page } from "@playwright/test";
 
+import type { NewCaseDraft } from "../../src/lib/preflight-v22";
 import { E2E_IDS } from "../fixtures/ids";
 import { discoveryStatusFixture, E2E_BUSINESS, E2E_MARKET, E2E_NOW, preflightFixture } from "../fixtures/preflight";
 import { installLocalApiRouter, LocalApiScenario, type LocalApiScenarioOptions } from "./api-router";
@@ -53,7 +54,7 @@ export async function completeProspectAcquisition(page: Page, selectedCompetitor
   await expect(page.getByRole("heading", { name: "Know what the report can say before it is generated." })).toBeVisible();
 }
 
-export async function seedCoverageDraft(page: Page): Promise<void> {
+export async function seedCoverageDraft(page: Page, overrides: Partial<NewCaseDraft> = {}): Promise<void> {
   const discovery = discoveryStatusFixture("succeeded");
   const draft = {
     schema_version: "2.2-new-case-v2",
@@ -78,6 +79,7 @@ export async function seedCoverageDraft(page: Page): Promise<void> {
     analysis_job_id: null,
     analysis_idempotency_key: null,
     previous_analysis_job_id: null,
+    ...overrides,
   };
   await page.addInitScript(({ value }) => {
     const key = "searchtrust:v2.2:new-case-draft";

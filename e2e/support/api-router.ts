@@ -53,6 +53,7 @@ export interface LocalApiScenarioOptions {
   share?: ShareScenario;
   verified?: VerifiedScenario;
   verifiedBalance?: number;
+  prospectRecovery?: "none" | "reserved" | "running";
 }
 
 export interface FixtureRequest {
@@ -90,6 +91,7 @@ export class LocalApiScenario {
   readonly options: Required<LocalApiScenarioOptions>;
   private discoveryPoll = 0;
   private analysisPoll = 0;
+  private analysisStarted = false;
   private syncPoll = 0;
   private checkoutUnlocked = false;
   private shareRevoked: boolean;
@@ -116,9 +118,12 @@ export class LocalApiScenario {
       share: options.share ?? "active",
       verified: options.verified ?? "success",
       verifiedBalance: options.verifiedBalance ?? 1,
+      prospectRecovery: options.prospectRecovery ?? "none",
     };
     this.shareRevoked = this.options.share === "revoked";
     this.verifiedBalance = this.options.verifiedBalance;
+    if (this.options.prospectRecovery !== "none") this.prospectWorkflowId = E2E_IDS.prospectWorkflowId;
+    this.analysisStarted = this.options.prospectRecovery === "running";
   }
 
   snapshot() {
@@ -191,6 +196,14 @@ export class LocalApiScenario {
         },
       };
     }
+    if (key.startsWith("GET /api/v2/prospect-workflows/")) {
+      if (!this.prospectWorkflowId || url.pathname !== `/api/v2/prospect-workflows/${this.prospectWorkflowId}`) {
+        return { status: 404, body: { error: { code: "PROSPECT_WORKFLOW_NOT_FOUND" } } };
+      }
+      return { status: 200, body: { workflow_id: this.prospectWorkflowId, case_id: this.caseId,
+        discovery_job_id: this.discoveryJobId, analysis_job_id: this.analysisStarted ? this.analysisJobId : null,
+        state: "reserved" } };
+    }
     if (key === `GET /api/v2/competitors/tasks/${this.discoveryJobId}`) {
       const poll = this.discoveryPoll++;
       const state = this.options.competitors === "failure" && poll >= 1 ? "failed" : poll === 0 ? "running" : this.options.competitors === "zero" ? "zero" : "succeeded";
@@ -234,6 +247,7 @@ export class LocalApiScenario {
     if (key === "POST /api/v2/analyze") {
       valid(parseAnalyzeRequest(jsonBody(request)), "analysis");
       this.analysisJobId = request.headers?.["x-searchtrust-job-id"] ?? E2E_IDS.analysisJobId;
+      this.analysisStarted = true;
       return { status: 202, body: { job_id: this.analysisJobId, status: "queued", estimated_seconds: 3 } };
     }
     if (key === `GET /api/v2/tasks/${this.analysisJobId}`) {
