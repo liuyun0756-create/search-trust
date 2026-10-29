@@ -131,7 +131,7 @@ export function CasePaymentHandoff({
                 <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em]">{businessName}</h2>
                 <p className="mt-2 text-xs leading-5 text-[#718073]">{scopeLine}</p>
               </div>
-              {status === "analysis_failed" ? <span className="rounded-full bg-[#fff2e7] px-3 py-1.5 text-[10px] font-bold uppercase text-[#963b27]">Credit returned</span> : covered && <span className="rounded-full bg-[#dff1ab] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#405c00]">Covered · no extra credit</span>}
+              {status === "analysis_failed" ? <span className="rounded-full bg-[#fff2e7] px-3 py-1.5 text-[10px] font-bold uppercase text-[#963b27]">Workflow refunded</span> : covered && <span className="rounded-full bg-[#dff1ab] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#405c00]">Covered · no extra credit</span>}
             </div>
 
             <div className="mt-8 rounded-xl border border-[#e3eae2] p-4" role="status" aria-label="Report generation stage">
