@@ -936,6 +936,70 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await db.query(`select count(*)::integer as n from public.credit_ledger where workflow_charge_id=$1`, [f.job])).rows[0]).toEqual({ n: 1 });
     expect((await db.query(`select count(*)::integer as n from public.report_content_revisions where report_id=$1`, [f.job])).rows[0]).toEqual({ n: 0 });
   });
+  async function persistFinalCosts(f: Awaited<ReturnType<typeof fixture>>, revision = 5,
+    overrides: {caseId?: string; kind?: string; status?: string; wrongStart?: boolean} = {}) {
+    const counters = {cost_schema_version: 1, cost_ledger_revision: revision,
+      job_attempts: 2, job_retry_count: 0, serpapi_attempts: 1};
+    await db.transaction(async tx => {
+      await tx.exec("set local role service_role");
+      await tx.query(`select * from upsert_v22_job_cost_summary($1,$2,$3,$4,2,$5,$6::jsonb,
+        (select created_at from analysis_jobs where id=$1) + $7::interval,now())`,
+      [f.job, overrides.caseId ?? f.caseId, overrides.kind ?? "verified_report",
+        overrides.status ?? "succeeded", revision, json(counters), overrides.wrongStart ? "-1 second" : "0 seconds"]);
+    });
+    return counters;
+  }
+
+  it("synchronizes final capability costs without changing settled report, approval or credits", async () => {
+    const f = await fixture(); await f.freeze(); await f.complete(); await f.save();
+    const before = (await db.query(`select status,capability_report_id,completed_at,state_revision,
+      terminal_effects_revision from analysis_jobs where id=$1`, [f.job])).rows[0];
+    const approval = (await db.query("select * from report_content_revisions where report_id=$1", [f.job])).rows;
+    const counters = await persistFinalCosts(f);
+    expect((await db.query("select cost_counters from analysis_jobs where id=$1", [f.job])).rows[0])
+      .toEqual({cost_counters: counters});
+    expect((await db.query(`select status,capability_report_id,completed_at,state_revision,
+      terminal_effects_revision from analysis_jobs where id=$1`, [f.job])).rows[0]).toEqual(before);
+    expect((await f.completed()).rows[0].payload).toEqual(f.report);
+    expect((await db.query("select * from report_content_revisions where report_id=$1", [f.job])).rows).toEqual(approval);
+    expect((await db.query("select credit_balance from users where id=$1", [f.owner])).rows[0]).toEqual({credit_balance: 4});
+    expect((await db.query("select delta from credit_ledger where workflow_charge_id=$1", [f.job])).rows).toEqual([{delta: -1}]);
+    await persistFinalCosts(f, 4);
+    expect((await db.query("select cost_counters from analysis_jobs where id=$1", [f.job])).rows[0])
+      .toEqual({cost_counters: counters});
+    const newer = await persistFinalCosts(f, 6);
+    expect((await db.query("select cost_counters from analysis_jobs where id=$1", [f.job])).rows[0])
+      .toEqual({cost_counters: newer});
+  });
+
+  it.each(["case", "kind", "status", "started", "active"])("rejects final cost identity mismatch: %s", async reason => {
+    const f = await fixture(); await f.freeze();
+    if (reason !== "active") await f.complete();
+    const other = reason === "case" ? await fixture() : null;
+    const before = (await db.query("select cost_counters,status from analysis_jobs where id=$1", [f.job])).rows;
+    await expect(persistFinalCosts(f, 5, {
+      caseId: other?.caseId, kind: reason === "kind" ? "prospect_report" : undefined,
+      status: reason === "status" ? "failed" : undefined, wrongStart: reason === "started",
+    })).rejects.toThrow("COST_SUMMARY_TASK_CONFLICT");
+    expect((await db.query("select cost_counters,status from analysis_jobs where id=$1", [f.job])).rows).toEqual(before);
+    expect((await db.query("select job_id from job_cost_summaries where job_id=$1", [f.job])).rows).toEqual([]);
+  });
+
+  it("keeps terminal cost synchronization internal to the service-only summary path", async () => {
+    expect((await db.query(`select has_function_privilege('anon','sync_v22_capability_terminal_costs()','execute') a,
+      has_function_privilege('authenticated','sync_v22_capability_terminal_costs()','execute') b,
+      has_function_privilege('service_role','sync_v22_capability_terminal_costs()','execute') c`)).rows[0])
+      .toEqual({a: false, b: false, c: false});
+  });
+  it("synchronizes failed task costs without returning a second credit", async () => {
+    const f = await fixture(); await f.freeze();
+    await db.query("update analysis_jobs set status='failed',current_stage='failed',completed_at=now(),error_code='TEST_FAILURE' where id=$1", [f.job]);
+    const before = (await db.query("select kind,delta from credit_ledger where workflow_charge_id=$1 order by delta", [f.job])).rows;
+    const counters = await persistFinalCosts(f, 5, {status: "failed"});
+    expect((await db.query("select cost_counters from analysis_jobs where id=$1", [f.job])).rows[0]).toEqual({cost_counters: counters});
+    expect((await db.query("select kind,delta from credit_ledger where workflow_charge_id=$1 order by delta", [f.job])).rows).toEqual(before);
+    expect(before).toEqual([{kind: "verified_debit", delta: -1}, {kind: "technical_failure_credit", delta: 1}]);
+  });
   it("keeps a saved candidate private until successful settlement and rejects early success callbacks", async () => {
     const f = await fixture(); await f.freeze(); await f.store();
     expect((await f.completed()).rows).toEqual([]);
