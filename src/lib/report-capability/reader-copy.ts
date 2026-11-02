@@ -35,6 +35,17 @@ export function readerLimit(value: string): string {
   return value;
 }
 
+const SAMPLE_TARGET = /^(.+) · (organic|maps|local_pack) · -?\d+(?:\.\d+)?,-?\d+(?:\.\d+)? · [a-z]{2}(?:-[A-Za-z]{2})? · (mobile|desktop)$/;
+const SAMPLE_TYPES: Record<string, string> = { organic: "Organic search", maps: "Maps", local_pack: "Search-result local pack" };
+
+/** Client reading: system search-sample targets keep the query and result type; coordinates, language and device stay in SEO views. */
+export function readerTarget(value: string): string {
+  return [...new Set(value.split("\n").map(line => {
+    const sample = line.match(SAMPLE_TARGET);
+    return sample ? `${sample[1]} · ${SAMPLE_TYPES[sample[2]]}` : line;
+  }))].join("\n");
+}
+
 export function readerLimits(values: string[]): string[] {
   return [...new Set(values.map(readerLimit))];
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readerLimit, readerLimits, evidenceFieldLabel, evidenceValue, observationWarnings } from "./reader-copy";
+import { readerLimit, readerLimits, readerTarget, evidenceFieldLabel, evidenceValue, observationWarnings } from "./reader-copy";
 import { generatedDelivery } from "./fixtures/generated-delivery";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
@@ -46,6 +46,20 @@ describe("client-facing report copy", () => {
     const statement = "A sampled difference does not establish a ranking cause.";
     expect(readerLimit(statement)).toBe(statement);
     expect(readerLimits([statement, statement])).toEqual([statement]);
+  });
+  it("keeps search-sample coordinates, language and device out of client reading", () => {
+    const sample = "Plumbing repair Fresno · organic · 36.774001,-119.68942 · en · mobile\nPlumbing repair Fresno · maps · 36.774001,-119.68942 · en · mobile\nbest Plumbing repair Fresno · maps · 36.774001,-119.68942 · en · desktop";
+    expect(readerTarget(sample)).toBe("Plumbing repair Fresno · Organic search\nPlumbing repair Fresno · Maps\nbest Plumbing repair Fresno · Maps");
+    expect(readerTarget("https://example.com/service")).toBe("https://example.com/service");
+    expect(readerTarget("Homepage · 12, Main St · en · mobile")).toBe("Homepage · 12, Main St · en · mobile");
+    const { delivery } = generatedDelivery("service-first.json");
+    delivery.document.actions[0].target = sample;
+    delivery.document.findings[0].target = sample;
+    const client = renderToStaticMarkup(createElement(CapabilityReportDocument, { document: delivery.document }));
+    expect(client).not.toContain("36.774001");
+    expect(client).toContain("Plumbing repair Fresno · Maps");
+    const owner = renderToStaticMarkup(createElement(CapabilityReportDocument, { document: delivery.document, technicalDetails: true }));
+    expect(owner).toContain("36.774001,-119.68942 · en · mobile");
   });
   it("uses a readable field label while retaining source values", () => {
     expect(evidenceFieldLabel("/payload/query_runs/1/results/7/position")).toBe("Observed search position");

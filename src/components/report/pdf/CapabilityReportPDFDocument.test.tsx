@@ -6,8 +6,57 @@ import { describe, expect, it } from "vitest";
 import { generatedDelivery } from "@/lib/report-capability/fixtures/generated-delivery";
 import { CapabilityReportPDFDocument } from "./CapabilityReportPDFDocument";
 import { buildApprovedCapabilityDelivery } from "@/lib/report-capability/delivery";
+import { novaSampleDelivery, sampleTargetDelivery, targetQueries, ordinaryTarget, unmatchedTarget } from "@/lib/report-capability/fixtures/sample-target-delivery";
+
+// Inspect text from the completed PDF layout, not compressed PDF bytes or mocked components.
+function renderedText(node: unknown): string {
+  if (!node || typeof node !== "object") return "";
+  const value = node as { type?: string; value?: string; children?: unknown[] };
+  if (value.type === "TEXT_INSTANCE") return value.value ?? "";
+  return value.children?.map(renderedText).join("\n") ?? "";
+}
 
 describe("Capability approved PDF renderer", () => {
+  it.runIf(Boolean(process.env.P0_01_NOVA_REPORT_PATH))("renders the real Nova PDF without sampling coordinates or device parameters", async () => {
+    const delivery = novaSampleDelivery();
+    const before = JSON.stringify(delivery);
+    let text = "";
+    const pdf = await renderToBuffer(React.cloneElement(CapabilityReportPDFDocument({ delivery }), {
+      onRender: (result: unknown) => {
+        text = renderedText((result as { _INTERNAL__LAYOUT__DATA_: unknown })._INTERNAL__LAYOUT__DATA_);
+      },
+    }));
+    expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
+    expect(text).toContain("Plumbing repair Fresno · Organic search");
+    expect(text).not.toContain("36.774001");
+    expect(text).not.toContain("· en · mobile");
+    expect(JSON.stringify(delivery)).toBe(before);
+    if (process.env.V22_PDF_OUTPUT_DIR) {
+      await mkdir(path.resolve(process.env.V22_PDF_OUTPUT_DIR), { recursive: true });
+      await writeFile(path.join(path.resolve(process.env.V22_PDF_OUTPUT_DIR), "nova-v5-p0-01.pdf"), pdf);
+    }
+  });
+  it("renders PDF text without sample coordinates in targets, rationale, materials or execution steps", async () => {
+    const delivery = sampleTargetDelivery();
+    const before = JSON.stringify(delivery);
+    let text = "";
+    const document = React.cloneElement(CapabilityReportPDFDocument({ delivery }), {
+      onRender: (result: unknown) => {
+        text = renderedText((result as { _INTERNAL__LAYOUT__DATA_: unknown })._INTERNAL__LAYOUT__DATA_);
+      },
+    });
+    const pdf = await renderToBuffer(document);
+    expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
+    expect(text).not.toContain("36.774001");
+    expect(text).not.toContain("-119.68942");
+    expect(text.replaceAll(unmatchedTarget, "")).not.toContain("· en · mobile");
+    expect(text).not.toContain("· en · desktop");
+    for (const query of targetQueries) expect(text).toContain(`${query} · Organic search`);
+    expect(text).toContain(ordinaryTarget);
+    expect(text).toContain(unmatchedTarget);
+    expect(text.match(/Checked scope: Scope query · Organic search/g)).toHaveLength(1);
+    expect(JSON.stringify(delivery)).toBe(before);
+  });
   it.each(["public-0.json", "public-3.json", "service-first.json", "service-measurement.json"])("renders the exact approved projection for %s", async (name) => {
     const { report, saved } = generatedDelivery(name);
     saved.content.summary = "SEO-approved client summary, retained in the PDF.";

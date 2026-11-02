@@ -3,7 +3,7 @@ import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/render
 import type { ApprovedCapabilityDelivery } from "@/lib/report-capability/delivery";
 import type { EffectiveBranding } from "@/lib/report-pdf/branding";
 import { assertCapabilityPdfText } from "@/lib/report-pdf/capability-fonts";
-import { evidenceFieldLabel, evidenceValue, readerLimits } from "@/lib/report-capability/reader-copy";
+import { evidenceFieldLabel, evidenceValue, readerLimits, readerTarget } from "@/lib/report-capability/reader-copy";
 
 const styles = StyleSheet.create({
   page: { padding: 38, paddingBottom: 72, fontFamily: "CapabilitySans", fontSize: 9, color: "#213D32", lineHeight: 1.5 },
@@ -63,7 +63,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
       <Copy style={styles.section}>{d.actions.length ? "Proposed work, in order" : "No action proposed"}</Copy>
       {d.actions.length ? d.actions.map((action) => <View key={action.id} style={styles.row} wrap={false}>
         <Copy style={styles.title}>{`${String(action.sequence).padStart(2, "0")} / ${action.title}`}</Copy>
-        <Copy style={styles.meta}>{action.target}</Copy>
+        <Copy style={styles.meta}>{readerTarget(action.target)}</Copy>
       </View>) : <Copy>The eligible evidence supports a diagnosis, not a proposed change. Review the recorded observations and unresolved checks before deciding what to investigate next.</Copy>}
       {d.clientNote ? <View style={styles.note}><Copy style={styles.title}>Note from your SEO</Copy><Copy>{d.clientNote}</Copy></View> : null}
       <Footer delivery={delivery} note={brand?.footerNote} />
@@ -72,7 +72,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
       <Copy style={styles.kicker}>CHECKED EVIDENCE</Copy><Copy style={styles.heading}>The basis for the decision</Copy>
       {d.findings.map((finding) => <View key={finding.id} style={styles.evidenceCard}>
         <View wrap={finding.target.length + finding.observed_fact.length > 600}>
-          <Copy style={styles.title}>{finding.target}</Copy><Copy>{finding.observed_fact}</Copy>
+          <Copy style={styles.title}>{readerTarget(finding.target)}</Copy><Copy>{finding.observed_fact}</Copy>
         </View>
         <Copy>{finding.judgment}</Copy><Copy>{finding.impact_path}</Copy>
         <Copy style={styles.meta}>{`${finding.comparison_scope} | ${finding.observed_at}`}</Copy>
@@ -87,25 +87,25 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
     </Page>
     {d.actions.map((action) => <Page key={action.id} size="A4" style={styles.page} wrap>
       <Copy style={styles.kicker}>{`ACTION ${String(action.sequence).padStart(2, "0")}`}</Copy>
-      <Copy style={styles.heading}>{action.title}</Copy><Copy style={styles.meta}>{`Target: ${action.target}`}</Copy>
+      <Copy style={styles.heading}>{action.title}</Copy><Copy style={styles.meta}>{`Target: ${readerTarget(action.target)}`}</Copy>
       {action.whyNow ? <View style={styles.card}>
         <Copy style={styles.title}>{action.whyNow.deliveryChanged ? `System recommendation - original position ${action.whyNow.systemPosition}` : "Why now"}</Copy>
         <Copy>{action.whyNow.explanation}</Copy>
-        {action.whyNow.deliveryChanged ? <Copy>{`The delivery plan was edited. This rationale describes the original recommendation: ${action.whyNow.systemTitle} | ${action.whyNow.systemTarget}`}</Copy> : null}
+        {action.whyNow.deliveryChanged ? <Copy>{`The delivery plan was edited. This rationale describes the original recommendation: ${action.whyNow.systemTitle} | ${readerTarget(action.whyNow.systemTarget)}`}</Copy> : null}
         <Copy>{`Prerequisites: ${action.whyNow.prerequisites.join("; ") || "No explicit prerequisite action recorded."}`}</Copy>
         <Copy>{`Business relevance: ${action.whyNow.business}`}</Copy><Copy>{`Evidence: ${action.whyNow.evidence}`}</Copy>
         <Copy>{`Execution conditions: ${action.whyNow.execution}`}</Copy>
         {action.whyNow.impactPaths.map((path,i) => <Copy key={`impact-${i}`}>{`Potential impact path: ${path}`}</Copy>)}
-        {action.whyNow.comparisonScopes.map((scope,i) => <Copy key={`scope-${i}`} style={styles.meta}>{`Checked scope: ${scope}`}</Copy>)}
+        {[...new Set(action.whyNow.comparisonScopes.map(readerTarget))].map((scope,i) => <Copy key={`scope-${i}`} style={styles.meta}>{`Checked scope: ${scope}`}</Copy>)}
         {action.whyNow.limits.map((limit,i) => <Copy key={`limit-${i}`} style={styles.meta}>{limit}</Copy>)}
       </View> : null}
-      <Copy style={styles.section}>Execution steps</Copy>{action.steps.map((step, i) => <Copy key={i}>{`${i + 1}. ${step}`}</Copy>)}
+      <Copy style={styles.section}>Execution steps</Copy>{action.steps.map((step, i) => <Copy key={i}>{`${i + 1}. ${readerTarget(step)}`}</Copy>)}
       <Copy style={styles.section}>Completion checks</Copy>{action.completion.map((item, i) => <Copy key={i}>{`- ${item}`}</Copy>)}
       <Copy style={styles.section}>Review basis</Copy><Copy>{action.review}</Copy>
       {action.materials.map((material) => <View key={material.id} style={styles.card} wrap={material.body.length + material.target.length >= 1500}>
         <Copy style={styles.title}>{material.title}</Copy>
         <Copy style={styles.kicker}>{material.readiness === "requires_confirmation" ? "CONFIRM BEFORE PUBLISHING" : material.readiness === "ready_to_use" ? "READY FOR YOUR REVIEW" : "EXECUTION INSTRUCTIONS"}</Copy>
-        <Copy style={styles.meta}>{`Material target: ${material.target}`}</Copy><Copy>{material.body}</Copy>
+        <Copy style={styles.meta}>{`Material target: ${readerTarget(material.target)}`}</Copy><Copy>{material.body}</Copy>
         {material.confirmation_items.map((item, i) => <Copy key={i}>{`Confirm: ${item}`}</Copy>)}
       </View>)}
       <Footer delivery={delivery} note={brand?.footerNote} />
