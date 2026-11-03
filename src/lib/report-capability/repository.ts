@@ -118,7 +118,7 @@ export class CapabilityRepository {
     if (!data) return null;
     const checked = validateCapabilityReport(data.payload);
     if (!checked.ok || data.id !== reportId || data.user_id !== userId || data.case_id !== caseId
-      || data.schema_version !== "2.2.2" || checked.report.id !== reportId
+      || data.schema_version !== checked.report.schema_version || checked.report.id !== reportId
       || checked.report.input_manifest.user_id !== userId || checked.report.input_manifest.case_id !== caseId
       || data.payload_checksum !== canonicalDigest(checked.report)) throw new CapabilityPersistenceError("CAPABILITY_INVALID");
     return checked.report;

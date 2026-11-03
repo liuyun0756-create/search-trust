@@ -1191,4 +1191,38 @@ describe.sequential("P1 isolated capability persistence", () => {
       expect((await db.query(`select count(*)::integer as n from public.credit_ledger where workflow_charge_id=$1 and kind='technical_failure_credit'`,[f.job])).rows[0]).toEqual({ n:1 });
     }
   });
+  it("P0-04 freezes rendered and static sources separately and preserves versioned delivery", async () => {
+    const f = await fixture({ acquisition: true });
+    const original = (await db.query<{id:string;normalized_payload:Record<string,unknown>}>('select id,normalized_payload from public.data_snapshots where case_id=$1', [f.caseId])).rows;
+    const staticRef = f.m.snapshots[0];
+    const payload = {schema_version:"site_rendered_snapshot_v1",source_kind:"rendered",root_url:f.m.business.site_url,
+      static_payload_checksum:staticRef.payload_checksum,completed_at:staticRef.fetched_at,
+      pages:[{url:f.m.business.site_url,deep_snapshot:{html:"<p>512-555-0100</p>"}}],limitations:[]};
+    const rendered = {...staticRef,snapshot_id:randomUUID(),source_kind:"rendered",schema_version:payload.schema_version,payload_checksum:canonicalDigest(payload)};
+    // This SQL-boundary fixture deliberately uses small synthetic sources.
+    const m = {...f.m,schema_version:"v22_analysis_input_v2",ruleset_version:"v22_capability_public_v7",snapshots:[...f.m.snapshots,rendered]};
+    const sources = m.snapshots.map(ref => ({kind:ref.source_kind,binding:{snapshot_id:ref.snapshot_id,case_id:f.caseId,
+      source_type:ref.source_kind==="public_gbp"?"gbp":ref.source_kind==="rendered"?"site":ref.source_kind,
+      schema_version:ref.schema_version,payload_checksum:ref.payload_checksum,fetched_at:ref.fetched_at,expires_at:ref.expires_at,
+      health_status:"healthy",identity_match_status:"matched"},
+      payload:ref.source_kind==="rendered"?payload:original.find(s=>s.id===ref.snapshot_id)!.normalized_payload}));
+    const body = {evidence_input:{sources}};
+    const recipe = {schema_version:"v22_generation_recipe_v2",request:{evidence_input:{sources:sources.map(({payload:_payload,...header})=>header)}}};
+    m.generation_input_checksum=canonicalDigest(body);
+    m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(m).filter(([key])=>key!=="input_checksum")));
+    const prepare = () => db.query(`select * from public.prepare_v22_capability_analysis_input($1,$2,$3,$4::jsonb,$5,$6::jsonb,$7,$8::jsonb,null,1)`,
+      [f.owner,f.caseId,f.job,json(m),canonicalJsonText(Object.fromEntries(Object.entries(m).filter(([key])=>key!=="input_checksum"))),json(recipe),canonicalJsonText(body),
+        json(Object.fromEntries(sources.map(s=>[s.kind,canonicalJsonText(s.payload)])))]);
+    await prepare(); await prepare();
+    expect((await db.query<{value:unknown}>("select public.hydrate_v22_capability_generation_input($1::jsonb,$2::jsonb) value",[json(m),json(recipe)])).rows[0].value).toEqual(body);
+    expect((await db.query("select normalized_payload from public.data_snapshots where id=$1",[staticRef.snapshot_id])).rows[0]).toEqual({normalized_payload:original.find(s=>s.id===staticRef.snapshot_id)!.normalized_payload});
+    expect((await db.query<{source_kind:string}>("select source_kind from public.analysis_manifest_snapshots where manifest_id=$1 order by source_kind",[m.id])).rows.map(s=>s.source_kind)).toEqual(["competitor","public_gbp","rendered","serp","site"]);
+    const report = {...f.report,schema_version:"2.2.4",input_manifest:m};
+    await db.query("select * from public.complete_v22_capability_analysis($1,$2,$3,$4::jsonb,$5,1)",[f.owner,f.caseId,f.job,json(report),canonicalJsonText(report)]);
+    expect((await f.completed()).rows[0].payload).toEqual(report);
+    expect((await db.query<{id:string}>("select id from public.list_v22_completed_capability_reports($1)",[f.owner])).rows.map(r=>r.id)).toContain(f.job);
+    await f.save({...f.revision,source_checksum:canonicalDigest(report)});
+    expect((await db.query("select schema_version from public.capability_report_versions where id=$1",[f.job])).rows[0]).toEqual({schema_version:"2.2.4"});
+  });
+
 });

@@ -6,6 +6,6 @@ export function readVersionedReport(value: unknown) {
   const legacy = validateReportV22(value);
   if (legacy.ok) return { ok: true, version: "2.2.1", report: legacy.report } as const;
   const capability = validateCapabilityReport(value);
-  if (capability.ok) return { ok: true, version: "2.2.2", report: capability.report } as const;
+  if (capability.ok) return { ok: true, version: capability.report.schema_version, report: capability.report } as const;
   return { ok: false, code: "REPORT_CONTRACT_INVALID" } as const;
 }

@@ -13,8 +13,8 @@ const structure: ValidateFunction<CapabilityReport> = ajv.getSchema<CapabilityRe
 const revisionStructure: ValidateFunction<DeliveryRevision> = ajv.getSchema<DeliveryRevision>("capability#/$defs/DeliveryRevision")!;
 const manifestStructure: ValidateFunction<AnalysisInputManifest> = ajv.getSchema<AnalysisInputManifest>("capability#/$defs/AnalysisInputManifest")!;
 const businessStructure: ValidateFunction<BusinessScope> = ajv.getSchema<BusinessScope>("capability#/$defs/BusinessScope")!;
-const order = ["site", "serp", "competitor", "public_gbp", "gsc", "ga4", "official_gbp"];
-const sourceSchemas = ["site_inventory_snapshot_v1", "serp_market_snapshot_v1", "competitor_collection_snapshot_v1", "customer_public_gbp_snapshot_v1", "gsc_sync_v1", "ga4_sync_v1", "gbp_sync_v1"];
+const order = ["site", "serp", "competitor", "public_gbp", "gsc", "ga4", "official_gbp", "rendered"];
+const sourceSchemas = ["site_inventory_snapshot_v1", "serp_market_snapshot_v1", "competitor_collection_snapshot_v1", "customer_public_gbp_snapshot_v1", "gsc_sync_v1", "ga4_sync_v1", "gbp_sync_v1", "site_rendered_snapshot_v1"];
 const unique = (values: unknown[]) => new Set(values).size === values.length;
 const instant = (value: string) => BigInt(Date.parse(`${value.slice(0, 19)}Z`)) * BigInt(1000)
   + BigInt((value.match(/\.(\d+)Z$/)?.[1] ?? "").padEnd(6, "0") || "0");
@@ -38,7 +38,10 @@ function manifestValid(m: AnalysisInputManifest) {
   if (!unique(kinds) || !unique(m.snapshots.map((s) => s.snapshot_id))) return false;
   if (kinds.join() !== [...kinds].sort((a, b) => order.indexOf(a) - order.indexOf(b)).join()) return false;
   if (!order.slice(0, m.mode === "acquisition" ? 4 : 6).every((kind) => kinds.includes(kind as typeof kinds[number]))) return false;
-  if (m.mode === "acquisition" && kinds.length !== 4) return false;
+  const rendered = m.schema_version === "v22_analysis_input_v2";
+  if (rendered !== kinds.includes("rendered") || rendered !== (m.ruleset_version === "v22_capability_public_v7")) return false;
+  if (rendered && m.mode !== "acquisition") return false;
+  if (m.mode === "acquisition" && kinds.length !== (rendered ? 5 : 4)) return false;
   for (const s of m.snapshots) {
     if (s.case_id !== m.case_id || s.schema_version !== sourceSchemas[order.indexOf(s.source_kind)]
       || instant(s.fetched_at) > instant(m.evaluated_at) || instant(s.expires_at) <= instant(m.evaluated_at)
@@ -65,6 +68,7 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
   try {
     if (!structure(value)) return invalid;
     const r = value, m = r.input_manifest;
+    if ((r.schema_version === "2.2.4") !== (m.schema_version === "v22_analysis_input_v2")) return invalid;
     if (!manifestValid(m) || r.id !== m.job_id || instant(r.generated_at) < instant(m.evaluated_at)
       || r.report_type !== (m.mode === "acquisition" ? "prospect" : "verified_execution")
       || r.version !== (m.previous_report ? m.previous_report.version + 1 : 1)
@@ -96,10 +100,10 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
       if (!m.previous_report || !findings.has(c.finding_id) || c.previous_fingerprint === c.current_fingerprint
         || c.current_fingerprint !== canonicalDigest(findings.get(c.finding_id))) return invalid;
     }
-    const ranked = ["v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6"].includes(m.ruleset_version);
+    const ranked = ["v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7"].includes(m.ruleset_version);
     if (Object.hasOwn(r, "prioritization") && r.prioritization == null) return invalid;
     if (ranked !== Boolean(r.prioritization) || (r.prioritization && !priorityMatches(r.prioritization, r))) return invalid;
-    if (r.prioritization && r.prioritization.rules_version !== (/_v[3456]$/.test(m.ruleset_version) ? "v22_business_priority_v2" : "v22_business_priority_v1")) return invalid;
+    if (r.prioritization && r.prioritization.rules_version !== (/_v[34567]$/.test(m.ruleset_version) ? "v22_business_priority_v2" : "v22_business_priority_v1")) return invalid;
     return { ok: true, report: r };
   } catch { return invalid; }
 }
