@@ -48,8 +48,10 @@ export function projectCapabilityReport(report: CapabilityReport, approved?: Del
       materials: a.materials.map((m) => ({ ...m, evidence_ids: [...m.evidence_ids], confirmation_items: [...m.confirmation_items] })),
       ...rationale(report, a, index + 1),
     })),
+    ...(report.contact_checks ? {contactChecks: report.contact_checks.map(c=>({...c,
+      compared_components:[...c.compared_components], omitted_components:[...c.omitted_components], evidence_ids:[...c.evidence_ids]}))} : {}),
     evidence: report.evidence.map((e) => ({ ...e, limitations: [...e.limitations] })),
-    findings: report.findings.map((f) => ({ ...f, evidence_ids: [...f.evidence_ids], limitations: [...f.limitations] })),
+    findings: report.findings.map((f) => ({ ...f, ...(f.coverage ? {coverage:f.coverage.map(c=>({...c}))} : {}), evidence_ids: [...f.evidence_ids], limitations: [...f.limitations] })),
     limitations: [...report.limitations],
   };
 }

@@ -105,6 +105,29 @@ export type Reason = string;
  * @maxItems 50
  */
 export type Changes = CapabilityChange[];
+export type ContactChecks =
+  | []
+  | [ContactCheck]
+  | [ContactCheck, ContactCheck]
+  | [ContactCheck, ContactCheck, ContactCheck]
+  | [ContactCheck, ContactCheck, ContactCheck, ContactCheck]
+  | null;
+export type Basis = "structured" | "text_pattern" | "rendered";
+/**
+ * @maxItems 20
+ */
+export type ComparedComponents = string[];
+/**
+ * @maxItems 500
+ */
+export type EvidenceIds1 = string[];
+export type Field = "phone" | "address" | "business_name" | "service_area";
+/**
+ * @maxItems 20
+ */
+export type OmittedComponents = string[];
+export type Result = "match" | "partial_match" | "mismatch" | "none";
+export type Status1 = "confirmed" | "not_detected" | "not_checked" | "not_assessed";
 /**
  * @minItems 1
  * @maxItems 500
@@ -131,15 +154,19 @@ export type Findings = [CapabilityFinding, ...CapabilityFinding[]];
 export type Classification = "fact" | "inference" | "estimate";
 export type ComparisonScope1 = string;
 export type Confidence = "low" | "medium" | "high";
+export type Coverage = [FindingCoverage, ...FindingCoverage[]] | null;
+export type Checked = boolean;
+export type Source = "site" | "gbp" | "serp" | "competitor" | "citation" | "gsc" | "ga4" | "rendered";
 /**
  * @minItems 1
  * @maxItems 20
  */
-export type EvidenceIds1 = [string, ...string[]];
+export type EvidenceIds2 = [string, ...string[]];
 export type Id4 = string;
 export type ImpactPath = string;
 export type Interpretation = "supported" | "needs_verification" | "conflicting";
 export type Judgment = string;
+export type Kind1 = ("fact" | "inference" | "recommendation") | null;
 /**
  * @maxItems 20
  */
@@ -149,6 +176,7 @@ export type ObservedFact = string;
 export type RuleId = string;
 export type RuleVersion = string;
 export type Severity = "low" | "medium" | "high" | "critical";
+export type Status2 = ("confirmed" | "not_detected" | "not_checked" | "not_assessed") | null;
 export type Target3 = string;
 export type GeneratedAt = string;
 export type Id5 = string;
@@ -337,18 +365,18 @@ export type RulesVersion = "v22_business_priority_v1" | "v22_business_priority_v
  */
 export type TargetPages1 = string[];
 export type ReportType1 = "prospect" | "verified_execution";
-export type SchemaVersion3 = "2.2.2" | "2.2.4";
+export type SchemaVersion3 = "2.2.2" | "2.2.4" | "2.2.5";
 export type SettlementPolicy = "one_credit_per_completed_analysis";
 export type Summary1 = string;
 export type Title4 = string;
 export type Version1 = number;
 
-export interface SearchTrustCapabilityContracts224222Compatible {
+export interface SearchTrustCapabilityContracts225222224Compatible {
   delivery_revision: DeliveryRevision;
   report: CapabilityReport;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "DeliveryRevision".
  */
 export interface DeliveryRevision {
@@ -365,7 +393,7 @@ export interface DeliveryRevision {
   user_id: UserId;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "EditableAction".
  */
 export interface EditableAction {
@@ -378,7 +406,7 @@ export interface EditableAction {
   title: Title1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "ExecutionMaterial".
  */
 export interface ExecutionMaterial {
@@ -392,13 +420,14 @@ export interface ExecutionMaterial {
   title: Title;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "CapabilityReport".
  */
 export interface CapabilityReport {
   action_state: ActionState;
   actions: Actions1;
   changes: Changes;
+  contact_checks?: ContactChecks;
   evidence: Evidence;
   findings: Findings;
   generated_at: GeneratedAt;
@@ -414,7 +443,7 @@ export interface CapabilityReport {
   version: Version1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "CapabilityAction".
  */
 export interface CapabilityAction {
@@ -429,7 +458,7 @@ export interface CapabilityAction {
   title: Title3;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "CapabilityChange".
  */
 export interface CapabilityChange {
@@ -439,7 +468,20 @@ export interface CapabilityChange {
   reason: Reason;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
+ * via the `definition` "ContactCheck".
+ */
+export interface ContactCheck {
+  basis: Basis;
+  compared_components: ComparedComponents;
+  evidence_ids: EvidenceIds1;
+  field: Field;
+  omitted_components: OmittedComponents;
+  result: Result;
+  status: Status1;
+}
+/**
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "CapabilityEvidence".
  */
 export interface CapabilityEvidence {
@@ -455,28 +497,39 @@ export interface CapabilityEvidence {
   value: Value;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "CapabilityFinding".
  */
 export interface CapabilityFinding {
   classification: Classification;
   comparison_scope: ComparisonScope1;
   confidence: Confidence;
-  evidence_ids: EvidenceIds1;
+  coverage?: Coverage;
+  evidence_ids: EvidenceIds2;
   id: Id4;
   impact_path: ImpactPath;
   interpretation: Interpretation;
   judgment: Judgment;
+  kind?: Kind1;
   limitations: Limitations1;
   observed_at: ObservedAt1;
   observed_fact: ObservedFact;
   rule_id: RuleId;
   rule_version: RuleVersion;
   severity: Severity;
+  status?: Status2;
   target: Target3;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
+ * via the `definition` "FindingCoverage".
+ */
+export interface FindingCoverage {
+  checked: Checked;
+  source: Source;
+}
+/**
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "AnalysisInputManifest".
  */
 export interface AnalysisInputManifest {
@@ -496,7 +549,7 @@ export interface AnalysisInputManifest {
   user_id: UserId2;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "BusinessScope".
  */
 export interface BusinessScope {
@@ -515,7 +568,7 @@ export interface BusinessScope {
   user_id: UserId1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "ExecutionConditions".
  */
 export interface ExecutionConditions {
@@ -523,7 +576,7 @@ export interface ExecutionConditions {
   publishing_access: PublishingAccess;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "ImplementationReference".
  */
 export interface ImplementationReference {
@@ -532,7 +585,7 @@ export interface ImplementationReference {
   revision: Revision1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "ReportReference".
  */
 export interface ReportReference {
@@ -543,7 +596,7 @@ export interface ReportReference {
   version: Version;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "SnapshotReference".
  */
 export interface SnapshotReference {
@@ -560,7 +613,7 @@ export interface SnapshotReference {
   source_kind: SourceKind1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "PrioritizationTrace".
  */
 export interface PrioritizationTrace {
@@ -573,7 +626,7 @@ export interface PrioritizationTrace {
   target_pages: TargetPages1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "PriorityDecision".
  */
 export interface PriorityDecision {
@@ -591,7 +644,7 @@ export interface PriorityDecision {
   severity: Severity1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts224222Compatible`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts225222224Compatible`'s JSON-Schema
  * via the `definition` "PriorityCandidateInput".
  */
 export interface PriorityCandidateInput {

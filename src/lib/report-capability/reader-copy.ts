@@ -74,3 +74,74 @@ export function evidenceValue(value: unknown): string {
   if (value === "succeeded") return "Collected successfully";
   return String(value);
 }
+
+/** Client evidence labels only; never rewrite the stored source or scope. */
+const SOURCE_LABELS: Record<string, string> = {
+  site: "Website sample", serp: "Search sample", competitor: "Competitor sample",
+  public_gbp: "Public business profile", official_gbp: "Connected business profile", gbp: "Business profile",
+  gsc: "Search Console", ga4: "Analytics", rendered: "Rendered page", citation: "Business listings",
+};
+export function evidenceSourceLabel(source?: string): string {
+  return SOURCE_LABELS[source ?? ""] ?? "Saved source";
+}
+
+export function readerDate(value: string): string {
+  return /^\d{4}-\d{2}-\d{2}T/.test(value) ? value.slice(0, 10) : value;
+}
+
+export function readerScope(value: string): string {
+  return readerTarget(value).split("\n").map(line => {
+    const saved = line.match(/^Saved (site|serp|competitor|public_gbp|rendered) sample(.*)$/);
+    if (saved) return `${evidenceSourceLabel(saved[1])}${saved[2]}`;
+    const prefix = line.match(/^(site|serp|competitor|public_gbp|official_gbp|gbp|gsc|ga4|rendered|citation) · (.*)$/);
+    return prefix ? `${evidenceSourceLabel(prefix[1])} · ${prefix[2]}` : line;
+  }).join("\n");
+}
+
+export function evidenceScopes(items: { comparison_scope?: string }[]): string[] {
+  return [...new Set(items.flatMap(item => item.comparison_scope ? readerScope(item.comparison_scope).split("\n") : []))];
+}
+
+type FindingDisplay = Pick<CapabilityReport["findings"][number], "kind" | "status" | "observed_fact" | "judgment" | "impact_path">
+  & {coverage?: ReadonlyArray<{source:string;checked:boolean}> | null};
+const FINDING_STATUSES = { confirmed: "Confirmed", not_detected: "Not detected", not_checked: "Not checked", not_assessed: "Not assessed" };
+export function findingLabels(finding: FindingDisplay) {
+  return {
+    kind: finding.kind ? {fact:"Fact", inference:"Inference", recommendation:"Recommendation"}[finding.kind] : "Unlabelled",
+    status: finding.status ? FINDING_STATUSES[finding.status] : "Unlabelled",
+    coverage: finding.coverage?.map(c=>`${c.checked ? "✓" : "✕"} ${evidenceSourceLabel(c.source)}`) ?? [],
+  };
+}
+
+/** Neutral client copy is a view, never a mutation of the saved finding. */
+export function readerFinding(finding: FindingDisplay) {
+  if (!finding.status || finding.status === "confirmed") return finding;
+  const judgment = {
+    not_detected: "Not detected in the checked sample. This does not show that it is absent.",
+    not_checked: "This could not be checked with the available evidence.",
+    not_assessed: finding.kind === "inference" ? "This is an interpretation to assess, not a confirmed fact."
+      : finding.kind === "recommendation" ? "This is a recommendation to review, not a confirmed fact."
+      : "The available observations do not establish an overall assessment.",
+  }[finding.status];
+  return {...finding, judgment, impact_path:"No cause or business impact is established by this item."};
+}
+
+const CONTACT_FIELDS = {phone:"Phone", address:"Address", business_name:"Name", service_area:"Service area"};
+const CONTACT_COMPONENTS: Record<string,string> = {
+  phone:"phone number", number:"phone number", extension:"extension", house:"house number",
+  street:"street", city:"city", region:"region", postal:"postcode", country:"country", unit:"unit",
+  remaining_address_components:"other address parts",
+};
+export function contactCheckLabel(check: NonNullable<CapabilityReport["contact_checks"]>[number]): string {
+  const result = {match:"Matches business profile", partial_match:"Partly matches business profile",
+    mismatch:"Differs from business profile", none:check.status === "not_detected"
+      ? "Not detected on the site" : FINDING_STATUSES[check.status]}[check.result];
+  const label = `${CONTACT_FIELDS[check.field]} · ${result}`;
+  const basis = check.basis === "text_pattern" ? "based on text recognition"
+    : check.basis === "rendered" ? "based on a rendered page" : "";
+  const parts = (values:string[]) => values.map(p=>CONTACT_COMPONENTS[p] ?? "other details").join(", ");
+  const scope = check.compared_components.length && (check.basis !== "structured" || check.omitted_components.length)
+    ? `${parts(check.compared_components)} only` : "";
+  const omitted = check.omitted_components.length ? `${parts(check.omitted_components)} not compared` : "";
+  return [label,basis,scope,omitted].filter(Boolean).join(" · ");
+}

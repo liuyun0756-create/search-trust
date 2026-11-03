@@ -1257,4 +1257,28 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await f.completed()).rows[0].payload).toEqual(f.report);
   });
 
+  it.each([true,false])("P0-06 saves labelled acquisition=%s with frozen replay and delivery", async acquisition=>{
+    const f=await fixture({acquisition});
+    f.m.ruleset_version=acquisition?"v22_capability_public_v8":"v22_capability_service_v5";
+    f.m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum")));
+    f.report.schema_version="2.2.5";
+    const findings=f.report.findings.map(finding=>({...finding,kind:"inference",status:"not_assessed",coverage:[{source:"site",checked:true},{source:"citation",checked:false}]}));
+    const contact_checks=[{field:"phone",result:"match",status:"confirmed",basis:"text_pattern",compared_components:["phone"],omitted_components:[],evidence_ids:[f.report.evidence[0].id]}];
+    const report={...f.report,findings,...(acquisition?{contact_checks}:{})};
+    await f.freeze();
+    if (acquisition) {
+      for(const contact_checks of [null,[{...report.contact_checks![0],result:null}],[{...report.contact_checks![0],result:"confirmed"}],[{...report.contact_checks![0],evidence_ids:["unbound"]}],[report.contact_checks![0],report.contact_checks![0]]]){
+        const bad={...report,contact_checks};
+        await expect(db.query("select * from public.store_v22_capability_report($1,$2,$3,$4::jsonb,$5,1)",[f.owner,f.caseId,f.job,json(bad),canonicalJsonText(bad)])).rejects.toThrow("CAPABILITY_CONTACT_CHECKS_INVALID");
+      }
+    }
+    const invalid={...report,findings:findings.map(finding=>({...finding,status:"confirmed"}))};
+    await expect(db.query("select * from public.store_v22_capability_report($1,$2,$3,$4::jsonb,$5,1)",[f.owner,f.caseId,f.job,json(invalid),canonicalJsonText(invalid)])).rejects.toThrow("CAPABILITY_FINDING_LABELS_INVALID");
+    await db.query("select * from public.complete_v22_capability_analysis($1,$2,$3,$4::jsonb,$5,1)",[f.owner,f.caseId,f.job,json(report),canonicalJsonText(report)]);
+    expect((await f.completed()).rows[0].payload).toEqual(report);
+    expect((await db.query<{id:string}>("select id from public.list_v22_completed_capability_reports($1)",[f.owner])).rows.map(row=>row.id)).toContain(f.job);
+    await f.save({...f.revision,source_checksum:canonicalDigest(report)});
+    expect((await db.query("select schema_version from public.capability_report_versions where id=$1",[f.job])).rows[0]).toEqual({schema_version:"2.2.5"});
+  });
+
 });

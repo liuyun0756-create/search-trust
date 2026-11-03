@@ -1,5 +1,5 @@
 import type { CapabilityReadingDocument as Document } from "@/lib/report-capability/reading-document";
-import { evidenceFieldLabel, evidenceValue, readerLimits, readerTarget } from "@/lib/report-capability/reader-copy";
+import { evidenceFieldLabel, evidenceValue, readerLimits, readerTarget, readerDate, readerScope, evidenceSourceLabel, evidenceScopes, findingLabels, readerFinding, contactCheckLabel } from "@/lib/report-capability/reader-copy";
 
 export function CapabilityReportDocument({ document, technicalDetails = false }: { document: Document; technicalDetails?: boolean }) {
   const target = (value: string) => technicalDetails ? value : readerTarget(value);
@@ -7,19 +7,28 @@ export function CapabilityReportDocument({ document, technicalDetails = false }:
     <header><h1 className="break-words text-3xl font-semibold tracking-tight">{document.title}</h1>
       <p className="mt-4 whitespace-pre-wrap break-words leading-7">{document.summary}</p>
       <p className="mt-4 rounded-xl bg-[#eaf2e6] p-4 font-medium">{document.actions.length ? `First proposed step: ${document.actions[0].title}` : "No change is proposed from this evidence. Review the diagnosis and unresolved checks."}</p></header>
-    <section aria-label="Findings" className="space-y-5">{document.findings.map((finding) => <div key={finding.id} className="rounded-xl bg-[#f3f7f2] p-5">
-      <h2 className="break-all font-semibold">{target(finding.target)}</h2><p className="mt-2 break-words">{finding.observed_fact}</p>
-      <p className="mt-2 break-words">{finding.judgment}</p>
-      <p className="mt-2 break-words text-sm">{finding.impact_path}</p>
-      <p className="mt-3 break-words text-sm">{finding.comparison_scope} · {finding.observed_at}</p>
+    {document.contactChecks?.length ? <section aria-label="Business details check" className="space-y-3">
+      <h2 className="text-xl font-semibold">Business details check</h2>
+      <ul className="space-y-2 text-sm">{document.contactChecks.map(check=><li key={check.field}>{contactCheckLabel(check)}</li>)}</ul>
+    </section> : null}
+    <section aria-label="Findings" className="space-y-5">{document.findings.map((finding) => { const labels=findingLabels(finding), copy=technicalDetails?finding:readerFinding(finding); return <div key={finding.id} className="rounded-xl bg-[#f3f7f2] p-5">
+      <h2 className="break-all font-semibold">{target(finding.target)}</h2>
+      <p aria-label="Finding classification" className="mt-2 text-sm font-medium">{labels.kind} · {labels.status}</p>
+      <p className="mt-2 text-sm">Coverage for this finding</p>
+      <ul aria-label="Finding coverage" className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">{labels.coverage.length ? labels.coverage.map(item=><li key={item}>{item}</li>) : <li>Coverage: Unlabelled</li>}</ul>
+      <p className="mt-2 break-words">{copy.observed_fact}</p>
+      <p className="mt-2 break-words">{copy.judgment}</p>
+      <p className="mt-2 break-words text-sm">{copy.impact_path}</p>
+      <p className="mt-3 break-words text-sm">{technicalDetails ? finding.comparison_scope : readerScope(finding.comparison_scope)} · {technicalDetails ? finding.observed_at : readerDate(finding.observed_at)}</p>
       <dl className="mt-4 space-y-2 text-sm">{document.evidence.filter((e) => finding.evidence_ids.includes(e.id)).map((e) => <div key={e.id}>
-        <dt className="break-all font-semibold">{evidenceFieldLabel(e.field_path)} · {e.object}</dt><dd className="break-words">{evidenceValue(e.value)}{e.unit ? ` ${e.unit}` : ""} · {e.observed_at}</dd>
+        <dt className="break-all font-semibold">{!technicalDetails ? `${evidenceSourceLabel(e.source_kind)} · ` : ""}{evidenceFieldLabel(e.field_path)} · {e.object}</dt><dd className="break-words">{evidenceValue(e.value)}{e.unit ? ` ${e.unit}` : ""} · {technicalDetails ? e.observed_at : readerDate(e.observed_at)}</dd>
       </div>)}</dl>
+      {!technicalDetails ? <ul aria-label="Evidence scope" className="mt-2 space-y-1 text-sm">{evidenceScopes(document.evidence.filter(e => finding.evidence_ids.includes(e.id))).map(scope => <li key={scope}>{scope}</li>)}</ul> : null}
       {technicalDetails ? <details className="mt-4 text-sm"><summary className="cursor-pointer font-medium">Inspect source references</summary>
         <dl className="mt-3 space-y-3">{document.evidence.filter(e => finding.evidence_ids.includes(e.id)).map(e => <div key={e.id}><dt className="break-all">{e.object}</dt><dd className="whitespace-pre-wrap break-all font-mono text-xs">{e.field_path}</dd></div>)}</dl>
       </details> : null}
       {finding.limitations.length ? <ul aria-label="Finding limits" className="mt-3 list-inside list-disc space-y-1 text-sm">{readerLimits(finding.limitations).map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul> : null}
-    </div>)}</section>
+    </div>; })}</section>
     <section aria-label="Action plan" className="space-y-5">
       <h2 className="text-xl font-semibold">{document.actions.length ? "Action plan" : "No action proposed yet"}</h2>
       {!document.actions.length ? <p>The available evidence does not support an action. Review the findings and limits before deciding what to investigate next.</p> : null}

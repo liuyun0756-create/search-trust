@@ -1,9 +1,9 @@
 import React from "react";
-import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View, Svg, Path } from "@react-pdf/renderer";
 import type { ApprovedCapabilityDelivery } from "@/lib/report-capability/delivery";
 import type { EffectiveBranding } from "@/lib/report-pdf/branding";
 import { assertCapabilityPdfText } from "@/lib/report-pdf/capability-fonts";
-import { evidenceFieldLabel, evidenceValue, readerLimits, readerTarget } from "@/lib/report-capability/reader-copy";
+import { evidenceFieldLabel, evidenceValue, readerLimits, readerTarget, readerDate, readerScope, evidenceSourceLabel, evidenceScopes, findingLabels, readerFinding, contactCheckLabel } from "@/lib/report-capability/reader-copy";
 
 const styles = StyleSheet.create({
   page: { padding: 38, paddingBottom: 72, fontFamily: "CapabilitySans", fontSize: 9, color: "#213D32", lineHeight: 1.5 },
@@ -70,19 +70,32 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
     </Page>
     <Page size="A4" style={styles.page} wrap>
       <Copy style={styles.kicker}>CHECKED EVIDENCE</Copy><Copy style={styles.heading}>The basis for the decision</Copy>
-      {d.findings.map((finding) => <View key={finding.id} style={styles.evidenceCard}>
+      {d.contactChecks?.length ? <View style={styles.evidenceCard}>
+        <Copy style={styles.title}>Business details check</Copy>
+        {d.contactChecks.map(check=><Copy key={check.field}>{contactCheckLabel(check)}</Copy>)}
+      </View> : null}
+      {d.findings.map((finding) => { const labels=findingLabels(finding), copy=readerFinding(finding); return <View key={finding.id} style={styles.evidenceCard}>
         <View wrap={finding.target.length + finding.observed_fact.length > 600}>
-          <Copy style={styles.title}>{readerTarget(finding.target)}</Copy><Copy>{finding.observed_fact}</Copy>
+          <Copy style={styles.title}>{readerTarget(finding.target)}</Copy><Copy>{copy.observed_fact}</Copy>
         </View>
-        <Copy>{finding.judgment}</Copy><Copy>{finding.impact_path}</Copy>
-        <Copy style={styles.meta}>{`${finding.comparison_scope} | ${finding.observed_at}`}</Copy>
+        <Copy style={styles.meta}>{`${labels.kind} | ${labels.status}`}</Copy>
+        {finding.coverage?.length ? <View style={{marginBottom:8}}>
+          <Copy style={styles.meta}>Coverage for this finding</Copy>
+          {finding.coverage.map(c=><View key={c.source} style={{flexDirection:"row",alignItems:"center",gap:5}}>
+            <Svg width={8} height={8} viewBox="0 0 10 10"><Path d={c.checked ? "M1 5 L4 8 L9 1" : "M2 2 L8 8 M8 2 L2 8"} stroke="#315a41" strokeWidth={1.5} fill="none"/></Svg>
+            <Copy style={styles.meta}>{`${evidenceSourceLabel(c.source)} · ${c.checked ? "Checked" : "Not checked"}`}</Copy>
+          </View>)}
+        </View> : <Copy style={styles.meta}>Coverage: Unlabelled</Copy>}
+        <Copy>{copy.judgment}</Copy><Copy>{copy.impact_path}</Copy>
+        <Copy style={styles.meta}>{`${readerScope(finding.comparison_scope)} | ${readerDate(finding.observed_at)}`}</Copy>
         {finding.evidence_ids.map((id) => { const item = evidence.get(id)!; return <View key={id} style={styles.row} wrap={item.object.length + item.field_path.length + String(item.value).length > 1000}>
-          <Copy style={styles.meta}>{`${evidenceFieldLabel(item.field_path)} | ${item.object}`}</Copy>
+          <Copy style={styles.meta}>{`${evidenceSourceLabel(item.source_kind)} | ${evidenceFieldLabel(item.field_path)} | ${item.object}`}</Copy>
           <Copy>{`${evidenceValue(item.value)}${item.unit ? ` ${item.unit}` : ""}`}</Copy>
-          <Copy style={styles.meta}>{`${item.comparison_scope} | ${item.observed_at}`}</Copy>
+          <Copy style={styles.meta}>{`${readerDate(item.observed_at)}`}</Copy>
         </View>; })}
+        {evidenceScopes(finding.evidence_ids.map(id => evidence.get(id)!)).map(scope => <Copy key={scope} style={styles.meta}>{scope}</Copy>)}
         {readerLimits(finding.limitations).map((limit, index) => <Copy key={index} style={styles.meta}>{`Limit: ${limit}`}</Copy>)}
-      </View>)}
+      </View>; })}
       <Footer delivery={delivery} note={brand?.footerNote} />
     </Page>
     {d.actions.map((action) => <Page key={action.id} size="A4" style={styles.page} wrap>

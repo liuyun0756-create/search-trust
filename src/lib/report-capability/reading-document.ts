@@ -6,11 +6,12 @@ type FullDocument = ReturnType<typeof projectCapabilityReport>;
 export type CapabilityReadingDocument = Pick<FullDocument,
   "title" | "summary" | "clientNote" | "actionState" | "limitations" | "actions"
 > & {
-  evidence: Pick<FullDocument["evidence"][number],
+  contactChecks?: FullDocument["contactChecks"];
+  evidence: (Pick<FullDocument["evidence"][number],
     "id" | "object" | "field_path" | "value" | "unit" | "observed_at"
-  >[];
+  > & Partial<Pick<FullDocument["evidence"][number], "source_kind" | "comparison_scope">>)[];
   findings: Pick<FullDocument["findings"][number],
     "id" | "target" | "observed_fact" | "judgment" | "impact_path" |
-    "comparison_scope" | "observed_at" | "evidence_ids" | "limitations"
+    "comparison_scope" | "observed_at" | "evidence_ids" | "limitations" | "kind" | "status" | "coverage"
   >[];
 };
