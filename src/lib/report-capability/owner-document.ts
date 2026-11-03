@@ -1,3 +1,4 @@
+import { editableVisibility } from "./action-visibility";
 import { projectCapabilityReport } from "./projection";
 import type { CapabilityRepository } from "./repository";
 import { initialCapabilityRevision } from "./revision";
@@ -14,7 +15,7 @@ export async function loadCapabilityOwnerDocument(
   const revision = await repository.loadRevision(userId, caseId, report);
   const approved = clientView && revision?.status === "approved" ? revision : null;
   return {
-    document: projectCapabilityReport(report, approved?.content),
+    document: projectCapabilityReport(report, approved?.content, !!approved),
     observationWarnings: observationWarnings(report),
     version: report.version,
     generatedAt: report.generated_at,
@@ -25,6 +26,6 @@ export async function loadCapabilityOwnerDocument(
     deliveryRevision: revision?.revision ?? 0,
     deliveryStatus: revision?.status ?? "original",
     orderConstraints: deliveryOrderConstraints(report),
-    editable: revision ? { ...revision.content, expected_revision: revision.revision } : initialCapabilityRevision(report),
+    editable: revision ? editableVisibility(report,{ ...revision.content, expected_revision: revision.revision }) : initialCapabilityRevision(report),
   };
 }

@@ -1,12 +1,14 @@
+import {clientActions} from "@/lib/report-capability/action-visibility";
 import type { CapabilityReadingDocument as Document } from "@/lib/report-capability/reading-document";
 import { evidenceFieldLabel, evidenceValue, readerLimits, readerTarget, readerDate, readerScope, evidenceSourceLabel, evidenceScopes, findingLabels, readerFinding, contactCheckLabel } from "@/lib/report-capability/reader-copy";
 
 export function CapabilityReportDocument({ document, technicalDetails = false }: { document: Document; technicalDetails?: boolean }) {
+  const actions=technicalDetails ? document.actions : clientActions(document.actions);
   const target = (value: string) => technicalDetails ? value : readerTarget(value);
   return <article className="mx-auto max-w-4xl space-y-8 rounded-2xl border border-[#dce6d9] bg-white p-5 text-[#1d2a22] sm:p-10">
     <header><h1 className="break-words text-3xl font-semibold tracking-tight">{document.title}</h1>
       <p className="mt-4 whitespace-pre-wrap break-words leading-7">{document.summary}</p>
-      <p className="mt-4 rounded-xl bg-[#eaf2e6] p-4 font-medium">{document.actions.length ? `First proposed step: ${document.actions[0].title}` : "No change is proposed from this evidence. Review the diagnosis and unresolved checks."}</p></header>
+      <p className="mt-4 rounded-xl bg-[#eaf2e6] p-4 font-medium">{actions.length ? `First proposed step: ${actions[0].title}` : "No change is proposed from this evidence. Review the diagnosis and unresolved checks."}</p></header>
     {document.contactChecks?.length ? <section aria-label="Business details check" className="space-y-3">
       <h2 className="text-xl font-semibold">Business details check</h2>
       <ul className="space-y-2 text-sm">{document.contactChecks.map(check=><li key={check.field}>{contactCheckLabel(check)}</li>)}</ul>
@@ -30,9 +32,10 @@ export function CapabilityReportDocument({ document, technicalDetails = false }:
       {finding.limitations.length ? <ul aria-label="Finding limits" className="mt-3 list-inside list-disc space-y-1 text-sm">{readerLimits(finding.limitations).map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul> : null}
     </div>; })}</section>
     <section aria-label="Action plan" className="space-y-5">
-      <h2 className="text-xl font-semibold">{document.actions.length ? "Action plan" : "No action proposed yet"}</h2>
-      {!document.actions.length ? <p>The available evidence does not support an action. Review the findings and limits before deciding what to investigate next.</p> : null}
-      {document.actions.map((action) => <section key={action.id} className="rounded-xl border border-[#dce6d9] p-5">
+      <h2 className="text-xl font-semibold">{actions.length ? "Action plan" : "No action proposed yet"}</h2>
+      {!actions.length ? <p>The available evidence does not support an action. Review the findings and limits before deciding what to investigate next.</p> : null}
+      {actions.map((action) => <section key={action.id} className="rounded-xl border border-[#dce6d9] p-5">
+        {technicalDetails && action.needsVerification ? <p className="mb-2 text-sm font-medium">Verify first · 建议先核实</p> : null}
         <h3 className="break-words font-semibold">{String(action.sequence).padStart(2, "0")} · {action.title}</h3>
         <p className="mt-2 whitespace-pre-wrap break-all text-sm">{target(action.target)}</p>
         {action.whyNow ? <aside className="mt-4 rounded-xl border border-[#dce6d9] bg-[#f3f7f2] p-4 text-sm">

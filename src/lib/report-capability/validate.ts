@@ -135,6 +135,10 @@ export function validatePreviousReport(current: CapabilityReport, previous: Capa
 export function validateDeliveryRevision(value: unknown, report: CapabilityReport): value is DeliveryRevision {
   try {
     if (!validateCapabilityReport(report).ok || !revisionStructure(value)) return false;
+    if (value.schema_version === "v22_delivery_revision_v2") {
+      if(report.schema_version !== "2.2.5" || !value.client_action_ids || !unique(value.client_action_ids)
+        || !value.client_action_ids.every(id=>value.actions.some(a=>a.id===id))) return false;
+    } else if(Object.hasOwn(value,"client_action_ids")) return false;
     const constraints = deliveryOrderConstraints(report);
     if (constraints && !validDeliveryOrder(value.actions.map(a => a.id), constraints)) return false;
     const m = report.input_manifest;

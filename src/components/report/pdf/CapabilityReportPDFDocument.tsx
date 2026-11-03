@@ -1,3 +1,4 @@
+import {clientActions} from "@/lib/report-capability/action-visibility";
 import React from "react";
 import { Document, Image, Page, StyleSheet, Text, View, Svg, Path } from "@react-pdf/renderer";
 import type { ApprovedCapabilityDelivery } from "@/lib/report-capability/delivery";
@@ -43,7 +44,7 @@ function Footer({ delivery, note }: { delivery: ApprovedCapabilityDelivery; note
 
 /** Pure renderer of one approved projection. No report rewording or fetching. */
 export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: ApprovedCapabilityDelivery; branding?: EffectiveBranding }) {
-  const d = delivery.document;
+  const d = {...delivery.document,actions:clientActions(delivery.document.actions)};
   const brand = branding?.enabled ? branding : undefined;
   if (brand?.agencyLogoData && (brand.agencyLogoData.length > 1_500_000 || !/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/i.test(brand.agencyLogoData))) throw new Error("CAPABILITY_PDF_LOGO_INVALID");
   checkText(delivery);

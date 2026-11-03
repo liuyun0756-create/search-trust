@@ -1,3 +1,4 @@
+import { editableVisibility } from "./action-visibility";
 import { NextResponse } from "next/server";
 import { CapabilityPersistenceError, type CapabilityRepository } from "./repository";
 import { initialCapabilityRevision } from "./revision";
@@ -52,7 +53,7 @@ export function createCapabilityRevisionHandlers(deps: Dependencies) {
       if (operation === "read") {
         const saved = await repository.loadRevision(user.userId,caseId,report);
         return respond({revision:saved?.revision ?? 0,status:saved?.status ?? "original",
-          content:saved ? {...saved.content,expected_revision:saved.revision} : initialCapabilityRevision(report)});
+          content:saved ? editableVisibility(report,{...saved.content,expected_revision:saved.revision}) : initialCapabilityRevision(report)});
       }
       let body: Record<string,unknown>;
       try { body = await boundedBody(request); } catch { return failure(400,"CAPABILITY_INVALID"); }

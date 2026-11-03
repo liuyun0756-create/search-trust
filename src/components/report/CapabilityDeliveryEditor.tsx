@@ -84,6 +84,14 @@ export function CapabilityDeliveryEditor({ initial, onSave, orderConstraints }: 
       </aside> : null}
       {draft.actions.length ? draft.actions.map((action, index) => <section key={action.id} className="space-y-4 rounded-xl border border-[#dce6d9] p-4">
         <h3 className="font-semibold">Action {index + 1}</h3>
+        {draft.schema_version === "v22_delivery_revision_v2" ? <label className="flex items-center gap-3 text-sm">
+          <input type="checkbox" aria-label={`Include action ${index+1} in client report`}
+            checked={draft.client_action_ids!.some(id=>id===action.id)}
+            onChange={event=>{const include=event.target.checked;setDraft(current=>({...current,
+              client_action_ids:current.actions.filter(a=>a.id===action.id ? include : current.client_action_ids!.some(id=>id===a.id)).map(a=>a.id) as DeliveryRevision["client_action_ids"]}));setMessage("");}} />
+          Include in client report
+          {!draft.client_action_ids!.some(id=>id===action.id) ? <span>Advisor only · verify before including</span> : null}
+        </label> : null}
         {orderConstraints && draft.actions.length>1 ? <div className="flex flex-wrap items-center gap-3 text-sm">
           <button type="button" aria-label={`Move action ${index+1} up`} disabled={!moved(index,-1)} className="rounded-lg border border-[#ccd9ce] px-3 py-2 disabled:opacity-40" onClick={()=>{const next=moved(index,-1);if(next)reorder(next);}}>↑ Move up</button>
           <button type="button" aria-label={`Move action ${index+1} down`} disabled={!moved(index,1)} className="rounded-lg border border-[#ccd9ce] px-3 py-2 disabled:opacity-40" onClick={()=>{const next=moved(index,1);if(next)reorder(next);}}>↓ Move down</button>

@@ -36,6 +36,6 @@ export function buildApprovedCapabilityDelivery(report: CapabilityReport, saved:
     reportId: report.id, revisionId: saved.id, revision: saved.revision,
     contentChecksum: canonicalDigest(saved.content), reportType: report.report_type, reportVersion: report.version,
     evaluatedAt: m.evaluated_at, siteUrl: m.business.site_url, service: m.business.primary_service, market: m.business.target_market,
-    document: projectCapabilityReport(report, saved.content),
+    document: projectCapabilityReport(report, saved.content, true),
   };
 }

@@ -1,8 +1,9 @@
 import type { CapabilityReport, DeliveryRevision } from "./generated/types";
 import { validateCapabilityReport, validateDeliveryRevision } from "./validate";
+import { actionNeedsVerification, clientActionIds } from "./action-visibility";
 import { canonicalDigest } from "../verified-analysis-v22/digest";
 
-function rationale(report: CapabilityReport, action: DeliveryRevision["actions"][number], sequence: number) {
+function rationale(report: CapabilityReport, action: DeliveryRevision["actions"][number], sequence: number, clientIds?:string[]) {
   const trace = report.prioritization;
   const decision = trace?.candidates.find(e => e.input.action_id === action.id);
   const source = report.actions.find(a => a.id === action.id);
@@ -17,7 +18,7 @@ function rationale(report: CapabilityReport, action: DeliveryRevision["actions"]
     systemTitle: source.title,
     deliveryChanged: sequence !== decision.selected_order || canonicalDigest(current) !== canonicalDigest(editable),
     prerequisites: [
-      ...decision.input.dependencies.map(id => report.actions.find(a => a.id === id)!.title),
+      ...decision.input.dependencies.filter(id=>!clientIds || clientIds.includes(id)).map(id => report.actions.find(a => a.id === id)!.title),
       ...(decision.prerequisite === "access_indexing" ? ["Access and indexing check before optimization"]
         : decision.prerequisite === "measurement" ? ["Reliable measurement before performance interpretation"] : []),
     ],
@@ -33,20 +34,23 @@ function rationale(report: CapabilityReport, action: DeliveryRevision["actions"]
 }
 
 /** Shared reading/export input. Caller validates and selects the approved revision. */
-export function projectCapabilityReport(report: CapabilityReport, approved?: DeliveryRevision) {
+export function projectCapabilityReport(report: CapabilityReport, approved?: DeliveryRevision, clientOnly=false) {
   if (!validateCapabilityReport(report).ok) throw new Error("Valid report required");
   if (approved && (approved.status !== "approved" || !validateDeliveryRevision(approved, report))) throw new Error("Approved revision required");
+  const visibleIds=clientActionIds(report,approved);
+  const actions=(approved?.actions ?? report.actions).filter(a=>!clientOnly || visibleIds.includes(a.id));
   return {
     reportId: report.id,
     title: approved?.title ?? report.title,
     summary: approved?.summary ?? report.summary,
     clientNote: approved?.client_note ?? null,
-    actionState: report.action_state,
-    actions: (approved?.actions ?? report.actions).map((a, index) => ({
+    actionState: actions.some(a=>visibleIds.includes(a.id)) ? "actions_supported" as const : "insufficient_basis" as const,
+    actions: actions.map((a, index) => ({
       id: a.id, sequence: index + 1, title: a.title, target: a.target,
       steps: [...a.steps], completion: [...a.completion], review: a.review,
       materials: a.materials.map((m) => ({ ...m, evidence_ids: [...m.evidence_ids], confirmation_items: [...m.confirmation_items] })),
-      ...rationale(report, a, index + 1),
+      ...(report.schema_version === "2.2.5" ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
+      ...rationale(report, a, index + 1, clientOnly ? visibleIds : undefined),
     })),
     ...(report.contact_checks ? {contactChecks: report.contact_checks.map(c=>({...c,
       compared_components:[...c.compared_components], omitted_components:[...c.omitted_components], evidence_ids:[...c.evidence_ids]}))} : {}),

@@ -1281,4 +1281,27 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await db.query("select schema_version from public.capability_report_versions where id=$1",[f.job])).rows[0]).toEqual({schema_version:"2.2.5"});
   });
 
+  it("P0-07 persists explicit client choices without changing frozen actions and rejects forged IDs",async()=>{
+    const f=await fixture({materials:true});
+    f.m.ruleset_version="v22_capability_service_v5";
+    f.m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum")));
+    const report={...f.report,schema_version:"2.2.5",findings:f.report.findings.map(f=>({...f,
+      kind:"fact",status:"not_detected",coverage:[{source:"serp",checked:true}]}))};
+    await f.freeze();await f.complete(report);
+    const original=JSON.stringify((await f.completed()).rows[0].payload);
+    const revision={...f.revision,schema_version:"v22_delivery_revision_v2",source_checksum:canonicalDigest(report),client_action_ids:[] as string[]};
+    const save=(content:unknown)=>db.query("select * from public.save_v22_completed_report_revision($1,$2,$3,$4::jsonb)",[f.owner,f.caseId,f.job,json(content)]);
+    for(const ids of [null,["invented"],[report.actions[0].id,report.actions[0].id]])
+      await expect(save({...revision,client_action_ids:ids})).rejects.toThrow("CAPABILITY_REVISION_INVALID");
+    const noSelection={...revision};Reflect.deleteProperty(noSelection,"client_action_ids");
+    await expect(save(noSelection)).rejects.toThrow("CAPABILITY_REVISION_INVALID");
+    await expect(save({...revision,schema_version:"v22_delivery_revision_v1"})).rejects.toThrow("CAPABILITY_REVISION_INVALID");
+    const hidden=(await save(revision)).rows[0] as {content:unknown};expect(hidden.content).toEqual(revision);
+    const included={...revision,expected_revision:1,client_action_ids:[report.actions[0].id]};
+    expect(((await save(included)).rows[0] as {content:unknown}).content).toEqual(included);
+    const rows=await db.query<{content:unknown}>("select content from public.report_content_revisions where report_id=$1 order by revision",[f.job]);
+    expect(rows.rows.map(r=>r.content)).toEqual([revision,included]);
+    expect(JSON.stringify((await f.completed()).rows[0].payload)).toBe(original);
+  });
+
 });
