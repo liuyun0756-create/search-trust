@@ -1225,4 +1225,36 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await db.query("select schema_version from public.capability_report_versions where id=$1",[f.job])).rows[0]).toEqual({schema_version:"2.2.4"});
   });
 
+  it.each(["customer_public_gbp_snapshot_v1", "customer_public_gbp_snapshot_v2", "unsupported_public_gbp_snapshot"])("P0-05 persists and rehydrates %s with exact optional fields", async schema => {
+    const f = await fixture({acquisition:true,skipPublicSnapshots:true});
+    const publicRef=f.m.snapshots.find(s=>s.source_kind==="public_gbp")!;
+    publicRef.schema_version=schema;
+    const sources=f.m.snapshots.map(ref=>({kind:ref.source_kind,binding:{snapshot_id:ref.snapshot_id,case_id:f.caseId,
+      source_type:ref.source_kind==="public_gbp"?"gbp":ref.source_kind,schema_version:ref.schema_version,
+      payload_checksum:ref.payload_checksum,fetched_at:ref.fetched_at,expires_at:ref.expires_at,health_status:"healthy",identity_match_status:"matched"},
+      payload:{schema_version:ref.schema_version,identity_match_status:"matched",health_status:"healthy",completed_at:ref.fetched_at,
+        ...(ref.source_kind==="public_gbp"&&schema.endsWith("_v2")?{record:{fields:{rating:{state:"observed",value:4.5},review_count:{state:"observed",value:1388},photo_count:{state:"not_returned",value:null}}}}:{})}}));
+    // SQL boundary fixture; complete application-shaped payloads are tested in Python.
+    for (const source of sources) {
+      source.binding.payload_checksum=canonicalDigest(source.payload);
+      f.m.snapshots.find(s=>s.snapshot_id===source.binding.snapshot_id)!.payload_checksum=source.binding.payload_checksum;
+    }
+    const body={evidence_input:{sources}};
+    const recipe={schema_version:"v22_generation_recipe_v1",request:{evidence_input:{sources:sources.map(({payload:_payload,...header})=>header)}}};
+    f.m.generation_input_checksum=canonicalDigest(body);
+    f.m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum")));
+    const prepare=()=>db.query(`select * from public.prepare_v22_capability_analysis_input($1,$2,$3,$4::jsonb,$5,$6::jsonb,$7,$8::jsonb,null,1)`,
+      [f.owner,f.caseId,f.job,json(f.m),canonicalJsonText(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum"))),json(recipe),canonicalJsonText(body),json(Object.fromEntries(sources.map(s=>[s.kind,canonicalJsonText(s.payload)])))]);
+    if (schema === "unsupported_public_gbp_snapshot") {
+      await expect(prepare()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
+      return;
+    }
+    await prepare(); await prepare();
+    expect((await db.query<{value:unknown}>("select public.hydrate_v22_capability_generation_input($1::jsonb,$2::jsonb) value",[json(f.m),json(recipe)])).rows[0].value).toEqual(body);
+    expect((await db.query("select schema_version,normalized_payload,payload_checksum from public.data_snapshots where id=$1",[publicRef.snapshot_id])).rows[0])
+      .toEqual({schema_version:schema,normalized_payload:sources[3].payload,payload_checksum:publicRef.payload_checksum});
+    await f.complete();
+    expect((await f.completed()).rows[0].payload).toEqual(f.report);
+  });
+
 });

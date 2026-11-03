@@ -43,7 +43,8 @@ function manifestValid(m: AnalysisInputManifest) {
   if (rendered && m.mode !== "acquisition") return false;
   if (m.mode === "acquisition" && kinds.length !== (rendered ? 5 : 4)) return false;
   for (const s of m.snapshots) {
-    if (s.case_id !== m.case_id || s.schema_version !== sourceSchemas[order.indexOf(s.source_kind)]
+    if (s.case_id !== m.case_id || (s.schema_version !== sourceSchemas[order.indexOf(s.source_kind)]
+      && !(s.source_kind === "public_gbp" && s.schema_version === "customer_public_gbp_snapshot_v2"))
       || instant(s.fetched_at) > instant(m.evaluated_at) || instant(s.expires_at) <= instant(m.evaluated_at)
       || ["gsc", "ga4", "official_gbp"].includes(s.source_kind) !== (s.binding_id !== null)) return false;
   }

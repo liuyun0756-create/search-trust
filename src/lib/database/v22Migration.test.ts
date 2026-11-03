@@ -582,7 +582,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       return JSON.stringify(value);
     };
     const digest = (value: unknown) => `sha256:${createHash("sha256").update(canonical(value)).digest("hex")}`;
-    async function fixture(withParentCoverageEvidence = false, publicFault?: "unhealthy"|"reference"|"checksum"|"schema") {
+    async function fixture(withParentCoverageEvidence = false, publicFault?: "unhealthy"|"reference"|"checksum"|"schema", publicSchema="customer_public_gbp_snapshot_v1") {
       const owner = await insertUser(randomUUID());
       const caseId = await insertCase(owner, randomUUID());
       const connection = await insertConnection(owner, randomUUID());
@@ -607,7 +607,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const publicReference = {case_id:caseId,site_url:parent.identity.business.site_url,
         public_gbp_url:url,entity_keys:[{kind:"cid",value:"123456789"}],
         confirmation_source:"user",confirmed_at:"2026-09-13T07:00:00Z"};
-      const publicPayload = {schema_version:"customer_public_gbp_snapshot_v1",
+      const publicPayload = {schema_version:publicSchema,
         request_target:{public_gbp_url:url,entity_keys:publicReference.entity_keys},
         started_at:"2026-09-13T07:01:00Z",completed_at:"2026-09-13T07:02:00Z",
         expires_at:"2099-09-13T07:02:00Z",provider:"serpapi_public",
@@ -624,12 +624,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const publicGbp = await insertId(`insert into public.data_snapshots
         (case_id,source_type,schema_version,fetched_at,expires_at,sync_trigger,health_status,
          normalized_payload,payload_checksum,provider_request_context)
-        values ($1,'gbp','customer_public_gbp_snapshot_v1',$2::timestamptz,$3::timestamptz,
+        values ($1,'gbp',$10,$2::timestamptz,$3::timestamptz,
           'report_generation',$8,$4::jsonb,$5,
           jsonb_build_object('job_id',$6::uuid,'customer_public_gbp_reference',$7::jsonb,
             'subject_reference_checksum',$9::text)) returning id`,
         [caseId,publicPayload.completed_at,publicPayload.expires_at,JSON.stringify(publicPayload),checksum,
-          parentId,JSON.stringify(publicReference),publicPayload.health_status,storedSubjectChecksum]);
+          parentId,JSON.stringify(publicReference),publicPayload.health_status,storedSubjectChecksum,publicSchema]);
       snapshots.gbp = publicGbp;
       for (const evidence of parent.evidence_index) evidence.snapshot_id = evidence.source_type === "gbp" ? publicGbp : snapshots[evidence.source_type];
       for (const coverage of parent.data_coverage.sources) coverage.snapshot_ids = coverage.source_type === "gbp" ? [publicGbp] : snapshots[coverage.source_type] ? [snapshots[coverage.source_type]] : [];
@@ -650,6 +650,14 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       const persist = (payload = result(), generation = 1) => db.query(`select * from public.persist_v22_verified_result($1,$2,$3,$4)`, [jobId,caseId,JSON.stringify(payload),generation]);
       return {owner,caseId,connection,parentId,publicGbp,parent,snapshots,bindings,jobId,key,start,result,persist};
     }
+
+    it("P0-05 allows a frozen V2 public profile through the existing credit bridge", async () => {
+      const f=await fixture(false,undefined,"customer_public_gbp_snapshot_v2");
+      expect((await f.start()).rows[0]).toMatchObject({created:true,public_gbp_snapshot_id:f.publicGbp,credit_balance:4});
+      expect((await f.start()).rows[0]).toMatchObject({idempotent:true,credit_balance:4});
+      const stored=(await db.query<{normalized_payload:unknown}>("select normalized_payload from public.data_snapshots where id=$1",[f.publicGbp])).rows[0].normalized_payload;
+      expect(stored).toMatchObject({schema_version:"customer_public_gbp_snapshot_v2"});
+    });
 
     it("atomically freezes inputs and debits one credit, with stable identity replay", async () => {
       const f = await fixture();
@@ -2417,14 +2425,14 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     );
   });
 
-  it("atomically reserves a paid job and persists its exact snapshot graph before success", async () => {
-    const owner = await insertUser("result-owner");
+  it.each(["customer_public_gbp_snapshot_v1", "customer_public_gbp_snapshot_v2"])("atomically reserves a paid job and persists its exact %s graph before success", async publicSchema => {
+    const owner = await insertUser(randomUUID());
     const caseId = await insertCase(owner, "result");
     const orderId = await insertId(
       `insert into public.orders (
          user_id, case_id, purchase_kind, payment_id, amount, currency,
          credits_purchased, status, paid_at
-       ) values ($1, $2, 'case_prospect_report', 'pay_result_1', 1900, 'USD', 0, 'paid', now())
+       ) values ($1, $2, 'case_prospect_report', 'pay_result_'||gen_random_uuid()::text, 1900, 'USD', 0, 'paid', now())
        returning id`,
       [owner, caseId],
     );
@@ -2433,11 +2441,11 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
        values ($1, $2, $3)`,
       [owner, caseId, orderId],
     );
-    const jobId = "77777777-7777-4777-8777-777777777777";
-    const siteId = "88888888-8888-4888-8888-888888888888";
-    const serpId = "99999999-9999-4999-8999-999999999999";
-    const competitorId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-    const publicGbpId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const jobId = randomUUID();
+    const siteId = randomUUID();
+    const serpId = randomUUID();
+    const competitorId = randomUUID();
+    const publicGbpId = randomUUID();
     const now = "2026-09-04T08:00:00Z";
     const publicGbpExpires = "2026-09-05T08:00:00Z";
     const publicGbpUrl = "https://maps.google.com/?cid=123456789";
@@ -2466,7 +2474,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     const publicGbpReference = {case_id:caseId,site_url:"https://result.example.com",
       public_gbp_url:publicGbpUrl,entity_keys:[{kind:"cid",value:"123456789"}],
       confirmation_source:"user",confirmed_at:"2026-09-04T07:00:00Z"};
-    const publicGbpPayload = {schema_version:"customer_public_gbp_snapshot_v1",
+    const publicGbpPayload = {schema_version:publicSchema,
       request_target:{public_gbp_url:publicGbpUrl,entity_keys:publicGbpReference.entity_keys},
       started_at:"2026-09-04T07:30:00Z",completed_at:now,expires_at:publicGbpExpires,
       health_status:"healthy",identity_match_status:"matched",subject_reference_checksum:checksum,
