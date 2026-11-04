@@ -16,7 +16,7 @@ let db: PGlite;
 const tables = ["case_business_scope_versions", "analysis_input_manifests", "analysis_manifest_snapshots", "capability_report_versions", "report_content_revisions"];
 const json = JSON.stringify;
 
-async function fixture(options: { acquisition?: boolean; expired?: boolean; expiresInMs?: number; unhealthy?: boolean; materials?: boolean; missingDebit?: boolean; actionCount?: 0 | 1 | 2 | 3; skipPublicSnapshots?: boolean } = {}) {
+async function fixture(options: { acquisition?: boolean; expired?: boolean; expiresInMs?: number; unhealthy?: boolean; materials?: boolean; missingDebit?: boolean; actionCount?: 0 | 1 | 2 | 3; skipPublicSnapshots?: boolean; siteSchema?: string } = {}) {
   const report = structuredClone(options.acquisition ? acquired : [first, firstOne, firstTwo, firstThree][options.actionCount ?? (options.materials ? 1 : 0)]);
   const m = report.input_manifest;
   const owner = randomUUID(), caseId = randomUUID(), job = randomUUID(), connection = randomUUID();
@@ -33,6 +33,7 @@ async function fixture(options: { acquisition?: boolean; expired?: boolean; expi
   await db.query(`insert into public.google_connections(id,user_id,google_subject,granted_scopes,access_token_ciphertext,access_token_iv,access_token_auth_tag,refresh_token_ciphertext,refresh_token_iv,refresh_token_auth_tag,encryption_key_version,token_expires_at)
     values($1,$2,$3,array['scope:test'],decode('01','hex'),decode('02','hex'),decode('03','hex'),decode('04','hex'),decode('05','hex'),decode('06','hex'),'test-key',now()+interval '1 hour')`, [connection, owner, owner]);
   for (const s of m.snapshots) {
+    if (s.source_kind === "site" && options.siteSchema) s.schema_version = options.siteSchema;
     Object.assign(s, { snapshot_id: randomUUID(), case_id: caseId, fetched_at: fetched, expires_at: expires });
     const privateSource = s.source_kind === "gsc" || s.source_kind === "ga4";
     s.binding_id = privateSource ? randomUUID() : null;
@@ -72,8 +73,8 @@ async function fixture(options: { acquisition?: boolean; expired?: boolean; expi
 
 // SQL-boundary fixtures intentionally contain minimal synthetic source objects;
 // application-shaped generation/worker integration is tested in the backend.
-async function recipeFixture(acquisition = true, alternatePrivateHeaders = false, expiresInMs?: number, missingDebit = false) {
-  const f = await fixture({ acquisition, skipPublicSnapshots: true, expiresInMs, missingDebit });
+async function recipeFixture(acquisition = true, alternatePrivateHeaders = false, expiresInMs?: number, missingDebit = false, siteSchema?: string) {
+  const f = await fixture({ acquisition, skipPublicSnapshots: true, expiresInMs, missingDebit, siteSchema });
   const sources = f.m.snapshots.slice(0,4).map((s) => {
     const type = s.source_kind === "public_gbp" ? "gbp" : s.source_kind;
     return { kind: s.source_kind, binding: { snapshot_id: s.snapshot_id, case_id: f.caseId, source_type: type, schema_version: s.schema_version,
@@ -1191,8 +1192,15 @@ describe.sequential("P1 isolated capability persistence", () => {
       expect((await db.query(`select count(*)::integer as n from public.credit_ledger where workflow_charge_id=$1 and kind='technical_failure_credit'`,[f.job])).rows[0]).toEqual({ n:1 });
     }
   });
-  it("P0-04 freezes rendered and static sources separately and preserves versioned delivery", async () => {
-    const f = await fixture({ acquisition: true });
+  it.each([
+    ["v22_capability_public_v7", "site_inventory_snapshot_v1"],
+    ["v22_capability_public_v7", "site_inventory_snapshot_v2"],
+    ["v22_capability_public_v8", "site_inventory_snapshot_v1"],
+    ["v22_capability_public_v8", "site_inventory_snapshot_v2"],
+    ["v22_capability_public_v9", "site_inventory_snapshot_v1"],
+    ["v22_capability_public_v9", "site_inventory_snapshot_v2"],
+  ])("P0-04/P0-10 freezes rendered and static sources with %s / %s and preserves delivery", async (ruleset, siteSchema) => {
+    const f = await fixture({ acquisition: true, siteSchema });
     const original = (await db.query<{id:string;normalized_payload:Record<string,unknown>}>('select id,normalized_payload from public.data_snapshots where case_id=$1', [f.caseId])).rows;
     const staticRef = f.m.snapshots[0];
     const payload = {schema_version:"site_rendered_snapshot_v1",source_kind:"rendered",root_url:f.m.business.site_url,
@@ -1200,7 +1208,7 @@ describe.sequential("P1 isolated capability persistence", () => {
       pages:[{url:f.m.business.site_url,deep_snapshot:{html:"<p>512-555-0100</p>"}}],limitations:[]};
     const rendered = {...staticRef,snapshot_id:randomUUID(),source_kind:"rendered",schema_version:payload.schema_version,payload_checksum:canonicalDigest(payload)};
     // This SQL-boundary fixture deliberately uses small synthetic sources.
-    const m = {...f.m,schema_version:"v22_analysis_input_v2",ruleset_version:"v22_capability_public_v7",snapshots:[...f.m.snapshots,rendered]};
+    const m = {...f.m,schema_version:"v22_analysis_input_v2",ruleset_version:ruleset,snapshots:[...f.m.snapshots,rendered]};
     const sources = m.snapshots.map(ref => ({kind:ref.source_kind,binding:{snapshot_id:ref.snapshot_id,case_id:f.caseId,
       source_type:ref.source_kind==="public_gbp"?"gbp":ref.source_kind==="rendered"?"site":ref.source_kind,
       schema_version:ref.schema_version,payload_checksum:ref.payload_checksum,fetched_at:ref.fetched_at,expires_at:ref.expires_at,
@@ -1213,16 +1221,34 @@ describe.sequential("P1 isolated capability persistence", () => {
     const prepare = () => db.query(`select * from public.prepare_v22_capability_analysis_input($1,$2,$3,$4::jsonb,$5,$6::jsonb,$7,$8::jsonb,null,1)`,
       [f.owner,f.caseId,f.job,json(m),canonicalJsonText(Object.fromEntries(Object.entries(m).filter(([key])=>key!=="input_checksum"))),json(recipe),canonicalJsonText(body),
         json(Object.fromEntries(sources.map(s=>[s.kind,canonicalJsonText(s.payload)])))]);
+    if (siteSchema === "site_inventory_snapshot_v2" && ruleset !== "v22_capability_public_v9") {
+      await expect(prepare()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
+      expect((await db.query("select id from public.analysis_input_manifests where job_id=$1",[f.job])).rows).toEqual([]);
+      expect((await db.query("select id from public.data_snapshots where id=$1",[rendered.snapshot_id])).rows).toEqual([]);
+      return;
+    }
     await prepare(); await prepare();
     expect((await db.query<{value:unknown}>("select public.hydrate_v22_capability_generation_input($1::jsonb,$2::jsonb) value",[json(m),json(recipe)])).rows[0].value).toEqual(body);
     expect((await db.query("select normalized_payload from public.data_snapshots where id=$1",[staticRef.snapshot_id])).rows[0]).toEqual({normalized_payload:original.find(s=>s.id===staticRef.snapshot_id)!.normalized_payload});
     expect((await db.query<{source_kind:string}>("select source_kind from public.analysis_manifest_snapshots where manifest_id=$1 order by source_kind",[m.id])).rows.map(s=>s.source_kind)).toEqual(["competitor","public_gbp","rendered","serp","site"]);
-    const report = {...f.report,schema_version:"2.2.4",input_manifest:m};
+    const labelled = ruleset !== "v22_capability_public_v7";
+    const report = {...f.report,schema_version:labelled ? "2.2.5" : "2.2.4",input_manifest:m,
+      ...(labelled ? {findings:f.report.findings.map(finding=>({...finding,kind:"fact",status:"confirmed",coverage:[{source:"site",checked:true}]})),
+        contact_checks:[{field:"phone",result:"none",status:"not_checked",basis:"structured",compared_components:[],omitted_components:[],evidence_ids:[]}]}
+        : {})};
+    if (labelled) {
+      for (const contact_checks of [undefined, null, [{...report.contact_checks![0],result:"invalid"}]]) {
+        const bad={...report,contact_checks};
+        if (contact_checks === undefined) Reflect.deleteProperty(bad,"contact_checks");
+        await expect(db.query("select * from public.store_v22_capability_report($1,$2,$3,$4::jsonb,$5,1)",
+          [f.owner,f.caseId,f.job,json(bad),canonicalJsonText(bad)])).rejects.toThrow("CAPABILITY_CONTACT_CHECKS_INVALID");
+      }
+    }
     await db.query("select * from public.complete_v22_capability_analysis($1,$2,$3,$4::jsonb,$5,1)",[f.owner,f.caseId,f.job,json(report),canonicalJsonText(report)]);
     expect((await f.completed()).rows[0].payload).toEqual(report);
     expect((await db.query<{id:string}>("select id from public.list_v22_completed_capability_reports($1)",[f.owner])).rows.map(r=>r.id)).toContain(f.job);
     await f.save({...f.revision,source_checksum:canonicalDigest(report)});
-    expect((await db.query("select schema_version from public.capability_report_versions where id=$1",[f.job])).rows[0]).toEqual({schema_version:"2.2.4"});
+    expect((await db.query("select schema_version from public.capability_report_versions where id=$1",[f.job])).rows[0]).toEqual({schema_version:report.schema_version});
   });
 
   it.each(["customer_public_gbp_snapshot_v1", "customer_public_gbp_snapshot_v2", "unsupported_public_gbp_snapshot"])("P0-05 persists and rehydrates %s with exact optional fields", async schema => {
@@ -1257,9 +1283,10 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await f.completed()).rows[0].payload).toEqual(f.report);
   });
 
-  it.each([true,false])("P0-06 saves labelled acquisition=%s with frozen replay and delivery", async acquisition=>{
+  it.each(["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_service_v5"])("P0-06/P0-10 saves labelled %s with frozen replay and delivery", async ruleset=>{
+    const acquisition=ruleset!=="v22_capability_service_v5";
     const f=await fixture({acquisition});
-    f.m.ruleset_version=acquisition?"v22_capability_public_v8":"v22_capability_service_v5";
+    f.m.ruleset_version=ruleset;
     f.m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum")));
     f.report.schema_version="2.2.5";
     const findings=f.report.findings.map(finding=>({...finding,kind:"inference",status:"not_assessed",coverage:[{source:"site",checked:true},{source:"citation",checked:false}]}));
@@ -1279,6 +1306,41 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await db.query<{id:string}>("select id from public.list_v22_completed_capability_reports($1)",[f.owner])).rows.map(row=>row.id)).toContain(f.job);
     await f.save({...f.revision,source_checksum:canonicalDigest(report)});
     expect((await db.query("select schema_version from public.capability_report_versions where id=$1",[f.job])).rows[0]).toEqual({schema_version:"2.2.5"});
+  });
+
+  it.each([
+    "v22_capability_public_v3", "v22_capability_public_v4", "v22_capability_public_v5",
+    "v22_capability_public_v6", "v22_capability_public_v8", "v22_capability_service_v5",
+  ])("P0-10 rejects site inventory v2 for historical %s without freezing it", async ruleset => {
+    const f=await fixture({acquisition:ruleset!=="v22_capability_service_v5",siteSchema:"site_inventory_snapshot_v2"});
+    f.m.ruleset_version=ruleset;
+    f.m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum")));
+    await expect(f.freeze()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
+    expect((await db.query("select id from public.analysis_input_manifests where job_id=$1",[f.job])).rows).toEqual([]);
+  });
+
+  it.each(["v22_capability_public_v8", "v22_capability_public_v9"])("P0-10 atomically prepares fresh inventory v2 only for v9 (%s)", async ruleset => {
+    const f=await recipeFixture(true,false,undefined,false,"site_inventory_snapshot_v2");
+    f.m.ruleset_version=ruleset;
+    f.m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum")));
+    expect((await db.query("select id from public.data_snapshots where case_id=$1",[f.caseId])).rows).toEqual([]);
+    if (ruleset!=="v22_capability_public_v9") {
+      await expect(f.prepare()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
+      expect((await db.query("select id from public.data_snapshots where case_id=$1",[f.caseId])).rows).toEqual([]);
+      return;
+    }
+    await f.prepare(); await f.prepare();
+    expect((await f.resolve()).rows[0].value.request).toEqual(f.body);
+    const site=f.m.snapshots[0];
+    expect((await db.query("select schema_version,payload_checksum from public.data_snapshots where id=$1",[site.snapshot_id])).rows[0])
+      .toEqual({schema_version:"site_inventory_snapshot_v2",payload_checksum:site.payload_checksum});
+  });
+
+  it("P0-10 rejects an unsupported inventory schema even for v9", async () => {
+    const f=await fixture({acquisition:true,siteSchema:"site_inventory_snapshot_v3"});
+    f.m.ruleset_version="v22_capability_public_v9";
+    f.m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum")));
+    await expect(f.freeze()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
   });
 
   it("P0-07 persists explicit client choices without changing frozen actions and rejects forged IDs",async()=>{

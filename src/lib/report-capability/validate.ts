@@ -39,11 +39,12 @@ function manifestValid(m: AnalysisInputManifest) {
   if (kinds.join() !== [...kinds].sort((a, b) => order.indexOf(a) - order.indexOf(b)).join()) return false;
   if (!order.slice(0, m.mode === "acquisition" ? 4 : 6).every((kind) => kinds.includes(kind as typeof kinds[number]))) return false;
   const rendered = m.schema_version === "v22_analysis_input_v2";
-  if (rendered !== kinds.includes("rendered") || (rendered && !["v22_capability_public_v7", "v22_capability_public_v8"].includes(m.ruleset_version)) || (!rendered && m.ruleset_version === "v22_capability_public_v7")) return false;
+  if (rendered !== kinds.includes("rendered") || (rendered && !["v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9"].includes(m.ruleset_version)) || (!rendered && m.ruleset_version === "v22_capability_public_v7")) return false;
   if (rendered && m.mode !== "acquisition") return false;
   if (m.mode === "acquisition" && kinds.length !== (rendered ? 5 : 4)) return false;
   for (const s of m.snapshots) {
     if (s.case_id !== m.case_id || (s.schema_version !== sourceSchemas[order.indexOf(s.source_kind)]
+      && !(s.source_kind === "site" && s.schema_version === "site_inventory_snapshot_v2" && m.ruleset_version === "v22_capability_public_v9")
       && !(s.source_kind === "public_gbp" && s.schema_version === "customer_public_gbp_snapshot_v2"))
       || instant(s.fetched_at) > instant(m.evaluated_at) || instant(s.expires_at) <= instant(m.evaluated_at)
       || ["gsc", "ga4", "official_gbp"].includes(s.source_kind) !== (s.binding_id !== null)) return false;
@@ -70,7 +71,7 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
     if (!structure(value)) return invalid;
     const r = value, m = r.input_manifest;
     const labelled = r.schema_version === "2.2.5";
-    if (labelled !== ["v22_capability_public_v8", "v22_capability_service_v5"].includes(m.ruleset_version)) return invalid;
+    if (labelled !== ["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_service_v5"].includes(m.ruleset_version)) return invalid;
     if (!labelled && (r.schema_version === "2.2.4") !== (m.schema_version === "v22_analysis_input_v2")) return invalid;
     if (!manifestValid(m) || r.id !== m.job_id || instant(r.generated_at) < instant(m.evaluated_at)
       || r.report_type !== (m.mode === "acquisition" ? "prospect" : "verified_execution")
@@ -79,7 +80,7 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
     if (![r.evidence, r.findings, r.actions].every((items) => unique(items.map((item) => item.id)))) return invalid;
     const snapshots = new Map(m.snapshots.map((s) => [s.snapshot_id, s]));
     const evidence = new Map(r.evidence.map((e) => [e.id, e]));
-    if (m.ruleset_version === "v22_capability_public_v8") {
+    if (["v22_capability_public_v8", "v22_capability_public_v9"].includes(m.ruleset_version)) {
       if (!r.contact_checks || !unique(r.contact_checks.map(c=>c.field))) return invalid;
       for (const check of r.contact_checks) {
         if (![check.compared_components,check.omitted_components,check.evidence_ids].every(unique)
@@ -114,10 +115,10 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
       if (!m.previous_report || !findings.has(c.finding_id) || c.previous_fingerprint === c.current_fingerprint
         || c.current_fingerprint !== canonicalDigest(findings.get(c.finding_id))) return invalid;
     }
-    const ranked = ["v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_service_v5"].includes(m.ruleset_version);
+    const ranked = ["v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_service_v5"].includes(m.ruleset_version);
     if (Object.hasOwn(r, "prioritization") && r.prioritization == null) return invalid;
     if (ranked !== Boolean(r.prioritization) || (r.prioritization && !priorityMatches(r.prioritization, r))) return invalid;
-    if (r.prioritization && r.prioritization.rules_version !== (/_v[345678]$/.test(m.ruleset_version) ? "v22_business_priority_v2" : "v22_business_priority_v1")) return invalid;
+    if (r.prioritization && r.prioritization.rules_version !== (/_v[3456789]$/.test(m.ruleset_version) ? "v22_business_priority_v2" : "v22_business_priority_v1")) return invalid;
     return { ok: true, report: r };
   } catch { return invalid; }
 }
