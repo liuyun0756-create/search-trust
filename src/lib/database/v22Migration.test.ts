@@ -1034,10 +1034,11 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     await db.close();
   });
 
-  it("P0-10 installs the v9 gates after action visibility and preserves server-only writes", async () => {
+  it("P1-00 installs v9/v10 gates after action visibility and preserves server-only writes", async () => {
     const files=(await readdir(migrationDirectory)).sort();
     expect(files.indexOf("20261104100000_add_capability_public_v9.sql"))
       .toBeGreaterThan(files.indexOf("20261103120000_add_capability_action_visibility.sql"));
+    expect(files.indexOf("20261104110000_add_capability_public_v10.sql")).toBeGreaterThan(files.indexOf("20261104100000_add_capability_public_v9.sql"));
     const signatures=[
       "public.freeze_v22_analysis_manifest(uuid,uuid,uuid,jsonb,text,text)",
       "public.store_v22_capability_report(uuid,uuid,uuid,jsonb,text,integer)",
@@ -1051,17 +1052,17 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
           .toEqual({allowed:role==="service_role"});
       }
     }
-    expect(definitions[0]).toContain("('v22_capability_public_v7','v22_capability_public_v8','v22_capability_public_v9')");
-    expect(definitions[0]).toContain("when p_manifest->>'ruleset_version'='v22_capability_public_v9'\n          and source->>'schema_version'='site_inventory_snapshot_v2'");
-    expect(definitions[1]).toContain("('v22_capability_public_v8','v22_capability_public_v9','v22_capability_service_v5') then '2.2.5'");
-    expect(definitions[1]).toContain("if manifest.payload->>'ruleset_version' in ('v22_capability_public_v8','v22_capability_public_v9') then");
+    expect(definitions[0]).toContain("('v22_capability_public_v7','v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10')");
+    expect(definitions[0]).toContain("when p_manifest->>'ruleset_version' in ('v22_capability_public_v9','v22_capability_public_v10')\n          and source->>'schema_version'='site_inventory_snapshot_v2'");
+    expect(definitions[1]).toContain("('v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_service_v5') then '2.2.5'");
+    expect(definitions[1]).toContain("if manifest.payload->>'ruleset_version' in ('v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10') then");
   });
 
-  it("P0-10 aborts on a missing replacement target instead of silently applying a partial migration", async () => {
-    const migration=await readFile(path.join(migrationDirectory,"20261104100000_add_capability_public_v9.sql"),"utf8");
+  it.each([["20261104100000_add_capability_public_v9.sql", "P010_MANIFEST_GATE_MISSING"], ["20261104110000_add_capability_public_v10.sql", "P100_MANIFEST_GATE_MISSING"]])("aborts a missing replacement target in %s", async (file, error) => {
+    const migration=await readFile(path.join(migrationDirectory,file),"utf8");
     // The old target is absent after installation. Only this in-memory database is used.
     try {
-      await expect(db.exec(migration)).rejects.toThrow("P010_MANIFEST_GATE_MISSING");
+      await expect(db.exec(migration)).rejects.toThrow(error);
     } finally {
       await db.exec("rollback");
     }

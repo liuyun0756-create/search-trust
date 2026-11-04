@@ -1199,6 +1199,8 @@ describe.sequential("P1 isolated capability persistence", () => {
     ["v22_capability_public_v8", "site_inventory_snapshot_v2"],
     ["v22_capability_public_v9", "site_inventory_snapshot_v1"],
     ["v22_capability_public_v9", "site_inventory_snapshot_v2"],
+    ["v22_capability_public_v10", "site_inventory_snapshot_v1"],
+    ["v22_capability_public_v10", "site_inventory_snapshot_v2"],
   ])("P0-04/P0-10 freezes rendered and static sources with %s / %s and preserves delivery", async (ruleset, siteSchema) => {
     const f = await fixture({ acquisition: true, siteSchema });
     const original = (await db.query<{id:string;normalized_payload:Record<string,unknown>}>('select id,normalized_payload from public.data_snapshots where case_id=$1', [f.caseId])).rows;
@@ -1221,7 +1223,7 @@ describe.sequential("P1 isolated capability persistence", () => {
     const prepare = () => db.query(`select * from public.prepare_v22_capability_analysis_input($1,$2,$3,$4::jsonb,$5,$6::jsonb,$7,$8::jsonb,null,1)`,
       [f.owner,f.caseId,f.job,json(m),canonicalJsonText(Object.fromEntries(Object.entries(m).filter(([key])=>key!=="input_checksum"))),json(recipe),canonicalJsonText(body),
         json(Object.fromEntries(sources.map(s=>[s.kind,canonicalJsonText(s.payload)])))]);
-    if (siteSchema === "site_inventory_snapshot_v2" && ruleset !== "v22_capability_public_v9") {
+    if (siteSchema === "site_inventory_snapshot_v2" && !["v22_capability_public_v9", "v22_capability_public_v10"].includes(ruleset)) {
       await expect(prepare()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
       expect((await db.query("select id from public.analysis_input_manifests where job_id=$1",[f.job])).rows).toEqual([]);
       expect((await db.query("select id from public.data_snapshots where id=$1",[rendered.snapshot_id])).rows).toEqual([]);
@@ -1283,7 +1285,7 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await f.completed()).rows[0].payload).toEqual(f.report);
   });
 
-  it.each(["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_service_v5"])("P0-06/P0-10 saves labelled %s with frozen replay and delivery", async ruleset=>{
+  it.each(["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_service_v5"])("P0-06/P0-10 saves labelled %s with frozen replay and delivery", async ruleset=>{
     const acquisition=ruleset!=="v22_capability_service_v5";
     const f=await fixture({acquisition});
     f.m.ruleset_version=ruleset;
@@ -1319,12 +1321,12 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await db.query("select id from public.analysis_input_manifests where job_id=$1",[f.job])).rows).toEqual([]);
   });
 
-  it.each(["v22_capability_public_v8", "v22_capability_public_v9"])("P0-10 atomically prepares fresh inventory v2 only for v9 (%s)", async ruleset => {
+  it.each(["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10"])("P0-10 atomically prepares fresh inventory v2 only for v9 (%s)", async ruleset => {
     const f=await recipeFixture(true,false,undefined,false,"site_inventory_snapshot_v2");
     f.m.ruleset_version=ruleset;
     f.m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key])=>key!=="input_checksum")));
     expect((await db.query("select id from public.data_snapshots where case_id=$1",[f.caseId])).rows).toEqual([]);
-    if (ruleset!=="v22_capability_public_v9") {
+    if (!["v22_capability_public_v9", "v22_capability_public_v10"].includes(ruleset)) {
       await expect(f.prepare()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
       expect((await db.query("select id from public.data_snapshots where case_id=$1",[f.caseId])).rows).toEqual([]);
       return;
