@@ -1384,10 +1384,16 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect(rows.rows.map(r=>r.content)).toEqual([revision,included]);
     expect(JSON.stringify((await f.completed()).rows[0].payload)).toBe(original);
   });
-  async function candidateFixture(dependencies=false) {
+  async function candidateFixture(dependencies=false, identityV2=false) {
     const f=await fixture({acquisition:true});
     const r=structuredClone(dependencies?candidateDependent:candidateSample) as unknown as CapabilityReport;
-    const m={...f.m,ruleset_version:'v22_capability_public_v12'};
+    const m:CapabilityReport['input_manifest']={...f.m,ruleset_version:identityV2?'v22_capability_public_v13':'v22_capability_public_v12'} as CapabilityReport['input_manifest'];
+    if(identityV2){
+      const market={display_name:m.business.target_market,country_code:'US'};
+      Object.assign(m,{schema_version:'v22_analysis_input_v3',identity_version_id:randomUUID(),identity_checksum:'sha256:'+'b'.repeat(64),target_market:market,evidence_as_of:m.evaluated_at});
+      await db.query('update client_cases set target_market=$1 where id=$2',[json(market),f.caseId]);
+      r.schema_version='2.2.8';
+    }
     m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(m).filter(([k])=>k!=='input_checksum')));
     r.id=f.job;r.input_manifest=m as unknown as CapabilityReport['input_manifest'];r.generated_at=f.report.generated_at;
     for(const e of r.evidence){const s=m.snapshots.find(s=>s.source_kind===e.source_kind)!;e.snapshot_id=s.snapshot_id;e.observed_at=s.fetched_at;}
@@ -1396,7 +1402,7 @@ describe.sequential("P1 isolated capability persistence", () => {
     r.action_candidates=r.prioritization.candidate_order!.map(id=>r.action_candidates!.find(a=>a.id===id)!);
     r.actions=r.prioritization.action_order.map(id=>r.action_candidates!.find(a=>a.id===id)!) as unknown as CapabilityReport['actions'];
     expect(validateCapabilityReport(r).ok).toBe(true);
-    await f.freeze(m);
+    await f.freeze(m as unknown as typeof f.m);
     const store=(body=r)=>db.query('select * from public.store_v22_capability_report($1,$2,$3,$4::jsonb,$5,1)',[f.owner,f.caseId,f.job,json(body),canonicalJsonText(body)]);
     const content=(ids=r.actions.map(a=>a.id))=>({schema_version:'v22_delivery_revision_v3',report_id:r.id,user_id:f.owner,case_id:f.caseId,
       source_checksum:canonicalDigest(r),expected_revision:0,status:'draft',title:r.title,summary:r.summary,client_note:null,
@@ -1404,6 +1410,15 @@ describe.sequential("P1 isolated capability persistence", () => {
     const save=(c:unknown,user=f.owner)=>db.query<{content:unknown}>('select * from public.save_v22_report_content_revision($1,$2,$3,$4::jsonb)',[user,f.caseId,f.job,json(c)]);
     return {f,r,store,content,save};
   }
+  it('P1-05 stores v13 and preserves candidate revision validation',async()=>{
+    const {f,r,store,save,content}=await candidateFixture(false,true);
+    await store();
+    expect(r.schema_version).toBe('2.2.8');
+    expect((await save(content())).rows[0].content).toEqual(content());
+    const bad={...r,schema_version:'2.2.7'};
+    await expect(store(bad as CapabilityReport)).rejects.toThrow();
+    expect((await db.query<{payload:unknown}>('select payload from capability_report_versions where id=$1',[f.job])).rows[0].payload).toEqual(r);
+  });
   it('P1-07 stores all five frozen candidates and allows a confirmed technical replacement',async()=>{
     const {f,r,store,content,save}=await candidateFixture();await store();await store();
     const ids=['ac-synthetic-4','ac-synthetic-1','ac-synthetic-2'],c=content(ids);

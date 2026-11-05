@@ -8,7 +8,7 @@ import { canonicalDigest, canonicalJsonText } from "../verified-analysis-v22/dig
 let db: PGlite;
 const json = JSON.stringify;
 // Minimal SQL-boundary sources, not captured customer data or a live generator run.
-async function fixture(sourceState?: string, saveScope = true) {
+async function fixture(sourceState?: string, saveScope = true, v2Mode?: string | null) {
   const report = structuredClone(sample), m = report.input_manifest;
   const owner = randomUUID(), caseId = randomUUID(), job = randomUUID(), connection = randomUUID();
   const fetched = new Date(Date.now()-86400000).toISOString(), evaluated = new Date(Date.now()-1000).toISOString();
@@ -20,6 +20,13 @@ async function fixture(sourceState?: string, saveScope = true) {
   await db.query("select register_v22_clerk_user($1,decode(repeat('01',32),'hex'),$2,null)",[owner,`${owner}@example.invalid`]);
   await db.query(`insert into client_cases(id,user_id,site_url,normalized_domain,business_name,business_identity,operating_model,primary_service,target_market)
     values($1,$2,$3,'clinic.example.invalid','Clinic',$4,'storefront',$5,$6)`,[caseId,owner,m.business.site_url,json(identity),m.business.primary_service,json({display_name:m.business.target_market})]);
+  if(v2Mode !== undefined){
+    const market={display_name:m.business.target_market,country_code:'US',city:'Austin',region:'TX',postal_code:null,latitude:null,longitude:null};
+    const identityV2={schema_version:'business_identity_v2',...identity,normalized_domain:'clinic.example.invalid',country_code:'US',
+      operating_model:{value:v2Mode,state:v2Mode?'resolved':'unresolved'},
+      operating_location:{state:'observed',role:'office',location:{address:'12 Actual Street, Dallas',city:'Dallas',country_code:'US'},source_refs:['saved-gbp']}};
+    await db.query('update client_cases set business_identity=$1,operating_model=$2,target_market=$3 where id=$4',[json(identityV2),v2Mode,json(market),caseId]);
+  }
   await db.query(`insert into google_connections(id,user_id,google_subject,granted_scopes,access_token_ciphertext,access_token_iv,access_token_auth_tag,refresh_token_ciphertext,refresh_token_iv,refresh_token_auth_tag,encryption_key_version,token_expires_at)
     values($1,$2,$3,array['openid','email','profile','https://www.googleapis.com/auth/webmasters.readonly','https://www.googleapis.com/auth/analytics.readonly'],decode('01','hex'),decode('02','hex'),decode('03','hex'),decode('04','hex'),decode('05','hex'),decode('06','hex'),'test-key',now()+interval '1 hour')`,[connection,owner,owner]);
   for(const s of m.snapshots) {
@@ -129,6 +136,32 @@ describe.sequential("first service isolated reservation and input binding",()=>{
     const read=(user=f.owner)=>db.query<{v:Record<string,unknown>}>('select get_v22_first_service_workspace($1,$2) v',[user,f.caseId]).then(r=>r.rows[0].v);
     return {...f,body,entryArgs:args,confirm,read};
   }
+  it.each(['storefront','service_area','hybrid','meeting_point',null])('P1-05 maps only supported v2 modes into first-service: %s',async mode=>{
+    const f=await fixture(undefined,false,mode);
+    const market={display_name:f.m.business.target_market,country_code:'US',city:'Austin',region:'TX',postal_code:null,latitude:null,longitude:null};
+    const identity={schema_version:'business_identity_v2',...f.identity,normalized_domain:'clinic.example.invalid',country_code:'US',
+      operating_model:{value:mode,state:mode?'resolved':'unresolved'},
+      operating_location:{state:'observed',role:'office',location:{address:'12 Actual Street, Dallas',city:'Dallas',country_code:'US'},source_refs:['saved-gbp']}};
+    const read=()=>db.query<{v:{business:{business_identity:unknown}}}>('select get_v22_first_service_workspace($1,$2) v',[f.owner,f.caseId]);
+    if(mode===null || mode==='meeting_point'){
+      await expect(read()).rejects.toThrow('FIRST_SERVICE_OPERATING_MODEL_UNSUPPORTED');
+      await expect(f.reserve()).rejects.toThrow('FIRST_SERVICE_OPERATING_MODEL_UNSUPPORTED');
+      expect(await f.balance()).toBe(5);
+    }else{
+      const legacy={...f.identity,normalized_domain:'clinic.example.invalid',operating_model:mode,primary_location:market};
+      expect((await read()).rows[0].v.business.business_identity).toEqual(legacy);
+      const args=[...f.reserveArgs];args[5]=json({...f.discoveryRequest,business_identity:legacy,target_market:market});
+      expect(await f.reserve(args)).toMatchObject({phase:'discovering',charge_state:'reserved'});
+      const dispatch=(await db.query<{v:Record<string,unknown>}>('select claim_v22_first_service_discovery_dispatch($1,$2) v',[f.job,randomUUID()])).rows[0].v;
+      expect(dispatch).toBeTruthy();
+      const id=f.collection.competitor_discovery.discovery_id;
+      const claimed=(await db.query<{v:Record<string,unknown>}>('select claim_v22_first_service_discovery_run($1,$2,$3) v',[f.job,id,randomUUID()])).rows[0].v;
+      expect(claimed).toMatchObject({outcome:'claimed',attempts:1});
+      expect(await f.balance()).toBe(4);
+    }
+    expect((await db.query<{business_identity:unknown}>('select business_identity from client_cases where id=$1',[f.caseId])).rows[0].business_identity).toEqual(identity);
+    expect((await db.query<{location_key:string}>('select location_key from client_cases where id=$1',[f.caseId])).rows[0].location_key).toContain('austin');
+  });
   it('reads first-service preparation without a charge or private source payload',async()=>{
     const f=await fixture(undefined,false);
     const result=(await db.query<{v:Record<string,unknown>}>('select get_v22_first_service_workspace($1,$2) v',[f.owner,f.caseId])).rows[0].v;

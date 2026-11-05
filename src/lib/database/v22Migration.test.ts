@@ -1041,6 +1041,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
     expect(files.indexOf("20261104110000_add_capability_public_v10.sql")).toBeGreaterThan(files.indexOf("20261104100000_add_capability_public_v9.sql"));
     expect(files.indexOf("20261104120000_add_capability_public_v11.sql")).toBeGreaterThan(files.indexOf("20261104110000_add_capability_public_v10.sql"));
     expect(files.indexOf("20261105100000_add_capability_public_v12.sql")).toBeGreaterThan(files.indexOf("20261104120000_add_capability_public_v11.sql"));
+    expect(files.indexOf("20261105110000_add_capability_public_v13_identity.sql")).toBeGreaterThan(files.indexOf("20261105100000_add_capability_public_v12.sql"));
     const signatures=[
       "public.freeze_v22_analysis_manifest(uuid,uuid,uuid,jsonb,text,text)",
       "public.store_v22_capability_report(uuid,uuid,uuid,jsonb,text,integer)",
@@ -1054,19 +1055,21 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
           .toEqual({allowed:role==="service_role"});
       }
     }
-    expect(definitions[0]).toContain("('v22_capability_public_v7','v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12')");
-    expect(definitions[0]).toContain("when p_manifest->>'ruleset_version' in ('v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12')\n          and source->>'schema_version'='site_inventory_snapshot_v2'");
+    expect(definitions[0]).toContain("('v22_capability_public_v7','v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13')");
+    expect(definitions[0]).toContain("when p_manifest->>'ruleset_version' in ('v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13')\n          and source->>'schema_version'='site_inventory_snapshot_v2'");
     expect(definitions[1]).toContain("('v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_service_v5') then '2.2.5'");
-    expect(definitions[1]).toContain("if manifest.payload->>'ruleset_version' in ('v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12') then");
+    expect(definitions[1]).toContain("if manifest.payload->>'ruleset_version' in ('v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13') then");
     expect(definitions[0]).toContain("source->>'schema_version'='site_inventory_snapshot_v3'");
     expect(definitions[1]).toContain("then 5 else 4 end");
     expect(definitions[1]).toContain("and c->>'field'='opening_hours'");
     expect(definitions[1]).toContain("then '2.2.6'");
     expect(definitions[1]).toContain("then '2.2.7'");
+    expect(definitions[1]).toContain("then '2.2.8'");
+    expect(definitions[0]).toContain("CAPABILITY_IDENTITY_BINDING_INVALID");
     expect(definitions[1]).toContain("validate_v22_candidate_pool(p_payload)");
   });
 
-  it.each([["20261105100000_add_capability_public_v12.sql", "P107_MANIFEST_TARGET_MISSING"], ["20261104120000_add_capability_public_v11.sql", "P100B_MANIFEST_MISSING"], ["20261104100000_add_capability_public_v9.sql", "P010_MANIFEST_GATE_MISSING"], ["20261104110000_add_capability_public_v10.sql", "P100_MANIFEST_GATE_MISSING"]])("aborts a missing replacement target in %s", async (file, error) => {
+  it.each([["20261105110000_add_capability_public_v13_identity.sql", "P105_TARGET_MISSING"], ["20261105100000_add_capability_public_v12.sql", "P107_MANIFEST_TARGET_MISSING"], ["20261104120000_add_capability_public_v11.sql", "P100B_MANIFEST_MISSING"], ["20261104100000_add_capability_public_v9.sql", "P010_MANIFEST_GATE_MISSING"], ["20261104110000_add_capability_public_v10.sql", "P100_MANIFEST_GATE_MISSING"]])("aborts a missing replacement target in %s", async (file, error) => {
     const migration=await readFile(path.join(migrationDirectory,file),"utf8");
     // The old target is absent after installation. Only this in-memory database is used.
     try {

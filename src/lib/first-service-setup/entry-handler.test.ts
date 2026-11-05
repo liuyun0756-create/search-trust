@@ -43,6 +43,13 @@ function post(value: unknown = body(), origin = "http://localhost:3100") {
   );
 }
 describe("first-service entry HTTP boundary", () => {
+  it("explains unsupported meeting-point or unconfirmed modes without starting work",async()=>{
+    const f=setup();f.repo.read.mockRejectedValue({code:"OPERATING_MODEL_UNSUPPORTED"});
+    const response=await f.GET(new NextRequest(`http://localhost:3100/api/v2/cases/${id}/first-service`),ctx);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({error:{code:"OPERATING_MODEL_UNSUPPORTED",message:"First-service analysis is not yet supported for a meeting-point or unconfirmed operating model."}});
+    expect(f.repo.execute).not.toHaveBeenCalled();
+  });
   it("fails closed without touching auth or storage", async () => {
     const f = setup();
     f.deps.enabled.mockReturnValue(false);

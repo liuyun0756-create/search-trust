@@ -129,6 +129,8 @@ export function createFirstServiceEntryHandlers(deps: Dependencies) {
           "CONFLICT",
           "This workflow changed. Check its current status before continuing.",
         );
+      if (code === "OPERATING_MODEL_UNSUPPORTED")
+        return error(409, code, "First-service analysis is not yet supported for a meeting-point or unconfirmed operating model.");
       if (code === "NOT_READY")
         return error(
           409,

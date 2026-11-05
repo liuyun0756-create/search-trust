@@ -8,13 +8,13 @@ import { FirstServiceContinuationRepository } from "../report-capability/first-s
 import type { EntryCommand, EntryView } from "./entry-contract";
 
 export class EntryError extends Error {
-  constructor(public code: "NOT_FOUND" | "CONFLICT" | "NOT_READY" | "UNAVAILABLE") {super(code);}
+  constructor(public code: "NOT_FOUND" | "CONFLICT" | "NOT_READY" | "UNAVAILABLE" | "OPERATING_MODEL_UNSUPPORTED") {super(code);}
 }
 export class FirstServiceEntryRepository {
   constructor(private db: SupabaseClient,private planningEnabled=false) {}
   private async load(userId: string, caseId: string) {
     const {data:r,error}=await this.db.rpc("get_v22_first_service_workspace",{p_user_id:userId,p_case_id:caseId});
-    if(error) throw new EntryError(error.message==="FIRST_SERVICE_CASE_NOT_FOUND"?"NOT_FOUND":"UNAVAILABLE");
+    if(error) throw new EntryError(error.message==="FIRST_SERVICE_CASE_NOT_FOUND"?"NOT_FOUND":error.message==="FIRST_SERVICE_OPERATING_MODEL_UNSUPPORTED"?"OPERATING_MODEL_UNSUPPORTED":"UNAVAILABLE");
     if(!isRecord(r)||r.user_id!==userId||r.case_id!==caseId||!isRecord(r.business)||!isRecord(r.sources)
       ||!Number.isSafeInteger(r.credit_balance)||(r.credit_balance as number)<0||typeof r.other_work!=="boolean") throw new EntryError("UNAVAILABLE");
     const business=parseDiscoveryRequest({case_id:caseId,...r.business,queries:["one","two","three"]});
