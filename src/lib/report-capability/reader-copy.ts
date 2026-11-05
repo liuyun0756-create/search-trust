@@ -126,13 +126,21 @@ export function readerFinding(finding: FindingDisplay) {
   return {...finding, judgment, impact_path:"No cause or business impact is established by this item."};
 }
 
-const CONTACT_FIELDS = {phone:"Phone", address:"Address", business_name:"Name", service_area:"Service area"};
+const CONTACT_FIELDS = {phone:"Phone", address:"Address", business_name:"Name", service_area:"Service area", opening_hours:"Opening hours"};
 const CONTACT_COMPONENTS: Record<string,string> = {
   phone:"phone number", number:"phone number", extension:"extension", house:"house number",
   street:"street", city:"city", region:"region", postal:"postcode", country:"country", unit:"unit",
   remaining_address_components:"other address parts",
 };
 export function contactCheckLabel(check: NonNullable<CapabilityReport["contact_checks"]>[number]): string {
+  if (check.field === "opening_hours") {
+    const result = {match:"Published hours match for all seven days", partial_match:"Published hours match for the compared days",
+      mismatch:"The published hours on the two channels differ. Please check both channels", none:"Published hours could not be compared"}[check.result];
+    const basis = check.result === "none" ? "" : check.basis === "structured" ? "Website structured data" : "Website text";
+    const days = (values: string[]) => values.filter(v => ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].includes(v)).join(", ");
+    return [`Opening hours · ${result}`, basis, check.compared_components.length ? `Compared: ${days(check.compared_components)}` : "",
+      check.omitted_components.length ? `Not compared: ${days(check.omitted_components)}` : ""].filter(Boolean).join(" · ");
+  }
   const result = {match:"Matches business profile", partial_match:"Partly matches business profile",
     mismatch:"Differs from business profile", none:check.status === "not_detected"
       ? "Not detected on the site" : FINDING_STATUSES[check.status]}[check.result];

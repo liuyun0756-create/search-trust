@@ -11,7 +11,7 @@ export type CapabilityTaskEnvelope = {
 export type CompletedCapabilityTask = {
   schema_version: "v22_capability_task_status_v1"; job_id: string; revision: number; run_generation: number;
   status: "succeeded"; stage: "completed"; progress: 100; message: string;
-  report_reference: { report_id: string; case_id: string; schema_version: "2.2.2" | "2.2.4" | "2.2.5"; report_type: "prospect" | "verified_execution"; payload_checksum: string };
+  report_reference: { report_id: string; case_id: string; schema_version: "2.2.2" | "2.2.4" | "2.2.5" | "2.2.6"; report_type: "prospect" | "verified_execution"; payload_checksum: string };
   created_at: string; deadline_at: string; updated_at: string;
 };
 const ajv = new Ajv2020({ strict: true, coerceTypes: false, useDefaults: false });

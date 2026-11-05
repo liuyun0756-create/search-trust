@@ -1201,6 +1201,10 @@ describe.sequential("P1 isolated capability persistence", () => {
     ["v22_capability_public_v9", "site_inventory_snapshot_v2"],
     ["v22_capability_public_v10", "site_inventory_snapshot_v1"],
     ["v22_capability_public_v10", "site_inventory_snapshot_v2"],
+    ["v22_capability_public_v10", "site_inventory_snapshot_v3"],
+    ["v22_capability_public_v11", "site_inventory_snapshot_v1"],
+    ["v22_capability_public_v11", "site_inventory_snapshot_v2"],
+    ["v22_capability_public_v11", "site_inventory_snapshot_v3"],
   ])("P0-04/P0-10 freezes rendered and static sources with %s / %s and preserves delivery", async (ruleset, siteSchema) => {
     const f = await fixture({ acquisition: true, siteSchema });
     const original = (await db.query<{id:string;normalized_payload:Record<string,unknown>}>('select id,normalized_payload from public.data_snapshots where case_id=$1', [f.caseId])).rows;
@@ -1223,7 +1227,7 @@ describe.sequential("P1 isolated capability persistence", () => {
     const prepare = () => db.query(`select * from public.prepare_v22_capability_analysis_input($1,$2,$3,$4::jsonb,$5,$6::jsonb,$7,$8::jsonb,null,1)`,
       [f.owner,f.caseId,f.job,json(m),canonicalJsonText(Object.fromEntries(Object.entries(m).filter(([key])=>key!=="input_checksum"))),json(recipe),canonicalJsonText(body),
         json(Object.fromEntries(sources.map(s=>[s.kind,canonicalJsonText(s.payload)])))]);
-    if (siteSchema === "site_inventory_snapshot_v2" && !["v22_capability_public_v9", "v22_capability_public_v10"].includes(ruleset)) {
+    if ((siteSchema === "site_inventory_snapshot_v3" && ruleset !== "v22_capability_public_v11") || (siteSchema === "site_inventory_snapshot_v2" && !["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11"].includes(ruleset))) {
       await expect(prepare()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
       expect((await db.query("select id from public.analysis_input_manifests where job_id=$1",[f.job])).rows).toEqual([]);
       expect((await db.query("select id from public.data_snapshots where id=$1",[rendered.snapshot_id])).rows).toEqual([]);
@@ -1234,11 +1238,15 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await db.query("select normalized_payload from public.data_snapshots where id=$1",[staticRef.snapshot_id])).rows[0]).toEqual({normalized_payload:original.find(s=>s.id===staticRef.snapshot_id)!.normalized_payload});
     expect((await db.query<{source_kind:string}>("select source_kind from public.analysis_manifest_snapshots where manifest_id=$1 order by source_kind",[m.id])).rows.map(s=>s.source_kind)).toEqual(["competitor","public_gbp","rendered","serp","site"]);
     const labelled = ruleset !== "v22_capability_public_v7";
-    const report = {...f.report,schema_version:labelled ? "2.2.5" : "2.2.4",input_manifest:m,
+    const report = {...f.report,schema_version:ruleset === "v22_capability_public_v11" ? "2.2.6" : labelled ? "2.2.5" : "2.2.4",input_manifest:m,
       ...(labelled ? {findings:f.report.findings.map(finding=>({...finding,kind:"fact",status:"confirmed",coverage:[{source:"site",checked:true}]})),
         contact_checks:[{field:"phone",result:"none",status:"not_checked",basis:"structured",compared_components:[],omitted_components:[],evidence_ids:[]}]}
         : {})};
     if (labelled) {
+      const five = ["phone","address","business_name","service_area","opening_hours"].map(field=>({...report.contact_checks![0],field}));
+      if (ruleset === "v22_capability_public_v11") report.contact_checks = five;
+      else await expect(db.query("select * from public.store_v22_capability_report($1,$2,$3,$4::jsonb,$5,1)",
+        [f.owner,f.caseId,f.job,json({...report,contact_checks:five}),canonicalJsonText({...report,contact_checks:five})])).rejects.toThrow("CAPABILITY_CONTACT_CHECKS_INVALID");
       for (const contact_checks of [undefined, null, [{...report.contact_checks![0],result:"invalid"}]]) {
         const bad={...report,contact_checks};
         if (contact_checks === undefined) Reflect.deleteProperty(bad,"contact_checks");

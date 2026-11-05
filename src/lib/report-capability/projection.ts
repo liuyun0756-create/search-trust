@@ -49,7 +49,7 @@ export function projectCapabilityReport(report: CapabilityReport, approved?: Del
       id: a.id, sequence: index + 1, title: a.title, target: a.target,
       steps: [...a.steps], completion: [...a.completion], review: a.review,
       materials: a.materials.map((m) => ({ ...m, evidence_ids: [...m.evidence_ids], confirmation_items: [...m.confirmation_items] })),
-      ...(report.schema_version === "2.2.5" ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
+      ...(["2.2.5", "2.2.6"].includes(report.schema_version) ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
       ...rationale(report, a, index + 1, clientOnly ? visibleIds : undefined),
     })),
     ...(report.contact_checks ? {contactChecks: report.contact_checks.map(c=>({...c,
