@@ -6,19 +6,21 @@ import { canonicalDigest } from "../verified-analysis-v22/digest";
 function rationale(report: CapabilityReport, action: DeliveryRevision["actions"][number], sequence: number, clientIds?:string[]) {
   const trace = report.prioritization;
   const decision = trace?.candidates.find(e => e.input.action_id === action.id);
-  const source = report.actions.find(a => a.id === action.id);
-  if (!trace || !decision || !source || !decision.selected_order) return {};
+  const pool=report.action_candidates ?? report.actions;
+  const source = pool.find(a => a.id === action.id);
+  if (!trace || !decision || !source) return {};
   const {finding_ids: _findings, dependencies: _dependencies, ...editable} = source;
   const current = {id:action.id, title:action.title, target:action.target, steps:action.steps,
     completion:action.completion, review:action.review, materials:action.materials};
   return { whyNow: {
     explanation: decision.explanation,
     systemPosition: decision.selected_order,
+    ...(report.schema_version === "2.2.7" ? {candidateSelection:decision.selected_order === null} : {}),
     systemTarget: source.target,
     systemTitle: source.title,
     deliveryChanged: sequence !== decision.selected_order || canonicalDigest(current) !== canonicalDigest(editable),
     prerequisites: [
-      ...decision.input.dependencies.filter(id=>!clientIds || clientIds.includes(id)).map(id => report.actions.find(a => a.id === id)!.title),
+      ...decision.input.dependencies.filter(id=>!clientIds || clientIds.includes(id)).map(id => pool.find(a => a.id === id)!.title),
       ...(decision.prerequisite === "access_indexing" ? ["Access and indexing check before optimization"]
         : decision.prerequisite === "measurement" ? ["Reliable measurement before performance interpretation"] : []),
     ],
@@ -40,6 +42,7 @@ export function projectCapabilityReport(report: CapabilityReport, approved?: Del
   const visibleIds=clientActionIds(report,approved);
   const actions=(approved?.actions ?? report.actions).filter(a=>!clientOnly || visibleIds.includes(a.id));
   return {
+    ...(report.schema_version === "2.2.7" ? {hideSourceIdentifiers:true} : {}),
     reportId: report.id,
     title: approved?.title ?? report.title,
     summary: approved?.summary ?? report.summary,
@@ -49,7 +52,7 @@ export function projectCapabilityReport(report: CapabilityReport, approved?: Del
       id: a.id, sequence: index + 1, title: a.title, target: a.target,
       steps: [...a.steps], completion: [...a.completion], review: a.review,
       materials: a.materials.map((m) => ({ ...m, evidence_ids: [...m.evidence_ids], confirmation_items: [...m.confirmation_items] })),
-      ...(["2.2.5", "2.2.6"].includes(report.schema_version) ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
+      ...(["2.2.5", "2.2.6", "2.2.7"].includes(report.schema_version) ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
       ...rationale(report, a, index + 1, clientOnly ? visibleIds : undefined),
     })),
     ...(report.contact_checks ? {contactChecks: report.contact_checks.map(c=>({...c,

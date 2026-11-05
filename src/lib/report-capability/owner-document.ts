@@ -25,6 +25,7 @@ export async function loadCapabilityOwnerDocument(
     pendingDraft: revision?.status === "draft",
     deliveryRevision: revision?.revision ?? 0,
     deliveryStatus: revision?.status ?? "original",
+    candidateReport: report.schema_version === "2.2.7" ? report : undefined,
     orderConstraints: deliveryOrderConstraints(report),
     editable: revision ? editableVisibility(report,{ ...revision.content, expected_revision: revision.revision }) : initialCapabilityRevision(report),
   };

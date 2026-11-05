@@ -55,7 +55,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
     <Page size="A4" style={styles.page} wrap>
       <View style={styles.brand}><Copy style={styles.kicker}>SEARCHTRUST / CLIENT DELIVERY</Copy>{brand?.agencyLogoData ? <Image src={brand.agencyLogoData} style={styles.logo} /> : null}</View>
       <Copy style={styles.meta}>{`${reportLabel} | Report version ${delivery.reportVersion} | Approved revision ${delivery.revision}`}</Copy>
-      <Copy style={styles.meta}>{`Source report ${delivery.reportId} | Approved revision ${delivery.revisionId} | ${delivery.contentChecksum}`}</Copy>
+      {!d.hideSourceIdentifiers ? <Copy style={styles.meta}>{`Source report ${delivery.reportId} | Approved revision ${delivery.revisionId} | ${delivery.contentChecksum}`}</Copy> : null}
       <Copy style={styles.heading}>{d.title}</Copy>
       {brand?.agencyName ? <Copy style={styles.meta}>{`Prepared by ${brand.agencyName}`}</Copy> : null}
       {brand?.clientName ? <Copy style={styles.meta}>{`Prepared for ${brand.clientName}`}</Copy> : null}
@@ -103,7 +103,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
       <Copy style={styles.kicker}>{`ACTION ${String(action.sequence).padStart(2, "0")}`}</Copy>
       <Copy style={styles.heading}>{action.title}</Copy><Copy style={styles.meta}>{`Target: ${readerTarget(action.target)}`}</Copy>
       {action.whyNow ? <View style={styles.card}>
-        <Copy style={styles.title}>{action.whyNow.deliveryChanged ? `System recommendation - original position ${action.whyNow.systemPosition}` : "Why now"}</Copy>
+        <Copy style={styles.title}>{action.whyNow.candidateSelection ? "Advisor-selected action" : action.whyNow.deliveryChanged ? `System recommendation - original position ${action.whyNow.systemPosition}` : "Why now"}</Copy>
         <Copy>{action.whyNow.explanation}</Copy>
         {action.whyNow.deliveryChanged ? <Copy>{`The delivery plan was edited. This rationale describes the original recommendation: ${action.whyNow.systemTitle} | ${readerTarget(action.whyNow.systemTarget)}`}</Copy> : null}
         <Copy>{`Prerequisites: ${action.whyNow.prerequisites.join("; ") || "No explicit prerequisite action recorded."}`}</Copy>

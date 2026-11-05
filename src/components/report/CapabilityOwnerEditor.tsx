@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { DeliveryRevision } from "@/lib/report-capability/generated/types";
+import type { CapabilityReport, DeliveryRevision } from "@/lib/report-capability/generated/types";
 import { CapabilityDeliveryEditor, type CapabilitySaveResult } from "./CapabilityDeliveryEditor";
 import type { DeliveryOrderConstraints } from "@/lib/report-capability/order";
 
@@ -11,7 +11,7 @@ function ordered(value: unknown): unknown {
   return value;
 }
 
-export function CapabilityOwnerEditor({initial,orderConstraints}: {initial:DeliveryRevision;orderConstraints?:DeliveryOrderConstraints}) {
+export function CapabilityOwnerEditor({initial,orderConstraints,candidateReport}: {initial:DeliveryRevision;orderConstraints?:DeliveryOrderConstraints;candidateReport?:CapabilityReport}) {
   const router = useRouter();
   async function save(content:DeliveryRevision): Promise<CapabilitySaveResult> {
     const response = await fetch(`/api/v2/cases/${encodeURIComponent(initial.case_id)}/reports/${encodeURIComponent(initial.report_id)}/content-revision`,{
@@ -28,6 +28,6 @@ export function CapabilityOwnerEditor({initial,orderConstraints}: {initial:Deliv
   }
   return <details className="mx-auto mt-8 max-w-4xl rounded-2xl border border-[#dce6d9] bg-white">
     <summary className="cursor-pointer p-5 font-semibold">Review &amp; approve · optional edits</summary>
-    <CapabilityDeliveryEditor initial={initial} onSave={save} orderConstraints={orderConstraints} />
+    <CapabilityDeliveryEditor initial={initial} onSave={save} orderConstraints={orderConstraints} candidateReport={candidateReport} />
   </details>;
 }

@@ -86,7 +86,7 @@ export default async function ReportV22Page({
       </div>
       <CapabilityReportDocument document={capability.document} technicalDetails={!capability.approvedRevision} />
       <CapabilityDeliveryActions caseId={caseId} reportId={reportId} revision={capability.deliveryRevision} approved={capability.hasApproved}/>
-      <CapabilityOwnerEditor key={reportId} initial={capability.editable} orderConstraints={capability.orderConstraints} />
+      <CapabilityOwnerEditor key={reportId} initial={capability.editable} orderConstraints={capability.orderConstraints} candidateReport={capability.candidateReport} />
       {implementationVersions.length ? <>
         <nav aria-label="Implementation record source version" className="mx-auto mt-8 flex max-w-4xl flex-wrap gap-3 text-sm">
           <span>Implementation records for approved delivery:</span>
