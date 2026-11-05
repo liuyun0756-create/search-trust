@@ -1,3 +1,7 @@
+import candidateSample from "../report-capability/fixtures/candidates/five.json";
+import candidateDependent from "../report-capability/fixtures/candidates/dependencies.json";
+import type {CapabilityReport} from "../report-capability/generated/types";
+import {replayPriority,priorityCandidate} from "../report-capability/priority";
 import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
@@ -1205,6 +1209,9 @@ describe.sequential("P1 isolated capability persistence", () => {
     ["v22_capability_public_v11", "site_inventory_snapshot_v1"],
     ["v22_capability_public_v11", "site_inventory_snapshot_v2"],
     ["v22_capability_public_v11", "site_inventory_snapshot_v3"],
+    ["v22_capability_public_v12", "site_inventory_snapshot_v1"],
+    ["v22_capability_public_v12", "site_inventory_snapshot_v2"],
+    ["v22_capability_public_v12", "site_inventory_snapshot_v3"],
   ])("P0-04/P0-10 freezes rendered and static sources with %s / %s and preserves delivery", async (ruleset, siteSchema) => {
     const f = await fixture({ acquisition: true, siteSchema });
     const original = (await db.query<{id:string;normalized_payload:Record<string,unknown>}>('select id,normalized_payload from public.data_snapshots where case_id=$1', [f.caseId])).rows;
@@ -1227,7 +1234,7 @@ describe.sequential("P1 isolated capability persistence", () => {
     const prepare = () => db.query(`select * from public.prepare_v22_capability_analysis_input($1,$2,$3,$4::jsonb,$5,$6::jsonb,$7,$8::jsonb,null,1)`,
       [f.owner,f.caseId,f.job,json(m),canonicalJsonText(Object.fromEntries(Object.entries(m).filter(([key])=>key!=="input_checksum"))),json(recipe),canonicalJsonText(body),
         json(Object.fromEntries(sources.map(s=>[s.kind,canonicalJsonText(s.payload)])))]);
-    if ((siteSchema === "site_inventory_snapshot_v3" && ruleset !== "v22_capability_public_v11") || (siteSchema === "site_inventory_snapshot_v2" && !["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11"].includes(ruleset))) {
+    if ((siteSchema === "site_inventory_snapshot_v3" && !["v22_capability_public_v11","v22_capability_public_v12"].includes(ruleset)) || (siteSchema === "site_inventory_snapshot_v2" && !["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12"].includes(ruleset))) {
       await expect(prepare()).rejects.toThrow("CAPABILITY_SNAPSHOT_INVALID");
       expect((await db.query("select id from public.analysis_input_manifests where job_id=$1",[f.job])).rows).toEqual([]);
       expect((await db.query("select id from public.data_snapshots where id=$1",[rendered.snapshot_id])).rows).toEqual([]);
@@ -1238,13 +1245,15 @@ describe.sequential("P1 isolated capability persistence", () => {
     expect((await db.query("select normalized_payload from public.data_snapshots where id=$1",[staticRef.snapshot_id])).rows[0]).toEqual({normalized_payload:original.find(s=>s.id===staticRef.snapshot_id)!.normalized_payload});
     expect((await db.query<{source_kind:string}>("select source_kind from public.analysis_manifest_snapshots where manifest_id=$1 order by source_kind",[m.id])).rows.map(s=>s.source_kind)).toEqual(["competitor","public_gbp","rendered","serp","site"]);
     const labelled = ruleset !== "v22_capability_public_v7";
-    const report = {...f.report,schema_version:ruleset === "v22_capability_public_v11" ? "2.2.6" : labelled ? "2.2.5" : "2.2.4",input_manifest:m,
+    const report = {...f.report,schema_version:ruleset === "v22_capability_public_v12" ? "2.2.7" : ruleset === "v22_capability_public_v11" ? "2.2.6" : labelled ? "2.2.5" : "2.2.4",input_manifest:m,
       ...(labelled ? {findings:f.report.findings.map(finding=>({...finding,kind:"fact",status:"confirmed",coverage:[{source:"site",checked:true}]})),
         contact_checks:[{field:"phone",result:"none",status:"not_checked",basis:"structured",compared_components:[],omitted_components:[],evidence_ids:[]}]}
         : {})};
+    if(ruleset === "v22_capability_public_v12") Object.assign(report,{action_candidates:[],
+      prioritization:replayPriority([],report.findings as unknown as CapabilityReport['findings'],m.business as unknown as CapabilityReport['input_manifest']['business'],m.input_checksum,'v22_business_priority_v3')});
     if (labelled) {
       const five = ["phone","address","business_name","service_area","opening_hours"].map(field=>({...report.contact_checks![0],field}));
-      if (ruleset === "v22_capability_public_v11") report.contact_checks = five;
+      if (["v22_capability_public_v11", "v22_capability_public_v12"].includes(ruleset)) report.contact_checks = five;
       else await expect(db.query("select * from public.store_v22_capability_report($1,$2,$3,$4::jsonb,$5,1)",
         [f.owner,f.caseId,f.job,json({...report,contact_checks:five}),canonicalJsonText({...report,contact_checks:five})])).rejects.toThrow("CAPABILITY_CONTACT_CHECKS_INVALID");
       for (const contact_checks of [undefined, null, [{...report.contact_checks![0],result:"invalid"}]]) {
@@ -1257,7 +1266,7 @@ describe.sequential("P1 isolated capability persistence", () => {
     await db.query("select * from public.complete_v22_capability_analysis($1,$2,$3,$4::jsonb,$5,1)",[f.owner,f.caseId,f.job,json(report),canonicalJsonText(report)]);
     expect((await f.completed()).rows[0].payload).toEqual(report);
     expect((await db.query<{id:string}>("select id from public.list_v22_completed_capability_reports($1)",[f.owner])).rows.map(r=>r.id)).toContain(f.job);
-    await f.save({...f.revision,source_checksum:canonicalDigest(report)});
+    await f.save({...f.revision,source_checksum:canonicalDigest(report),...(ruleset === "v22_capability_public_v12" ? {schema_version:"v22_delivery_revision_v3",client_action_ids:[]} : {})});
     expect((await db.query("select schema_version from public.capability_report_versions where id=$1",[f.job])).rows[0]).toEqual({schema_version:report.schema_version});
   });
 
@@ -1374,6 +1383,71 @@ describe.sequential("P1 isolated capability persistence", () => {
     const rows=await db.query<{content:unknown}>("select content from public.report_content_revisions where report_id=$1 order by revision",[f.job]);
     expect(rows.rows.map(r=>r.content)).toEqual([revision,included]);
     expect(JSON.stringify((await f.completed()).rows[0].payload)).toBe(original);
+  });
+  async function candidateFixture(dependencies=false) {
+    const f=await fixture({acquisition:true});
+    const r=structuredClone(dependencies?candidateDependent:candidateSample) as unknown as CapabilityReport;
+    const m={...f.m,ruleset_version:'v22_capability_public_v12'};
+    m.input_checksum=canonicalDigest(Object.fromEntries(Object.entries(m).filter(([k])=>k!=='input_checksum')));
+    r.id=f.job;r.input_manifest=m as unknown as CapabilityReport['input_manifest'];r.generated_at=f.report.generated_at;
+    for(const e of r.evidence){const s=m.snapshots.find(s=>s.source_kind===e.source_kind)!;e.snapshot_id=s.snapshot_id;e.observed_at=s.fetched_at;}
+    for(const finding of r.findings)finding.observed_at=r.evidence.find(e=>finding.evidence_ids.includes(e.id))!.observed_at;
+    r.prioritization=replayPriority(r.action_candidates!.map(priorityCandidate),r.findings,m.business as unknown as CapabilityReport['input_manifest']['business'],m.input_checksum,'v22_business_priority_v3');
+    r.action_candidates=r.prioritization.candidate_order!.map(id=>r.action_candidates!.find(a=>a.id===id)!);
+    r.actions=r.prioritization.action_order.map(id=>r.action_candidates!.find(a=>a.id===id)!) as unknown as CapabilityReport['actions'];
+    expect(validateCapabilityReport(r).ok).toBe(true);
+    await f.freeze(m);
+    const store=(body=r)=>db.query('select * from public.store_v22_capability_report($1,$2,$3,$4::jsonb,$5,1)',[f.owner,f.caseId,f.job,json(body),canonicalJsonText(body)]);
+    const content=(ids=r.actions.map(a=>a.id))=>({schema_version:'v22_delivery_revision_v3',report_id:r.id,user_id:f.owner,case_id:f.caseId,
+      source_checksum:canonicalDigest(r),expected_revision:0,status:'draft',title:r.title,summary:r.summary,client_note:null,
+      actions:ids.map(id=>{const {finding_ids:_f,dependencies:_d,...a}=r.action_candidates!.find(a=>a.id===id)!;return structuredClone(a);}),client_action_ids:[...ids]});
+    const save=(c:unknown,user=f.owner)=>db.query<{content:unknown}>('select * from public.save_v22_report_content_revision($1,$2,$3,$4::jsonb)',[user,f.caseId,f.job,json(c)]);
+    return {f,r,store,content,save};
+  }
+  it('P1-07 stores all five frozen candidates and allows a confirmed technical replacement',async()=>{
+    const {f,r,store,content,save}=await candidateFixture();await store();await store();
+    const ids=['ac-synthetic-4','ac-synthetic-1','ac-synthetic-2'],c=content(ids);
+    await expect(save(c)).rejects.toThrow('CAPABILITY_TECHNICAL_CONFIRMATION_REQUIRED');
+    const ack={confirmed:true,omitted_action_ids:['ac-synthetic-0'],selected_action_ids:[...ids],client_action_ids:[...ids]};
+    const confirmed={...c,technical_omission_confirmation:ack};
+    expect((await save(confirmed)).rows[0].content).toEqual(confirmed);
+    await expect(save(confirmed)).rejects.toThrow('CAPABILITY_REVISION_CONFLICT');
+    await expect(save({...confirmed,expected_revision:1},randomUUID())).rejects.toThrow('CAPABILITY_REPORT_NOT_FOUND');
+    const restored={...content(),expected_revision:1,status:'approved'};
+    expect((await save(restored)).rows[0].content).toEqual(restored);
+    expect((await db.query<{payload:unknown}>('select payload from public.capability_report_versions where id=$1',[f.job])).rows[0].payload).toEqual(r);
+    expect((await db.query<{content:unknown}>('select content from public.report_content_revisions where report_id=$1 order by revision',[f.job])).rows.map(x=>x.content)).toEqual([confirmed,restored]);
+  });
+  it.each(['missing-pool','pool-order','forged-selected','forged-qualification','unknown-evidence','duplicate-material','empty-steps'])('P1-07 rejects invalid persisted pool: %s',async kind=>{
+    const {r,store}=await candidateFixture();const bad=structuredClone(r);
+    if(kind==='missing-pool')delete bad.action_candidates;
+    if(kind==='pool-order')bad.action_candidates!.reverse();
+    if(kind==='forged-selected')bad.actions[0]={...bad.actions[0]!,title:'Different from frozen pool'};
+    if(kind==='forged-qualification')bad.prioritization!.candidates[1].technical_finding_ids=['invented'];
+    if(kind==='unknown-evidence')bad.action_candidates![4].materials[0]!.evidence_ids=['invented'];
+    if(kind==='duplicate-material')bad.action_candidates![4].materials=[bad.action_candidates![4].materials[0]!,bad.action_candidates![4].materials[0]!];
+    if(kind==='empty-steps')bad.action_candidates![4].steps=[] as never;
+    await expect(store(bad)).rejects.toThrow('CAPABILITY_CANDIDATES_INVALID');
+  });
+  it.each(['append','remove','duplicate','cross-report','materials','evidence','stale-ack','old-revision','source'])('P1-07 rejects invalid selection: %s',async kind=>{
+    const {store,content,save}=await candidateFixture();await store();const c=content();
+    if(kind==='append')c.actions.push(structuredClone(c.actions[0]));
+    if(kind==='remove'){c.actions.pop();c.client_action_ids.pop();}
+    if(kind==='duplicate')c.actions[1]=structuredClone(c.actions[0]);
+    if(kind==='cross-report')c.actions[0].id='unknown';
+    if(kind==='materials')c.actions[0].materials[0]!.id='another-action-material';
+    if(kind==='evidence')c.actions[0].materials[0]!.evidence_ids=['invented'];
+    if(kind==='old-revision')c.schema_version='v22_delivery_revision_v2';
+    if(kind==='source')c.source_checksum=('sha256:'+'f'.repeat(64)) as `sha256:${string}`;
+    const body=kind==='stale-ack'?{...c,technical_omission_confirmation:{confirmed:true,omitted_action_ids:['ac-synthetic-0'],selected_action_ids:c.client_action_ids,client_action_ids:c.client_action_ids}}:c;
+    await expect(save(body)).rejects.toThrow(/CAPABILITY_/);
+  });
+  it.each(['missing','reversed','hidden'])('P1-07 enforces dependencies despite confirmation: %s',async kind=>{
+    const {store,content,save}=await candidateFixture(true);await store();
+    const ids=kind==='missing'?['ac-synthetic-4','ac-synthetic-1','ac-synthetic-2']:kind==='reversed'?['ac-synthetic-1','ac-synthetic-0','ac-synthetic-2']:['ac-synthetic-0','ac-synthetic-1','ac-synthetic-2'];
+    const c=content(ids);if(kind==='hidden')c.client_action_ids=ids.slice(1);
+    const body={...c,technical_omission_confirmation:{confirmed:true,omitted_action_ids:['ac-synthetic-0'],selected_action_ids:ids,client_action_ids:c.client_action_ids}};
+    await expect(save(body)).rejects.toThrow('CAPABILITY_ORDER_INVALID');
   });
 
 });

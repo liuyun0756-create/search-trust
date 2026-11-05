@@ -1,3 +1,4 @@
+import { replayCandidates } from "./candidate-priority";
 import type { BusinessScope, CapabilityAction, CapabilityFinding, PrioritizationTrace, PriorityCandidateInput, PriorityDecision } from "./generated/types";
 import { canonicalDigest } from "../verified-analysis-v22/digest";
 
@@ -33,6 +34,7 @@ function measurement(rule: string) {
 /** Replay the ordinal backend rules. Persisted explanations cannot contradict their inputs. */
 export function replayPriority(inputs: PriorityCandidateInput[], findings: CapabilityFinding[], business: BusinessScope, checksum: string,
   rulesVersion: PrioritizationTrace["rules_version"] = "v22_business_priority_v1"): PrioritizationTrace {
+  if(rulesVersion === "v22_business_priority_v3") return replayCandidates(inputs,findings,business,checksum);
   const conditions = business.execution_conditions ?? {capacity:"unknown", publishing_access:"unknown"};
   const byId = new Map(findings.map(f => [f.id, f]));
   const ids = new Set(inputs.map(c => c.action_id));
@@ -106,8 +108,8 @@ export function replayPriority(inputs: PriorityCandidateInput[], findings: Capab
     target_pages:[...business.target_pages], action_order: action_order as PrioritizationTrace["action_order"], candidates:entries, limitations:[priorityLimit] };
 }
 
-export function priorityMatches(trace: PrioritizationTrace, report: {actions: CapabilityAction[]; findings: CapabilityFinding[]; input_manifest: {business: BusinessScope; input_checksum: string}}) {
+export function priorityMatches(trace: PrioritizationTrace, report: {action_candidates?: CapabilityAction[] | null; actions: CapabilityAction[]; findings: CapabilityFinding[]; input_manifest: {business: BusinessScope; input_checksum: string}}) {
   const replay = replayPriority(trace.candidates.map(e => e.input), report.findings, report.input_manifest.business, report.input_manifest.input_checksum, trace.rules_version);
   return canonicalDigest(trace) === canonicalDigest(replay) && JSON.stringify(trace.action_order) === JSON.stringify(report.actions.map(a => a.id))
-    && report.actions.every(a => canonicalDigest(priorityCandidate(a)) === canonicalDigest(trace.candidates.find(e => e.input.action_id === a.id)?.input));
+    && (report.action_candidates ?? report.actions).every(a => canonicalDigest(priorityCandidate(a)) === canonicalDigest(trace.candidates.find(e => e.input.action_id === a.id)?.input));
 }
