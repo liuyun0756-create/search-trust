@@ -18,7 +18,8 @@ export async function loadCapabilityOwnerDocument(
     document: projectCapabilityReport(report, approved?.content, !!approved),
     observationWarnings: observationWarnings(report),
     version: report.version,
-    identityReviewAvailable: report.report_type === "prospect",
+    identityReviewAvailable: report.report_type === "prospect"
+      && report.input_manifest.ruleset_version === "v22_capability_public_v13",
     generatedAt: report.generated_at,
     approvedRevision: approved?.revision ?? null,
     hasApproved: revision?.status === "approved",

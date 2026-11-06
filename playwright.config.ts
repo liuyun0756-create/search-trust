@@ -6,6 +6,8 @@ export default defineConfig({
   globalSetup: "./e2e/support/warm-method-routes.ts",
   testDir: "./e2e",
   testMatch: "**/*.spec.ts",
+  // Private saved-input previews run only through their dedicated configs.
+  testIgnore: ["**/capability-candidates.spec.ts", "**/identity-review.spec.ts"],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

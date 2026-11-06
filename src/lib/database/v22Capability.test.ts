@@ -142,6 +142,21 @@ describe.sequential("P1 isolated capability persistence", () => {
   }, 30000);
   afterAll(async () => { await db.close(); });
 
+  it("keeps old backend 84f1f80 public v5 freeze/store compatible after all migrations", async () => {
+    // 84f1f80 emits public v5 with manifest v1 / report 2.2.2, without v13 identity fields.
+    const f = await fixture({ acquisition: true });
+    f.m.ruleset_version = "v22_capability_public_v5";
+    f.m.input_checksum = canonicalDigest(Object.fromEntries(Object.entries(f.m).filter(([key]) => key !== "input_checksum")));
+    expect(f.m.schema_version).toBe("v22_analysis_input_v1");
+    expect(f.report.schema_version).toBe("2.2.2");
+    const frozen = await f.freeze();
+    expect(frozen.rows[0].payload).toEqual(f.m);
+    await f.store();
+    expect((await db.query<{ payload: unknown }>("select payload from public.capability_report_versions where id=$1", [f.job])).rows[0].payload).toEqual(f.report);
+    await f.complete();
+    expect((await f.completed()).rows[0].payload).toEqual(f.report);
+  });
+
   async function implementationFixture(options: {acquisition?: boolean; uncompleted?: boolean; draft?: boolean} = {}) {
     const f = await fixture({actionCount: 1, acquisition: options.acquisition});
     await f.freeze(); await f.store(); if (!options.uncompleted) await f.complete();

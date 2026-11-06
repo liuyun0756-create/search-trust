@@ -1,7 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 import { generatedDelivery } from "./fixtures/generated-delivery";
 import { loadCapabilityOwnerDocument } from "./owner-document";
+import v12 from "./fixtures/candidates/five.json";
+import identity from "../identity-review/fixtures/synthetic.json";
+import { validateCapabilityReport } from "./validate";
 describe("owner report page data gate",()=>{
+  it.each([
+    ["v5 prospect", generatedDelivery("public-0.json").report, false],
+    ["v12 prospect", v12, false],
+    ["v13 prospect", identity.base, true],
+    ["verified execution", generatedDelivery("service-first.json").report, false],
+  ] as const)("identity review requires v13 prospect (%s)", async (_name, raw, available) => {
+    const checked = validateCapabilityReport(raw);
+    expect(checked.ok).toBe(true);
+    if (!checked.ok) throw new Error("Invalid saved report fixture");
+    const report = checked.report;
+    const repo = { loadCompletedReport: vi.fn(async () => report), loadRevision: vi.fn(async () => null) };
+    const result = await loadCapabilityOwnerDocument(repo, report.input_manifest.user_id, report.input_manifest.case_id, report.id, false);
+    expect(result!.identityReviewAvailable).toBe(available);
+  });
   it("never reads revisions for an uncompleted or unowned candidate",async()=>{
     const repo={loadCompletedReport:vi.fn(async()=>null),loadRevision:vi.fn()};
     expect(await loadCapabilityOwnerDocument(repo,"user","case","report",true)).toBeNull();
