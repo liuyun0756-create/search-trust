@@ -4,7 +4,6 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import type { CaseLocation } from "../cases/contracts";
-import { caseLocationKey } from "../cases/normalize";
 
 type IdRow = { id: string };
 
@@ -1540,7 +1539,7 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
       `select location_key from public.client_cases where id = $1`,
       [first],
     );
-    expect(generated.rows[0].location_key).toBe(caseLocationKey(austin));
+    expect(generated.rows[0].location_key).toBe("geo:30.267200:-97.743100");
 
     await expectSqlError(
       `insert into public.client_cases (

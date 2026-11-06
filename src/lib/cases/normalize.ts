@@ -25,7 +25,6 @@ export interface NormalizedCreateCaseInput {
   target_market: CaseLocation;
   public_gbp_url: string | null;
   business_identity: BusinessIdentity;
-  location_key: string;
 }
 
 export interface NormalizedUpdateCaseInput {
@@ -171,23 +170,6 @@ export function normalizePublicGbpUrl(value: string | null | undefined): string 
   return url.toString();
 }
 
-function locationPart(value: string | null): string {
-  return normalizeWhitespace(value ?? "").toLowerCase();
-}
-
-export function caseLocationKey(location: CaseLocation): string {
-  if (location.latitude !== null && location.longitude !== null) {
-    return `geo:${location.latitude.toFixed(6)}:${location.longitude.toFixed(6)}`;
-  }
-  return `place:${[
-    location.country_code,
-    location.region,
-    location.city,
-    location.postal_code,
-    location.display_name,
-  ].map(locationPart).join("|")}`;
-}
-
 export function buildBusinessIdentity(input: {
   businessName: string;
   siteUrl: string;
@@ -236,7 +218,6 @@ export function parseCreateCaseInput(value: unknown): NormalizedCreateCaseInput 
     target_market: targetMarket,
     public_gbp_url: publicGbpUrl,
     business_identity: businessIdentity,
-    location_key: caseLocationKey(primaryLocation),
   };
 }
 

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { CaseApiError } from "./errors";
 import {
-  caseLocationKey,
   parseCaseId,
   parseCaseListQuery,
   parseCreateCaseInput,
@@ -66,7 +65,7 @@ describe("Case request normalization", () => {
       latitude: null,
       longitude: null,
     });
-    expect(input.location_key).toBe("geo:30.267200:-97.743100");
+    expect(input).not.toHaveProperty("location_key");
     expect(input.public_gbp_url).toBe("https://maps.google.com/?cid=123");
     expect(input.business_identity).toEqual({
       business_name: "Example Dental",
@@ -99,7 +98,7 @@ describe("Case request normalization", () => {
     }));
   });
 
-  it("creates a stable place key when coordinates are absent", () => {
+  it("normalizes a location without coordinates for database key computation", () => {
     const input = parseCreateCaseInput({
       ...validCreateRequest,
       primary_location: {
@@ -110,7 +109,7 @@ describe("Case request normalization", () => {
         postal_code: null,
       },
     });
-    expect(caseLocationKey(input.primary_location)).toBe("place:us|texas|austin||austin, tx");
+    expect(input.primary_location).toMatchObject({ display_name: "Austin, TX", region: "Texas", city: "Austin", latitude: null, longitude: null });
   });
 
   it("requires coordinates to be provided as a pair", () => {

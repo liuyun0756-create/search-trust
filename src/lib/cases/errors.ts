@@ -5,6 +5,7 @@ export type CaseErrorCode =
   | "UNAUTHORIZED"
   | "CASE_NOT_FOUND"
   | "CASE_ALREADY_EXISTS"
+  | "CASE_CONFLICT"
   | "CASE_ARCHIVED"
   | "INTERNAL_ERROR";
 
@@ -49,6 +50,10 @@ export class CaseApiError extends Error {
     return new CaseApiError("CASE_ALREADY_EXISTS", 409, "A Case already exists for this website and Location.", {
       duplicate: { case_id: caseId, status },
     });
+  }
+
+  static conflict(): CaseApiError {
+    return new CaseApiError("CASE_CONFLICT", 409, "This Case conflicts with an existing record. Refresh before continuing.");
   }
 
   static archived(): CaseApiError {

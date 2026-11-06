@@ -112,7 +112,7 @@ test(`first-service browser entry through actual workers to delivery (${clean?'z
         await order.screenshot({path:info.outputPath('order-mobile.png')});
       }
     }
-    await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Approve for delivery'}).click();
+    await page.getByRole('checkbox',{name:/I have reviewed this content/}).check();await page.getByRole('button',{name:'Approve for delivery'}).click();
     await expect(page.getByText('Revision 1 approved for delivery.')).toBeVisible();
     if(loss==='none'){
       await page.goto(`${page.url()}?implementation=1`);

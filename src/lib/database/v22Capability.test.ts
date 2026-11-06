@@ -176,6 +176,47 @@ describe.sequential("P1 isolated capability persistence", () => {
       "select * from public.get_v22_implementation_records($1,$2,$3,$4)", [owner, caseId, reportId, revisionId]);
     return {...f, entry, delivery, payload, saveImplementation: save, readImplementation: read};
   }
+  it.each(["2.2.2", "2.2.4", "2.2.5", "2.2.6", "2.2.7", "2.2.8"])("reads completed implementation source %s and rejects checksum mismatch", async version => {
+    const f = await implementationFixture();
+    // Isolate source-reader compatibility from generation contracts. These
+    // synthetic rows keep real completion/charge/ledger entitlement checks.
+    await db.exec("begin; alter table capability_report_versions disable trigger user; alter table report_content_revisions disable trigger user;");
+    try {
+      const report = {...f.report, schema_version: version};
+      const checksum = canonicalDigest(report);
+      await db.query("update capability_report_versions set schema_version=$1,payload=$2::jsonb,payload_checksum=$3 where id=$4", [version,json(report),checksum,f.job]);
+      await db.query("update report_content_revisions set content=jsonb_set(content,'{source_checksum}',to_jsonb($1::text)) where id=$2",[checksum,f.delivery.id]);
+      const completed = await f.completed();
+      expect(completed.rows).toHaveLength(1);
+      const args = [f.owner,f.caseId,f.job,f.delivery.id];
+      const source = await db.query<{value:{report_checksum:string}}>("select v22_implementation_source($1,$2,$3,$4) value",args);
+      expect(source.rows[0].value.report_checksum).toBe(checksum);
+      expect((await f.readImplementation()).rows).toEqual([]);
+      await db.query("update report_content_revisions set content=jsonb_set(content,'{source_checksum}',to_jsonb($1::text)) where id=$2",['sha256:'+"f".repeat(64),f.delivery.id]);
+      await expect(db.query("select v22_implementation_source($1,$2,$3,$4)",args)).rejects.toThrow("IMPLEMENTATION_SOURCE_NOT_FOUND");
+    } finally { await db.exec("rollback"); }
+  });
+
+  it("keeps unknown completed source versions unavailable", async () => {
+    const f = await implementationFixture();
+    await db.exec("begin; alter table capability_report_versions disable trigger user; alter table capability_report_versions drop constraint capability_report_versions_schema_version_check; alter table capability_report_versions drop constraint capability_report_input_variant;");
+    try {
+      await db.query("update capability_report_versions set schema_version='2.2.999' where id=$1",[f.job]);
+      expect((await db.query("select * from get_v22_completed_plan_source($1,$2,$3)",[f.owner,f.caseId,f.job])).rows).toEqual([]);
+      await expect(f.readImplementation()).rejects.toThrow("IMPLEMENTATION_SOURCE_NOT_FOUND");
+    } finally { await db.exec("rollback"); }
+  });
+
+  it("preserves the entire 2.2.3 projection/checksum branch and internal-only privileges", async () => {
+    const original = await readFile("supabase/migrations/20261028090000_continue_v22_multi_round_reviews.sql","utf8");
+    const branch = original.slice(original.indexOf("  elsif r.schema_version='2.2.3' then"), original.indexOf("end; $$;",original.indexOf("create function public.get_v22_completed_plan_source")));
+    const definition = (await db.query<{definition:string}>("select pg_get_functiondef('public.get_v22_completed_plan_source(uuid,uuid,uuid)'::regprocedure) definition")).rows[0].definition;
+    expect(definition).toContain(branch);
+    for (const role of ["anon","authenticated","service_role"]) {
+      expect((await db.query<{allowed:boolean}>("select has_function_privilege($1,'public.get_v22_completed_plan_source(uuid,uuid,uuid)','execute') allowed",[role])).rows[0].allowed).toBe(false);
+    }
+  });
+
   it("saves free implementation snapshots, corrects dates without mutation, and recovers a lost acknowledgement", async () => {
     const f = await implementationFixture(), firstPayload = f.payload();
     const ledgerBefore = (await db.query("select * from public.credit_ledger where user_id=$1", [f.owner])).rows;

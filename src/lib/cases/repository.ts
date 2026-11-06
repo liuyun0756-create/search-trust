@@ -35,7 +35,10 @@ export interface CaseListResult {
   total: number;
 }
 
+export type CaseKeyIdentity = { schema_version?: unknown; primary_location?: unknown };
+
 export interface CaseRepository {
+  computeLocationKey(identity: CaseKeyIdentity, targetMarket: CaseLocation): Promise<string>;
   create(input: CreateCaseRecord): Promise<CaseRecord>;
   findById(userId: string, caseId: string): Promise<CaseRecord | null>;
   findDuplicate(
@@ -52,11 +55,15 @@ export interface CaseRepository {
 
 export class CasePersistenceError extends Error {
   readonly code: string | null;
+  readonly constraint: string | null;
 
   constructor(message: string, code: string | null = null) {
     super(message);
     this.name = "CasePersistenceError";
     this.code = code;
+    this.constraint = code === "23505"
+      ? message.match(/unique constraint "([a-zA-Z0-9_]+)"/)?.[1] ?? null
+      : null;
   }
 }
 
@@ -68,6 +75,18 @@ function persistenceError(error: { message: string; code?: string | null }): Cas
 
 export class SupabaseCaseRepository implements CaseRepository {
   constructor(private readonly supabase: SupabaseClient) {}
+
+  async computeLocationKey(identity: CaseKeyIdentity, targetMarket: CaseLocation): Promise<string> {
+    // Match the client_cases.location_key generated column, including identity v2.
+    const location = identity.schema_version === "business_identity_v2"
+      ? targetMarket : identity.primary_location;
+    const { data, error } = await this.supabase.rpc("v22_case_location_key", { location });
+    if (error) throw persistenceError(error);
+    if (typeof data !== "string" || !data) {
+      throw new CasePersistenceError("Database returned no Case location key.");
+    }
+    return data;
+  }
 
   async create(input: CreateCaseRecord): Promise<CaseRecord> {
     const { data, error } = await this.supabase

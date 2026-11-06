@@ -3,7 +3,6 @@ import type { CaseListQuery, CaseLocation, CaseOperatingModel, CaseStatus } from
 import { CaseApiError } from "./errors";
 import {
   buildBusinessIdentity,
-  caseLocationKey,
   type NormalizedCreateCaseInput,
   type NormalizedUpdateCaseInput,
 } from "./normalize";
@@ -97,17 +96,18 @@ async function duplicateError(
   );
   return duplicate
     ? CaseApiError.duplicate(duplicate.id, duplicate.status)
-    : CaseApiError.internal();
+    : CaseApiError.conflict();
 }
 
 export function createCaseService(repository: CaseRepository): CaseService {
   return {
     async create(userId, input) {
       return internalize(async () => {
+        const locationKey = await repository.computeLocationKey(input.business_identity, input.target_market);
         const existing = await repository.findDuplicate(
           userId,
           input.normalized_domain,
-          input.location_key,
+          locationKey,
         );
         if (existing) throw CaseApiError.duplicate(existing.id, existing.status);
 
@@ -126,11 +126,13 @@ export function createCaseService(repository: CaseRepository): CaseService {
           return toResource(created);
         } catch (error) {
           if (error instanceof CasePersistenceError && error.code === "23505") {
+            // Never log database messages/details: they can contain customer data.
+            console.warn("Case uniqueness conflict", { constraint: error.constraint ?? "unknown" });
             throw await duplicateError(
               repository,
               userId,
               input.normalized_domain,
-              input.location_key,
+              locationKey,
             );
           }
           throw error;
@@ -175,18 +177,6 @@ export function createCaseService(repository: CaseRepository): CaseService {
         const publicGbpUrl = input.public_gbp_url !== undefined
           ? input.public_gbp_url
           : currentIdentity.public_gbp_url ?? null;
-        const locationKey = caseLocationKey(primaryLocation);
-
-        if (input.primary_location) {
-          const duplicate = await repository.findDuplicate(
-            userId,
-            existing.normalized_domain,
-            locationKey,
-            existing.id,
-          );
-          if (duplicate) throw CaseApiError.duplicate(duplicate.id, duplicate.status);
-        }
-
         const update: UpdateCaseRecord = {
           ...(input.business_name !== undefined ? { business_name: businessName } : {}),
           ...(input.operating_model !== undefined ? { operating_model: operatingModel } : {}),
@@ -209,6 +199,15 @@ export function createCaseService(repository: CaseRepository): CaseService {
           });
         }
 
+        const locationKey = await repository.computeLocationKey(
+          update.business_identity ?? existing.business_identity,
+          update.target_market ?? existing.target_market,
+        );
+        if (input.primary_location || input.target_market) {
+          const duplicate = await repository.findDuplicate(userId, existing.normalized_domain, locationKey, existing.id);
+          if (duplicate) throw CaseApiError.duplicate(duplicate.id, duplicate.status);
+        }
+
         try {
           const updated = await repository.updateActive(userId, caseId, update);
           if (updated) return toResource(updated);
@@ -217,6 +216,8 @@ export function createCaseService(repository: CaseRepository): CaseService {
           return toResource(current);
         } catch (error) {
           if (error instanceof CasePersistenceError && error.code === "23505") {
+            // Never log database messages/details: they can contain customer data.
+            console.warn("Case uniqueness conflict", { constraint: error.constraint ?? "unknown" });
             throw await duplicateError(
               repository,
               userId,

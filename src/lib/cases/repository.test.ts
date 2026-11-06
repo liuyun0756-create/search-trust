@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { CaseLocation } from "./contracts";
 import type { CaseRecord, CreateCaseRecord } from "./repository";
@@ -133,4 +133,15 @@ describe("Supabase Case repository owner scoping", () => {
       expect(builder.calls[0]).toEqual(["from", "client_cases"]);
     }
   });
+});
+
+
+it.each([null, "", 123])("rejects an invalid database key response %s", async data => {
+  const repository = new SupabaseCaseRepository({ rpc: vi.fn().mockResolvedValue({ data, error: null }) } as unknown as SupabaseClient);
+  await expect(repository.computeLocationKey(record.business_identity, location)).rejects.toThrow("Database returned no Case location key");
+});
+
+it("propagates RPC failure without falling back to a JavaScript key", async () => {
+  const repository = new SupabaseCaseRepository({ rpc: vi.fn().mockResolvedValue({ data: null, error: {message: "RPC unavailable", code: "XX000"} }) } as unknown as SupabaseClient);
+  await expect(repository.computeLocationKey(record.business_identity, location)).rejects.toMatchObject({code: "XX000"});
 });
