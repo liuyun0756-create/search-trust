@@ -15,6 +15,7 @@ import Link from "next/link";
 import { CapabilityRepository } from "@/lib/report-capability/repository";
 import { loadCapabilityOwnerDocument } from "@/lib/report-capability/owner-document";
 import { CapabilityReportDocument } from "@/components/report/CapabilityReportDocument";
+import { IdentityConfirmation } from "@/components/report/IdentityConfirmation";
 import { CapabilityOwnerEditor } from "@/components/report/CapabilityOwnerEditor";
 import { CapabilityDeliveryActions } from "@/components/report/CapabilityDeliveryActions";
 import { ImplementationRecords } from "@/components/report/ImplementationRecords";
@@ -84,6 +85,7 @@ export default async function ReportV22Page({
           <Link href={`${base}?view=client`} aria-current={capability.approvedRevision ? "page" : undefined} className="underline underline-offset-4">Approved client report</Link>
         </nav> : null}
       </div>
+      {query.view !== "client" && capability.identityReviewAvailable && <IdentityConfirmation caseId={caseId} reportId={reportId} />}
       <CapabilityReportDocument document={capability.document} technicalDetails={!capability.approvedRevision} />
       <CapabilityDeliveryActions caseId={caseId} reportId={reportId} revision={capability.deliveryRevision} approved={capability.hasApproved}/>
       <CapabilityOwnerEditor key={reportId} initial={capability.editable} orderConstraints={capability.orderConstraints} candidateReport={capability.candidateReport} />

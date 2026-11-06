@@ -43,8 +43,14 @@ function manifestValid(m: AnalysisInputManifest) {
   if(v3 !== (m.ruleset_version === "v22_capability_public_v13")) return false;
   if(v3) {
     if(m.mode !== "acquisition" || !m.identity_version_id || !m.identity_checksum || !m.target_market
-      || m.target_market.display_name !== m.business.target_market || m.evidence_as_of !== m.evaluated_at) return false;
+      || m.target_market.display_name !== m.business.target_market || !m.evidence_as_of
+      || (!m.execution_type && m.evidence_as_of !== m.evaluated_at)) return false;
   } else if(["identity_version_id","identity_checksum","target_market","evidence_as_of"].some(k=>Object.hasOwn(m,k))) return false;
+  if (m.execution_type === "public_reassessment") {
+    if (!v3 || !m.base_report_ref || m.base_report_ref.case_id !== m.case_id
+      || m.base_report_ref.report_type !== "prospect" || m.base_report_ref.report_id === m.job_id
+      || !m.evidence_as_of || instant(m.evidence_as_of) > instant(m.evaluated_at)) return false;
+  } else if (Object.hasOwn(m,"execution_type") || Object.hasOwn(m,"base_report_ref")) return false;
   const rendered = m.schema_version === "v22_analysis_input_v2" || (v3 && kinds.includes("rendered"));
   if (rendered !== kinds.includes("rendered") || (rendered && !["v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13"].includes(m.ruleset_version)) || (!rendered && m.ruleset_version === "v22_capability_public_v7")) return false;
   if (rendered && m.mode !== "acquisition") return false;
@@ -54,7 +60,7 @@ function manifestValid(m: AnalysisInputManifest) {
       && !(s.source_kind === "site" && s.schema_version === "site_inventory_snapshot_v3" && ["v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13"].includes(m.ruleset_version))
       && !(s.source_kind === "site" && s.schema_version === "site_inventory_snapshot_v2" && ["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13"].includes(m.ruleset_version))
       && !(s.source_kind === "public_gbp" && s.schema_version === "customer_public_gbp_snapshot_v2"))
-      || instant(s.fetched_at) > instant(m.evaluated_at) || instant(s.expires_at) <= instant(m.evaluated_at)
+      || instant(s.fetched_at) > instant(m.evidence_as_of ?? m.evaluated_at) || instant(s.expires_at) <= instant(m.evidence_as_of ?? m.evaluated_at)
       || ["gsc", "ga4", "official_gbp"].includes(s.source_kind) !== (s.binding_id !== null)) return false;
   }
   if (["acquisition", "first_service"].includes(m.mode)) {
@@ -87,7 +93,8 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
     if (!labelled && (r.schema_version === "2.2.4") !== (m.schema_version === "v22_analysis_input_v2")) return invalid;
     if (!manifestValid(m) || r.id !== m.job_id || instant(r.generated_at) < instant(m.evaluated_at)
       || r.report_type !== (m.mode === "acquisition" ? "prospect" : "verified_execution")
-      || r.version !== (m.previous_report ? m.previous_report.version + 1 : 1)
+      || r.version !== ((m.base_report_ref ?? m.previous_report)?.version ?? 0) + 1
+      || r.settlement_policy !== (m.execution_type === "public_reassessment" ? "no_charge_public_reassessment" : "one_credit_per_completed_analysis")
       || Boolean(r.actions.length) !== (r.action_state === "actions_supported")) return invalid;
     if (![r.evidence, r.findings, r.actions].every((items) => unique(items.map((item) => item.id)))) return invalid;
     const snapshots = new Map(m.snapshots.map((s) => [s.snapshot_id, s]));
