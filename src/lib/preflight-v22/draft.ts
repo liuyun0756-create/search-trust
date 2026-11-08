@@ -73,7 +73,11 @@ export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | nul
   const createdAt = Date.parse(value.created_at);
   const updatedAt = Date.parse(value.updated_at);
   const expiresAt = Date.parse(value.expires_at);
-  if (![createdAt, updatedAt, expiresAt].every(Number.isFinite) || updatedAt < createdAt || expiresAt <= updatedAt || expiresAt <= now.getTime()) return null;
+  // A paid workflow is recovered against the server's charge/task state. Its
+  // local TTL must not discard the only reference to an in-progress analysis.
+  const serverWorkflow = typeof value.prospect_workflow_id === "string" && uuidV4.test(value.prospect_workflow_id);
+  if (![createdAt, updatedAt, expiresAt].every(Number.isFinite) || updatedAt < createdAt || expiresAt <= createdAt
+    || (!serverWorkflow && (expiresAt <= updatedAt || expiresAt <= now.getTime()))) return null;
   if (typeof value.draft_case_id !== "string" || !uuidV4.test(value.draft_case_id)) return null;
   if (typeof value.site_url !== "string" || !(typeof value.gbp_url === "string" || value.gbp_url === null)) return null;
   if (value.preflight !== null && !parsePreflightResponse(value.preflight).ok) return null;
@@ -120,7 +124,10 @@ export function loadDraft(storage: DraftStorage, now = new Date()): NewCaseDraft
 
 export function saveDraft(storage: DraftStorage, draft: NewCaseDraft): void {
   const parsed = parseDraft(draft, new Date(Date.parse(draft.updated_at)));
-  if (!parsed) throw new Error("INVALID_NEW_CASE_DRAFT");
+  if (!parsed) {
+    const expired = Date.parse(draft.expires_at) <= Date.parse(draft.updated_at);
+    throw new Error(expired ? "NEW_CASE_DRAFT_EXPIRED" : "INVALID_NEW_CASE_DRAFT");
+  }
   storage.setItem(NEW_CASE_DRAFT_STORAGE_KEY, JSON.stringify(parsed));
 }
 

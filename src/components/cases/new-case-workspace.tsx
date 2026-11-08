@@ -57,6 +57,9 @@ function apiError(error: unknown) {
 export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boolean}={}) {
   const [draft, setDraft] = useState<NewCaseDraft>(() => createNewCaseDraft());
   const [hydrated, setHydrated] = useState(false);
+  const [draftProblem, setDraftProblem] = useState<string | null>(null);
+  const [workflowClosed, setWorkflowClosed] = useState(false);
+  const persistenceBlocked = useRef(false);
   const [discoverySubmitting, setDiscoverySubmitting] = useState(false);
   const [planning,setPlanning]=useState<PlanningStatus>({ready:false,revision:null});
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
@@ -87,7 +90,19 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
       skipNextSave.current = false;
       return;
     }
-    saveDraft(sessionStorage, draft);
+    if (persistenceBlocked.current) return;
+    try {
+      saveDraft(sessionStorage, draft);
+    } catch (error) {
+      persistenceBlocked.current = true;
+      const expired = error instanceof Error && error.message === "NEW_CASE_DRAFT_EXPIRED";
+      console.error(expired ? "NEW_CASE_DRAFT_EXPIRED" : "NEW_CASE_DRAFT_SAVE_FAILED");
+      if (expired) {
+        try { clearDraft(sessionStorage); } catch { console.error("NEW_CASE_DRAFT_CLEAR_FAILED"); }
+      }
+      setDraftProblem(expired ? "This session draft expired. Start a new Case check."
+        : "This session draft could not be saved. Start a new Case check.");
+    }
   }, [draft, hydrated]);
 
   useEffect(() => {
@@ -105,11 +120,16 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
             message: "The saved workflow could not be checked. Refresh to reconnect or open Cases & reports. No new analysis has been started." });
           return;
         }
-        if (restored.analysis_job_id) {
+        if (restored.state === "compensated") {
+          setWorkflowClosed(true);
+          setPaymentHandoff({ status: "error", caseId: null,
+            message: "This workflow is closed. Start a new Case check." });
+        } else if (restored.analysis_job_id) {
           setDraft((current) => reduceWorkspaceState(current, { type: "RESUME_ANALYSIS", job_id: restored.analysis_job_id! }));
           setPaymentHandoff({ status: "analyzing", caseId: restored.case_id,
             message: "Reconnecting to your existing report task. No new analysis or charge is needed." });
         } else if (restored.state !== "reserved") {
+          setWorkflowClosed(true);
           setPaymentHandoff({ status: "error", caseId: null,
             message: "This workflow is closed. Open Cases & reports to review its result before starting another analysis." });
         } else {
@@ -245,7 +265,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     const confirmation = draft.business_confirmation;
     const jobId = draft.analysis_job_id;
     const idempotencyKey = draft.analysis_idempotency_key;
-    if (submittingAnalysis.current || !paymentHandoff.caseId || !draft.prospect_workflow_id || !discovery || !confirmation || !jobId || !idempotencyKey || (planningEnabled&&!planning.ready)) return;
+    if (persistenceBlocked.current || workflowClosed || submittingAnalysis.current || !paymentHandoff.caseId || !draft.prospect_workflow_id || !discovery || !confirmation || !jobId || !idempotencyKey || (planningEnabled&&!planning.ready)) return;
     const selected = new Set(draft.selected_competitor_ids);
     const competitors = discovery.candidates
       .filter((candidate) => selected.has(candidate.competitor_id))
@@ -285,6 +305,11 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
         }),
       });
       const payload = await response.json().catch(() => null);
+      if (!response.ok && ["PROSPECT_WORKFLOW_NOT_RESERVED", "PROSPECT_WORKFLOW_UNAVAILABLE"].includes(payload?.error?.code)) {
+        setWorkflowClosed(true);
+        setPaymentHandoff(current => ({...current,status:"error",message:"This workflow is closed. Start a new Case check."}));
+        return;
+      }
       if(planningEnabled&&response.status===409){
         setDraft(current=>reduceWorkspaceState(current,{type:"RETURN_TO_COVERAGE"}));
         setPaymentHandoff(current=>({...current,status:"unlocked",message:"Scope or planning settings changed. Review the saved settings and confirm again. The same report task and reserved credit are retained."}));
@@ -306,17 +331,17 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     } finally {
       submittingAnalysis.current = false;
     }
-  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId,planningEnabled,planning.ready,planning.revision]);
+  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId,planningEnabled,planning.ready,planning.revision,workflowClosed]);
 
   useEffect(() => {
-    if (draft.stage !== "auth_handoff" || paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client") return;
+    if (persistenceBlocked.current || workflowClosed || draft.stage !== "auth_handoff" || paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client") return;
     if (!draft.analysis_job_id) {
       const jobId = crypto.randomUUID();
       setDraft((current) => reduceWorkspaceState(current, { type: "START_ANALYSIS", job_id: jobId, idempotency_key: `analyze:${current.draft_case_id}:${jobId}` }));
       return;
     }
     void submitAnalysis();
-  }, [draft.analysis_job_id, draft.goal, draft.stage, paymentHandoff.status, submitAnalysis]);
+  }, [draft.analysis_job_id, draft.goal, draft.stage, paymentHandoff.status, submitAnalysis, workflowClosed]);
 
   useEffect(() => {
     const jobId = draft.analysis_job_id;
@@ -529,6 +554,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   }
 
   function continueAfterCoverage() {
+    if (persistenceBlocked.current || workflowClosed) return;
     if(planningEnabled&&!planning.ready)return;
     setPaymentHandoff((current) => ({
       ...current,
@@ -540,7 +566,10 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   }
 
   function reset() {
-    clearDraft(sessionStorage);
+    try { clearDraft(sessionStorage); } catch { console.error("NEW_CASE_DRAFT_CLEAR_FAILED"); }
+    persistenceBlocked.current = false;
+    setDraftProblem(null);
+    setWorkflowClosed(false);
     skipNextSave.current = true;
     setDraft(createNewCaseDraft());
     setAnalysisStatus(null);
@@ -557,6 +586,13 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   const creditCopy = workflowCreditCopy[creditState];
 
   if (!hydrated) return <div className="min-h-screen bg-[#f7faf7]" />;
+  if (draftProblem || workflowClosed) return (
+    <main className="min-h-screen bg-[#f7faf7] p-8">
+      <p role="alert">{draftProblem ?? "This workflow is closed. Start a new Case check."}</p>
+      <button type="button" onClick={reset}>Start a new Case check</button>
+      <Link href="/reports">Cases &amp; reports</Link>
+    </main>
+  );
 
   return (
     <div className="min-h-screen bg-[#f7faf7] text-[#1d2a22]">
