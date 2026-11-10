@@ -125,7 +125,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
       <Footer delivery={delivery} note={brand?.footerNote} />
     </Page>)}
     <Page size="A4" style={styles.page} wrap><Copy style={styles.kicker}>SCOPE AND LIMITS</Copy><Copy style={styles.heading}>What this report does not establish</Copy>
-      {readerLimits(d.limitations).map((limit, index) => <Copy key={index}>{`- ${limit}`}</Copy>)}
+      {readerLimits(d.limitations, true).map((limit, index) => <Copy key={index}>{`- ${limit}`}</Copy>)}
       <Footer delivery={delivery} note={brand?.footerNote} />
     </Page>
   </Document>;

@@ -46,8 +46,21 @@ export function readerTarget(value: string): string {
   }))].join("\n");
 }
 
-export function readerLimits(values: string[]): string[] {
-  return [...new Set(values.map(readerLimit))];
+const GROUPED_LIMITS: ReadonlyArray<readonly [string, string]> = [
+  ["Domain coverage remains unverified for these saved samples:\n", "Some saved search samples do not support a reliable domain coverage judgment. This does not establish absence or a ranking problem."],
+  ["Full competitor-position comparisons remain incomplete for these saved samples:\n", "Some competitor-position comparisons could not be completed. The observed client positions do not establish an absolute ranking."],
+];
+
+/** Full text remains the default for consumers without an expandable view. */
+export function readerLimits(values: string[], compact = false): string[] {
+  return [...new Set(values.map(value => compact
+    ? GROUPED_LIMITS.find(([prefix]) => value.startsWith(prefix))?.[1] ?? readerLimit(value)
+    : readerLimit(value)))];
+}
+
+/** The original query/type sentences, shown in a closed disclosure on the web. */
+export function readerLimitDetails(values: string[]): string[] {
+  return [...new Set(values.filter(value => GROUPED_LIMITS.some(([prefix]) => value.startsWith(prefix))).map(readerLimit))];
 }
 
 const labels: Record<string, string> = {
@@ -115,7 +128,9 @@ export function findingLabels(finding: FindingDisplay) {
 
 /** Neutral client copy is a view, never a mutation of the saved finding. */
 export function readerFinding(finding: FindingDisplay) {
-  if (!finding.status || finding.status === "confirmed") return finding;
+  const observed_fact = finding.observed_fact.replace(/\s*\(rank_source=[a-z_]+\)/g, "");
+  const copy = observed_fact === finding.observed_fact ? finding : {...finding, observed_fact};
+  if (!finding.status || finding.status === "confirmed") return copy;
   const judgment = {
     not_detected: "Not detected in the checked sample. This does not show that it is absent.",
     not_checked: "This could not be checked with the available evidence.",
@@ -123,7 +138,7 @@ export function readerFinding(finding: FindingDisplay) {
       : finding.kind === "recommendation" ? "This is a recommendation to review, not a confirmed fact."
       : "The available observations do not establish an overall assessment.",
   }[finding.status];
-  return {...finding, judgment, impact_path:"No cause or business impact is established by this item."};
+  return {...copy, judgment, impact_path:"No cause or business impact is established by this item."};
 }
 
 const CONTACT_FIELDS = {phone:"Phone", address:"Address", business_name:"Name", service_area:"Service area", opening_hours:"Opening hours"};

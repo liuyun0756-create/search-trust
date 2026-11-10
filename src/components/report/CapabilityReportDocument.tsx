@@ -1,10 +1,11 @@
 import {clientActions} from "@/lib/report-capability/action-visibility";
 import type { CapabilityReadingDocument as Document } from "@/lib/report-capability/reading-document";
-import { evidenceFieldLabel, evidenceValue, readerLimits, readerTarget, readerDate, readerScope, evidenceSourceLabel, evidenceScopes, findingLabels, readerFinding, contactCheckLabel } from "@/lib/report-capability/reader-copy";
+import { evidenceFieldLabel, evidenceValue, readerLimits, readerLimitDetails, readerTarget, readerDate, readerScope, evidenceSourceLabel, evidenceScopes, findingLabels, readerFinding, contactCheckLabel } from "@/lib/report-capability/reader-copy";
 
 export function CapabilityReportDocument({ document, technicalDetails = false }: { document: Document; technicalDetails?: boolean }) {
   const actions=technicalDetails ? document.actions : clientActions(document.actions);
   const target = (value: string) => technicalDetails ? value : readerTarget(value);
+  const limitDetails = readerLimitDetails(document.limitations);
   return <article className="mx-auto max-w-4xl space-y-8 rounded-2xl border border-[#dce6d9] bg-white p-5 text-[#1d2a22] sm:p-10">
     <header><h1 className="break-words text-3xl font-semibold tracking-tight">{document.title}</h1>
       <p className="mt-4 whitespace-pre-wrap break-words leading-7">{document.summary}</p>
@@ -71,6 +72,10 @@ export function CapabilityReportDocument({ document, technicalDetails = false }:
       </section>)}
     </section>
     {document.clientNote ? <aside className="rounded-xl bg-[#f3f7f2] p-5"><h2 className="font-semibold">Note from your SEO</h2><p className="mt-2 whitespace-pre-wrap break-words">{document.clientNote}</p></aside> : null}
-    <footer><h2 className="font-semibold">Review limits</h2><ul className="mt-2 space-y-2">{readerLimits(document.limitations).map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul></footer>
+    <footer><h2 className="font-semibold">Review limits</h2><ul className="mt-2 space-y-2">{readerLimits(document.limitations, true).map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul>
+      {limitDetails.length ? <details className="mt-4 text-sm"><summary className="cursor-pointer font-medium">Technical details</summary>
+        <ul aria-label="Detailed review limits" className="mt-3 space-y-3">{limitDetails.map((item, i) => <li key={i} className="whitespace-pre-wrap break-words">{item}</li>)}</ul>
+      </details> : null}
+    </footer>
   </article>;
 }

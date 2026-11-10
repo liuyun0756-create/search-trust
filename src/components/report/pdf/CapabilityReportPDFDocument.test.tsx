@@ -17,6 +17,22 @@ function renderedText(node: unknown): string {
 }
 
 describe("Capability approved PDF renderer", () => {
+  it("uses compact grouped limits and plain-language position facts in memory", async () => {
+    const { delivery } = generatedDelivery("service-first.json");
+    delivery.document.limitations = ["Domain coverage remains unverified for these saved samples:\nDomain coverage for 'long query one' (maps) remains unverified.\nDomain coverage for 'long query two' (organic) remains unverified."];
+    delivery.document.findings[0].observed_fact = "Observed at position 2 (rank_source=provider_position).";
+    delivery.document.findings[0].status = "confirmed";
+    const before = JSON.stringify(delivery);
+    let text = "";
+    await renderToBuffer(React.cloneElement(CapabilityReportPDFDocument({ delivery }), {
+      onRender: (result: unknown) => {text = renderedText((result as { _INTERNAL__LAYOUT__DATA_: unknown })._INTERNAL__LAYOUT__DATA_);},
+    }));
+    expect(text).toContain("Some saved search samples do not support a reliable domain coverage judgment.");
+    expect(text).not.toContain("long query one");
+    expect(text).toContain("Observed at position 2.");
+    expect(text).not.toContain("rank_source");
+    expect(JSON.stringify(delivery)).toBe(before);
+  });
   it.runIf(Boolean(process.env.P0_01_NOVA_REPORT_PATH))("renders the real Nova PDF without sampling coordinates or device parameters", async () => {
     const delivery = novaSampleDelivery();
     const before = JSON.stringify(delivery);
