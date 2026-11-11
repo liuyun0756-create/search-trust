@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -79,6 +80,17 @@ function coverageDraft(): NewCaseDraft {
 }
 
 describe("CoverageStep", () => {
+  it("connects a disabled Generate button to its visible planning reason", () => {
+    const html = renderToStaticMarkup(<CoverageStep draft={coverageDraft()} continueDisabled
+      continueDisabledReason="Loading saved planning settings. Please wait before generating the report."
+      onContinue={vi.fn()} onBack={vi.fn()} />);
+    const document = new DOMParser().parseFromString(html, "text/html");
+    const button = Array.from(document.querySelectorAll("button")).find(node => node.textContent?.includes("Generate Prospect report"))!;
+    expect(button.hasAttribute("disabled")).toBe(true);
+    expect(document.getElementById(button.getAttribute("aria-describedby")!)?.textContent).toBe(
+      "Loading saved planning settings. Please wait before generating the report.");
+  });
+
   it("translates technical coverage into report scope and boundaries", () => {
     const html = renderToStaticMarkup(<CoverageStep draft={coverageDraft()} onContinue={vi.fn()} onBack={vi.fn()} />);
 

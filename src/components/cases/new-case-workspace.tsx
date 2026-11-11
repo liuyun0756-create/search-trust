@@ -54,6 +54,16 @@ function apiError(error: unknown) {
     : { code: "UNEXPECTED_ERROR", message: "Something interrupted the request. Your draft is still safe." };
 }
 
+function planningBlockedMessage(status: PlanningStatus) {
+  switch (status.blockedReason) {
+    case "load_error": return "Saved planning settings could not be loaded. Use Reload saved settings to retry before generating the report.";
+    case "unsaved": return "Save or reload your planning settings before generating the report.";
+    case "saving": return "Saving planning settings. Please wait before generating the report.";
+    case "save_error": return "Planning settings could not be saved. Retry Save planning settings or reload before generating the report.";
+    default: return "Loading saved planning settings. Please wait before generating the report.";
+  }
+}
+
 export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boolean}={}) {
   const [draft, setDraft] = useState<NewCaseDraft>(() => createNewCaseDraft());
   const [hydrated, setHydrated] = useState(false);
@@ -76,6 +86,8 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   const authenticatedFetch = useAuthenticatedFetch();
   const [analysisStatus, setAnalysisStatus] = useState<VersionedTaskStatus | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const planningBlocked = planningEnabled && !planning.ready;
+  const planningMessage = planningBlockedMessage(planning);
   const needsGbpRepair = analysisStatus?.status === "failed"
     && analysisStatus.error?.error_code.startsWith("V22_CUSTOMER_PUBLIC_GBP_");
 
@@ -265,7 +277,11 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     const confirmation = draft.business_confirmation;
     const jobId = draft.analysis_job_id;
     const idempotencyKey = draft.analysis_idempotency_key;
-    if (persistenceBlocked.current || workflowClosed || submittingAnalysis.current || !paymentHandoff.caseId || !draft.prospect_workflow_id || !discovery || !confirmation || !jobId || !idempotencyKey || (planningEnabled&&!planning.ready)) return;
+    if (planningBlocked) {
+      setPaymentHandoff(current => ({ ...current, message: planningMessage }));
+      return;
+    }
+    if (persistenceBlocked.current || workflowClosed || submittingAnalysis.current || !paymentHandoff.caseId || !draft.prospect_workflow_id || !discovery || !confirmation || !jobId || !idempotencyKey) return;
     const selected = new Set(draft.selected_competitor_ids);
     const competitors = discovery.candidates
       .filter((candidate) => selected.has(candidate.competitor_id))
@@ -277,6 +293,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
         confirmation_source: "user" as const,
       }));
     submittingAnalysis.current = true;
+    setHandoffMessage(null);
     setPaymentHandoff((current) => ({ ...current, status: "starting_analysis", message: "Securing the report task and its exact confirmed competitor scope…" }));
     try {
       const response = await authenticatedFetch("/api/v2/analyze", {
@@ -310,9 +327,40 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
         setPaymentHandoff(current => ({...current,status:"error",message:"This workflow is closed. Start a new Case check."}));
         return;
       }
-      if(planningEnabled&&response.status===409){
-        setDraft(current=>reduceWorkspaceState(current,{type:"RETURN_TO_COVERAGE"}));
-        setPaymentHandoff(current=>({...current,status:"unlocked",message:"Scope or planning settings changed. Review the saved settings and confirm again. The same report task and reserved credit are retained."}));
+      if (response.status === 409) {
+        // The frontend proxy can collapse different intake failures into one code.
+        // Verify the reserved workflow before describing a conflict as planning drift.
+        let restored: ReturnType<typeof parseProspectWorkflowRecovery> = null;
+        try {
+          const check = await authenticatedFetch(`/api/v2/prospect-workflows/${encodeURIComponent(draft.prospect_workflow_id)}`);
+          restored = check.ok ? parseProspectWorkflowRecovery(await check.json()) : null;
+        } catch { /* The visible recovery message below handles an unreadable status. */ }
+        if (!restored || restored.workflow_id !== draft.prospect_workflow_id || restored.case_id !== paymentHandoff.caseId) {
+          const message = "The workflow status could not be checked. Open Cases & reports to check its result before trying again.";
+          setPaymentHandoff(current => ({ ...current, status: "error", message }));
+          setHandoffMessage(message);
+          return;
+        }
+        if (restored.state !== "reserved") {
+          setWorkflowClosed(true);
+          setPaymentHandoff(current => ({ ...current, status: "error", message: "This workflow is closed. Start a new Case check." }));
+          return;
+        }
+        if (restored.analysis_job_id) {
+          setDraft(current => reduceWorkspaceState(current, { type: "RESUME_ANALYSIS", job_id: restored.analysis_job_id! }));
+          setPaymentHandoff(current => ({ ...current, status: "analyzing", message: "This workflow already has a report task. Reconnecting to that task without starting another analysis." }));
+          return;
+        }
+        if (planningEnabled) {
+          const message = "Scope or planning settings changed. Review the saved settings and confirm again. The same report task and reserved credit are retained.";
+          setDraft(current => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }));
+          setPaymentHandoff(current => ({ ...current, status: "unlocked", message }));
+          setHandoffMessage(message);
+          return;
+        }
+        const message = "The analysis scope could not be confirmed. Open Cases & reports to check this workflow before trying again.";
+        setPaymentHandoff(current => ({ ...current, status: "error", message }));
+        setHandoffMessage(message);
         return;
       }
       if (!response.ok) throw new Error(payload?.error?.message || "The report task could not be started yet.");
@@ -331,7 +379,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     } finally {
       submittingAnalysis.current = false;
     }
-  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId,planningEnabled,planning.ready,planning.revision,workflowClosed]);
+  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId,planningEnabled,planningBlocked,planningMessage,planning.revision,workflowClosed]);
 
   useEffect(() => {
     if (persistenceBlocked.current || workflowClosed || draft.stage !== "auth_handoff" || paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client") return;
@@ -555,7 +603,11 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
 
   function continueAfterCoverage() {
     if (persistenceBlocked.current || workflowClosed) return;
-    if(planningEnabled&&!planning.ready)return;
+    if (planningBlocked) {
+      setPaymentHandoff(current => ({ ...current, message: planningMessage }));
+      return;
+    }
+    setHandoffMessage(null);
     setPaymentHandoff((current) => ({
       ...current,
       status: "unlocked",
@@ -570,6 +622,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     persistenceBlocked.current = false;
     setDraftProblem(null);
     setWorkflowClosed(false);
+    setPlanning({ ready: false, revision: null, blockedReason: "loading" });
     skipNextSave.current = true;
     setDraft(createNewCaseDraft());
     setAnalysisStatus(null);
@@ -619,6 +672,10 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
         </aside>
         <main className="relative overflow-hidden bg-[#f7faf7] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-[72px] xl:py-16">
           <div className="relative mx-auto max-w-[980px]">
+            {handoffMessage && <div role="status" className="mb-5 rounded-xl border border-[#cbd8a5] bg-white p-4 text-sm">
+              <p>{handoffMessage}</p>
+              {paymentHandoff.status === "error" && <Link href="/reports" className="mt-2 inline-block underline">Cases &amp; reports</Link>}
+            </div>}
             {planningEnabled&&paymentHandoff.caseId&&(draft.stage==="coverage"||draft.stage==="auth_handoff") ? <PlanningSettings key={`${paymentHandoff.caseId}:${draft.stage}`} caseId={paymentHandoff.caseId} onStatus={setPlanning} locked={draft.stage==="auth_handoff"}/> : null}
             {draft.stage === "goal_website" && <GoalWebsiteStep key={draft.draft_case_id} initialGoal={draft.goal} initialSiteUrl={draft.site_url} initialGbpUrl={draft.gbp_url} onSubmit={startPreflight} />}
             {draft.stage === "preflight_running" && <PreflightStatus kind="loading" title="Checking the public evidence surface" message="We’re resolving the business website, public profile, service, market, and available analysis modules." />}
@@ -640,12 +697,12 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
             {draft.stage === "competitor_discovery_running" && <PreflightStatus kind="loading" title="Finding qualified local competitors" message={draft.discovery_status?.message ?? "The durable discovery task is checking market results and validating candidate websites."} progress={draft.discovery_status?.progress} />}
             {draft.stage === "competitor_discovery_failed" && <PreflightStatus kind="error" title="Competitor discovery needs attention" message={draft.discovery_error?.message ?? "The competitor search could not be completed."} onRetry={draft.discovery_error?.retryable === false ? undefined : () => void retryDiscovery()} onEdit={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} editLabel="Edit business scope" />}
             {draft.stage === "competitor_confirmation" && draft.discovery_status?.result && <CompetitorConfirmationStep status={draft.discovery_status} selectedIds={draft.selected_competitor_ids} onSelectionChange={(competitor_ids) => setDraft((current) => reduceWorkspaceState(current, { type: "SELECT_COMPETITORS", competitor_ids }))} onConfirm={() => setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_COMPETITORS" }))} onRerun={(urls) => draft.business_confirmation && void startDiscovery(draft.business_confirmation, urls)} onEditScope={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} />}
-            {draft.stage === "coverage" && <CoverageStep draft={draft} continueDisabled={planningEnabled&&!planning.ready} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
+            {draft.stage === "coverage" && <CoverageStep draft={draft} continueDisabled={planningBlocked} continueDisabledReason={planningBlocked ? planningMessage : undefined} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
             {draft.stage === "auth_handoff" && (
               isSignedIn ? (
                 <CasePaymentHandoff
                   status={paymentHandoff.status}
-                  message={paymentHandoff.message}
+                  message={planningBlocked && paymentHandoff.status === "unlocked" ? planningMessage : paymentHandoff.message}
                   caseId={paymentHandoff.caseId}
                   businessName={draft.business_confirmation?.business_identity.business_name}
                   scopeLine={draft.business_confirmation ? `${draft.business_confirmation.primary_service} · ${draft.business_confirmation.target_market.display_name} · ${draft.selected_competitor_ids.length} confirmed ${draft.selected_competitor_ids.length === 1 ? "competitor" : "competitors"}` : undefined}

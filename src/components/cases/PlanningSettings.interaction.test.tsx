@@ -15,7 +15,7 @@ describe("planning settings UI",()=>{
     await user.selectOptions(screen.getByLabelText("Client's confirmed business focus"),"contact_path");
     await user.selectOptions(screen.getByLabelText("Your execution capacity"),"limited");
     await user.selectOptions(screen.getByLabelText("Your publishing access"),"needs_approval");
-    expect(status).toHaveBeenLastCalledWith({ready:false,revision:0});
+    expect(status).toHaveBeenLastCalledWith({ready:false,revision:0,blockedReason:"unsaved"});
     await user.click(screen.getByRole("button",{name:"Save planning settings"}));
     await screen.findByText(/Saved for the next diagnosis/);
     expect(status).toHaveBeenLastCalledWith({ready:true,revision:1});
@@ -26,7 +26,7 @@ describe("planning settings UI",()=>{
     const status=vi.fn(),user=userEvent.setup();render(<PlanningSettings caseId={caseId} onStatus={status}/>);
     await screen.findByLabelText("Client's confirmed business focus");await user.selectOptions(screen.getByLabelText("Client's confirmed business focus"),"business_identity");
     await user.click(screen.getByRole("button",{name:"Save planning settings"}));await screen.findByRole("alert");
-    expect(screen.getByLabelText("Client's confirmed business focus")).toHaveValue("business_identity");expect(status).toHaveBeenLastCalledWith({ready:false,revision:0});
+    expect(screen.getByLabelText("Client's confirmed business focus")).toHaveValue("business_identity");expect(status).toHaveBeenLastCalledWith({ready:false,revision:0,blockedReason:"save_error"});
     await user.click(screen.getByRole("button",{name:/Reload saved settings · discard/}));
     await waitFor(()=>expect(screen.getByLabelText("Client's confirmed business focus")).toHaveValue("unknown"));expect(status).toHaveBeenLastCalledWith({ready:true,revision:0});
   });

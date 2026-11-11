@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -29,6 +31,7 @@ interface CoverageStepProps {
   onContinue(): void;
   onBack(): void;
   continueDisabled?:boolean;
+  continueDisabledReason?:string;
 }
 
 const evidenceGroups = [
@@ -104,7 +107,8 @@ const statusPresentation = {
   blocked: { label: "Needs attention", className: "bg-[#ffe3dd] text-[#8e3024]", icon: TriangleAlert },
 };
 
-export function CoverageStep({ draft, onContinue, onBack,continueDisabled=false }: CoverageStepProps) {
+export function CoverageStep({ draft, onContinue, onBack,continueDisabled=false,continueDisabledReason }: CoverageStepProps) {
+  const disabledReasonId = useId();
   const preflight = draft.preflight;
   const business = draft.business_confirmation;
   const selected = draft.selected_competitor_ids.length;
@@ -217,9 +221,12 @@ export function CoverageStep({ draft, onContinue, onBack,continueDisabled=false 
           <h2 className="mt-2 max-w-xl text-xl font-semibold tracking-[-0.025em] text-[#202a20]">{action.title}</h2>
           <p className="mt-2 max-w-2xl text-xs leading-5 text-[#69745a]">{action.detail}</p>
         </div>
-        <button type="button" onClick={onContinue} disabled={continueDisabled} className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#234b38] px-6 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/45">
+        <div>
+        <button type="button" onClick={onContinue} disabled={continueDisabled} aria-describedby={continueDisabled && continueDisabledReason ? disabledReasonId : undefined} className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#234b38] px-6 text-sm font-bold text-white outline-none transition hover:bg-[#2c6348] focus-visible:ring-4 focus-visible:ring-[#8ab49a]/45 disabled:cursor-not-allowed disabled:opacity-50">
           {action.button}<ArrowRight aria-hidden="true" size={16} className="transition-transform group-hover:translate-x-0.5" />
         </button>
+        {continueDisabled && continueDisabledReason ? <p id={disabledReasonId} role="status" className="mt-3 max-w-sm text-sm leading-6 text-[#52685b]">{continueDisabledReason}</p> : null}
+        </div>
       </div>
 
       <div className="mt-5 flex flex-col gap-3 text-xs text-[#758075] sm:flex-row sm:items-center sm:justify-between">

@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {parsePlanningSettings,parsePlanningView,type PlanningSettingsView,type PlanningSettings as Settings} from "@/lib/planning-settings/contracts";
-export type PlanningStatus={ready:boolean;revision:number|null};
+export type PlanningStatus={ready:boolean;revision:number|null;blockedReason?:"loading"|"load_error"|"unsaved"|"saving"|"save_error"};
 const field="mt-2 block min-h-11 w-full rounded-lg border border-[#ccd9ce] bg-white p-3 text-sm disabled:opacity-60";
 export function PlanningSettings({caseId,onStatus,locked=false}:{caseId:string;onStatus:(status:PlanningStatus)=>void;locked?:boolean}){
   const [saved,setSaved]=useState<PlanningSettingsView|null>(null),[draft,setDraft]=useState<Settings|null>(null),[pages,setPages]=useState("");
@@ -9,23 +9,23 @@ export function PlanningSettings({caseId,onStatus,locked=false}:{caseId:string;o
   const [dirty,setDirty]=useState(false);
   const mounted=useRef(true),saving=useRef(false),callback=useRef(onStatus);callback.current=onStatus;
   const load=useCallback(async()=>{
-    if(saving.current)return;setBusy(true);callback.current({ready:false,revision:null});
+    if(saving.current)return;setBusy(true);setError("");callback.current({ready:false,revision:null,blockedReason:"loading"});
     try{
       const response=await fetch(`/api/v2/cases/${caseId}/planning-settings`,{cache:"no-store"});
       const value=parsePlanningView(await response.json(),caseId);if(!response.ok||!value)throw Error();
       if(!mounted.current)return;setSaved(value);setDraft(value.settings);setPages(value.settings.target_pages.join("\n"));setDirty(false);setError("");
       callback.current({ready:true,revision:value.revision});
-    }catch{if(mounted.current)setError("Could not load the saved settings. Reload before confirming a diagnosis.");}
+    }catch{if(mounted.current){setError("Could not load the saved settings. Reload before confirming a diagnosis.");callback.current({ready:false,revision:null,blockedReason:"load_error"});}}
     finally{if(mounted.current)setBusy(false);}
   },[caseId]);
   useEffect(()=>{mounted.current=true;void load();return()=>{mounted.current=false;};},[load]);
-  function changed(next:Settings){setDirty(true);setDraft(next);setMessage("");setError("");callback.current({ready:false,revision:saved?.revision??null});}
+  function changed(next:Settings){setDirty(true);setDraft(next);setMessage("");setError("");callback.current({ready:false,revision:saved?.revision??null,blockedReason:"unsaved"});}
   async function save(){
     if(!draft||!saved||locked||saving.current)return;
     let urls:string[];try{urls=pages.split("\n").map(s=>s.trim()).filter(Boolean).map(s=>new URL(s).toString());}catch{setError("Use complete website URLs, one per line.");return;}
     const settings=parsePlanningSettings({...draft,target_pages:urls},saved.siteUrl);
     if(!settings){setError("Use up to 20 distinct URLs on this client's website, without fragments or login details.");return;}
-    saving.current=true;setBusy(true);callback.current({ready:false,revision:saved.revision});
+    saving.current=true;setBusy(true);callback.current({ready:false,revision:saved.revision,blockedReason:"saving"});
     try{
       const response=await fetch(`/api/v2/cases/${caseId}/planning-settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({expectedRevision:saved.revision,settings})});
       const data=await response.json();if(!response.ok)throw Error(data.error?.message||"Could not confirm the save. Retry the same edits before continuing.");
@@ -35,7 +35,7 @@ export function PlanningSettings({caseId,onStatus,locked=false}:{caseId:string;o
           ||value.settings.execution_conditions.capacity!==settings.execution_conditions.capacity||value.settings.execution_conditions.publishing_access!==settings.execution_conditions.publishing_access)throw Error("Could not confirm the save. Your edits are still here.");
       }
       if(!mounted.current)return;setSaved(value!);setDraft(value!.settings);setPages(value!.settings.target_pages.join("\n"));setDirty(false);setError("");setMessage("Saved for the next diagnosis. Existing reports and approved plans are unchanged.");callback.current({ready:true,revision:value!.revision});
-    }catch(e){if(mounted.current)setError(e instanceof Error?e.message:"Could not save. Your edits are still here.");}
+    }catch(e){if(mounted.current){setError(e instanceof Error?e.message:"Could not save. Your edits are still here.");callback.current({ready:false,revision:saved.revision,blockedReason:"save_error"});}}
     finally{saving.current=false;if(mounted.current)setBusy(false);}
   }
   return <section aria-label="Business focus and execution conditions" className="my-6 rounded-2xl border border-[#d7e4d2] bg-[#f3f7f2] p-5 sm:p-6">
@@ -59,7 +59,7 @@ export function PlanningSettings({caseId,onStatus,locked=false}:{caseId:string;o
       <button type="button" className="ml-3 min-h-11 px-2 text-sm underline" onClick={()=>void load()}>Reload saved settings · discard unsaved edits</button>
     </fieldset>}
     {locked?<p className="mt-4 text-sm">The submitted request keeps its saved settings. Later changes cannot rewrite that diagnosis.</p>:null}
-    {error?<div className="mt-4 text-sm"><p role="alert">{error}</p><button type="button" disabled={busy||locked} onClick={()=>void load()} className="mt-2 min-h-11 underline">Reload saved settings · replaces these unsaved edits</button></div>:null}
+    {error?<div className="mt-4 text-sm"><p role="alert">{error}</p><button type="button" disabled={busy} onClick={()=>void load()} className="mt-2 min-h-11 underline">Reload saved settings · replaces these unsaved edits</button></div>:null}
     <p role="status" aria-live="polite" className="mt-3 text-sm">{message||(!busy&&dirty?"Unsaved changes. Save or reload before confirming the diagnosis.":"")}</p>
   </section>;
 }
