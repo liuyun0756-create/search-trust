@@ -6,6 +6,7 @@ type FullDocument = ReturnType<typeof projectCapabilityReport>;
 export type CapabilityReadingDocument = Pick<FullDocument,
   "title" | "summary" | "clientNote" | "actionState" | "limitations" | "actions"
 > & {
+  keywordVisibility?: FullDocument["keywordVisibility"];
   contactChecks?: FullDocument["contactChecks"];
   evidence: (Pick<FullDocument["evidence"][number],
     "id" | "object" | "field_path" | "value" | "unit" | "observed_at"

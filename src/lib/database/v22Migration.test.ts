@@ -1054,10 +1054,12 @@ describe.sequential("SearchTrust v2.2 Supabase migration", () => {
           .toEqual({allowed:role==="service_role"});
       }
     }
-    expect(definitions[0]).toContain("('v22_capability_public_v7','v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13')");
-    expect(definitions[0]).toContain("when p_manifest->>'ruleset_version' in ('v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13')\n          and source->>'schema_version'='site_inventory_snapshot_v2'");
+    expect(definitions[0]).toContain("('v22_capability_public_v7','v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13','v22_capability_public_v14')");
+    expect(definitions[0]).toContain("when p_manifest->>'ruleset_version' in ('v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13','v22_capability_public_v14')\n          and source->>'schema_version'='site_inventory_snapshot_v2'");
     expect(definitions[1]).toContain("('v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_service_v5') then '2.2.5'");
-    expect(definitions[1]).toContain("if manifest.payload->>'ruleset_version' in ('v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13') then");
+    expect(definitions[1]).toContain("if manifest.payload->>'ruleset_version' in ('v22_capability_public_v8','v22_capability_public_v9','v22_capability_public_v10','v22_capability_public_v11','v22_capability_public_v12','v22_capability_public_v13','v22_capability_public_v14') then");
+    expect(files.indexOf("20261112100000_add_keyword_visibility_v14.sql")).toBeGreaterThan(files.indexOf("20261105110000_add_capability_public_v13_identity.sql"));
+    expect(definitions[1]).toContain("then '2.2.9'");
     expect(definitions[0]).toContain("source->>'schema_version'='site_inventory_snapshot_v3'");
     expect(definitions[1]).toContain("then 5 else 4 end");
     expect(definitions[1]).toContain("and c->>'field'='opening_hours'");

@@ -1,3 +1,4 @@
+import {clientKeywordVisibility} from "@/lib/report-capability/keyword-visibility";
 import {clientActions} from "@/lib/report-capability/action-visibility";
 import React from "react";
 import { Document, Image, Page, StyleSheet, Text, View, Svg, Path } from "@react-pdf/renderer";
@@ -45,6 +46,7 @@ function Footer({ delivery, note }: { delivery: ApprovedCapabilityDelivery; note
 /** Pure renderer of one approved projection. No report rewording or fetching. */
 export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: ApprovedCapabilityDelivery; branding?: EffectiveBranding }) {
   const d = {...delivery.document,actions:clientActions(delivery.document.actions)};
+  const keywords=d.keywordVisibility ? clientKeywordVisibility(d.keywordVisibility) : undefined;
   const brand = branding?.enabled ? branding : undefined;
   if (brand?.agencyLogoData && (brand.agencyLogoData.length > 1_500_000 || !/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/i.test(brand.agencyLogoData))) throw new Error("CAPABILITY_PDF_LOGO_INVALID");
   checkText(delivery);
@@ -71,6 +73,15 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
     </Page>
     <Page size="A4" style={styles.page} wrap>
       <Copy style={styles.kicker}>CHECKED EVIDENCE</Copy><Copy style={styles.heading}>The basis for the decision</Copy>
+      {keywords ? <View style={styles.evidenceCard}>
+        <Copy style={styles.title}>Target keyword visibility</Copy>
+        <Copy>{`Map Pack visibility: ${keywords.localPack.label} ${keywords.localPack.coverage}`}</Copy>
+        <Copy>{`Organic visibility: ${keywords.organic.label} ${keywords.organic.coverage}`}</Copy>
+        {keywords.rows.map(row=><View key={row.query} style={styles.row} wrap={false}>
+          <Copy style={styles.title}>{row.query}</Copy>
+          <Copy>{`Map Pack: ${row.localPack.text}`}</Copy><Copy>{`Organic first page: ${row.organic.text}`}</Copy>
+        </View>)}
+      </View> : null}
       {d.contactChecks?.length ? <View style={styles.evidenceCard}>
         <Copy style={styles.title}>Business details check</Copy>
         {d.contactChecks.map(check=><Copy key={check.field}>{contactCheckLabel(check)}</Copy>)}

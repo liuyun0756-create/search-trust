@@ -3,7 +3,7 @@ import type { CapabilityReport } from "./generated/types";
 export type DeliveryOrderConstraints = { allowReplacement?:boolean; systemOrder: string[]; actions: {id:string; title:string; dependencies:string[]; layer:number}[] };
 export function deliveryOrderConstraints(report: CapabilityReport): DeliveryOrderConstraints | undefined {
   if (!["v22_business_priority_v2","v22_business_priority_v3"].includes(report.prioritization?.rules_version ?? "")) return undefined;
-  return {...(["2.2.7", "2.2.8"].includes(report.schema_version) ? {allowReplacement:true} : {}), systemOrder:report.actions.map(a=>a.id), actions:(report.action_candidates ?? report.actions).map(a=>{
+  return {...(["2.2.7", "2.2.8", "2.2.9"].includes(report.schema_version) ? {allowReplacement:true} : {}), systemOrder:report.actions.map(a=>a.id), actions:(report.action_candidates ?? report.actions).map(a=>{
     const decision=report.prioritization!.candidates.find(e=>e.input.action_id===a.id)!;
     return {id:a.id,title:a.title,dependencies:[...a.dependencies],layer:{access_indexing:0,measurement:1,none:2}[decision.prerequisite]};
   })};

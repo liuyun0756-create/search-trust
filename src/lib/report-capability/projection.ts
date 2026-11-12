@@ -1,3 +1,4 @@
+import {keywordVisibilityView} from "./keyword-visibility";
 import type { CapabilityReport, DeliveryRevision } from "./generated/types";
 import { validateCapabilityReport, validateDeliveryRevision } from "./validate";
 import { actionNeedsVerification, clientActionIds } from "./action-visibility";
@@ -15,7 +16,7 @@ function rationale(report: CapabilityReport, action: DeliveryRevision["actions"]
   return { whyNow: {
     explanation: decision.explanation,
     systemPosition: decision.selected_order,
-    ...(["2.2.7", "2.2.8"].includes(report.schema_version) ? {candidateSelection:decision.selected_order === null} : {}),
+    ...(["2.2.7", "2.2.8", "2.2.9"].includes(report.schema_version) ? {candidateSelection:decision.selected_order === null} : {}),
     systemTarget: source.target,
     systemTitle: source.title,
     deliveryChanged: sequence !== decision.selected_order || canonicalDigest(current) !== canonicalDigest(editable),
@@ -42,7 +43,8 @@ export function projectCapabilityReport(report: CapabilityReport, approved?: Del
   const visibleIds=clientActionIds(report,approved);
   const actions=(approved?.actions ?? report.actions).filter(a=>!clientOnly || visibleIds.includes(a.id));
   return {
-    ...(["2.2.7", "2.2.8"].includes(report.schema_version) ? {hideSourceIdentifiers:true} : {}),
+    ...(["2.2.7", "2.2.8", "2.2.9"].includes(report.schema_version) ? {hideSourceIdentifiers:true} : {}),
+    ...(report.keyword_visibility ? {keywordVisibility:keywordVisibilityView(report.keyword_visibility,clientOnly)} : {}),
     reportId: report.id,
     title: approved?.title ?? report.title,
     summary: approved?.summary ?? report.summary,
@@ -52,7 +54,7 @@ export function projectCapabilityReport(report: CapabilityReport, approved?: Del
       id: a.id, sequence: index + 1, title: a.title, target: a.target,
       steps: [...a.steps], completion: [...a.completion], review: a.review,
       materials: a.materials.map((m) => ({ ...m, evidence_ids: [...m.evidence_ids], confirmation_items: [...m.confirmation_items] })),
-      ...(["2.2.5", "2.2.6", "2.2.7", "2.2.8"].includes(report.schema_version) ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
+      ...(["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9"].includes(report.schema_version) ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
       ...rationale(report, a, index + 1, clientOnly ? visibleIds : undefined),
     })),
     ...(report.contact_checks ? {contactChecks: report.contact_checks.map(c=>({...c,
