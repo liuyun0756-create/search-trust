@@ -1,3 +1,4 @@
+import {checkedKeywordQueries} from '../target-keywords/contracts';
 import { NextRequest, NextResponse } from "next/server";
 
 import { parseDiscoveryRequest } from "@/lib/preflight-v22/validate";
@@ -8,6 +9,7 @@ import { isUuid } from "./contracts";
 const IDEMPOTENCY = /^[A-Za-z0-9._:-]{8,200}$/;
 
 interface Dependencies {
+  keywordsEnabled?():boolean;
   getCurrentUser(): Promise<{ userId: string } | null>;
   createRepository(): ProspectWorkflowRepository;
   submitDiscovery(request: NextRequest): Promise<Response>;
@@ -43,20 +45,34 @@ export function createProspectWorkflowHandlers(dependencies: Dependencies) {
       if (!parsed.ok || parsed.value.case_id !== caseId) {
         return error("INVALID_REQUEST", "The discovery request does not match this Case.", 400);
       }
+      const keywordRevision=request.headers.get("x-searchtrust-keyword-planning-revision");
+      let repo:ProspectWorkflowRepository;
+      let keywordsOn=dependencies.keywordsEnabled?.()===true;
+      try{
+        repo=dependencies.createRepository();
+        if(keywordsOn&&keywordRevision===null&&await repo.canResumeLegacy?.(user.userId,caseId,workflowId))keywordsOn=false;
+      }catch{return error("PROSPECT_WORKFLOW_UNAVAILABLE","The saved workflow could not be checked. Reload before continuing; no credit has been reserved.",503);}
+
+      if((keywordsOn&&(keywordRevision===null||!/^[1-9][0-9]{0,9}$/.test(keywordRevision)||Number(keywordRevision)>2147483647
+         ||!checkedKeywordQueries(parsed.value.queries)||parsed.value.queries.some(q=>q!==q.trim())))||(!keywordsOn&&keywordRevision!==null))
+        return error("TARGET_KEYWORDS_REQUIRED","Confirm and save 3–5 target keywords before starting. No credit has been reserved.",409);
       let reservation;
       try {
-        reservation = await dependencies.createRepository().reserve({
+        reservation = await repo.reserve({
           userId: user.userId,
           caseId,
           workflowId,
           discoveryJobId,
           idempotencyKey,
           taskIdempotencyKey,
+          ...(keywordsOn?{keywords:{queries:parsed.value.queries,planningRevision:Number(keywordRevision),scope:{primary_service:parsed.value.primary_service,target_market:parsed.value.target_market}}}:{}),
         });
       } catch (cause) {
         if (cause instanceof ProspectWorkflowPersistenceError && cause.code === "INSUFFICIENT_CREDITS") {
           return error("INSUFFICIENT_CREDITS", "Buy 1 credit to start this Prospect analysis.", 409);
         }
+        if(cause instanceof ProspectWorkflowPersistenceError&&["PLANNING_SETTINGS_CONFLICT","TARGET_KEYWORDS_DISCOVERY_CONFLICT"].includes(cause.code))
+          return error(cause.code,"Saved target keywords changed. Reload and confirm the list before starting. No credit has been reserved.",409);
         return error("PROSPECT_WORKFLOW_UNAVAILABLE", "The Prospect workflow could not be reserved yet.", 409);
       }
       if (reservation.charge_state === "compensated") {

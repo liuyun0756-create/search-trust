@@ -1,3 +1,4 @@
+import {isTargetKeywordsEnabled} from '../target-keywords/config';
 import { getCurrentUser } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase";
 import { createAnalysisStatusHandler, createAnalysisStreamHandler, createAnalysisSubmitHandler, createLatestAnalysisHandler } from "./handlers";
@@ -22,6 +23,7 @@ const dependencies = {
   fetcher: fetch,
   timeoutMs: 30_000,
   isCapabilityReadEnabled: () => process.env.V22_CAPABILITY_DISPATCH_ENABLED === "true",
+  isTargetKeywordsEnabled,
   isPlanningEnabled:isPlanningSettingsEnabled,
   isCapabilityIntakeEnabled: () => process.env.V22_CAPABILITY_DISPATCH_ENABLED === "true"
     && process.env.V22_CAPABILITY_INTAKE_ENABLED === "true",

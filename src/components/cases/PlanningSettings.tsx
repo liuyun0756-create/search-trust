@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {parsePlanningSettings,parsePlanningView,type PlanningSettingsView,type PlanningSettings as Settings} from "@/lib/planning-settings/contracts";
-export type PlanningStatus={ready:boolean;revision:number|null;blockedReason?:"loading"|"load_error"|"unsaved"|"saving"|"save_error"};
+export type PlanningStatus={keywordQueries?:string[];ready:boolean;revision:number|null;blockedReason?:"loading"|"load_error"|"unsaved"|"saving"|"save_error"};
 const field="mt-2 block min-h-11 w-full rounded-lg border border-[#ccd9ce] bg-white p-3 text-sm disabled:opacity-60";
 export function PlanningSettings({caseId,onStatus,locked=false}:{caseId:string;onStatus:(status:PlanningStatus)=>void;locked?:boolean}){
   const [saved,setSaved]=useState<PlanningSettingsView|null>(null),[draft,setDraft]=useState<Settings|null>(null),[pages,setPages]=useState("");
@@ -14,7 +14,7 @@ export function PlanningSettings({caseId,onStatus,locked=false}:{caseId:string;o
       const response=await fetch(`/api/v2/cases/${caseId}/planning-settings`,{cache:"no-store"});
       const value=parsePlanningView(await response.json(),caseId);if(!response.ok||!value)throw Error();
       if(!mounted.current)return;setSaved(value);setDraft(value.settings);setPages(value.settings.target_pages.join("\n"));setDirty(false);setError("");
-      callback.current({ready:true,revision:value.revision});
+      callback.current({ready:true,revision:value.revision,...(value.settings.schema_version==="v22_planning_settings_v2"?{keywordQueries:value.settings.target_keywords.map(k=>k.query)}:{})});
     }catch{if(mounted.current){setError("Could not load the saved settings. Reload before confirming a diagnosis.");callback.current({ready:false,revision:null,blockedReason:"load_error"});}}
     finally{if(mounted.current)setBusy(false);}
   },[caseId]);
@@ -34,7 +34,7 @@ export function PlanningSettings({caseId,onStatus,locked=false}:{caseId:string;o
         if(!value||value.settings.priority!==settings.priority||value.settings.target_pages.join("\n")!==settings.target_pages.join("\n")
           ||value.settings.execution_conditions.capacity!==settings.execution_conditions.capacity||value.settings.execution_conditions.publishing_access!==settings.execution_conditions.publishing_access)throw Error("Could not confirm the save. Your edits are still here.");
       }
-      if(!mounted.current)return;setSaved(value!);setDraft(value!.settings);setPages(value!.settings.target_pages.join("\n"));setDirty(false);setError("");setMessage("Saved for the next diagnosis. Existing reports and approved plans are unchanged.");callback.current({ready:true,revision:value!.revision});
+      if(!mounted.current)return;setSaved(value!);setDraft(value!.settings);setPages(value!.settings.target_pages.join("\n"));setDirty(false);setError("");setMessage("Saved for the next diagnosis. Existing reports and approved plans are unchanged.");callback.current({ready:true,revision:value!.revision,...(value!.settings.schema_version==="v22_planning_settings_v2"?{keywordQueries:value!.settings.target_keywords.map(k=>k.query)}:{})});
     }catch(e){if(mounted.current){setError(e instanceof Error?e.message:"Could not save. Your edits are still here.");callback.current({ready:false,revision:saved.revision,blockedReason:"save_error"});}}
     finally{saving.current=false;if(mounted.current)setBusy(false);}
   }

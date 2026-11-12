@@ -1,3 +1,4 @@
+import {checkedKeywordQueries,type KeywordDraft,type KeywordBinding,type TargetKeyword} from '../target-keywords/contracts';
 import type { BusinessIdentity, TargetMarket } from "@/lib/report-v22/generated/types";
 
 import type {
@@ -7,6 +8,7 @@ import type {
 } from "./contracts";
 
 export const DRAFT_SCHEMA_VERSION = "2.2-new-case-v2" as const;
+export const KEYWORD_DRAFT_SCHEMA_VERSION = "2.2-new-case-v3" as const;
 export const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 
 export type WorkspaceStage =
@@ -28,7 +30,9 @@ export interface BusinessConfirmation {
 }
 
 export interface NewCaseDraft {
-  schema_version: typeof DRAFT_SCHEMA_VERSION;
+  schema_version: typeof DRAFT_SCHEMA_VERSION | typeof KEYWORD_DRAFT_SCHEMA_VERSION;
+  target_keywords?: KeywordDraft | null;
+  discovery_keywords?: KeywordBinding | null;
   created_at: string;
   updated_at: string;
   expires_at: string;
@@ -53,12 +57,16 @@ export interface NewCaseDraft {
 }
 
 export type WorkspaceEvent =
+  | {type:"CONFIRM_SCOPE_FOR_KEYWORDS";confirmation:BusinessConfirmation}
+  | {type:"EDIT_TARGET_KEYWORDS";items:TargetKeyword[]}
+  | {type:"CONFIRM_TARGET_KEYWORDS";value:KeywordDraft}
+
   | { type: "CHANGE_SOURCE"; goal: WorkGoal; site_url: string; gbp_url: string | null }
   | { type: "START_PREFLIGHT" }
   | { type: "PREFLIGHT_SUCCEEDED"; response: PreflightResponse }
   | { type: "PREFLIGHT_FAILED"; code: string; message: string }
   | { type: "CONFIRM_BUSINESS"; confirmation: BusinessConfirmation }
-  | { type: "START_DISCOVERY"; workflow_id: string; job_id: string; idempotency_key: string; supplemental_website_urls?: string[] }
+  | { type: "START_DISCOVERY"; workflow_id: string; job_id: string; idempotency_key: string; supplemental_website_urls?: string[];keyword_binding?:KeywordBinding }
   | { type: "DISCOVERY_UPDATED"; status: CompetitorDiscoveryStatusResponse }
   | { type: "DISCOVERY_REQUEST_FAILED"; code: string; message: string; retryable?: boolean }
   | { type: "PROSPECT_START_REJECTED" }
@@ -81,10 +89,11 @@ function iso(now: Date) { return now.toISOString(); }
 export function createNewCaseDraft(
   now = new Date(),
   id = crypto.randomUUID(),
-  safe?: { goal?: WorkGoal; site_url?: string; gbp_url?: string | null },
+  safe?: { goal?: WorkGoal; site_url?: string; gbp_url?: string | null;target_keywords_enabled?:boolean },
 ): NewCaseDraft {
   return {
-    schema_version: DRAFT_SCHEMA_VERSION,
+    schema_version: safe?.target_keywords_enabled?KEYWORD_DRAFT_SCHEMA_VERSION:DRAFT_SCHEMA_VERSION,
+    ...(safe?.target_keywords_enabled?{target_keywords:null,discovery_keywords:null}:{}),
     created_at: iso(now),
     updated_at: iso(now),
     expires_at: iso(new Date(now.getTime() + DRAFT_TTL_MS)),
@@ -110,7 +119,7 @@ export function createNewCaseDraft(
 }
 
 function touch(state: NewCaseDraft, update: Partial<NewCaseDraft>, now: Date): NewCaseDraft {
-  return { ...state, ...update, updated_at: iso(now) };
+  return { ...state, ...update, ...(state.schema_version===KEYWORD_DRAFT_SCHEMA_VERSION&&update.discovery_job_id===null?{discovery_keywords:null}:{}),updated_at: iso(now) };
 }
 
 function clearDiscovery() {
@@ -159,6 +168,16 @@ export function reduceWorkspaceState(
   now = new Date(),
 ): NewCaseDraft {
   switch (event.type) {
+    case "CONFIRM_SCOPE_FOR_KEYWORDS":
+      if(state.schema_version!==KEYWORD_DRAFT_SCHEMA_VERSION||state.prospect_workflow_id)return state;
+      return touch(state,{...clearDiscovery(),stage:"business_confirmation",business_confirmation:event.confirmation,target_keywords:null},now);
+    case "EDIT_TARGET_KEYWORDS":
+      if(state.schema_version!==KEYWORD_DRAFT_SCHEMA_VERSION||state.stage!=="business_confirmation"||state.prospect_workflow_id)return state;
+      return touch(state,{target_keywords:{items:event.items,binding:null,case_id:state.target_keywords?.case_id??null}},now);
+    case "CONFIRM_TARGET_KEYWORDS":
+      if(state.schema_version!==KEYWORD_DRAFT_SCHEMA_VERSION||state.prospect_workflow_id||!state.business_confirmation||!event.value.binding
+        ||JSON.stringify(checkedKeywordQueries(event.value.items.map(k=>k.query)))!==JSON.stringify(event.value.binding.queries))return state;
+      return touch(state,{stage:"prospect_start",target_keywords:event.value},now);
     case "CHANGE_SOURCE":
       return touch(state, {
         goal: event.goal,
@@ -184,9 +203,12 @@ export function reduceWorkspaceState(
         prospect_workflow_id: state.prospect_workflow_id,
       }, now);
     case "START_DISCOVERY":
+      if(state.schema_version===KEYWORD_DRAFT_SCHEMA_VERSION&&(!event.keyword_binding||!state.target_keywords?.binding
+        ||JSON.stringify(event.keyword_binding)!==JSON.stringify(state.target_keywords.binding)))return state;
       if (state.discovery_job_id && state.stage === "competitor_discovery_running") return state;
       return touch(state, {
         stage: "competitor_discovery_running",
+        ...(state.schema_version===KEYWORD_DRAFT_SCHEMA_VERSION?{discovery_keywords:event.keyword_binding!}:{}),
         prospect_workflow_id: event.workflow_id,
         discovery_job_id: event.job_id,
         discovery_idempotency_key: event.idempotency_key,
@@ -231,6 +253,7 @@ export function reduceWorkspaceState(
         prospect_workflow_id: state.prospect_workflow_id,
       }, now);
     case "EDIT_BUSINESS":
+      if(state.schema_version===KEYWORD_DRAFT_SCHEMA_VERSION&&state.prospect_workflow_id)return state;
       return touch(state, { stage: "business_confirmation" }, now);
     case "EDIT_COMPETITORS":
       return state.discovery_status?.result ? touch(state, { stage: "competitor_confirmation" }, now) : state;

@@ -1,7 +1,7 @@
 import {NextResponse} from "next/server";
 import {isUuid} from "../verified-analysis-v22/contracts";
 import {PlanningSettingsError,type PlanningSettingsRepository} from "./repository";
-type Dependencies={enabled():boolean;user():Promise<{userId:string}|null>;repository():Pick<PlanningSettingsRepository,"read"|"save">};
+type Dependencies={enabled():boolean;keywordsEnabled?():boolean;user():Promise<{userId:string}|null>;repository():Pick<PlanningSettingsRepository,"read"|"save">};
 const response=(body:unknown,status=200)=>NextResponse.json(body,{status,headers:{"Cache-Control":"private, no-store","Vary":"Cookie"}});
 const failure=(code:string,status:number)=>response({error:{code,message:code==="CONFLICT"?"Settings changed in another page. Reload and compare before continuing.":"Planning settings could not be confirmed. Your edits have been kept."}},status);
 export function createPlanningSettingsHandlers(deps:Dependencies){
@@ -25,6 +25,7 @@ export function createPlanningSettingsHandlers(deps:Dependencies){
       }catch{return failure("INVALID",400);}finally{reader.releaseLock();}
       if(!body||typeof body!=="object"||Array.isArray(body)||Object.keys(body).sort().join()!=="expectedRevision,settings")return failure("INVALID",400);
       const b=body as {expectedRevision:number;settings:unknown};
+      if(b.settings&&typeof b.settings==="object"&&"schema_version" in b.settings&&b.settings.schema_version==="v22_planning_settings_v2"&&!deps.keywordsEnabled?.())return failure("INVALID",400);
       return response(await repo.save(user.userId,id,b.expectedRevision,b.settings));
     }catch(error){return error instanceof PlanningSettingsError?failure(error.code,error.code==="NOT_FOUND"?404:error.code==="CONFLICT"?409:error.code==="INVALID"?400:503):failure("UNAVAILABLE",503);}
   };

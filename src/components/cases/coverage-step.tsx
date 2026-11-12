@@ -145,6 +145,8 @@ export function CoverageStep({ draft, onContinue, onBack,continueDisabled=false,
         </dl>
       </div>
 
+      {draft.discovery_keywords?<section aria-label="Confirmed target keywords" className="mt-6 rounded-xl border border-[#d7e4d2] bg-white p-5"><h2 className="font-semibold">Confirmed target keywords · locked for this workflow</h2><ol className="mt-3 list-inside list-decimal space-y-2">{draft.discovery_keywords.queries.map(query=><li key={query}>{query}</li>)}</ol><p className="mt-3 text-sm">These exact queries were used for competitor discovery. To change them, start a new workflow. This page does not collect again.</p></section>:null}
+
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,.65fr)]">
         <div>
           <div className="mb-5 flex items-end justify-between gap-4">

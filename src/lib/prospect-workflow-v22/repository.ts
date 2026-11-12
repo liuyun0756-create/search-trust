@@ -1,5 +1,7 @@
 import "server-only";
 
+import {canonicalJsonText} from "../verified-analysis-v22/digest";
+import type {KeywordScope} from "../target-keywords/contracts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { parseProspectWorkflowReservation, parseProspectWorkflowRecovery, type ProspectWorkflowReservation } from "./contracts";
@@ -12,7 +14,9 @@ export interface ProspectWorkflowRepository {
     discoveryJobId: string;
     idempotencyKey: string;
     taskIdempotencyKey: string;
+    keywords?:{queries:string[];planningRevision:number;scope:KeywordScope};
   }): Promise<ProspectWorkflowReservation>;
+  canResumeLegacy?(userId:string,caseId:string,workflowId:string):Promise<boolean>;
   ownsDiscovery(userId: string, discoveryJobId: string): Promise<boolean>;
 }
 
@@ -44,23 +48,34 @@ export class SupabaseProspectWorkflowRepository implements ProspectWorkflowRepos
     discoveryJobId: string;
     idempotencyKey: string;
     taskIdempotencyKey: string;
+    keywords?:{queries:string[];planningRevision:number;scope:KeywordScope};
   }): Promise<ProspectWorkflowReservation> {
-    const { data, error } = await this.db.rpc("start_v22_prospect_discovery", {
+    const { data, error } = await this.db.rpc(input.keywords?"start_v22_prospect_discovery_with_keywords":"start_v22_prospect_discovery", {
       p_user_id: input.userId,
       p_case_id: input.caseId,
       p_workflow_id: input.workflowId,
       p_discovery_job_id: input.discoveryJobId,
       p_workflow_idempotency_key: input.idempotencyKey,
       p_task_idempotency_key: input.taskIdempotencyKey,
+      ...(input.keywords?{p_planning_revision:input.keywords.planningRevision,p_queries_canonical:canonicalJsonText(input.keywords.queries),p_keyword_scope:input.keywords.scope}:{}),
     }).single();
     const parsed = parseProspectWorkflowReservation(data);
     if (error || !parsed) {
       const code = error?.message?.includes("INSUFFICIENT_CREDITS")
         ? "INSUFFICIENT_CREDITS"
-        : "PROSPECT_WORKFLOW_PERSISTENCE_FAILED";
+        : error?.message?.includes("PLANNING_SETTINGS_CONFLICT")?"PLANNING_SETTINGS_CONFLICT"
+        : error?.message?.includes("TARGET_KEYWORDS")?"TARGET_KEYWORDS_DISCOVERY_CONFLICT":"PROSPECT_WORKFLOW_PERSISTENCE_FAILED";
       throw new ProspectWorkflowPersistenceError(code);
     }
     return parsed;
+  }
+
+  async canResumeLegacy(userId:string,caseId:string,workflowId:string):Promise<boolean>{
+    const saved=await this.recover(userId,workflowId);
+    if(!saved||saved.case_id!==caseId||saved.state!=="reserved"||saved.analysis_job_id)return false;
+    const {data,error}=await this.db.from("prospect_target_keyword_bindings").select("discovery_job_id").eq("workflow_id",workflowId).limit(1);
+    if(error)throw new ProspectWorkflowPersistenceError();
+    return Array.isArray(data)&&data.length===0;
   }
 
   async ownsDiscovery(userId: string, discoveryJobId: string): Promise<boolean> {

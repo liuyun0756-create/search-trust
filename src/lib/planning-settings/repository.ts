@@ -21,7 +21,8 @@ export class PlanningSettingsRepository {
     if(!settings||!Number.isSafeInteger(expectedRevision)||expectedRevision<0)throw new PlanningSettingsError("INVALID");
     const {data,error}=await this.db.rpc("save_v22_case_planning_settings",{p_user_id:user,p_case_id:caseId,p_expected_revision:expectedRevision,p_settings:settings});
     this.error(error);const view=this.checked(data,caseId);
-    if(canonicalDigest(view.settings)!==canonicalDigest(settings)||![expectedRevision,expectedRevision+1].includes(view.revision))throw new PlanningSettingsError("UNAVAILABLE");
+    const comparable=(s:typeof settings)=>{if(s.schema_version!=="v22_planning_settings_v2")return s;const {keyword_confirmation:_,...body}=s;return body;};
+    if(canonicalDigest(comparable(view.settings))!==canonicalDigest(comparable(settings))||![expectedRevision,expectedRevision+1].includes(view.revision))throw new PlanningSettingsError("UNAVAILABLE");
     return view;
   }
 }

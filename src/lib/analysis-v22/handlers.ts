@@ -19,6 +19,7 @@ interface Dependencies {
   isCapabilityIntakeEnabled?(): boolean;
   isCapabilityReadEnabled?(): boolean;
   isPlanningEnabled?():boolean;
+  isTargetKeywordsEnabled?():boolean;
 }
 
 function jsonError(code: string, message: string, status: number) {
@@ -87,7 +88,11 @@ export function createAnalysisSubmitHandler(deps: Dependencies) {
         headers: { "X-SearchTrust-User-ID": user.userId, "X-SearchTrust-Job-ID": jobId,
           "X-SearchTrust-Discovery-ID": discoveryId, "X-SearchTrust-Workflow-ID": workflowId,
           "Idempotency-Key": idempotencyKey, ...(previousJobId ? { "X-SearchTrust-Previous-Job-ID": previousJobId } : {}),
-          ...(deps.isPlanningEnabled?.()?{"X-SearchTrust-Planning-Revision":planningRevision!}:{}) },
+          ...(deps.isPlanningEnabled?.()?{"X-SearchTrust-Planning-Revision":planningRevision!}:{}),
+          ...(deps.isTargetKeywordsEnabled?.()&&request.headers.has("x-searchtrust-keyword-planning-revision")?{
+            "X-SearchTrust-Keyword-Planning-Revision":request.headers.get("x-searchtrust-keyword-planning-revision")!,
+            "X-SearchTrust-Keyword-Digest":request.headers.get("x-searchtrust-keyword-digest")??""}:{}),
+        },
       });
       if (result.error) return result.error;
       const checked = parseVersionedTaskStatus(result.response!.payload, jobId, parsed.value.case_id);

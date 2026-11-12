@@ -1,8 +1,10 @@
+import {validKeywordBinding,type TargetKeyword} from '../target-keywords/contracts';
 import type { WorkGoal } from "./contracts";
 import { parseDiscoveryRequest, parseDiscoveryStatusResponse, parsePreflightResponse } from "./validate";
 import {
   createNewCaseDraft,
   DRAFT_SCHEMA_VERSION,
+  KEYWORD_DRAFT_SCHEMA_VERSION,
   reduceWorkspaceState,
   type BusinessConfirmation,
   type NewCaseDraft,
@@ -44,11 +46,12 @@ function safeGoal(value: unknown): WorkGoal {
   return typeof value === "string" && goals.has(value as WorkGoal) ? value as WorkGoal : "win_new_client";
 }
 
-function recoverSafe(value: unknown, now: Date): NewCaseDraft {
+function recoverSafe(value: unknown, now: Date,keywordsEnabled=false): NewCaseDraft {
   const record = object(value) ? value : {};
   const gbp = record.gbp_url;
   return createNewCaseDraft(now, crypto.randomUUID(), {
     goal: safeGoal(record.goal),
+    target_keywords_enabled:keywordsEnabled,
     site_url: safeUrlInput(record.site_url),
     gbp_url: gbp === null ? null : safeUrlInput(gbp) || null,
   });
@@ -67,8 +70,9 @@ function validBusinessConfirmation(value: unknown): value is BusinessConfirmatio
 }
 
 export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | null {
-  if (!object(value) || Object.keys(value).some((key) => !topLevelKeys.has(key))) return null;
-  if (value.schema_version !== DRAFT_SCHEMA_VERSION || !goals.has(value.goal as WorkGoal) || !stages.has(value.stage as WorkspaceStage)) return null;
+  const keyword=object(value)&&value.schema_version===KEYWORD_DRAFT_SCHEMA_VERSION;
+  if (!object(value) || Object.keys(value).some((key) => !topLevelKeys.has(key)&&!(keyword&&["target_keywords","discovery_keywords"].includes(key)))) return null;
+  if (![DRAFT_SCHEMA_VERSION,KEYWORD_DRAFT_SCHEMA_VERSION].includes(value.schema_version as typeof DRAFT_SCHEMA_VERSION) || !goals.has(value.goal as WorkGoal) || !stages.has(value.stage as WorkspaceStage)) return null;
   if (typeof value.created_at !== "string" || typeof value.updated_at !== "string" || typeof value.expires_at !== "string") return null;
   const createdAt = Date.parse(value.created_at);
   const updatedAt = Date.parse(value.updated_at);
@@ -95,6 +99,17 @@ export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | nul
   if (!Array.isArray(value.supplemental_website_urls) || value.supplemental_website_urls.length > 3 || !value.supplemental_website_urls.every((item) => typeof item === "string" && item.length <= 2083)) return null;
   if (!Array.isArray(value.selected_competitor_ids) || value.selected_competitor_ids.length > 3 || !value.selected_competitor_ids.every((item) => typeof item === "string") || new Set(value.selected_competitor_ids).size !== value.selected_competitor_ids.length) return null;
   if (!(value.preflight_error === null || (object(value.preflight_error) && typeof value.preflight_error.code === "string" && typeof value.preflight_error.message === "string"))) return null;
+  if(keyword){
+    const selection=value.target_keywords,binding=value.discovery_keywords;
+    if(binding!==null&&!validKeywordBinding(binding))return null;
+    if(selection!==null){
+      if(!object(selection)||Object.keys(selection).sort().join()!=="binding,case_id,items"||!Array.isArray(selection.items)||selection.items.length>5
+       ||!selection.items.every((k:TargetKeyword)=>k&&typeof k.query==="string"&&k.query.length<=10000&&["seo","system_accepted"].includes(k.origin)&&Array.isArray(k.suggestion_refs)&&k.suggestion_refs.length<=10&&k.suggestion_refs.every(r=>typeof r==="string"&&r.length<=300))
+       ||(selection.case_id!==null&&(typeof selection.case_id!=="string"||!uuidV4.test(selection.case_id)))
+       ||(selection.binding!==null&&!validKeywordBinding(selection.binding)))return null;
+      if(selection.binding&&JSON.stringify((selection.items as TargetKeyword[]).map(k=>k.query))!==JSON.stringify((selection.binding as {queries:string[]}).queries))return null;
+    }
+  }
   return {
     ...value,
     analysis_job_id: value.analysis_job_id ?? null,
@@ -103,13 +118,13 @@ export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | nul
   } as unknown as NewCaseDraft;
 }
 
-export function loadDraft(storage: DraftStorage, now = new Date()): NewCaseDraft {
+export function loadDraft(storage: DraftStorage, now = new Date(),keywordsEnabled=false): NewCaseDraft {
   const raw = storage.getItem(NEW_CASE_DRAFT_STORAGE_KEY);
-  if (!raw) return createNewCaseDraft(now);
+  if (!raw) return createNewCaseDraft(now,undefined,{target_keywords_enabled:keywordsEnabled});
   let value: unknown;
   try { value = JSON.parse(raw); } catch {
     storage.removeItem(NEW_CASE_DRAFT_STORAGE_KEY);
-    return createNewCaseDraft(now);
+    return createNewCaseDraft(now,undefined,{target_keywords_enabled:keywordsEnabled});
   }
   const parsed = parseDraft(value, now);
   if (parsed) {
@@ -119,7 +134,7 @@ export function loadDraft(storage: DraftStorage, now = new Date()): NewCaseDraft
       : parsed;
   }
   storage.removeItem(NEW_CASE_DRAFT_STORAGE_KEY);
-  return recoverSafe(value, now);
+  return recoverSafe(value, now,keywordsEnabled);
 }
 
 export function saveDraft(storage: DraftStorage, draft: NewCaseDraft): void {

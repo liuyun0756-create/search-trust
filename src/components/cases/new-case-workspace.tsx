@@ -2,7 +2,7 @@
 
 import { Check, LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuditModal } from "@/components/common/AuditModalProvider";
 import { useAuthenticatedFetch } from "@/lib/use-authenticated-fetch";
@@ -33,6 +33,9 @@ import { GoalWebsiteStep } from "./goal-website-step";
 import { NewCaseStepper } from "./new-case-stepper";
 import { PreflightStatus } from "./preflight-status";
 import { ProspectStartStep } from "./prospect-start-step";
+import {TargetKeywordSetup} from './TargetKeywordSetup';
+import {checkedKeywordQueries,type KeywordScope} from '@/lib/target-keywords/contracts';
+import {KEYWORD_DRAFT_SCHEMA_VERSION} from '@/lib/preflight-v22/state-machine';
 import {PlanningSettings,type PlanningStatus} from "./PlanningSettings";
 
 function normalizeWebInput(value: string) {
@@ -64,8 +67,9 @@ function planningBlockedMessage(status: PlanningStatus) {
   }
 }
 
-export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boolean}={}) {
-  const [draft, setDraft] = useState<NewCaseDraft>(() => createNewCaseDraft());
+export function NewCaseWorkspace({planningEnabled=false,keywordsEnabled=false}:{planningEnabled?:boolean;keywordsEnabled?:boolean}={}) {
+  const [draft, setDraft] = useState<NewCaseDraft>(() => createNewCaseDraft(undefined,undefined,{target_keywords_enabled:keywordsEnabled}));
+  const [editingKeywordScope,setEditingKeywordScope]=useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [draftProblem, setDraftProblem] = useState<string | null>(null);
   const [workflowClosed, setWorkflowClosed] = useState(false);
@@ -86,13 +90,20 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   const authenticatedFetch = useAuthenticatedFetch();
   const [analysisStatus, setAnalysisStatus] = useState<VersionedTaskStatus | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
-  const planningBlocked = planningEnabled && !planning.ready;
+  const keywordMode=keywordsEnabled&&draft.schema_version===KEYWORD_DRAFT_SCHEMA_VERSION&&draft.goal==="win_new_client";
+  const planningActive=planningEnabled||keywordMode;
+  const keywordScope=useMemo<KeywordScope|null>(()=>draft.business_confirmation?{primary_service:draft.business_confirmation.primary_service,target_market:draft.business_confirmation.target_market}:null,[draft.business_confirmation]);
+  const keywordProblem=keywordMode&&(!draft.target_keywords?.binding||!checkedKeywordQueries(draft.target_keywords.items.map(k=>k.query)))
+    ?"Confirm and save the target keywords before continuing. Return to step 2."
+    :keywordMode&&draft.discovery_keywords&&(JSON.stringify(draft.target_keywords?.items.map(k=>k.query))!==JSON.stringify(draft.discovery_keywords.queries)||(planning.ready&&JSON.stringify(planning.keywordQueries)!==JSON.stringify(draft.discovery_keywords.queries)))
+      ?"Target keywords no longer match the confirmed discovery. Start a new Case check; this workflow will not collect again.":null;
+  const planningBlocked = planningActive && !planning.ready;
   const planningMessage = planningBlockedMessage(planning);
   const needsGbpRepair = analysisStatus?.status === "failed"
     && analysisStatus.error?.error_code.startsWith("V22_CUSTOMER_PUBLIC_GBP_");
 
   useEffect(() => {
-    setDraft(loadDraft(sessionStorage));
+    setDraft(loadDraft(sessionStorage,new Date(),keywordsEnabled));
     setHydrated(true);
   }, []);
 
@@ -254,9 +265,9 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   }, [authenticatedFetch, draft.business_confirmation, draft.draft_case_id, draft.goal]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || draft.stage !== "prospect_start" || draft.prospect_workflow_id) return;
+    if (!isLoaded || !isSignedIn || !(draft.stage === "prospect_start"||(keywordMode&&draft.stage==="business_confirmation"&&draft.business_confirmation)) || draft.prospect_workflow_id) return;
     if (!paymentHandoff.caseId && paymentHandoff.status === "saving_case") void saveCase();
-  }, [draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId, paymentHandoff.status, draft.prospect_workflow_id, saveCase]);
+  }, [draft.stage, isLoaded, isSignedIn, paymentHandoff.caseId, paymentHandoff.status, draft.prospect_workflow_id, saveCase,keywordMode]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || draft.stage !== "prospect_start") return;
@@ -277,6 +288,9 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     const confirmation = draft.business_confirmation;
     const jobId = draft.analysis_job_id;
     const idempotencyKey = draft.analysis_idempotency_key;
+    if(keywordProblem||(keywordMode&&!draft.discovery_keywords)){
+      setHandoffMessage(keywordProblem??"The frozen target keywords are unavailable. Start a new Case check; no new collection has been started.");return;
+    }
     if (planningBlocked) {
       setPaymentHandoff(current => ({ ...current, message: planningMessage }));
       return;
@@ -304,7 +318,8 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
           "x-searchtrust-discovery-id": discovery.discovery_id,
           "x-searchtrust-workflow-id": draft.prospect_workflow_id,
           "idempotency-key": idempotencyKey,
-          ...(planningEnabled&&planning.revision!==null?{"x-searchtrust-planning-revision":String(planning.revision)}:{}),
+          ...(planningActive&&planning.revision!==null?{"x-searchtrust-planning-revision":String(planning.revision)}:{}),
+          ...(keywordMode&&draft.discovery_keywords?{"x-searchtrust-keyword-planning-revision":String(draft.discovery_keywords.planning_revision),"x-searchtrust-keyword-digest":draft.discovery_keywords.queries_digest}:{}),
           ...(draft.previous_analysis_job_id
             ? { "x-searchtrust-previous-job-id": draft.previous_analysis_job_id }
             : {}),
@@ -315,7 +330,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
           business_identity: confirmation.business_identity,
           primary_service: confirmation.primary_service,
           target_market: confirmation.target_market,
-          queries: discoveryQueries(confirmation),
+          queries: keywordMode?draft.discovery_keywords!.queries:discoveryQueries(confirmation),
           competitors,
           first_party_snapshots: [],
           parent_report: null,
@@ -351,7 +366,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
           setPaymentHandoff(current => ({ ...current, status: "analyzing", message: "This workflow already has a report task. Reconnecting to that task without starting another analysis." }));
           return;
         }
-        if (planningEnabled) {
+        if (planningActive) {
           const message = "Scope or planning settings changed. Review the saved settings and confirm again. The same report task and reserved credit are retained.";
           setDraft(current => reduceWorkspaceState(current, { type: "RETURN_TO_COVERAGE" }));
           setPaymentHandoff(current => ({ ...current, status: "unlocked", message }));
@@ -379,7 +394,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     } finally {
       submittingAnalysis.current = false;
     }
-  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId,planningEnabled,planningBlocked,planningMessage,planning.revision,workflowClosed]);
+  }, [authenticatedFetch, draft.analysis_idempotency_key, draft.analysis_job_id, draft.business_confirmation, draft.discovery_status, draft.previous_analysis_job_id, draft.prospect_workflow_id, draft.selected_competitor_ids, paymentHandoff.caseId,planningActive,planningBlocked,planningMessage,planning.revision,workflowClosed,keywordMode,keywordProblem,draft.discovery_keywords,draft.target_keywords]);
 
   useEffect(() => {
     if (persistenceBlocked.current || workflowClosed || draft.stage !== "auth_handoff" || paymentHandoff.status !== "unlocked" || draft.goal !== "win_new_client") return;
@@ -513,6 +528,9 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
       await saveCase();
       return;
     }
+    if(keywordMode&&(keywordProblem||!draft.target_keywords?.binding)){
+      setHandoffMessage(keywordProblem??"Confirm and save target keywords before starting. No credit has been reserved.");return;
+    }
     const normalizedSupplements: string[] = [];
     try {
       for (const value of supplements) normalizedSupplements.push(normalizeWebInput(value));
@@ -526,7 +544,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     const workflowIdempotencyKey = `prospect:${draft.draft_case_id}:${workflowId}`;
     // The ownership/task rows do not exist until the start request is accepted.
     setDiscoverySubmitting(true);
-    setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", workflow_id: workflowId, job_id: jobId, idempotency_key: idempotencyKey, supplemental_website_urls: normalizedSupplements }));
+    setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", workflow_id: workflowId, job_id: jobId, idempotency_key: idempotencyKey, supplemental_website_urls: normalizedSupplements,...(keywordMode?{keyword_binding:draft.target_keywords!.binding!}:{}) }));
     setPaymentHandoff((current) => ({ ...current, status: "starting_analysis", message: "Reserving 1 credit and starting provider-backed discovery…" }));
     try {
       const response = await authenticatedFetch(`/api/v2/cases/${encodeURIComponent(paymentHandoff.caseId)}/prospect-workflow`, {
@@ -537,13 +555,14 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
           "x-searchtrust-workflow-idempotency-key": workflowIdempotencyKey,
           "x-searchtrust-discovery-job-id": jobId,
           "idempotency-key": idempotencyKey,
+          ...(keywordMode?{"x-searchtrust-keyword-planning-revision":String(draft.target_keywords!.binding!.planning_revision)}:{}),
         },
         body: JSON.stringify({
           case_id: paymentHandoff.caseId,
           business_identity: confirmation.business_identity,
           primary_service: confirmation.primary_service,
           target_market: confirmation.target_market,
-          queries: discoveryQueries(confirmation),
+          queries: keywordMode?draft.target_keywords!.binding!.queries:discoveryQueries(confirmation),
           search_language: "en",
           search_device: "mobile",
           supplemental_website_urls: normalizedSupplements,
@@ -569,7 +588,9 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   }
 
   function confirmBusiness(confirmation: BusinessConfirmation) {
-    setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_BUSINESS", confirmation }));
+    setEditingKeywordScope(false);
+    if(keywordMode)setPaymentHandoff({status:"saving_case",caseId:null,message:"Saving this confirmed Case. Target keywords are confirmed next, before any credit is used."});
+    setDraft((current) => reduceWorkspaceState(current, { type: keywordMode?"CONFIRM_SCOPE_FOR_KEYWORDS":"CONFIRM_BUSINESS", confirmation }));
     if (!isSignedIn) openLogin();
   }
 
@@ -587,7 +608,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
       }
       if (latest.error?.retryable) {
         await retryCompetitorDiscovery(draft.discovery_job_id);
-        setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", workflow_id: draft.prospect_workflow_id!, job_id: draft.discovery_job_id!, idempotency_key: draft.discovery_idempotency_key ?? `retry:${draft.discovery_job_id}` }));
+        setDraft((current) => reduceWorkspaceState(current, { type: "START_DISCOVERY", workflow_id: draft.prospect_workflow_id!, job_id: draft.discovery_job_id!, idempotency_key: draft.discovery_idempotency_key ?? `retry:${draft.discovery_job_id}`,...(keywordMode&&draft.discovery_keywords?{keyword_binding:draft.discovery_keywords}:{}) }));
         return;
       }
       setDraft((current) => reduceWorkspaceState(current, { type: "DISCOVERY_UPDATED", status: latest }));
@@ -603,6 +624,7 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
 
   function continueAfterCoverage() {
     if (persistenceBlocked.current || workflowClosed) return;
+    if(keywordProblem){setHandoffMessage(keywordProblem);return;}
     if (planningBlocked) {
       setPaymentHandoff(current => ({ ...current, message: planningMessage }));
       return;
@@ -617,6 +639,11 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     if (!isSignedIn) openLogin();
   }
 
+  function editBusinessScope(){
+    if(keywordMode&&draft.prospect_workflow_id){setHandoffMessage("This workflow's keywords and business scope are locked. Start a new Case check to change them; this page will not collect again.");return;}
+    setDraft(current=>reduceWorkspaceState(current,{type:"EDIT_BUSINESS"}));
+  }
+
   function reset() {
     try { clearDraft(sessionStorage); } catch { console.error("NEW_CASE_DRAFT_CLEAR_FAILED"); }
     persistenceBlocked.current = false;
@@ -624,7 +651,8 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
     setWorkflowClosed(false);
     setPlanning({ ready: false, revision: null, blockedReason: "loading" });
     skipNextSave.current = true;
-    setDraft(createNewCaseDraft());
+    setEditingKeywordScope(false);
+    setDraft(createNewCaseDraft(undefined,undefined,{target_keywords_enabled:keywordsEnabled}));
     setAnalysisStatus(null);
     setHandoffMessage(null);
     setCreditBalance(null);
@@ -639,9 +667,9 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
   const creditCopy = workflowCreditCopy[creditState];
 
   if (!hydrated) return <div className="min-h-screen bg-[#f7faf7]" />;
-  if (draftProblem || workflowClosed) return (
+  if (draftProblem || workflowClosed || (!keywordsEnabled&&draft.schema_version===KEYWORD_DRAFT_SCHEMA_VERSION)) return (
     <main className="min-h-screen bg-[#f7faf7] p-8">
-      <p role="alert">{draftProblem ?? "This workflow is closed. Start a new Case check."}</p>
+      <p role="alert">{draftProblem ?? (!keywordsEnabled&&draft.schema_version===KEYWORD_DRAFT_SCHEMA_VERSION?"Target keyword setup is unavailable. Start a new Case check.":"This workflow is closed. Start a new Case check.")}</p>
       <button type="button" onClick={reset}>Start a new Case check</button>
       <Link href="/reports">Cases &amp; reports</Link>
     </main>
@@ -672,21 +700,27 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
         </aside>
         <main className="relative overflow-hidden bg-[#f7faf7] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 xl:px-[72px] xl:py-16">
           <div className="relative mx-auto max-w-[980px]">
+            {keywordsEnabled&&draft.schema_version!==KEYWORD_DRAFT_SCHEMA_VERSION&&!draft.prospect_workflow_id?<div role="status" className="mb-5 rounded-xl bg-white p-4 text-sm"><p>This saved draft keeps its original setup. To confirm target keywords, start a new Case check before using a credit.</p><button type="button" onClick={reset} className="mt-2 min-h-11 underline">Start a new Case check with target keywords</button></div>:null}
             {handoffMessage && <div role="status" className="mb-5 rounded-xl border border-[#cbd8a5] bg-white p-4 text-sm">
               <p>{handoffMessage}</p>
               {paymentHandoff.status === "error" && <Link href="/reports" className="mt-2 inline-block underline">Cases &amp; reports</Link>}
             </div>}
-            {planningEnabled&&paymentHandoff.caseId&&(draft.stage==="coverage"||draft.stage==="auth_handoff") ? <PlanningSettings key={`${paymentHandoff.caseId}:${draft.stage}`} caseId={paymentHandoff.caseId} onStatus={setPlanning} locked={draft.stage==="auth_handoff"}/> : null}
+            {planningActive&&paymentHandoff.caseId&&(draft.stage==="coverage"||draft.stage==="auth_handoff") ? <PlanningSettings key={`${paymentHandoff.caseId}:${draft.stage}`} caseId={paymentHandoff.caseId} onStatus={setPlanning} locked={draft.stage==="auth_handoff"}/> : null}
             {draft.stage === "goal_website" && <GoalWebsiteStep key={draft.draft_case_id} initialGoal={draft.goal} initialSiteUrl={draft.site_url} initialGbpUrl={draft.gbp_url} onSubmit={startPreflight} />}
             {draft.stage === "preflight_running" && <PreflightStatus kind="loading" title="Checking the public evidence surface" message="We’re resolving the business website, public profile, service, market, and available analysis modules." />}
             {draft.stage === "preflight_failed" && <PreflightStatus kind="error" title="Preflight needs attention" message={draft.preflight_error?.message ?? "The public data check could not be completed."} onRetry={() => void startPreflight({ goal: draft.goal, site_url: draft.site_url, gbp_url: draft.gbp_url })} />}
-            {draft.stage === "business_confirmation" && draft.preflight && <BusinessMatchStep key={draft.preflight.preflight_id} preflight={draft.preflight} submittedGbpUrl={draft.gbp_url} initialConfirmation={draft.business_confirmation} onConfirm={confirmBusiness} onEditSource={() => setDraft((current) => reduceWorkspaceState(current, { type: "CHANGE_SOURCE", goal: current.goal, site_url: current.site_url, gbp_url: current.gbp_url }))} />}
+            {draft.stage === "business_confirmation" && draft.preflight && (!keywordMode||!draft.business_confirmation||editingKeywordScope) && <BusinessMatchStep key={draft.preflight.preflight_id} preflight={draft.preflight} submittedGbpUrl={draft.gbp_url} initialConfirmation={draft.business_confirmation} onConfirm={confirmBusiness} onEditSource={() => setDraft((current) => reduceWorkspaceState(current, { type: "CHANGE_SOURCE", goal: current.goal, site_url: current.site_url, gbp_url: current.gbp_url }))} />}
+            {keywordMode&&draft.stage==="business_confirmation"&&draft.preflight&&keywordScope&&draft.business_confirmation&&!editingKeywordScope?<TargetKeywordSetup
+              caseId={paymentHandoff.caseId} profileUrl={draft.business_confirmation.business_identity.public_gbp_url??null} scope={keywordScope} preflight={draft.preflight} value={draft.target_keywords??null}
+              onEdit={items=>setDraft(current=>reduceWorkspaceState(current,{type:"EDIT_TARGET_KEYWORDS",items}))}
+              onConfirm={value=>setDraft(current=>reduceWorkspaceState(current,{type:"CONFIRM_TARGET_KEYWORDS",value}))}
+              onBack={()=>setEditingKeywordScope(true)} onRetryCase={()=>void saveCase()} caseMessage={paymentHandoff.message}/>:null}
             {draft.stage === "prospect_start" && draft.business_confirmation && (
               <ProspectStartStep
                 business={draft.business_confirmation}
                 status={paymentHandoff.status}
                 message={paymentHandoff.message}
-                caseReady={Boolean(paymentHandoff.caseId)}
+                caseReady={Boolean(paymentHandoff.caseId)&&!keywordProblem}
                 covered={creditState === "covered"}
                 creditBalance={creditBalance}
                 signedIn={Boolean(isSignedIn)}
@@ -695,9 +729,9 @@ export function NewCaseWorkspace({planningEnabled=false}:{planningEnabled?:boole
               />
             )}
             {draft.stage === "competitor_discovery_running" && <PreflightStatus kind="loading" title="Finding qualified local competitors" message={draft.discovery_status?.message ?? "The durable discovery task is checking market results and validating candidate websites."} progress={draft.discovery_status?.progress} />}
-            {draft.stage === "competitor_discovery_failed" && <PreflightStatus kind="error" title="Competitor discovery needs attention" message={draft.discovery_error?.message ?? "The competitor search could not be completed."} onRetry={draft.discovery_error?.retryable === false ? undefined : () => void retryDiscovery()} onEdit={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} editLabel="Edit business scope" />}
-            {draft.stage === "competitor_confirmation" && draft.discovery_status?.result && <CompetitorConfirmationStep status={draft.discovery_status} selectedIds={draft.selected_competitor_ids} onSelectionChange={(competitor_ids) => setDraft((current) => reduceWorkspaceState(current, { type: "SELECT_COMPETITORS", competitor_ids }))} onConfirm={() => setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_COMPETITORS" }))} onRerun={(urls) => draft.business_confirmation && void startDiscovery(draft.business_confirmation, urls)} onEditScope={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_BUSINESS" }))} />}
-            {draft.stage === "coverage" && <CoverageStep draft={draft} continueDisabled={planningBlocked} continueDisabledReason={planningBlocked ? planningMessage : undefined} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
+            {draft.stage === "competitor_discovery_failed" && <PreflightStatus kind="error" title="Competitor discovery needs attention" message={draft.discovery_error?.message ?? "The competitor search could not be completed."} onRetry={draft.discovery_error?.retryable === false ? undefined : () => void retryDiscovery()} onEdit={editBusinessScope} editLabel="Edit business scope" />}
+            {draft.stage === "competitor_confirmation" && draft.discovery_status?.result && <CompetitorConfirmationStep status={draft.discovery_status} selectedIds={draft.selected_competitor_ids} onSelectionChange={(competitor_ids) => setDraft((current) => reduceWorkspaceState(current, { type: "SELECT_COMPETITORS", competitor_ids }))} onConfirm={() => setDraft((current) => reduceWorkspaceState(current, { type: "CONFIRM_COMPETITORS" }))} onRerun={(urls) => draft.business_confirmation && void startDiscovery(draft.business_confirmation, urls)} onEditScope={editBusinessScope} />}
+            {draft.stage === "coverage" && <CoverageStep draft={draft} continueDisabled={planningBlocked||!!keywordProblem} continueDisabledReason={keywordProblem??(planningBlocked ? planningMessage : undefined)} onContinue={continueAfterCoverage} onBack={() => setDraft((current) => reduceWorkspaceState(current, { type: "EDIT_COMPETITORS" }))} />}
             {draft.stage === "auth_handoff" && (
               isSignedIn ? (
                 <CasePaymentHandoff

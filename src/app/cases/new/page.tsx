@@ -1,3 +1,4 @@
+import {isTargetKeywordsEnabled} from '@/lib/target-keywords/config';
 import type { Metadata } from "next";
 
 import { IntakePaused } from "@/components/cases/intake-paused";
@@ -12,5 +13,5 @@ export const metadata: Metadata = {
 };
 
 export default function NewCasePage() {
-  return isV22PublicEntryEnabled() ? <NewCaseWorkspace planningEnabled={isPlanningSettingsEnabled()&&process.env.V22_CAPABILITY_INTAKE_ENABLED==="true"} /> : <IntakePaused />;
+  return isV22PublicEntryEnabled() ? <NewCaseWorkspace keywordsEnabled={isTargetKeywordsEnabled()} planningEnabled={isPlanningSettingsEnabled()&&process.env.V22_CAPABILITY_INTAKE_ENABLED==="true"} /> : <IntakePaused />;
 }

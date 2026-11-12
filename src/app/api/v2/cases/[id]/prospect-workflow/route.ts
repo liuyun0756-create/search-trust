@@ -1,3 +1,4 @@
+import {isTargetKeywordsEnabled} from '@/lib/target-keywords/config';
 import { getCurrentUser } from "@/lib/auth";
 import { createDiscoverySubmitProxy } from "@/lib/preflight-v22/proxy";
 import { createProspectWorkflowHandlers, SupabaseProspectWorkflowRepository } from "@/lib/prospect-workflow-v22";
@@ -6,6 +7,7 @@ import { createServerClient } from "@/lib/supabase";
 
 const handlers = createProspectWorkflowHandlers({
   getCurrentUser,
+  keywordsEnabled:isTargetKeywordsEnabled,
   createRepository: () => new SupabaseProspectWorkflowRepository(createServerClient()),
   submitDiscovery: createDiscoverySubmitProxy(),
   getDiscovery: async () => new Response(null, { status: 405 }),

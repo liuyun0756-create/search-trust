@@ -87,3 +87,33 @@ describe("charged Prospect workflow boundary", () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe('confirmed target keyword reservation gate',()=>{
+ const reservation={workflow_id:workflowId,discovery_job_id:discoveryJobId,charge_state:'reserved' as const,created:true,idempotent:false,credit_balance:4};
+ it('requires confirmed planning revision before any new reservation or provider submission',async()=>{
+  const repo={reserve:vi.fn(async(..._input:Parameters<ProspectWorkflowRepository["reserve"]>)=>reservation),ownsDiscovery:vi.fn()},submit=vi.fn(async(..._requests:NextRequest[])=>Response.json({}, {status:202}));
+  const handler=createProspectWorkflowHandlers({...dependencies(repo,submit),keywordsEnabled:()=>true});
+  const response=await handler.POST(request(),{params:Promise.resolve({id:caseId})});
+  expect(response.status).toBe(409);expect(repo.reserve).not.toHaveBeenCalled();expect(submit).not.toHaveBeenCalled();
+ });
+ it('passes the original query spelling/order and confirmed scope to the atomic keyword reservation',async()=>{
+  const repo={reserve:vi.fn(async(..._input:Parameters<ProspectWorkflowRepository["reserve"]>)=>reservation),ownsDiscovery:vi.fn()},handler=createProspectWorkflowHandlers({...dependencies(repo),keywordsEnabled:()=>true});
+  const req=request();req.headers.set('x-searchtrust-keyword-planning-revision','2');
+  expect((await handler.POST(req,{params:Promise.resolve({id:caseId})})).status).toBe(202);
+  expect(repo.reserve.mock.calls[0][0]).toMatchObject({keywords:{queries:requestBody.queries,planningRevision:2,scope:{primary_service:requestBody.primary_service,target_market:market}}});
+ });
+ it('keeps a pre-existing reserved legacy workflow on its original path while the new flag is on',async()=>{
+  const repo={reserve:vi.fn(async(..._input:Parameters<ProspectWorkflowRepository["reserve"]>)=>reservation),ownsDiscovery:vi.fn(),canResumeLegacy:vi.fn(async()=>true)};
+  const handler=createProspectWorkflowHandlers({...dependencies(repo),keywordsEnabled:()=>true});
+  expect((await handler.POST(request(),{params:Promise.resolve({id:caseId})})).status).toBe(202);
+  expect(repo.canResumeLegacy).toHaveBeenCalledWith(userId,caseId,workflowId);
+  expect(repo.reserve.mock.calls[0][0]).not.toHaveProperty('keywords');
+ });
+ it('forwards the exact original request without new fields or headers when the flag is off',async()=>{
+  const repo={reserve:vi.fn(async(..._input:Parameters<ProspectWorkflowRepository["reserve"]>)=>reservation),ownsDiscovery:vi.fn()},submit=vi.fn(async(..._requests:NextRequest[])=>Response.json({}, {status:202}));
+  const req=request(),beforeBody=await req.clone().text(),beforeHeaders=Object.fromEntries(req.headers);
+  expect((await createProspectWorkflowHandlers({...dependencies(repo,submit),keywordsEnabled:()=>false}).POST(req,{params:Promise.resolve({id:caseId})})).status).toBe(202);
+  const forwarded=submit.mock.calls[0][0];expect(await forwarded.clone().text()).toBe(beforeBody);expect(Object.fromEntries(forwarded.headers)).toEqual(beforeHeaders);
+  expect(repo.reserve.mock.calls[0][0]).not.toHaveProperty('keywords');
+ });
+});
