@@ -46,7 +46,10 @@ describe.sequential('v14 keyword visibility SQL boundary',()=>{
   await db.query(`insert into analysis_jobs(id,case_id,job_type,status,current_stage,idempotency_key,created_at,deadline_at) values($1,$2,'prospect_report','queued','queued','keyword-synthetic',now()-interval '10 seconds',now()+interval '20 minutes')`,[job,caseId]);
   await db.query(`insert into workflow_charges(id,user_id,case_id,workflow_kind,idempotency_key,analysis_job_id,discovery_job_id) values($1,$2,$3,'prospect','keyword-synthetic',$1,$1)`,[job,owner,caseId]);
   await db.query(`insert into credit_ledger(user_id,case_id,workflow_charge_id,analysis_job_id,kind,delta,balance_after,idempotency_key) values($1,$2,$3,$3,'prospect_debit',-1,0,'keyword-synthetic')`,[owner,caseId,job]);
-  const envelope={schema_version:'v22_analysis_request_envelope_v1',analyze_request:{case_id:caseId,report_type:'prospect',business_identity:identity,primary_service:m.business.primary_service,target_market:m.target_market,queries:m.keyword_queries,competitors:q.evidence_input.context.competitors,first_party_snapshots:[]},competitor_discovery:{local_synthetic:true}};
+  // Real intake stores the legacy identity; v14 converts only the generation input.
+  const legacyIdentity={business_name:identity.business_name,site_url:identity.site_url,normalized_domain:identity.normalized_domain,
+   public_gbp_url:identity.public_gbp_url,operating_model:'service_area',primary_location:structuredClone(m.target_market)};
+  const envelope={schema_version:'v22_analysis_request_envelope_v1',analyze_request:{case_id:caseId,report_type:'prospect',business_identity:legacyIdentity,primary_service:m.business.primary_service,target_market:m.target_market,queries:m.keyword_queries,competitors:q.evidence_input.context.competitors,first_party_snapshots:[]},competitor_discovery:{local_synthetic:true}};
   await rpc('begin_v22_acquisition_preparation',[owner,caseId,job,'keyword-synthetic',m.business.id,canonicalJsonText(envelope)]);
   const token=randomUUID();expect((await rpc('claim_v22_acquisition_preparation',[job,1,token,3])).outcome).toBe('claimed');
   const {input_checksum,...canonical}=m;
