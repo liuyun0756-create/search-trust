@@ -20,6 +20,7 @@ export function readerLimit(value: string): string {
   if (value.includes("for this offline evaluation")) return "The website and public business profile were compared for the confirmed business.";
   if (value === "Customer public GBP identity: strong_id_matched.") return "The public business profile matched the confirmed business identity.";
   if (value === "SERP_LOCAL_PACK_SECTION_INVALID") return "The search-result local pack could not be read reliably; it is not evidence that the business is absent.";
+  if (value === "SERP_LOCAL_PACK_UNNAMED_RESULT") return "A sampled local pack entry did not include a business name. This does not establish that the business is absent.";
   if (/^v22_public\.[\w.]+: [\w_]+$/.test(value)) {
     if (value.includes("gbp_")) return "Some public business details could not be compared reliably. Confirm the current details before proposing a correction.";
     if (value.includes("competitor_")) return "The saved page samples do not establish a service-page gap. Check the existing pages before proposing a new one.";

@@ -6,6 +6,14 @@ import { createElement } from "react";
 import { CapabilityReportDocument } from "@/components/report/CapabilityReportDocument";
 
 describe("client-facing report copy", () => {
+  it("explains unnamed local pack entries without exposing the internal code", () => {
+    const { delivery } = generatedDelivery("service-first.json");
+    delivery.document.findings[0].limitations.push("SERP_LOCAL_PACK_UNNAMED_RESULT");
+    const client = renderToStaticMarkup(createElement(CapabilityReportDocument, { document: delivery.document }));
+    expect(readerLimit("SERP_LOCAL_PACK_UNNAMED_RESULT")).toBe("A sampled local pack entry did not include a business name. This does not establish that the business is absent.");
+    expect(client).toContain("did not include a business name");
+    expect(client).not.toContain("SERP_LOCAL_PACK_UNNAMED_RESULT");
+  });
   it("keeps raw paths available to the SEO while client reading uses labels", () => {
     const { delivery } = generatedDelivery("service-first.json");
     delivery.document.findings[0].limitations.push("candidate_exhausted", "SERP_LOCAL_PACK_SECTION_INVALID");
