@@ -360,6 +360,7 @@ P0 的任务卡写到可以直接实施的粒度。P1 写到范围和验收标�
 | P1-02 | 第一段已上线（v15 开关关闭），第二段待开始 | 第一段 search-trust `d8e4439` / RD `21c883c`；迁移 `20261117100000` | 负责人核对第一段上线通过；`V22_GBP_COMPARISON_ENABLED` 未设置（关闭）；第二段尚未授权（见 reviews/P1-02.md） | 2026-11-17 |
 
 | P1-03 | 已上线（v16 开关关闭），待冒烟验收 | search-trust `62aa942` / RD `18b0cf2`；迁移 `20261117110000` | 负责人上线核对通过：14个函数md5等于目标值、ACL不变，GBP/LANDING两个开关均未设置；尚未冒烟（见 reviews/P1-03.md） | 2026-11-17 |
+| P1-04 | 已上线（v17 开关关闭），待冒烟验收 | RD `204c0e3` / search-trust `db3ff15`；迁移 `20261117120000` | 15个函数目标prosrc/definition md5全部匹配、ACL不变；新增validator仅postgres/service_role获授权。三处部署成功，新开关未设置，Web/Worker实际false；未采集/扣费/冒烟（见 reviews/P1-04.md） | 2026-11-17 |
 
 状态取值：待开始 / 进行中 / 待验收 / 打回 / 通过。
 
