@@ -1,3 +1,4 @@
+import {GBP_LABELS,clientGbpComparison} from "@/lib/report-capability/gbp-comparison";
 import {clientKeywordVisibility} from "@/lib/report-capability/keyword-visibility";
 import {clientActions} from "@/lib/report-capability/action-visibility";
 import React from "react";
@@ -46,6 +47,7 @@ function Footer({ delivery, note }: { delivery: ApprovedCapabilityDelivery; note
 /** Pure renderer of one approved projection. No report rewording or fetching. */
 export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: ApprovedCapabilityDelivery; branding?: EffectiveBranding }) {
   const d = {...delivery.document,actions:clientActions(delivery.document.actions)};
+  const gbp=d.gbpComparison ? clientGbpComparison(d.gbpComparison) : undefined;
   const keywords=d.keywordVisibility ? clientKeywordVisibility(d.keywordVisibility) : undefined;
   const brand = branding?.enabled ? branding : undefined;
   if (brand?.agencyLogoData && (brand.agencyLogoData.length > 1_500_000 || !/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/i.test(brand.agencyLogoData))) throw new Error("CAPABILITY_PDF_LOGO_INVALID");
@@ -73,6 +75,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
     </Page>
     <Page size="A4" style={styles.page} wrap>
       <Copy style={styles.kicker}>CHECKED EVIDENCE</Copy><Copy style={styles.heading}>The basis for the decision</Copy>
+      {gbp ? <View><Copy style={styles.section}>Google Business Profile comparison</Copy><Copy>Saved profile observations and bounded review samples.</Copy>{gbp.rows.map((row,i)=><View key={i}><Copy style={styles.section}>{row.name+(row.subject==='customer'?' · Customer':'')}</Copy>{row.metrics.map(metric=><Copy key={metric.key}>{`${metric.label}: ${metric.text}${metric.sampledAt?` (Sampled ${metric.sampledAt})`:''}`}</Copy>)}</View>)}{gbp.differences.map(d=><Copy key={d.metric}>{`${GBP_LABELS[d.metric]}: ${d.text}`}</Copy>)}</View> : null}
       {keywords ? <View style={styles.evidenceCard}>
         <Copy style={styles.title}>Target keyword visibility</Copy>
         <Copy>{`Map Pack visibility: ${keywords.localPack.label} ${keywords.localPack.coverage}`}</Copy>
