@@ -59,5 +59,14 @@ job49c74362原175个key与已保存冻结输入；所有delegate HTTP/Firecrawl�
 
 无。P1-04设计将在此修复交付完成后开始，本文件不实现P1-04。
 
+## 上线执行记录（2026-11-17）
+
+- PLAN状态单独提交`029e845`，前端PR #10合并`b45a2b6`；PR CI `44052773297`、main CI `44054276141`均成功，P1-03现为“已上线（v16 开关关闭），待冒烟验收”。
+- 后端实现`6518e2f`，PR #9；PR CI `44055779175`全绿（fast 4414 passed /16 skipped /265 deselected；Redis通过）。前端仅本说明`f57ffbf`，PR #11；PR CI `44055816172`全绿：单元2793 passed /11 skipped，数据库135 passed，浏览器90 passed /1 skipped，安全检查通过。
+- 两个PR均绿后依次合并。后端main=`d24b9307230a2b58187bab7ef86fe689096fff44`，main CI `44058431482`成功，fast 4414 passed /16 skipped /265 deselected（952.90s）、Redis通过；前端main=`fab917cd4b073a2b91bc444dd9b7c22ea9b71f70`，main CI `44058494933`成功。
+- Railway Web部署`55a24570-78fa-40f0-8286-96f33e2971e4`、Worker部署`053fe711-26a2-47f0-bd61-58131516ad01`均SUCCESS且实例RUNNING，commit均为`d24b930`。Vercel生产`dpl_2JxWDNEiECHxkrRKmwyJV3KaYs2Y`为READY，commit=`fab917c`，绑定trysearchtrust.com。
+- 只读健康检查`GET /api/v1/health`为HTTP 200、`{"status":"ok","version":"1.0.0"}`。Web/Worker只读运行时核对：新命名空间site_inventory_v5、结构预算256000B、freeze预算40000000B；GBP/LANDING开关均未设置、有效值false。
+- 本轮不需迁移；没有生产数据库写入、供应商采集、扣费、冒烟或开关/配置修改。P1-04仅在三处部署核对完成后开始设计，待负责人确认，不实现。
+
 ---
 ## 验收（由负责人填写）
