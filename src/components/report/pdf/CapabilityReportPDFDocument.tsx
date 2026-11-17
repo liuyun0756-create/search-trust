@@ -1,3 +1,4 @@
+import {clientLandingComparison} from "@/lib/report-capability/landing-page-comparison";
 import {GBP_LABELS,clientGbpComparison} from "@/lib/report-capability/gbp-comparison";
 import {clientKeywordVisibility} from "@/lib/report-capability/keyword-visibility";
 import {clientActions} from "@/lib/report-capability/action-visibility";
@@ -47,6 +48,7 @@ function Footer({ delivery, note }: { delivery: ApprovedCapabilityDelivery; note
 /** Pure renderer of one approved projection. No report rewording or fetching. */
 export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: ApprovedCapabilityDelivery; branding?: EffectiveBranding }) {
   const d = {...delivery.document,actions:clientActions(delivery.document.actions)};
+  const landing=d.landingPageComparison ? clientLandingComparison(d.landingPageComparison) : undefined;
   const gbp=d.gbpComparison ? clientGbpComparison(d.gbpComparison) : undefined;
   const keywords=d.keywordVisibility ? clientKeywordVisibility(d.keywordVisibility) : undefined;
   const brand = branding?.enabled ? branding : undefined;
@@ -75,6 +77,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
     </Page>
     <Page size="A4" style={styles.page} wrap>
       <Copy style={styles.kicker}>CHECKED EVIDENCE</Copy><Copy style={styles.heading}>The basis for the decision</Copy>
+      {landing ? <View><Copy style={styles.section}>Landing page comparison</Copy><Copy>{landing.cityLimit}</Copy>{landing.rows.map((row,i)=><View key={i}><Copy style={styles.section}>{row.name}</Copy><Copy>{row.scope}</Copy><Copy>{row.pageTypes.map(p=>p.label+": "+p.count).join("; ")}</Copy>{row.metrics.map(m=><Copy key={m.key}>{m.label+": "+m.text}</Copy>)}{row.sources.map(url=><Copy key={url}>{url}</Copy>)}</View>)}{landing.comparisons.map(c=><Copy key={c.metric}>{c.label+" — Inference: "+c.text}</Copy>)}</View> : null}
       {gbp ? <View><Copy style={styles.section}>Google Business Profile comparison</Copy><Copy>Saved profile observations and bounded review samples.</Copy>{gbp.rows.map((row,i)=><View key={i}><Copy style={styles.section}>{row.name+(row.subject==='customer'?' · Customer':'')}</Copy>{row.metrics.map(metric=><Copy key={metric.key}>{`${metric.label}: ${metric.text}${metric.sampledAt?` (Sampled ${metric.sampledAt})`:''}`}</Copy>)}</View>)}{gbp.differences.map(d=><Copy key={d.metric}>{`${GBP_LABELS[d.metric]}: ${d.text}`}</Copy>)}</View> : null}
       {keywords ? <View style={styles.evidenceCard}>
         <Copy style={styles.title}>Target keyword visibility</Copy>
