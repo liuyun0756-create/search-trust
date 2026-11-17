@@ -1,0 +1,137 @@
+[
+  {
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "definition_md5": "b839256d729fb9363a4a95a371730360",
+    "proname": "check_v22_acquisition_preparation_binding",
+    "prosrc_md5": "ed8b8cfda34dbb4a048e657b6cc2a6e0",
+    "signature": "check_v22_acquisition_preparation_binding()",
+    "after_definition_md5": "16b0195903b4cf7a4bf6a36529a461b1",
+    "after_prosrc_md5": "94f6db2d90bcc184fe2586402562d0e4"
+  },
+  {
+    "acl": "{postgres=X/postgres}",
+    "definition_md5": "9acfb11c9a28d8618d54fc42ba7ebf5d",
+    "proname": "enforce_v22_delivery_prerequisites",
+    "prosrc_md5": "81e5a94aede8bab15a26f6d7f8f12fb6",
+    "signature": "enforce_v22_delivery_prerequisites()",
+    "after_definition_md5": "dd620cf7839668e9aae39fdf9d6ef934",
+    "after_prosrc_md5": "8217d86a33aec3818f6d69196f749f57"
+  },
+  {
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "definition_md5": "4cbd2de054c4dd6d405cf8378243b60c",
+    "proname": "freeze_v22_analysis_manifest",
+    "prosrc_md5": "2c0525bb1bda9407cf840975982e8bbe",
+    "signature": "freeze_v22_analysis_manifest(uuid,uuid,uuid,jsonb,text,text)",
+    "after_definition_md5": "1249a1b6d253ef87d1f90cd4d42317a4",
+    "after_prosrc_md5": "aea839f7a64f87ec6a1937b3b63d3f9b"
+  },
+  {
+    "acl": "{postgres=X/postgres}",
+    "definition_md5": "b908616f3dceed95196e55c70d35d44c",
+    "proname": "get_v22_completed_plan_source",
+    "prosrc_md5": "6270c06847ad347c30a569fc427e527a",
+    "signature": "get_v22_completed_plan_source(uuid,uuid,uuid)",
+    "after_definition_md5": "e30c224207c51630217d2d8e4f8f5eb4",
+    "after_prosrc_md5": "c09bd3471e4bcbefefea534c08c55194"
+  },
+  {
+    "acl": "{postgres=X/postgres}",
+    "definition_md5": "1596fedf9bb859daf4208ad59c3a7bf4",
+    "proname": "hydrate_v22_capability_generation_input",
+    "prosrc_md5": "96d2ee773d50026b4e323b61c8f27a30",
+    "signature": "hydrate_v22_capability_generation_input(jsonb,jsonb)",
+    "after_definition_md5": "56f011dd10dc4b3657f0ed4df87ce163",
+    "after_prosrc_md5": "1bf2c8d2a0dd32250464910012a928a3"
+  },
+  {
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "definition_md5": "af12506f75d41d057cbd4feb6ad61ad5",
+    "proname": "list_v22_completed_capability_reports",
+    "prosrc_md5": "9a070b2827f989b662157b21adcb66f7",
+    "signature": "list_v22_completed_capability_reports(uuid)",
+    "after_definition_md5": "e6ae76122e2171f9fbfbf3dcbe6b7a69",
+    "after_prosrc_md5": "fc4003bf3c87d576de97007b06a9f035"
+  },
+  {
+    "acl": "{postgres=X/postgres}",
+    "definition_md5": "85649f0975965b7821cdc52f80634961",
+    "proname": "prepare_v22_capability_analysis_input_core",
+    "prosrc_md5": "330678273b0b5e0ec490e68a80f24aa3",
+    "signature": "prepare_v22_capability_analysis_input_core(uuid,uuid,uuid,jsonb,text,jsonb,text,jsonb,text,integer)",
+    "after_definition_md5": "fe6963ba8d8fc41569746598eff877d2",
+    "after_prosrc_md5": "80b235b0d296088e35240262f22c32e6"
+  },
+  {
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "definition_md5": "8cbcc5c30529ebaa8d645a83ec94e3d1",
+    "proname": "prepare_v22_public_reassessment",
+    "prosrc_md5": "046b8128f57a7fa717bad8a56ff7286b",
+    "signature": "prepare_v22_public_reassessment(uuid,uuid,uuid,uuid,jsonb,text)",
+    "after_definition_md5": "9f8d3fa2a8af9085e7aed6273e091334",
+    "after_prosrc_md5": "73cad0ad378c3e569e1dee98815216c0"
+  },
+  {
+    "acl": "{postgres=X/postgres}",
+    "definition_md5": "f6e69e3f629689d9d09cdedd9cc74043",
+    "proname": "save_v22_report_content_revision",
+    "prosrc_md5": "f71d0f34475d2ee1425ccc20245c0ee2",
+    "signature": "save_v22_report_content_revision(uuid,uuid,uuid,jsonb)",
+    "after_definition_md5": "fd5797dbcc2d330ed8ef665d4da85a3b",
+    "after_prosrc_md5": "a28afebbf5673d340dd4739ff0d950ff"
+  },
+  {
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "definition_md5": "4cffe1e43e174631f321c76e43794c8d",
+    "proname": "store_v22_capability_report",
+    "prosrc_md5": "9e736210899a25544804b24e84b889ec",
+    "signature": "store_v22_capability_report(uuid,uuid,uuid,jsonb,text,integer)",
+    "after_definition_md5": "ace90ab9eb8bb62f5dd101018efb9466",
+    "after_prosrc_md5": "183043584ad30ff742cf69b1b7105de6"
+  },
+  {
+    "acl": "{postgres=X/postgres}",
+    "definition_md5": "598fa78a1ef0a26cfccada936d1757f1",
+    "proname": "validate_v22_candidate_pool",
+    "prosrc_md5": "314dd4d07d6555df001f366a0fb007f1",
+    "signature": "validate_v22_candidate_pool(jsonb)",
+    "after_definition_md5": "4ee50b0d19a7fa7eb2823b30fd9ff3af",
+    "after_prosrc_md5": "e05427f1ce2e192b00a629886d6d1683"
+  },
+  {
+    "acl": "{postgres=X/postgres}",
+    "definition_md5": "5d3af06a2ede0bd4d2c914665d6a4981",
+    "proname": "validate_v22_candidate_selection",
+    "prosrc_md5": "b96eafeb9fc489331a3451fb316ccf67",
+    "signature": "validate_v22_candidate_selection(jsonb,jsonb)",
+    "after_definition_md5": "60f4a48d046d81f03ea29a96709e53a9",
+    "after_prosrc_md5": "c68eaa40c723123356d8fbd59f9101ad"
+  },
+  {
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "definition_md5": "af1cffb5894094d0a37c0037ba7794bf",
+    "proname": "validate_v22_gbp_comparison",
+    "prosrc_md5": "b0071fb4459b3fe77eeab2bbb6d87b40",
+    "signature": "validate_v22_gbp_comparison(jsonb)",
+    "after_definition_md5": "003e675d8d1d233150377a0a9cb3d3c8",
+    "after_prosrc_md5": "b5cbb6c7ac7fcc0387982c1c71f3ba6f"
+  },
+  {
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "definition_md5": "6a81ca3e501ddd953ab855848fa7e0f7",
+    "proname": "validate_v22_keyword_visibility",
+    "prosrc_md5": "d2b6c9600b1262510bcc841b0862ffc2",
+    "signature": "validate_v22_keyword_visibility(jsonb)",
+    "after_definition_md5": "6d7e39a4884dafccaf68bba09d878d35",
+    "after_prosrc_md5": "2507c855859e6551074db3758ac884a0"
+  },
+  {
+    "acl": "{postgres=X/postgres,service_role=X/postgres}",
+    "definition_md5": "db921c07d47252dfc2ae40397a35d398",
+    "proname": "validate_v22_landing_comparison",
+    "prosrc_md5": "b710618bc1034a238758cb06249ec570",
+    "signature": "validate_v22_landing_comparison(jsonb)",
+    "after_definition_md5": "651cd9e51806813e1e0cc818502bf517",
+    "after_prosrc_md5": "f4ef9bfc8fed3af18278a9809dd7e824"
+  }
+]

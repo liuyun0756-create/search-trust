@@ -380,7 +380,8 @@ export type SchemaVersion3 =
   | "v22_analysis_input_v3"
   | "v22_analysis_input_v4"
   | "v22_analysis_input_v5"
-  | "v22_analysis_input_v6";
+  | "v22_analysis_input_v6"
+  | "v22_analysis_input_v7";
 /**
  * @minItems 4
  * @maxItems 8
@@ -560,6 +561,25 @@ export type TargetCity = string | null;
  */
 export type Limitations2 = [string, ...string[]];
 /**
+ * @maxItems 2
+ */
+export type Items = [] | [PossibleReason] | [PossibleReason, PossibleReason];
+/**
+ * @minItems 4
+ * @maxItems 401
+ */
+export type BasisRefs = [string, string, string, string, ...string[]];
+export type Classification2 = "inference";
+/**
+ * @minItems 2
+ * @maxItems 3
+ */
+export type CompetitorIndices2 = [number, number] | [number, number, number];
+export type CustomerText = string;
+export type Metric2 = "rating" | "review_count";
+export type SchemaVersion7 = "possible_reasons_v1";
+export type Status8 = "assessed" | "not_assessed";
+/**
  * @maxItems 3
  */
 export type ActionOrder = [] | [string] | [string, string] | [string, string, string];
@@ -665,19 +685,20 @@ export type RulesVersion = "v22_business_priority_v1" | "v22_business_priority_v
  */
 export type TargetPages1 = string[];
 export type ReportType1 = "prospect" | "verified_execution";
-export type SchemaVersion7 = "2.2.2" | "2.2.4" | "2.2.5" | "2.2.6" | "2.2.7" | "2.2.8" | "2.2.9" | "2.2.10" | "2.2.11";
+export type SchemaVersion8 =
+  "2.2.2" | "2.2.4" | "2.2.5" | "2.2.6" | "2.2.7" | "2.2.8" | "2.2.9" | "2.2.10" | "2.2.11" | "2.2.12";
 export type SettlementPolicy = "one_credit_per_completed_analysis" | "no_charge_public_reassessment";
 export type Summary1 = string;
 export type Title4 = string;
 export type Version1 = number;
 
-export interface SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3 {
+export interface SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3 {
   business_identity_v2: BusinessIdentityV2;
   delivery_revision: DeliveryRevision;
   report: CapabilityReport;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "BusinessIdentityV2".
  */
 export interface BusinessIdentityV2 {
@@ -693,7 +714,7 @@ export interface BusinessIdentityV2 {
   site_url: SiteUrl;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "IdentityMatch".
  */
 export interface IdentityMatch {
@@ -703,7 +724,7 @@ export interface IdentityMatch {
   state: State;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "OperatingLocation".
  */
 export interface OperatingLocation {
@@ -714,7 +735,7 @@ export interface OperatingLocation {
   state: State1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "LocationConfirmation".
  */
 export interface LocationConfirmation {
@@ -725,7 +746,7 @@ export interface LocationConfirmation {
   source_ref: SourceRef;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "OperatingPlace".
  */
 export interface OperatingPlace {
@@ -736,7 +757,7 @@ export interface OperatingPlace {
   region?: Region;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "OperatingModeAssessment".
  */
 export interface OperatingModeAssessment {
@@ -750,7 +771,7 @@ export interface OperatingModeAssessment {
   value: Value1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "ModeConfirmation".
  */
 export interface ModeConfirmation {
@@ -764,7 +785,7 @@ export interface ModeConfirmation {
   value: Value;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "ModeEvidence".
  */
 export interface ModeEvidence {
@@ -775,7 +796,7 @@ export interface ModeEvidence {
   url: Url;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "DeliveryRevision".
  */
 export interface DeliveryRevision {
@@ -794,7 +815,7 @@ export interface DeliveryRevision {
   user_id: UserId;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "EditableAction".
  */
 export interface EditableAction {
@@ -807,7 +828,7 @@ export interface EditableAction {
   title: Title1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "ExecutionMaterial".
  */
 export interface ExecutionMaterial {
@@ -821,7 +842,7 @@ export interface ExecutionMaterial {
   title: Title;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "TechnicalOmissionConfirmation".
  */
 export interface TechnicalOmissionConfirmation {
@@ -831,7 +852,7 @@ export interface TechnicalOmissionConfirmation {
   selected_action_ids: SelectedActionIds;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "CapabilityReport".
  */
 export interface CapabilityReport {
@@ -849,16 +870,17 @@ export interface CapabilityReport {
   keyword_visibility?: KeywordVisibility | null;
   landing_page_comparison?: LandingComparison | null;
   limitations: Limitations2;
+  possible_reasons?: PossibleReasons | null;
   prioritization?: PrioritizationTrace | null;
   report_type: ReportType1;
-  schema_version: SchemaVersion7;
+  schema_version: SchemaVersion8;
   settlement_policy: SettlementPolicy;
   summary: Summary1;
   title: Title4;
   version: Version1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "CapabilityAction".
  */
 export interface CapabilityAction {
@@ -873,7 +895,7 @@ export interface CapabilityAction {
   title: Title3;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "CapabilityChange".
  */
 export interface CapabilityChange {
@@ -883,7 +905,7 @@ export interface CapabilityChange {
   reason: Reason1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "ContactCheck".
  */
 export interface ContactCheck {
@@ -896,7 +918,7 @@ export interface ContactCheck {
   status: Status1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "CapabilityEvidence".
  */
 export interface CapabilityEvidence {
@@ -912,7 +934,7 @@ export interface CapabilityEvidence {
   value: Value2;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "CapabilityFinding".
  */
 export interface CapabilityFinding {
@@ -936,7 +958,7 @@ export interface CapabilityFinding {
   target: Target3;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "FindingCoverage".
  */
 export interface FindingCoverage {
@@ -944,7 +966,7 @@ export interface FindingCoverage {
   source: Source1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "GbpComparison".
  */
 export interface GbpComparison {
@@ -953,7 +975,7 @@ export interface GbpComparison {
   schema_version?: SchemaVersion2;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "GbpDifference".
  */
 export interface GbpDifference {
@@ -964,7 +986,7 @@ export interface GbpDifference {
   status: Status3;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "GbpComparisonRow".
  */
 export interface GbpComparisonRow {
@@ -976,7 +998,7 @@ export interface Metrics {
   [k: string]: GbpMetric;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "GbpMetric".
  */
 export interface GbpMetric {
@@ -990,7 +1012,7 @@ export interface GbpMetric {
   value?: Value3;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "AnalysisInputManifest".
  */
 export interface AnalysisInputManifest {
@@ -1017,7 +1039,7 @@ export interface AnalysisInputManifest {
   user_id: UserId2;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "ReportReference".
  */
 export interface ReportReference {
@@ -1028,7 +1050,7 @@ export interface ReportReference {
   version: Version;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "BusinessScope".
  */
 export interface BusinessScope {
@@ -1047,7 +1069,7 @@ export interface BusinessScope {
   user_id: UserId1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "ExecutionConditions".
  */
 export interface ExecutionConditions {
@@ -1055,7 +1077,7 @@ export interface ExecutionConditions {
   publishing_access: PublishingAccess;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "ImplementationReference".
  */
 export interface ImplementationReference {
@@ -1064,7 +1086,7 @@ export interface ImplementationReference {
   revision: Revision1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "SnapshotReference".
  */
 export interface SnapshotReference {
@@ -1081,7 +1103,7 @@ export interface SnapshotReference {
   source_kind: SourceKind1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "TargetMarket".
  */
 export interface TargetMarket1 {
@@ -1094,7 +1116,7 @@ export interface TargetMarket1 {
   region?: Region1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "KeywordVisibility".
  */
 export interface KeywordVisibility {
@@ -1106,7 +1128,7 @@ export interface KeywordVisibility {
   window?: Window;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "KeywordAssessment".
  */
 export interface KeywordAssessment {
@@ -1118,7 +1140,7 @@ export interface KeywordAssessment {
   total_keywords: TotalKeywords;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "KeywordRow".
  */
 export interface KeywordRow {
@@ -1128,7 +1150,7 @@ export interface KeywordRow {
   query: Query;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "KeywordPosition".
  */
 export interface KeywordPosition {
@@ -1141,7 +1163,7 @@ export interface KeywordPosition {
   status: Status5;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "KeywordSample".
  */
 export interface KeywordSample {
@@ -1155,7 +1177,7 @@ export interface KeywordSample {
   snapshot_id: SnapshotId2;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "LandingComparison".
  */
 export interface LandingComparison {
@@ -1167,7 +1189,7 @@ export interface LandingComparison {
   target_city: TargetCity;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "LandingInference".
  */
 export interface LandingInference {
@@ -1179,7 +1201,7 @@ export interface LandingInference {
   status?: Status6;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "LandingEvidence".
  */
 export interface LandingEvidence {
@@ -1191,7 +1213,7 @@ export interface LandingEvidence {
   url: Url1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "LandingRow".
  */
 export interface LandingRow {
@@ -1209,7 +1231,7 @@ export interface Metrics1 {
   [k: string]: LandingMetric;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "LandingMetric".
  */
 export interface LandingMetric {
@@ -1223,7 +1245,27 @@ export interface PageTypeCounts {
   [k: string]: number;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
+ * via the `definition` "PossibleReasons".
+ */
+export interface PossibleReasons {
+  items: Items;
+  schema_version?: SchemaVersion7;
+  status: Status8;
+}
+/**
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
+ * via the `definition` "PossibleReason".
+ */
+export interface PossibleReason {
+  basis_refs: BasisRefs;
+  classification?: Classification2;
+  competitor_indices: CompetitorIndices2;
+  customer_text: CustomerText;
+  metric: Metric2;
+}
+/**
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "PrioritizationTrace".
  */
 export interface PrioritizationTrace {
@@ -1237,7 +1279,7 @@ export interface PrioritizationTrace {
   target_pages: TargetPages1;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "PriorityDecision".
  */
 export interface PriorityDecision {
@@ -1257,7 +1299,7 @@ export interface PriorityDecision {
   technical_finding_ids?: TechnicalFindingIds;
 }
 /**
- * This interface was referenced by `SearchTrustCapabilityContracts2216Reports22222422522622722822922102211DeliveryV1V2V3`'s JSON-Schema
+ * This interface was referenced by `SearchTrustCapabilityContracts2217Reports222224225226227228229221022112212DeliveryV1V2V3`'s JSON-Schema
  * via the `definition` "PriorityCandidateInput".
  */
 export interface PriorityCandidateInput {

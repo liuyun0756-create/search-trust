@@ -6,7 +6,7 @@ import {canonicalDigest,canonicalJsonText} from '../../verified-analysis-v22/dig
 export const fix='20261113090000_bind_converted_acquisition_identity.sql';
 export async function database(includeFix=true){
  const db=new PGlite();await db.exec('create role anon;create role authenticated;create role service_role bypassrls;');
- for(const file of (await readdir('supabase/migrations')).sort())if(includeFix||(file!==fix&&file!=='20261117100000_add_gbp_comparison_v15.sql'&&file!=='20261117110000_add_landing_comparison_v16.sql'))await db.exec(await readFile('supabase/migrations/'+file,'utf8'));
+ for(const file of (await readdir('supabase/migrations')).sort())if(includeFix||(file!==fix&&file!=='20261117100000_add_gbp_comparison_v15.sql'&&file!=='20261117110000_add_landing_comparison_v16.sql'&&file!=='20261117120000_add_comparison_reasons_v17.sql'))await db.exec(await readFile('supabase/migrations/'+file,'utf8'));
  return db;
 }
 export async function rpc(db,name,body){
