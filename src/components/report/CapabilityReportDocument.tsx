@@ -1,3 +1,4 @@
+import {LandingPageComparisonSection} from "./LandingPageComparisonSection";
 import {GbpComparisonSection} from "./GbpComparisonSection";
 import {KeywordVisibilitySection} from "./KeywordVisibilitySection";
 import {clientActions} from "@/lib/report-capability/action-visibility";
@@ -12,6 +13,7 @@ export function CapabilityReportDocument({ document, technicalDetails = false }:
     <header><h1 className="break-words text-3xl font-semibold tracking-tight">{document.title}</h1>
       <p className="mt-4 whitespace-pre-wrap break-words leading-7">{document.summary}</p>
       <p className="mt-4 rounded-xl bg-[#eaf2e6] p-4 font-medium">{actions.length ? `First proposed step: ${actions[0].title}` : "No change is proposed from this evidence. Review the diagnosis and unresolved checks."}</p></header>
+    {document.landingPageComparison ? <LandingPageComparisonSection value={document.landingPageComparison} technicalDetails={technicalDetails}/> : null}
     {document.gbpComparison ? <GbpComparisonSection value={document.gbpComparison} technicalDetails={technicalDetails}/> : null}
     {document.keywordVisibility ? <KeywordVisibilitySection value={document.keywordVisibility} technicalDetails={technicalDetails}/> : null}
     {document.contactChecks?.length ? <section aria-label="Business details check" className="space-y-3">
