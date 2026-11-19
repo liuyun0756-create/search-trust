@@ -29,6 +29,8 @@
 
 ## 成本与兼容
 
-GPT-4.1 mini 标准文本价每百万输入 $0.40、缓存输入 $0.10、输出 $1.60。按 3,000 输入与 900 输出估算 $0.00264/报告。最多一次请求、8 秒总超时、无需额外点数，失败只保留结构化建议。快照 `gpt-4.1-mini-2025-04-14` 已弃用，官方列出的停用日期是 2027-01-14。[模型价格](https://developers.openai.com/api/docs/models/gpt-4.1-mini) · [停用公告](https://developers.openai.com/api/docs/deprecations)
+例文默认模型由 `V22_ACTION_EXAMPLE_MODEL` 配置，当前为 `gpt-6-luna`。模型需支持 Chat Completions 的 JSON 对象输出和 `reasoning_effort=none`。截至 2026-11-19，Luna 未标为弃用，官方未公布停用日期。标准文本价每百万输入 $0.10、缓存输入 $0.01、输出 $0.50。按 3,000 输入与 900 输出估算 $0.00075/报告。最多一次请求、8 秒总超时、无需额外点数，失败只保留结构化建议。[当前模型和价格](https://developers.openai.com/api/docs/models/gpt-6-luna)
+
+旧快照 `gpt-4.1-mini-2025-04-14` 的停用日期为 2027-01-14。OpenAI 将 Luna 列为推荐替代模型，GPT-4.1 mini 页面没有为旧别名列出更新的稳定快照。[旧模型](https://developers.openai.com/api/docs/models/gpt-4.1-mini) · [停用公告](https://developers.openai.com/api/docs/deprecations)
 
 相同冻结输入前后比较 46 份完整报告，覆盖 v1–v18，逐字节一致。v19 的预留合约保持原来的拒绝行为，不被 v20 白名单接纳。真实 report fixture 来自 All Star 金标准，例文由替身选择，已分别导入 identity 和 candidate 镜像。
