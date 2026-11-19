@@ -20,6 +20,21 @@
 
 Volcanoes 的绑定网站来源只有一个结构截断的首页记录，deep_analyzed=false、deep_snapshot=null、internal_links=[]。离线单独查看的未绑定 page.html 有 3 个同文同目标锚点，文本为 “5.0 Google Rating”，链接为 https://share.google/tv7K3sxM5ATPwNgxu，去重后为 1。URL 本身没有 CID、Place ID 或 Data ID。负责人确认跳转后属于本商家，但已绑定输入只保存确认的 Google GBP CID 16906567364961418758，没有该徽章的链接与跳转证据。该页在主表中无可检查声明。
 
+## 34 条未检查的原因与短链收益
+
+以下为互斥分类。执照号和其它资质自述优先按声明性质归类，剩余项目再按链接归类。
+
+| 原因 | 条数 | 依据 |
+|---|---:|---|
+| 无链接 | 1 | Vision-Tech 的 4.9/5 Trust Score Rated |
+| 短链未展开 | 0 | 绑定样本没有命中短链 |
+| 第三方平台链接无可比 ID | 3 | 两个 Yelp 锚点共享商户 slug，一个 BBB 锚点有 profile ID，均缺同平台已确认参考值 |
+| 执照号，本期不核验 | 3 | Fresno 424352、Art Douglas 699348、Low Cost 1028276 |
+| 其它 | 27 | 资质自述，缺可比编号或平台目标 |
+| **合计** | **34** | |
+
+以已保存 URL 的 host 和 path 离线筛选短链。2 个 Yelp 链接为 yelp.com/biz 商户页，1 个 BBB 链接为 bbb.org 上的 /profile/ 商户页。它们已带平台定位符，单跟随跳转无法提供已确认的参考键。34 条中可展开短链 **0**，预计新增可判归属 **0/34**（本商家 0、他方 0）。Volcanoes 的 share.google 链接属于理论可展开类型，但出自另存未绑定 HTML。该条仅作独立夹具讨论。没有发出 HTTP 请求，也没有验证 URL 的在线可用性。
+
 ## 人工核对清单
 
 逐行列出保存的页面、短摘录、原链接及未检查依据。资质摘录来自 P1-03 的实际抽取。
