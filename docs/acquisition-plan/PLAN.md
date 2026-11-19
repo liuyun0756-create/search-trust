@@ -357,7 +357,7 @@ P0 的任务卡写到可以直接实施的粒度。P1 写到范围和验收标�
 | P1-07 | 通过 | search-trust `a565358`（第一段）+ `01e0945`（第二段）/ RD `a3945fa` | 技术问题优先、完整候选池、等量替换（技术行动替换需警告确认）；六站客户顺序不变；新增 v12 迁移 `20261105100000`（见 reviews/P1-07.md） | 2026-11-05 |
 | P1-05 | 通过 | 第一段 search-trust `fd29eb8` / RD `88b1518`；第二段 search-trust `49456aa` / RD `ecd68e7`；第三段 search-trust `23ca7a1`，兼容修复 `3906471` / RD `7956d9b` | 第三段已提交；迁移 `20261105120000` 已在生产执行（负责人确认）；identity v2、身份审核、持久查找台账与离线重判验收通过（见 reviews/P1-05.md） | 2026-11-17 |
 | P1-01 | 通过 | 第一段 search-trust `6056049` / RD `7dd1da1`；第二段 RD `f6ee1f3` / search-trust `8d8e045`；相关修复：RD PR #3–#6 `147605a`、`a0115f3`、`a3273b0`、`d3180fe`；search-trust PR #3–#4 `9baa3f1`、`612ec2c` | 第六次冒烟 `49c74362-4d53-46e1-bee3-20059fc7da85` 完整跑通：Firecrawl 2/2、地图包 3/3、3 个竞品均 partial、freeze 33.7 MB / 4.4 秒；已知遗留见 reviews/P1-01.md 验收记录 | 2026-11-17 |
-| P1-02 | 第一段已上线（v15 开关关闭），第二段待开始 | 第一段 search-trust `d8e4439` / RD `21c883c`；迁移 `20261117100000` | 负责人核对第一段上线通过；`V22_GBP_COMPARISON_ENABLED` 未设置（关闭）；第二段尚未授权（见 reviews/P1-02.md） | 2026-11-17 |
+| P1-02 | 第一段已上线（v15 开关关闭），第二段待开始 | 第一段 search-trust `d8e4439` / RD `21c883c`；迁移 `20261117100000` | 负责人核对第一段上线通过；`V22_GBP_COMPARISON_ENABLED` 未设置（关闭）；第二段尚未授权，已预留 v19 / 报告 2.2.14 / 合约 2.2.19 / manifest v9（见 reviews/P1-02.md） | 2026-11-17 |
 
 | P1-03 | 已上线（v16 开关关闭），待冒烟验收 | search-trust `62aa942` / RD `18b0cf2`；迁移 `20261117110000` | 负责人上线核对通过：14个函数md5等于目标值、ACL不变，GBP/LANDING两个开关均未设置；尚未冒烟（见 reviews/P1-03.md） | 2026-11-17 |
 | P1-04 | 已上线（v17 开关关闭），待冒烟验收 | RD `204c0e3` / search-trust `db3ff15`；迁移 `20261117120000` | 15个函数目标prosrc/definition md5全部匹配、ACL不变；新增validator仅postgres/service_role获授权。三处部署成功，新开关未设置，Web/Worker实际false；未采集/扣费/冒烟（见 reviews/P1-04.md） | 2026-11-17 |
