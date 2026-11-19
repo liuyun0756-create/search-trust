@@ -1,4 +1,5 @@
-import {actionAdviceFields, type ActionAdviceView} from "@/lib/report-capability/action-advice";
+import type {ActionAdviceView} from "@/lib/report-capability/action-advice";
+import {actionAdviceFields} from "@/lib/report-capability/action-advice-fields";
 
 export function ActionAdviceSection({advice, technicalDetails}: {advice: ActionAdviceView; technicalDetails: boolean}) {
   return <section aria-label="Structured recommendation" className="mt-4 space-y-3">

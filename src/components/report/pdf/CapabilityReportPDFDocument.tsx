@@ -1,4 +1,4 @@
-import {actionAdviceFields} from "@/lib/report-capability/action-advice";
+import {actionAdviceFields} from "@/lib/report-capability/action-advice-fields";
 import {clientPossibleReasons} from "@/lib/report-capability/possible-reasons";
 import {clientLandingComparison} from "@/lib/report-capability/landing-page-comparison";
 import {GBP_LABELS,clientGbpComparison} from "@/lib/report-capability/gbp-comparison";
