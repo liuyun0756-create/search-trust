@@ -31,6 +31,34 @@ jobs:
       - run: npm run build
       - run: npm run security:scan
 
+  fixture-mirrors:
+    name: Verify identity and candidate fixture mirrors
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check out the canonical fixture source
+        uses: actions/checkout@v4
+        with:
+          repository: liuyun0756-create/SearchTrust-RD
+          # Advance this pin when intentionally refreshing either fixture set.
+          ref: 355928817c8ffe6f6a8a9d62f13c98fe4005cc98
+          path: output/fixture-backend
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install fixture exporter dependencies
+        working-directory: output/fixture-backend
+        run: python -m pip install -r requirements-dev.txt
+      - name: Check both frontend mirrors
+        working-directory: output/fixture-backend
+        run: |
+          python scripts/export_v22_identity_fixtures.py --check --frontend-dir "$GITHUB_WORKSPACE"
+          python scripts/export_v22_candidate_fixtures.py --check --frontend-dir "$GITHUB_WORKSPACE"
+
   browser:
     name: Local stubbed browser journeys
     runs-on: ubuntu-latest
@@ -78,7 +106,7 @@ jobs:
 
   deploy:
     name: Trigger Vercel production deployment
-    needs: [quality, browser]
+    needs: [quality, browser, fixture-mirrors]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && success() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
