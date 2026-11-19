@@ -6,6 +6,7 @@ type FullDocument = ReturnType<typeof projectCapabilityReport>;
 export type CapabilityReadingDocument = Pick<FullDocument,
   "title" | "summary" | "clientNote" | "actionState" | "limitations" | "actions"
 > & {
+  localEntityCoverage?: FullDocument["localEntityCoverage"];
   possibleReasons?: FullDocument["possibleReasons"];
   landingPageComparison?: FullDocument["landingPageComparison"];
   gbpComparison?: FullDocument["gbpComparison"];
