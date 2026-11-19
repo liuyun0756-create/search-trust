@@ -1,6 +1,6 @@
 # P1-09 v20 迁移核对表
 
-`20261119110000_add_action_advice_v20.sql` 从完整本地迁移链取得基线，替换函数定义前核对 `prosrc` 和 `pg_get_functiondef` 的 MD5，执行后再次核对并确保 ACL 不变。基线的 17 个 `prosrc` 对齐上一轮只读生产读回。新增校验函数仅 postgres 与 service_role 有执行权。回滚定义在 `docs/acquisition-plan/rollback/20261119110000/`，应先检查是否已写入 v20 行，再由负责人决定回滚方式。v19 的版本号保持预留。
+`20261119110000_add_action_advice_v20.sql` 从完整本地迁移链取得基线，替换函数定义前核对 `prosrc` 和 `pg_get_functiondef` 的 MD5，执行后再次核对并确保 ACL 不变。本轮生产只读版本核对中，17 个函数的 `prosrc` 和定义 MD5 均匹配。新增校验函数仅 postgres 与 service_role 有执行权。回滚定义在 `docs/acquisition-plan/rollback/20261119110000/`，应先检查是否已写入 v20 行，再由负责人决定回滚方式。v19 的版本号保持预留。
 
 | 函数 | 基线 prosrc MD5 | 目标 prosrc MD5 | 基线定义 MD5 | 目标定义 MD5 |
 |---|---|---|---|---|
@@ -23,9 +23,9 @@
 | `validate_v22_possible_reasons` | `a998df6f12d953e859db25061298a68b` | `faa69f555c2ba7a3b35f755dd766d5b3` | `16955995827a4f1090a5ab454811d64f` | `25b02d2e6fca3f545e6cda062a9d172b` |
 | `validate_v22_action_advice` | 新增 | `781dbabaa9d7fc052f9e7089cc59696e` | 新增 | `3e8ba72f0694fab849447fe17678101a` |
 
-| 函数 | 迁移前 ACL | 本地迁移后 ACL |
+| 函数 | 生产迁移前 ACL | 生产目标 ACL |
 |---|---|---|
-| `check_v22_acquisition_preparation_binding` | `{postgres=X/postgres}` | `{postgres=X/postgres}` |
+| `check_v22_acquisition_preparation_binding` | `{postgres=X/postgres,service_role=X/postgres}` | `{postgres=X/postgres,service_role=X/postgres}` |
 | `enforce_v22_delivery_prerequisites` | `{postgres=X/postgres}` | `{postgres=X/postgres}` |
 | `freeze_v22_analysis_manifest` | `{postgres=X/postgres,service_role=X/postgres}` | `{postgres=X/postgres,service_role=X/postgres}` |
 | `get_v22_completed_plan_source` | `{postgres=X/postgres}` | `{postgres=X/postgres}` |
@@ -44,4 +44,4 @@
 | `validate_v22_possible_reasons` | `{postgres=X/postgres,service_role=X/postgres}` | `{postgres=X/postgres,service_role=X/postgres}` |
 | `validate_v22_action_advice` | 新增 | `{postgres=X/postgres,service_role=X/postgres}` |
 
-完整本地迁移链上的目标 MD5 和 ACL 均匹配。生产执行后需按同一张表逐项比对。
+完整本地迁移链上的目标 MD5 匹配，17 个 ACL 都维持本地原样。生产的 `check_v22_acquisition_preparation_binding` 还有现存的 service_role 授权，迁移比对并保留所在数据库的原 ACL。生产执行后需按同一张表逐项比对。
