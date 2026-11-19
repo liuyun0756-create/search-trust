@@ -1,0 +1,138 @@
+[
+  {
+    "signature": "check_v22_acquisition_preparation_binding()",
+    "old": "69e04a08e050f379d093b978cce1ea59",
+    "target": "6ccda16035beaa2295294312946f000b",
+    "old_definition": "66839ee6958656fee884649824f97f93",
+    "target_definition": "eb3a93fa608c8547641bc6d9b8d14fd8",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "enforce_v22_delivery_prerequisites()",
+    "old": "a8ac53b46740b5aea057eccf84b57574",
+    "target": "ea5bbd5bb2d13703f6c24347b96190ff",
+    "old_definition": "048defbf583ff11205fd2929b9cff579",
+    "target_definition": "d3b6d324634673ff72c44f08433fc793",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "freeze_v22_analysis_manifest(uuid,uuid,uuid,jsonb,text,text)",
+    "old": "6a6a4f69a71ba2eac10424f3b69c6397",
+    "target": "f7765af77b2f63627f05c22197aa7770",
+    "old_definition": "95249e4df132810f4a41394c80ca127b",
+    "target_definition": "02006f638ef65f53f8116ae90a926729",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "get_v22_completed_plan_source(uuid,uuid,uuid)",
+    "old": "172f228fee8b2ab9755662b185c0b882",
+    "target": "b18f8c8b763e4da941a397fdb5b2aa88",
+    "old_definition": "4999e57ce90bfa2f16f18110792a1011",
+    "target_definition": "00e51f429b6e19380df377d1dae155a4",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "hydrate_v22_capability_generation_input(jsonb,jsonb)",
+    "old": "2817cb748ab207890ff068739bb1db6e",
+    "target": "c570a9440f929a9f1b0b484479be7d2f",
+    "old_definition": "be855b1c7b054de2ebd67d498ab154c7",
+    "target_definition": "458c732a46ccbf1671c2a16633d2e855",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "list_v22_completed_capability_reports(uuid)",
+    "old": "470f2a10a8cc32ae0a0cc5b9e6b8f2be",
+    "target": "6950b9316ce591e0865a5d6e41aaa3f4",
+    "old_definition": "70e37eba9f81816a3c4c4645e9715662",
+    "target_definition": "aeb06d5e15fc006bb2af5785c66d6e2d",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "prepare_v22_capability_analysis_input_core(uuid,uuid,uuid,jsonb,text,jsonb,text,jsonb,text,integer)",
+    "old": "e881b99c1b2faf962c9ac335a2a5ceb8",
+    "target": "f2adf04713918cfd7c76c9d22bca1bab",
+    "old_definition": "b53b65aa05a9d18e78de571f88873c7f",
+    "target_definition": "36152bfd22b17033e07db1a27861f9a4",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "prepare_v22_public_reassessment(uuid,uuid,uuid,uuid,jsonb,text)",
+    "old": "ac8ddc791a6ade70ddc08e9cc021cd18",
+    "target": "da9350d5fa8819cafaca21936aaaca75",
+    "old_definition": "b71dfb77c3f11bb6b12d3432c778ec14",
+    "target_definition": "f48e7da63cd581065a2c87fb817219e3",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "save_v22_report_content_revision(uuid,uuid,uuid,jsonb)",
+    "old": "3c8eb295206779d7016e1731c313c9fe",
+    "target": "5a91a7178eb64e426432b3e02b27ac9c",
+    "old_definition": "a250d9decfbadf0667854413ffab55a3",
+    "target_definition": "1883f9c53bac6b0e37900e4796556453",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "store_v22_capability_report(uuid,uuid,uuid,jsonb,text,integer)",
+    "old": "0ce899788f1a050b789c5f8fefe04093",
+    "target": "d572f0259d97e4387b3571445989bd5e",
+    "old_definition": "20702f4b4f8691635a27cf3b63130b8a",
+    "target_definition": "73477a140d0406edccafec15b18e4bff",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "validate_v22_candidate_pool(jsonb)",
+    "old": "86d3af83fdb9ae75710029d6ed9b2c76",
+    "target": "c3c09663d8b75ad17f8c35fe972b1215",
+    "old_definition": "193f6ed3393588cf8f24e4d0cb2d01ba",
+    "target_definition": "db5c2f952cd122383e926826f50a9711",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "validate_v22_candidate_selection(jsonb,jsonb)",
+    "old": "2cc38134e2eac87e0a8cb7a4ab1aed12",
+    "target": "1c357bf64c945e897b0f85ad5c4a4761",
+    "old_definition": "a56409eb0d56927911ea52d9dcacc5ab",
+    "target_definition": "d7ee8d78b2c4c4b88518bab3c128921f",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "validate_v22_gbp_comparison(jsonb)",
+    "old": "26317a2fb8571ecbf5689018e881f49f",
+    "target": "e183e708caa775a59fe745a5ee9266ec",
+    "old_definition": "d79c0865791160217f5eb12c414e2a4a",
+    "target_definition": "9d9711583b39ddeebf6198cb81ad742a",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "validate_v22_keyword_visibility(jsonb)",
+    "old": "63449c99e91833b4fefc2cc3507fd912",
+    "target": "9002c0028e876da46324e5d3718d175c",
+    "old_definition": "49bf2f673b33adbb6b8846aa992b0b73",
+    "target_definition": "409689159eecb869681c52f7f419fb69",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "validate_v22_landing_comparison(jsonb)",
+    "old": "ed017fb5e894566114e6b8dd5d056893",
+    "target": "867130da045a7b67bf2a6a2d1a68835c",
+    "old_definition": "9f40f85e1b1a017fe130296e0fa1a9de",
+    "target_definition": "7984aed02eead420d22a8dfa0434fa0c",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "validate_v22_local_entity_coverage(jsonb)",
+    "old": "f7c2311e8d2909fa41e0c5308a88db7d",
+    "target": "5da5ca2a6ea78c3dbdee4c6d0973e2c8",
+    "old_definition": "b6296db1b4aac8425b00cc3b7fde71a4",
+    "target_definition": "819599f3a7e0815605865060a51f2956",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "validate_v22_possible_reasons(jsonb)",
+    "old": "a998df6f12d953e859db25061298a68b",
+    "target": "faa69f555c2ba7a3b35f755dd766d5b3",
+    "old_definition": "16955995827a4f1090a5ab454811d64f",
+    "target_definition": "25b02d2e6fca3f545e6cda062a9d172b",
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  }
+]

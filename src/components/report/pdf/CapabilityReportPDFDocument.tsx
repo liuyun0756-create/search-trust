@@ -1,3 +1,4 @@
+import {actionAdviceFields} from "@/lib/report-capability/action-advice";
 import {clientPossibleReasons} from "@/lib/report-capability/possible-reasons";
 import {clientLandingComparison} from "@/lib/report-capability/landing-page-comparison";
 import {GBP_LABELS,clientGbpComparison} from "@/lib/report-capability/gbp-comparison";
@@ -129,6 +130,19 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
     {d.actions.map((action) => <Page key={action.id} size="A4" style={styles.page} wrap>
       <Copy style={styles.kicker}>{`ACTION ${String(action.sequence).padStart(2, "0")}`}</Copy>
       <Copy style={styles.heading}>{action.title}</Copy><Copy style={styles.meta}>{`Target: ${readerTarget(action.target)}`}</Copy>
+      {action.advice ? <>
+        {actionAdviceFields(action.advice).map(([label, lines]) => <View key={label} style={styles.row}>
+          <Copy style={styles.title}>{label}</Copy>
+          {lines.map((line, index) => <Copy key={index}>{line}</Copy>)}
+        </View>)}
+        {action.advice.example ? <View style={styles.card}>
+          <Copy style={styles.title}>Example copy</Copy><Copy>{action.advice.example}</Copy>
+        </View> : null}
+        {action.advice.reference ? <View style={styles.card}>
+          <Copy style={styles.title}>Quote from your website</Copy>
+          <Copy>{action.advice.reference.text}</Copy><Copy>{action.advice.reference.url}</Copy>
+        </View> : null}
+      </> : <>
       {action.whyNow ? <View style={styles.card}>
         <Copy style={styles.title}>{action.whyNow.candidateSelection ? "Advisor-selected action" : action.whyNow.deliveryChanged ? `System recommendation - original position ${action.whyNow.systemPosition}` : "Why now"}</Copy>
         <Copy>{action.whyNow.explanation}</Copy>
@@ -143,6 +157,7 @@ export function CapabilityReportPDFDocument({ delivery, branding }: { delivery: 
       <Copy style={styles.section}>Execution steps</Copy>{action.steps.map((step, i) => <Copy key={i}>{`${i + 1}. ${readerTarget(step)}`}</Copy>)}
       <Copy style={styles.section}>Completion checks</Copy>{action.completion.map((item, i) => <Copy key={i}>{`- ${item}`}</Copy>)}
       <Copy style={styles.section}>Review basis</Copy><Copy>{action.review}</Copy>
+      </>}
       {action.materials.map((material) => <View key={material.id} style={styles.card} wrap={material.body.length + material.target.length >= 1500}>
         <Copy style={styles.title}>{material.title}</Copy>
         <Copy style={styles.kicker}>{material.readiness === "requires_confirmation" ? "CONFIRM BEFORE PUBLISHING" : material.readiness === "ready_to_use" ? "READY FOR YOUR REVIEW" : "EXECUTION INSTRUCTIONS"}</Copy>
