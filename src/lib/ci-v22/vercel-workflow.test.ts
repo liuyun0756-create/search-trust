@@ -24,7 +24,7 @@ async function vercelConfig(): Promise<{ git?: { deploymentEnabled?: boolean } }
 }
 
 describe("Vercel deployment workflow", () => {
-  it("runs quality and browser checks for pull requests and main pushes", async () => {
+  it("runs quality, browser and fixture mirror checks for pull requests and main pushes", async () => {
     const value = await workflow();
     expect(value.on).toHaveProperty("pull_request");
     expect(value.on.push).toMatchObject({ branches: ["main"] });
@@ -36,12 +36,22 @@ describe("Vercel deployment workflow", () => {
       "npm run security:scan",
     ]));
     expect(value.jobs.browser.steps.some((step) => step.run === "npm run test:e2e:ci")).toBe(true);
+    const mirrors = value.jobs["fixture-mirrors"].steps;
+    expect(mirrors.find((step) => step.with?.repository === "liuyun0756-create/SearchTrust-RD")?.with).toMatchObject({
+      ref: expect.stringMatching(/^[0-9a-f]{40}$/),
+      "persist-credentials": false,
+    });
+    const commands = mirrors.flatMap((step) => step.run?.trim().split("\n") ?? []);
+    expect(commands).toEqual(expect.arrayContaining([
+      'python scripts/export_v22_identity_fixtures.py --check --frontend-dir "$GITHUB_WORKSPACE"',
+      'python scripts/export_v22_candidate_fixtures.py --check --frontend-dir "$GITHUB_WORKSPACE"',
+    ]));
   });
 
   it("cannot deploy from a pull request or after a failed dependency", async () => {
     const value = await workflow();
     const deploy = value.jobs.deploy;
-    expect(deploy.needs?.sort()).toEqual(["browser", "quality"]);
+    expect(deploy.needs?.sort()).toEqual(["browser", "fixture-mirrors", "quality"]);
     expect(deploy.if).toContain("github.event_name == 'push'");
     expect(deploy.if).toContain("github.ref == 'refs/heads/main'");
     expect(deploy.if).toContain("success()");
