@@ -19,7 +19,7 @@ export async function loadCapabilityOwnerDocument(
     observationWarnings: observationWarnings(report),
     version: report.version,
     identityReviewAvailable: report.report_type === "prospect"
-      && ["v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(report.input_manifest.ruleset_version),
+      && ["v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(report.input_manifest.ruleset_version),
     generatedAt: report.generated_at,
     approvedRevision: approved?.revision ?? null,
     hasApproved: revision?.status === "approved",
@@ -27,7 +27,7 @@ export async function loadCapabilityOwnerDocument(
     pendingDraft: revision?.status === "draft",
     deliveryRevision: revision?.revision ?? 0,
     deliveryStatus: revision?.status ?? "original",
-    candidateReport: ["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12"].includes(report.schema_version) ? report : undefined,
+    candidateReport: ["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"].includes(report.schema_version) ? report : undefined,
     orderConstraints: deliveryOrderConstraints(report),
     editable: revision ? editableVisibility(report,{ ...revision.content, expected_revision: revision.revision }) : initialCapabilityRevision(report),
   };

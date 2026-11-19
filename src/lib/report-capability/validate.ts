@@ -1,3 +1,4 @@
+import {localEntityCoverageValid} from "./local-entity-coverage";
 import {possibleReasonsValid} from "./possible-reasons";
 import {landingComparisonValid} from "./landing-page-comparison";
 import {gbpComparisonValid} from "./gbp-comparison";
@@ -43,14 +44,15 @@ function manifestValid(m: AnalysisInputManifest) {
   if (!unique(kinds) || !unique(m.snapshots.map((s) => s.snapshot_id))) return false;
   if (kinds.join() !== [...kinds].sort((a, b) => order.indexOf(a) - order.indexOf(b)).join()) return false;
   if (!order.slice(0, m.mode === "acquisition" ? 4 : 6).every((kind) => kinds.includes(kind as typeof kinds[number]))) return false;
-  const v3 = ["v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7"].includes(m.schema_version);
-  const v4 = ["v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7"].includes(m.schema_version);
+  const v3 = ["v22_analysis_input_v3", "v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"].includes(m.schema_version);
+  const v4 = ["v22_analysis_input_v4", "v22_analysis_input_v5", "v22_analysis_input_v6", "v22_analysis_input_v7", "v22_analysis_input_v8"].includes(m.schema_version);
+  if ((m.schema_version === "v22_analysis_input_v8") !== (m.ruleset_version === "v22_capability_public_v18")) return false;
   if ((m.schema_version === "v22_analysis_input_v7") !== (m.ruleset_version === "v22_capability_public_v17")) return false;
   if ((m.schema_version === "v22_analysis_input_v6") !== (m.ruleset_version === "v22_capability_public_v16")) return false;
   if((m.schema_version === "v22_analysis_input_v5") !== (m.ruleset_version === "v22_capability_public_v15"))return false;
-  if(v4 !== (["v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version)))return false;
+  if(v4 !== (["v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version)))return false;
   if(v4 ? !m.keyword_queries || !unique(m.keyword_queries.map(q=>q.toLowerCase())) : Object.hasOwn(m,"keyword_queries"))return false;
-  if(v3 !== (["v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version))) return false;
+  if(v3 !== (["v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version))) return false;
   if(v3) {
     if(m.mode !== "acquisition" || !m.identity_version_id || !m.identity_checksum || !m.target_market
       || m.target_market.display_name !== m.business.target_market || !m.evidence_as_of
@@ -62,13 +64,13 @@ function manifestValid(m: AnalysisInputManifest) {
       || !m.evidence_as_of || instant(m.evidence_as_of) > instant(m.evaluated_at)) return false;
   } else if (Object.hasOwn(m,"execution_type") || Object.hasOwn(m,"base_report_ref")) return false;
   const rendered = m.schema_version === "v22_analysis_input_v2" || (v3 && kinds.includes("rendered"));
-  if (rendered !== kinds.includes("rendered") || (rendered && !["v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version)) || (!rendered && m.ruleset_version === "v22_capability_public_v7")) return false;
+  if (rendered !== kinds.includes("rendered") || (rendered && !["v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version)) || (!rendered && m.ruleset_version === "v22_capability_public_v7")) return false;
   if (rendered && m.mode !== "acquisition") return false;
   if (m.mode === "acquisition" && kinds.length !== (rendered ? 5 : 4)) return false;
   for (const s of m.snapshots) {
     if (s.case_id !== m.case_id || (s.schema_version !== sourceSchemas[order.indexOf(s.source_kind)]
-      && !(s.source_kind === "site" && s.schema_version === "site_inventory_snapshot_v3" && ["v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version))
-      && !(s.source_kind === "site" && s.schema_version === "site_inventory_snapshot_v2" && ["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version))
+      && !(s.source_kind === "site" && s.schema_version === "site_inventory_snapshot_v3" && ["v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version))
+      && !(s.source_kind === "site" && s.schema_version === "site_inventory_snapshot_v2" && ["v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version))
       && !(s.source_kind === "public_gbp" && s.schema_version === "customer_public_gbp_snapshot_v2"))
       || instant(s.fetched_at) > instant(m.evidence_as_of ?? m.evaluated_at) || instant(s.expires_at) <= instant(m.evidence_as_of ?? m.evaluated_at)
       || ["gsc", "ga4", "official_gbp"].includes(s.source_kind) !== (s.binding_id !== null)) return false;
@@ -94,20 +96,23 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
   try {
     if (!structure(value)) return invalid;
     const r = value, m = r.input_manifest;
-    const reasons=m.ruleset_version === "v22_capability_public_v17";
-    if(reasons !== (r.schema_version === "2.2.12") || (reasons ? !r.possible_reasons || !possibleReasonsValid(r) : Object.hasOwn(r,"possible_reasons"))) return invalid;
-    const landing=["v22_capability_public_v16","v22_capability_public_v17"].includes(m.ruleset_version);
-    if(landing !== (["2.2.11","2.2.12"].includes(r.schema_version)) || (landing ? !r.landing_page_comparison || !landingComparisonValid(r.landing_page_comparison,m) : Object.hasOwn(r,"landing_page_comparison")))return invalid;
-    const comparison=["v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version);
-    if(comparison !== (["2.2.10", "2.2.11", "2.2.12"].includes(r.schema_version)) || (comparison ? !r.gbp_comparison || !gbpComparisonValid(r.gbp_comparison,m) : Object.hasOwn(r,"gbp_comparison")))return invalid;
-    const keyword = ["v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version);
-    if(keyword !== (["2.2.9", "2.2.10", "2.2.11", "2.2.12"].includes(r.schema_version)) || (keyword ? !r.keyword_visibility || !keywordVisibilityValid(r.keyword_visibility,m) : Object.hasOwn(r,"keyword_visibility")))return invalid;
+    const localEntity = m.ruleset_version === "v22_capability_public_v18";
+    if (localEntity !== (r.schema_version === "2.2.13")
+      || (localEntity ? !r.local_entity_coverage || !localEntityCoverageValid(r.local_entity_coverage, m) : Object.hasOwn(r, "local_entity_coverage"))) return invalid;
+    const reasons=["v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version);
+    if(reasons !== (["2.2.12", "2.2.13"].includes(r.schema_version)) || (reasons ? !r.possible_reasons || !possibleReasonsValid(r) : Object.hasOwn(r,"possible_reasons"))) return invalid;
+    const landing=["v22_capability_public_v16","v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version);
+    if(landing !== (["2.2.11","2.2.12", "2.2.13"].includes(r.schema_version)) || (landing ? !r.landing_page_comparison || !landingComparisonValid(r.landing_page_comparison,m) : Object.hasOwn(r,"landing_page_comparison")))return invalid;
+    const comparison=["v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version);
+    if(comparison !== (["2.2.10", "2.2.11", "2.2.12", "2.2.13"].includes(r.schema_version)) || (comparison ? !r.gbp_comparison || !gbpComparisonValid(r.gbp_comparison,m) : Object.hasOwn(r,"gbp_comparison")))return invalid;
+    const keyword = ["v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version);
+    if(keyword !== (["2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"].includes(r.schema_version)) || (keyword ? !r.keyword_visibility || !keywordVisibilityValid(r.keyword_visibility,m) : Object.hasOwn(r,"keyword_visibility")))return invalid;
     if ((r.schema_version === "2.2.6") !== (m.ruleset_version === "v22_capability_public_v11")) return invalid;
-    const v12 = ["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12"].includes(r.schema_version);
-    if(v12 !== (["v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version)) || v12 !== Array.isArray(r.action_candidates)) return invalid;
+    const v12 = ["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"].includes(r.schema_version);
+    if(v12 !== (["v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version)) || v12 !== Array.isArray(r.action_candidates)) return invalid;
     if((r.schema_version === "2.2.8") !== (m.ruleset_version === "v22_capability_public_v13")) return invalid;
-    const labelled = ["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12"].includes(r.schema_version);
-    if (labelled !== ["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_service_v5"].includes(m.ruleset_version)) return invalid;
+    const labelled = ["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"].includes(r.schema_version);
+    if (labelled !== ["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_service_v5"].includes(m.ruleset_version)) return invalid;
     if (!labelled && (r.schema_version === "2.2.4") !== (m.schema_version === "v22_analysis_input_v2")) return invalid;
     if (!manifestValid(m) || r.id !== m.job_id || instant(r.generated_at) < instant(m.evaluated_at)
       || r.report_type !== (m.mode === "acquisition" ? "prospect" : "verified_execution")
@@ -117,9 +122,9 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
     if (![r.evidence, r.findings, r.actions].every((items) => unique(items.map((item) => item.id)))) return invalid;
     const snapshots = new Map(m.snapshots.map((s) => [s.snapshot_id, s]));
     const evidence = new Map(r.evidence.map((e) => [e.id, e]));
-    if (["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version)) {
+    if (["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version)) {
       if (!r.contact_checks || !unique(r.contact_checks.map(c=>c.field))) return invalid;
-      if (!["v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17"].includes(m.ruleset_version) && (r.contact_checks.length > 4 || r.contact_checks.some(c=>c.field === "opening_hours"))) return invalid;
+      if (!["v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18"].includes(m.ruleset_version) && (r.contact_checks.length > 4 || r.contact_checks.some(c=>c.field === "opening_hours"))) return invalid;
       for (const check of r.contact_checks) {
         if (![check.compared_components,check.omitted_components,check.evidence_ids].every(unique)
           || !check.evidence_ids.every(id=>r.evidence.some(e=>e.id===id))) return invalid;
@@ -160,7 +165,7 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
       if (!m.previous_report || !findings.has(c.finding_id) || c.previous_fingerprint === c.current_fingerprint
         || c.current_fingerprint !== canonicalDigest(findings.get(c.finding_id))) return invalid;
     }
-    const ranked = ["v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_service_v5"].includes(m.ruleset_version);
+    const ranked = ["v22_capability_public_v2", "v22_capability_service_v2", "v22_capability_public_v3", "v22_capability_service_v3", "v22_capability_public_v4", "v22_capability_service_v4", "v22_capability_public_v5", "v22_capability_public_v6", "v22_capability_public_v7", "v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_service_v5"].includes(m.ruleset_version);
     if (Object.hasOwn(r, "prioritization") && r.prioritization == null) return invalid;
     if (ranked !== Boolean(r.prioritization) || (r.prioritization && !priorityMatches(r.prioritization, r))) return invalid;
     if (r.prioritization && r.prioritization.rules_version !== (v12 ? "v22_business_priority_v3" : /_v(?:[3456789]|10|11)$/.test(m.ruleset_version) ? "v22_business_priority_v2" : "v22_business_priority_v1")) return invalid;
@@ -182,11 +187,11 @@ export function validateDeliveryRevision(value: unknown, report: CapabilityRepor
   try {
     if (!validateCapabilityReport(report).ok || !revisionStructure(value)) return false;
     const v3=value.schema_version === "v22_delivery_revision_v3";
-    if(v3 !== (["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12"].includes(report.schema_version)))return false;
+    if(v3 !== (["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"].includes(report.schema_version)))return false;
     if(v3 && !candidateSelectionValid(report,value))return false;
     if (!v3 && Object.hasOwn(value,"technical_omission_confirmation"))return false;
     if (v3 || value.schema_version === "v22_delivery_revision_v2") {
-      if(!["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12"].includes(report.schema_version) || !value.client_action_ids || !unique(value.client_action_ids)
+      if(!["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13"].includes(report.schema_version) || !value.client_action_ids || !unique(value.client_action_ids)
         || !value.client_action_ids.every(id=>value.actions.some(a=>a.id===id))) return false;
     } else if(Object.hasOwn(value,"client_action_ids")) return false;
     const constraints = deliveryOrderConstraints(report);

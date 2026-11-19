@@ -1,3 +1,4 @@
+import {LocalEntityCoverageSection} from "./LocalEntityCoverageSection";
 import {PossibleReasonsSection} from "./PossibleReasonsSection";
 import {LandingPageComparisonSection} from "./LandingPageComparisonSection";
 import {GbpComparisonSection} from "./GbpComparisonSection";
@@ -14,6 +15,7 @@ export function CapabilityReportDocument({ document, technicalDetails = false }:
     <header><h1 className="break-words text-3xl font-semibold tracking-tight">{document.title}</h1>
       <p className="mt-4 whitespace-pre-wrap break-words leading-7">{document.summary}</p>
       <p className="mt-4 rounded-xl bg-[#eaf2e6] p-4 font-medium">{actions.length ? `First proposed step: ${actions[0].title}` : "No change is proposed from this evidence. Review the diagnosis and unresolved checks."}</p></header>
+    {document.localEntityCoverage ? <LocalEntityCoverageSection value={document.localEntityCoverage} technicalDetails={technicalDetails}/> : null}
     {document.possibleReasons ? <PossibleReasonsSection value={document.possibleReasons} technicalDetails={technicalDetails}/> : null}
     {document.landingPageComparison ? <LandingPageComparisonSection value={document.landingPageComparison} technicalDetails={technicalDetails}/> : null}
     {document.gbpComparison ? <GbpComparisonSection value={document.gbpComparison} technicalDetails={technicalDetails}/> : null}

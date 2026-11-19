@@ -6,12 +6,23 @@ import functionAudit from './test-support/reasons-function-audit.json';
 import original from '../report-capability/fixtures/reasons-v17/bound.json';
 import originalReport from '../report-capability/fixtures/reasons-v17/report.json';
 import {canonicalDigest,canonicalJsonText} from '../verified-analysis-v22/digest';
+import localEntityAudit from './test-support/local-entity-function-audit.json';
+import v18Bound from '../report-capability/fixtures/local-entity-v18/bound.json';
+import v18Report from '../report-capability/fixtures/local-entity-v18/report.json';
 let db:PGlite,report:any,bound:any;
 const baselineAcls=new Map<string,string|null>();
+const v17Results=new Map<string, unknown>();
+const v18BaselineAcls=new Map<string,string|null>();
+
+async function functionState(signature:string) {
+ return (await db.query<{source:string,definition:string,acl:string|null}>(
+  'select md5(prosrc) source, md5(pg_get_functiondef(oid)) definition, proacl::text acl from pg_proc where oid=$1::regprocedure',
+  ['public.'+signature])).rows[0];
+}
 const json=JSON.stringify;
 async function rpc(name:string,args:unknown[]){return (await db.query<{value:any}>(`select to_jsonb(public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')})) value`,args)).rows[0]?.value;}
 
-function freshFixture(){
+function freshFixture(version:number){
  // Retimestamp a synthetic copy only. Original checked-in fixture bytes stay intact.
  const delta=Date.now()-1000-Date.parse(original.manifest.evaluated_at);
  function shift(v:any):any{
@@ -19,7 +30,7 @@ function freshFixture(){
   if(v&&typeof v==='object')return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,shift(x)]));
   return typeof v==='string'&&/^\d{4}-\d\d-\d\dT/.test(v)?new Date(Date.parse(v)+delta).toISOString():v;
  }
- const b=shift(original),r=shift(originalReport),m=b.manifest,q=b.request;
+ const b=shift(version===18?v18Bound:original),r=shift(version===18?v18Report:originalReport),m=b.manifest,q=b.request;
  const market=q.evidence_input.sources.find((s:any)=>s.kind==='serp');
  for(const s of q.evidence_input.sources){
   if(s.kind==='competitor')s.payload.market_snapshot_checksum=canonicalDigest(market.payload);
@@ -31,18 +42,25 @@ function freshFixture(){
  const {input_checksum:_,...content}=m;m.input_checksum=canonicalDigest(content);
  b.recipe.request=structuredClone(q);
  for(const s of b.recipe.request.evidence_input.sources){delete s.payload;if(s.shared_snapshot)delete s.shared_snapshot.snapshot;}
+ if(r.local_entity_coverage) for(const e of r.local_entity_coverage.evidence)e.sampled_at=q.evidence_input.sources.find((s:any)=>s.kind==='site').payload.selected_pages[Number(e.path.split('/')[3])].deep_snapshot.collected_at;
  r.input_manifest=structuredClone(m);r.keyword_visibility.sample.payload_checksum=market.binding.payload_checksum;
  return {bound:b,report:r};
 }
 
-describe.sequential('v17 possible reasons comparison SQL boundary',()=>{
+describe.each([17,18])('v%i comparison SQL boundary',version=>{
  beforeAll(async()=>{
   db=new PGlite();await db.exec('create role anon;create role authenticated;create role service_role bypassrls;');
   for(const name of (await readdir('supabase/migrations')).sort()){
+   if(name.startsWith('20261119100000')) for(const row of localEntityAudit) {
+    const state=await functionState(row.signature);
+    expect(state).toMatchObject({source:row.old,definition:row.old_definition});
+    v18BaselineAcls.set(row.signature,state.acl);
+   }
    if(name==='20261117120000_add_comparison_reasons_v17.sql')for(const row of functionAudit)baselineAcls.set(row.signature,(await db.query<{acl:string|null}>('select proacl::text acl from pg_proc where oid=$1::regprocedure',['public.'+row.signature])).rows[0].acl);
    await db.exec(await readFile('supabase/migrations/'+name,'utf8'));
+   if(name.startsWith('20261117120000')) for(const row of functionAudit) v17Results.set(row.signature,await functionState(row.signature));
   }
-  ({bound,report}=freshFixture());const m=bound.manifest,q=bound.request;
+  ({bound,report}=freshFixture(version));const m=bound.manifest,q=bound.request;
   const owner=m.user_id,caseId=m.case_id,job=m.job_id,identity=q.business_identity;
   await db.query('insert into users(id,clerk_user_id,email,credit_balance) values($1,$2,$3,1)',[owner,'keyword-synthetic','keyword@example.invalid']);
   await db.query(`insert into client_cases(id,user_id,site_url,normalized_domain,business_name,business_identity,operating_model,primary_service,target_market)
@@ -62,12 +80,12 @@ describe.sequential('v17 possible reasons comparison SQL boundary',()=>{
   expect((await rpc('freeze_v22_acquisition_preparation',[token,json({cost_schema_version:1,cost_ledger_revision:3}),json(body)])).manifest_id).toBe(m.id);
  },30000);
  afterAll(async()=>{await db.close();});
- it('completes real freeze, hydrates the exact input and stores 2.2.11 with valid candidates',async()=>{
+ it('completes real freeze, hydrates the exact input and stores the complete report with valid candidates',async()=>{
   const m=bound.manifest;
   expect(await rpc('hydrate_v22_capability_generation_input',[json(m),json(bound.recipe)])).toEqual(bound.request);
   await rpc('validate_v22_candidate_pool',[json(report)]);
   const stored=await rpc('store_v22_capability_report',[m.user_id,m.case_id,m.job_id,json(report),canonicalJsonText(report),1]);
-  expect(stored.schema_version).toBe('2.2.12');expect(stored.payload).toEqual(report);
+  expect(stored.schema_version).toBe(version===18?'2.2.13':'2.2.12');expect(stored.payload).toEqual(report);
   expect((await db.query('select count(*)::integer n from data_snapshots')).rows[0]).toEqual({n:4});
  });
  it('rejects forged positions, query bindings, source references and assessment counts',async()=>{
@@ -115,7 +133,7 @@ describe.sequential('v17 possible reasons comparison SQL boundary',()=>{
  });
  it('matches all fifteen target function hashes and retains their production ACLs',async()=>{
   for(const row of functionAudit){
-   expect((await db.query('select md5(prosrc) source,md5(pg_get_functiondef(oid)) definition,proacl::text acl from pg_proc where oid=$1::regprocedure',['public.'+row.signature])).rows[0]).toEqual({source:row.after_prosrc_md5,definition:row.after_definition_md5,acl:baselineAcls.get(row.signature)});
+   expect(v17Results.get(row.signature)).toEqual({source:row.after_prosrc_md5,definition:row.after_definition_md5,acl:baselineAcls.get(row.signature)});
   }
  });
  it('validates exact reason copy, order, inference and both sides of the basis',async()=>{
@@ -136,5 +154,28 @@ describe.sequential('v17 possible reasons comparison SQL boundary',()=>{
   await expect(rpc('validate_v22_possible_reasons',[json({...report,schema_version:'2.2.11'})])).rejects.toThrow('CAPABILITY_REASONS_VERSION_INVALID');
   expect((await db.query(`select has_function_privilege('anon','public.validate_v22_possible_reasons(jsonb)','execute') anon,has_function_privilege('authenticated','public.validate_v22_possible_reasons(jsonb)','execute') authenticated,has_function_privilege('service_role','public.validate_v22_possible_reasons(jsonb)','execute') service`)).rows[0]).toEqual({anon:false,authenticated:false,service:true});
  });
+
+ if(version===18) {
+  it('matches all 16 target definitions and keeps existing ACLs',async()=>{
+   for(const row of localEntityAudit) expect(await functionState(row.signature)).toEqual({
+    source:row.target,definition:row.target_definition,acl:v18BaselineAcls.get(row.signature),
+   });
+   expect((await functionState('validate_v22_local_entity_coverage(jsonb)')).acl).toBe('{postgres=X/postgres,service_role=X/postgres}');
+  });
+  it('validates coverage and rejects wrong source, city, tier, archive status and old versions',async()=>{
+   await rpc('validate_v22_local_entity_coverage',[json(report)]);
+   for(const kind of ['city','source','quote','rank','scope','legacy','absent']){
+    const bad=structuredClone(report),coverage=bad.local_entity_coverage;
+    if(kind==='city')coverage.target_city='Elsewhere';
+    if(kind==='source')coverage.evidence[0].snapshot_id=randomUUID();
+    if(kind==='quote')coverage.evidence[0].quote='Unsourced content';
+    if(kind==='rank')coverage.status='not_detected';
+    if(kind==='scope')coverage.archive_headings_only=true;
+    if(kind==='legacy')bad.schema_version='2.2.12';
+    if(kind==='absent')delete bad.local_entity_coverage;
+    await expect(rpc('validate_v22_local_entity_coverage',[json(bad)])).rejects.toThrow('CAPABILITY_LOCAL_ENTITY');
+   }
+  });
+ }
 
 });
