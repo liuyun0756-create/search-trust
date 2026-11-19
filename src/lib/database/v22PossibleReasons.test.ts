@@ -9,10 +9,15 @@ import {canonicalDigest,canonicalJsonText} from '../verified-analysis-v22/digest
 import localEntityAudit from './test-support/local-entity-function-audit.json';
 import v18Bound from '../report-capability/fixtures/local-entity-v18/bound.json';
 import v18Report from '../report-capability/fixtures/local-entity-v18/report.json';
+import actionAdviceAudit from './test-support/action-advice-function-audit.json';
+import v20Bound from '../report-capability/fixtures/action-advice-v20/sql-bound.json';
+import v20Report from '../report-capability/fixtures/action-advice-v20/sql-report.json';
+import v20ExampleReport from '../report-capability/fixtures/candidates/v20.json';
 let db:PGlite,report:any,bound:any;
 const baselineAcls=new Map<string,string|null>();
 const v17Results=new Map<string, unknown>();
 const v18BaselineAcls=new Map<string,string|null>();
+const v18Results=new Map<string, unknown>();
 
 async function functionState(signature:string) {
  return (await db.query<{source:string,definition:string,acl:string|null}>(
@@ -30,7 +35,7 @@ function freshFixture(version:number){
   if(v&&typeof v==='object')return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,shift(x)]));
   return typeof v==='string'&&/^\d{4}-\d\d-\d\dT/.test(v)?new Date(Date.parse(v)+delta).toISOString():v;
  }
- const b=shift(version===18?v18Bound:original),r=shift(version===18?v18Report:originalReport),m=b.manifest,q=b.request;
+ const b=shift(version===20?v20Bound:version===18?v18Bound:original),r=shift(version===20?v20Report:version===18?v18Report:originalReport),m=b.manifest,q=b.request;
  const market=q.evidence_input.sources.find((s:any)=>s.kind==='serp');
  for(const s of q.evidence_input.sources){
   if(s.kind==='competitor')s.payload.market_snapshot_checksum=canonicalDigest(market.payload);
@@ -47,7 +52,7 @@ function freshFixture(version:number){
  return {bound:b,report:r};
 }
 
-describe.each([17,18])('v%i comparison SQL boundary',version=>{
+describe.each([17,18,20])('v%i comparison SQL boundary',version=>{
  beforeAll(async()=>{
   db=new PGlite();await db.exec('create role anon;create role authenticated;create role service_role bypassrls;');
   for(const name of (await readdir('supabase/migrations')).sort()){
@@ -57,7 +62,13 @@ describe.each([17,18])('v%i comparison SQL boundary',version=>{
     v18BaselineAcls.set(row.signature,state.acl);
    }
    if(name==='20261117120000_add_comparison_reasons_v17.sql')for(const row of functionAudit)baselineAcls.set(row.signature,(await db.query<{acl:string|null}>('select proacl::text acl from pg_proc where oid=$1::regprocedure',['public.'+row.signature])).rows[0].acl);
+   if(name.startsWith('20261119110000')) for(const row of actionAdviceAudit) {
+    expect(await functionState(row.signature)).toEqual({source:row.old,definition:row.old_definition,acl:row.acl});
+   }
    await db.exec(await readFile('supabase/migrations/'+name,'utf8'));
+   if(name.startsWith('20261119100000')) for(const row of localEntityAudit) {
+    v18Results.set(row.signature,await functionState(row.signature));
+   }
    if(name.startsWith('20261117120000')) for(const row of functionAudit) v17Results.set(row.signature,await functionState(row.signature));
   }
   ({bound,report}=freshFixture(version));const m=bound.manifest,q=bound.request;
@@ -85,7 +96,7 @@ describe.each([17,18])('v%i comparison SQL boundary',version=>{
   expect(await rpc('hydrate_v22_capability_generation_input',[json(m),json(bound.recipe)])).toEqual(bound.request);
   await rpc('validate_v22_candidate_pool',[json(report)]);
   const stored=await rpc('store_v22_capability_report',[m.user_id,m.case_id,m.job_id,json(report),canonicalJsonText(report),1]);
-  expect(stored.schema_version).toBe(version===18?'2.2.13':'2.2.12');expect(stored.payload).toEqual(report);
+  expect(stored.schema_version).toBe(version===20?'2.2.15':version===18?'2.2.13':'2.2.12');expect(stored.payload).toEqual(report);
   expect((await db.query('select count(*)::integer n from data_snapshots')).rows[0]).toEqual({n:4});
  });
  it('rejects forged positions, query bindings, source references and assessment counts',async()=>{
@@ -157,7 +168,7 @@ describe.each([17,18])('v%i comparison SQL boundary',version=>{
 
  if(version===18) {
   it('matches all 16 target definitions and keeps existing ACLs',async()=>{
-   for(const row of localEntityAudit) expect(await functionState(row.signature)).toEqual({
+   for(const row of localEntityAudit) expect(v18Results.get(row.signature)).toEqual({
     source:row.target,definition:row.target_definition,acl:v18BaselineAcls.get(row.signature),
    });
    expect((await functionState('validate_v22_local_entity_coverage(jsonb)')).acl).toBe('{postgres=X/postgres,service_role=X/postgres}');
@@ -175,6 +186,24 @@ describe.each([17,18])('v%i comparison SQL boundary',version=>{
     if(kind==='absent')delete bad.local_entity_coverage;
     await expect(rpc('validate_v22_local_entity_coverage',[json(bad)])).rejects.toThrow('CAPABILITY_LOCAL_ENTITY');
    }
+  });
+ }
+
+ if(version===20) {
+  it('validates frozen example text, evidence and historical version isolation',async()=>{
+   await rpc('validate_v22_action_advice',[json(v20ExampleReport)]);
+   const wrong=structuredClone(v20ExampleReport);
+   wrong.action_advice.find(item=>item.example)!.example!.text='Call a competing business.';
+   await expect(rpc('validate_v22_action_advice',[json(wrong)])).rejects.toThrow('CAPABILITY_ACTION_ADVICE_INVALID');
+   await expect(rpc('validate_v22_action_advice',[json({...v20ExampleReport,schema_version:'2.2.14'})])).rejects.toThrow('CAPABILITY_ACTION_ADVICE_INVALID');
+   await rpc('validate_v22_action_advice',[json({schema_version:'2.2.14'})]);
+  });
+  it('matches all v20 targets and preserves the old ACLs',async()=>{
+   for(const row of actionAdviceAudit) expect(await functionState(row.signature)).toEqual({
+    source:row.target,definition:row.target_definition,acl:row.acl,
+   });
+   expect((await functionState('validate_v22_action_advice(jsonb)')).acl)
+    .toBe('{postgres=X/postgres,service_role=X/postgres}');
   });
  }
 

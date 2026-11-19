@@ -44,7 +44,7 @@ jobs:
         with:
           repository: liuyun0756-create/SearchTrust-RD
           # Advance this pin when intentionally refreshing either fixture set.
-          ref: 355928817c8ffe6f6a8a9d62f13c98fe4005cc98
+          ref: 399282652ab26860afb9f5c0404781e4abc8781a
           path: output/fixture-backend
           persist-credentials: false
       - uses: actions/setup-python@v7

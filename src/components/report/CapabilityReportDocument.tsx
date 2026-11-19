@@ -1,3 +1,4 @@
+import {ActionAdviceSection} from "./ActionAdviceSection";
 import {LocalEntityCoverageSection} from "./LocalEntityCoverageSection";
 import {PossibleReasonsSection} from "./PossibleReasonsSection";
 import {LandingPageComparisonSection} from "./LandingPageComparisonSection";
@@ -48,6 +49,7 @@ export function CapabilityReportDocument({ document, technicalDetails = false }:
       {actions.map((action) => <section key={action.id} className="rounded-xl border border-[#dce6d9] p-5">
         {technicalDetails && action.needsVerification ? <p className="mb-2 text-sm font-medium">Verify first · 建议先核实</p> : null}
         <h3 className="break-words font-semibold">{String(action.sequence).padStart(2, "0")} · {action.title}</h3>
+        {action.advice ? <ActionAdviceSection advice={action.advice} technicalDetails={technicalDetails}/> : <>
         <p className="mt-2 whitespace-pre-wrap break-all text-sm">{target(action.target)}</p>
         {action.whyNow ? <aside className="mt-4 rounded-xl border border-[#dce6d9] bg-[#f3f7f2] p-4 text-sm">
           <p className="font-semibold">{action.whyNow.candidateSelection ? "Advisor-selected action" : action.whyNow.deliveryChanged ? `System recommendation · original position ${action.whyNow.systemPosition}` : "Why now"}</p>
@@ -72,6 +74,7 @@ export function CapabilityReportDocument({ document, technicalDetails = false }:
         <ol className="mt-4 list-inside list-decimal space-y-2">{action.steps.map((step, i) => <li key={i} className="break-words">{target(step)}</li>)}</ol>
         <p className="mt-4 font-semibold">Completion checks</p><ul className="mt-2 list-inside list-disc">{action.completion.map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul>
         <p className="mt-4 break-words text-sm">{action.review}</p>
+        </>}
         {action.materials.map((material) => <aside key={material.id} className="mt-5 rounded-xl bg-[#f3f7f2] p-4">
           <h4 className="break-words font-semibold">{material.title}</h4>
           <p className="mt-1 text-sm">{material.readiness === "requires_confirmation" ? "Confirm before publishing" : material.readiness === "ready_to_use" ? "Ready for your review" : "Execution instructions"}</p>
