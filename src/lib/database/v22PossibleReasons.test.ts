@@ -18,6 +18,7 @@ const baselineAcls=new Map<string,string|null>();
 const v17Results=new Map<string, unknown>();
 const v18BaselineAcls=new Map<string,string|null>();
 const v18Results=new Map<string, unknown>();
+const v20Results=new Map<string, unknown>();
 
 async function functionState(signature:string) {
  return (await db.query<{source:string,definition:string,acl:string|null}>(
@@ -26,6 +27,15 @@ async function functionState(signature:string) {
 }
 const json=JSON.stringify;
 async function rpc(name:string,args:unknown[]){return (await db.query<{value:any}>(`select to_jsonb(public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')})) value`,args)).rows[0]?.value;}
+
+function reportWithWireReviewCount(report:typeof v18Report, countText:string):string {
+ const marker='REVIEW_COUNT_WIRE_VALUE';
+ const comparison=report.gbp_comparison;
+ const rows=comparison.rows.map((row,index)=>index!==1?row:{
+  ...row,metrics:{...row.metrics,reviews_90d:{...row.metrics.reviews_90d,value:marker}},
+ });
+ return json({...report,gbp_comparison:{...comparison,rows}}).replace(json(marker),countText);
+}
 
 function freshFixture(version:number){
  // Retimestamp a synthetic copy only. Original checked-in fixture bytes stay intact.
@@ -66,6 +76,9 @@ describe.each([17,18,20])('v%i comparison SQL boundary',version=>{
     expect(await functionState(row.signature)).toEqual({source:row.old,definition:row.old_definition,acl:row.acl});
    }
    await db.exec(await readFile('supabase/migrations/'+name,'utf8'));
+   if(name.startsWith('20261119110000')) for(const row of actionAdviceAudit) {
+    v20Results.set(row.signature,await functionState(row.signature));
+   }
    if(name.startsWith('20261119100000')) for(const row of localEntityAudit) {
     v18Results.set(row.signature,await functionState(row.signature));
    }
@@ -95,7 +108,14 @@ describe.each([17,18,20])('v%i comparison SQL boundary',version=>{
   const m=bound.manifest;
   expect(await rpc('hydrate_v22_capability_generation_input',[json(m),json(bound.recipe)])).toEqual(bound.request);
   await rpc('validate_v22_candidate_pool',[json(report)]);
-  const stored=await rpc('store_v22_capability_report',[m.user_id,m.case_id,m.job_id,json(report),canonicalJsonText(report),1]);
+  // Fresno's Python wire payload sent a JSON number with a decimal point.
+  // JSON.stringify on a parsed fixture would silently erase that representation.
+  const reviewCount=report.gbp_comparison.rows[1].metrics.reviews_90d.value;
+  const wire=version===18?reportWithWireReviewCount(report,`${reviewCount}.0`):json(report);
+  if(version===18) expect((await db.query<{count_text:string}>(`
+    select $1::jsonb#>>'{gbp_comparison,rows,1,metrics,reviews_90d,value}' count_text
+  `,[wire])).rows[0].count_text).toBe(`${reviewCount}.0`);
+  const stored=await rpc('store_v22_capability_report',[m.user_id,m.case_id,m.job_id,wire,canonicalJsonText(report),1]);
   expect(stored.schema_version).toBe(version===20?'2.2.15':version===18?'2.2.13':'2.2.12');expect(stored.payload).toEqual(report);
   expect((await db.query('select count(*)::integer n from data_snapshots')).rows[0]).toEqual({n:4});
  });
@@ -167,6 +187,20 @@ describe.each([17,18,20])('v%i comparison SQL boundary',version=>{
  });
 
  if(version===18) {
+  it('rejects a fractional count, a numeric string, or a different integral count',async()=>{
+   const actual=Number(report.gbp_comparison.rows[1].metrics.reviews_90d.value);
+   for(const wrong of [`${actual}.5`,json(String(actual)),String(actual-1)]){
+    await expect(rpc('validate_v22_gbp_comparison',[reportWithWireReviewCount(report,wrong)]))
+      .rejects.toThrow('CAPABILITY_GBP_COMPARISON_VALUE_INVALID');
+   }
+  });
+  it('applies the GBP numeric fix without changing validator permissions',async()=>{
+   expect(await functionState('validate_v22_gbp_comparison(jsonb)')).toEqual({
+    source:'fbb49257bd7342006707fbb41737f4b2',
+    definition:'49f1317c82b800f3135b79a98e48263a',
+    acl:'{postgres=X/postgres,service_role=X/postgres}',
+   });
+  });
   it('matches all 16 target definitions and keeps existing ACLs',async()=>{
    for(const row of localEntityAudit) expect(v18Results.get(row.signature)).toEqual({
     source:row.target,definition:row.target_definition,acl:v18BaselineAcls.get(row.signature),
@@ -199,7 +233,7 @@ describe.each([17,18,20])('v%i comparison SQL boundary',version=>{
    await rpc('validate_v22_action_advice',[json({schema_version:'2.2.14'})]);
   });
   it('matches all v20 targets and preserves the old ACLs',async()=>{
-   for(const row of actionAdviceAudit) expect(await functionState(row.signature)).toEqual({
+   for(const row of actionAdviceAudit) expect(v20Results.get(row.signature)).toEqual({
     source:row.target,definition:row.target_definition,acl:row.acl,
    });
    expect((await functionState('validate_v22_action_advice(jsonb)')).acl)
