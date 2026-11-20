@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import type {ContactCheck} from '@/lib/report-capability/generated/types';
 import {modeLabels,type Mode,type Workspace,type Preview} from '@/lib/identity-review/view';
 import {contactCheckLabel} from '@/lib/report-capability/reader-copy';
+import {IdentityStatus} from './IdentityStatus';
 export function addressSummary(checks:ContactCheck[],mode:Mode|null){
  if(!mode)return 'Address check unavailable until the operating model and business profile are confirmed.';
  if(mode==='service_area'||mode==='meeting_point')return 'Street address check is not applicable to this operating model.';
@@ -25,11 +26,11 @@ export function IdentityConfirmation({caseId,reportId,endpoint,onCommitted}:{cas
  }
  return <section aria-labelledby="identity-title" className="mx-auto mb-8 max-w-4xl rounded-2xl border-2 border-[#718b73] bg-[#f4f8f0] p-6 text-[#22382c]">
   <p className="text-xs font-semibold uppercase tracking-wider">Review before approving</p><h2 id="identity-title" className="mt-2 text-2xl font-semibold">Identity confirmation</h2>
-  <p className="mt-3 text-sm">Confirm how the business serves customers and which Google Business Profile belongs to this location. Changes create a separate report from saved observations.</p>
+  <p className="mt-3 text-sm">Confirmation applies to a new report only. Existing reports and share links keep their saved versions. Customer review data must be collected separately.</p>
   {error&&<div role="alert" className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3">{error}<button className="ml-3 underline" disabled={busy} onClick={()=>execute('workspace')}>Reload identity workspace</button></div>}
   {!workspace&&!error&&<p role="status" className="mt-4">Loading saved identity…</p>}
   {workspace&&<>
-   <p className="mt-4 rounded-lg bg-white p-3" data-testid="current-address">{workspace.identity.operating_model.confirmation_ref?addressSummary(workspace.checks,workspace.identity.operating_model.value):'Identity is not confirmed. Address check is temporarily unavailable.'}</p>
+   <IdentityStatus identity={workspace.identity} checks={workspace.checks}/>
    <details className="mt-3 text-sm"><summary className="cursor-pointer">System suggestion and saved evidence</summary><p className="mt-2">Suggestion: {workspace.automatic.suggested_value?modeLabels[workspace.automatic.suggested_value]:'Needs your confirmation'}. A suggestion does not confirm customer access to an address.</p>{workspace.automatic.evidence_refs.map((e,i)=><blockquote key={i} className="mt-2 border-l-2 pl-3">{e.quote}<span className="block text-xs">{e.url}</span></blockquote>)}</details>
    <fieldset disabled={busy||committed} className="mt-5 grid gap-5 sm:grid-cols-2">
     <label className="font-medium">Operating model<select aria-label="Operating model" className={inputClass} value={mode} onChange={e=>{setMode(e.target.value as Mode);setCustomersCanVisit(false);setPreview(null);}}><option value="">Choose an operating model</option>{Object.entries(modeLabels).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
@@ -37,7 +38,7 @@ export function IdentityConfirmation({caseId,reportId,endpoint,onCommitted}:{cas
     {(mode==='storefront'||mode==='hybrid')&&branch&&<label className="flex items-start gap-3 rounded-lg border border-[#c8d4ca] bg-white p-4 sm:col-span-2"><input type="checkbox" aria-label="Customers can visit this Google Business Profile address" className="mt-1" checked={customersCanVisit} onChange={e=>{setCustomersCanVisit(e.target.checked);setPreview(null);}}/><span>Customers can visit this Google Business Profile address<span className="mt-1 block text-sm font-normal">Confirm this only for the selected profile address. Leaving it unchecked keeps the address check unavailable.</span><span className="mt-2 block text-sm font-normal">{workspace.branches.find(b=>b.ref===branch)?.address??'No saved address is available.'}</span></span></label>}
     <label className="font-medium sm:col-span-2">Confirmation reason<textarea aria-label="Confirmation reason" required className={inputClass} value={reason} maxLength={1000} rows={2} onChange={e=>{setReason(e.target.value);setPreview(null);}} placeholder="How did you confirm the operating model and this branch?"/></label>
    </fieldset>
-   {workspace.branches.length===0&&<p role="note" className="mt-3">No business profile passed the website or phone check. Identity remains unconfirmed; missing details are not evidence of a mismatch.</p>}
+   {workspace.branches.length===0&&<p role="note" className="mt-3">No saved business profile is available to select for this review.</p>}
    {branch&&!workspace.branches.find(b=>b.ref===branch)?.available_for_reassessment&&<p role="note" className="mt-3">This branch is a verified candidate, but its full saved details are unavailable. Offline reassessment cannot use it yet.</p>}
    <p className="mt-3 text-sm">Saved observations: {workspace.evidence_as_of}. No new collection or collection credit is used for reassessment.</p>
    {dirty&&!preview&&!committed&&<p role="status" className="mt-3 font-medium">Your choices have not been applied.</p>}

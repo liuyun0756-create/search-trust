@@ -28,7 +28,8 @@ it('renders client, shared and advisor views with explicit sample and unknown la
   render(shared?<CapabilitySharedReport delivery={delivery} token="synthetic"/>:<CapabilityReportDocument document={projectCapabilityReport(report)}/>);
   const section=screen.getByRole('region',{name:'Google Business Profile comparison'});
   expect(section.textContent).toContain('At least 30');expect(section.textContent).toContain('20/30 sampled reviews');
-  expect(section.textContent).toContain('Not checked: customer review samples were not collected.');
+  expect(section.textContent).toContain('Not checked: customer reviews were not collected.');
+  expect(section.textContent).toContain('Comparison not checked: customer reviews were not collected.');
   expect(section.textContent).not.toMatch(/source_refs|\/payload\/|req_|rv_|latitude|longitude|provider_| · en · mobile|v22_public\./);
   cleanup();
  }

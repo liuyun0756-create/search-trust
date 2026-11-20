@@ -1,10 +1,17 @@
-import type {AnalysisInputManifest,LandingComparison} from './generated/types';
+import type {AnalysisInputManifest,LandingComparison,LandingMetric} from './generated/types';
 import {readerTarget} from './reader-copy';
 
 export const LANDING_LABELS={local_entities:'Distinct target cities mentioned',case_study:'Detailed project narratives',portfolio:'Work showcase sections',credentials:'Website credential claims',service_price:'Service pricing information',discount:'Discount offers',project_budget:'Project budget statements'} as const;
 export const LANDING_METRICS=Object.keys(LANDING_LABELS) as (keyof typeof LANDING_LABELS)[];
 function publicUrl(value:string){try{const u=new URL(value);return ['http:','https:'].includes(u.protocol)?u.origin+u.pathname:null;}catch{return null;}}
 const comparisonCopy={bounded_counts:'Full-site page totals are not compared: these are bounded samples.',customer_unchecked:'Comparison not checked: the customer element was not verified in the saved sample.',insufficient_comparators:'Comparison not checked: fewer than two eligible competitor samples.',comparison_time_gap:'Comparison not checked: original page sampling times are more than 24 hours apart.',no_supported_difference:'No supported difference is established from these bounded samples.'};
+const uncheckedReason: Partial<Record<LandingMetric['reason'], string>> = {
+  not_observed_in_saved_sample: 'Not checked: the saved sample does not establish this element.',
+  no_usable_pages: 'Not checked: no usable pages were saved for this website.',
+  source_unavailable: 'Not checked: the website sample was unavailable.',
+  identity_unresolved: 'Not checked: the site sample could not be tied to the business.',
+  target_city_unavailable: 'Not checked: no confirmed target city was saved.',
+};
 export function landingComparisonView(value:LandingComparison,clientOnly:boolean){return {
  cityLimit:value.target_city?`Only the confirmed target city (${readerTarget(value.target_city)}) is checked; other cities, neighbourhoods and landmarks are not assessed.`:'Target city not checked: no confirmed target city was saved.',
  rows:value.rows.map(r=>({name:readerTarget(r.name),subject:r.subject,
@@ -12,7 +19,7 @@ export function landingComparisonView(value:LandingComparison,clientOnly:boolean
   pageTypes:Object.entries(r.page_type_counts).filter(([,n])=>n>0).map(([label,count])=>({label:label.replaceAll('_',' '),count})),
   metrics:LANDING_METRICS.map(key=>({key,label:LANDING_LABELS[key],text:r.metrics[key].status==='observed'
    ?key==='local_entities'?'Target city observed in the saved sample.':`At least ${r.metrics[key].count} observed in the saved sample.`
-   :r.metrics[key].reason==='target_city_unavailable'?'Not checked: no confirmed target city was saved.':'Not checked: the saved sample does not establish this element.'})),
+   :uncheckedReason[r.metrics[key].reason]??'Not checked: the saved sample does not establish this element.'})),
   sources:[...new Set(Object.values(r.metrics).flatMap(m=>m.evidence.map(e=>publicUrl(e.url))).filter((u):u is string=>u!==null))],
  })),comparisons:value.comparisons.map(c=>({metric:c.metric,label:c.metric==='page_type_counts'?'Page sample counts':LANDING_LABELS[c.metric],classification:'Inference',text:comparisonCopy[c.reason]})),
  ...(!clientOnly?{technical:structuredClone(value)}:{}),

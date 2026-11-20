@@ -6,7 +6,7 @@ test('first-page keyword client and advisor views stay separate without provider
  const section=page.getByRole('region',{name:'Target keyword visibility'});
  await expect(section).toBeVisible();
  await expect(section.getByText('Not observed on the first page of the sampled results.')).toBeVisible();
- await expect(section.getByText('Not checked in this sample.')).toHaveCount(2);
+ await expect(section.getByText('Not checked: this result section was unavailable.')).toHaveCount(2);
  await expect(section.getByText('Medium visibility in the checked sample. 2/3 keywords checked')).toHaveCount(2);
  expect(await section.innerText()).not.toMatch(/Google Maps reference|provider_position|latitude|snapshot_id|"ratio"|\/payload\//);
  await expect(page.getByRole('button',{name:/Start analysis|Generate Prospect report|Approve/})).toHaveCount(0);

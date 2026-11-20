@@ -7,6 +7,7 @@ import type { CapabilityReport } from "./generated/types";
 import { buildApprovedCapabilityDelivery, validateSavedCapabilityRevision } from "./delivery";
 import type { ApprovedCapabilityDelivery, SavedCapabilityRevision } from "./delivery";
 import { capabilityWorkspaceItem } from "./workspace";
+import { supportsIdentityReview } from "@/lib/identity-review/view";
 
 export class CapabilityPersistenceError extends Error {
   constructor(public readonly code: "CAPABILITY_INVALID" | "CAPABILITY_CONFLICT" | "CAPABILITY_UNAVAILABLE") {
@@ -26,8 +27,23 @@ export class CapabilityRepository {
     const { data, error } = await this.db.rpc("list_v22_completed_capability_reports", { p_user_id: userId });
     checkError(error);
     if (!Array.isArray(data)) throw new CapabilityPersistenceError("CAPABILITY_UNAVAILABLE");
-    try { return data.map((row: unknown) => capabilityWorkspaceItem(row, userId)); }
+    let reports;
+    try { reports = data.map((row: unknown) => capabilityWorkspaceItem(row, userId)); }
     catch { throw new CapabilityPersistenceError("CAPABILITY_INVALID"); }
+    if (!reports.some(report => report.type === "prospect")) return reports;
+
+    // The completed index omits the ruleset. Fetch only owner-scoped metadata,
+    // then join it to the already authorized report IDs.
+    const metadata = await this.db.from("capability_report_versions")
+      .select("id,case_id,ruleset:payload->input_manifest->>ruleset_version")
+      .eq("user_id", userId).eq("payload->>report_type", "prospect");
+    if (metadata.error || !metadata.data) return reports;
+    const byId = new Map(metadata.data.map(row => [row.id, row]));
+    return reports.map(report => {
+      const row = byId.get(report.reportId);
+      return row?.case_id === report.caseId && supportsIdentityReview(report.type, row.ruleset)
+        ? { ...report, identityReviewAvailable: true } : report;
+    });
   }
 
   async saveBusiness(userId: string, caseId: string, expectedRevision: number, value: unknown) {

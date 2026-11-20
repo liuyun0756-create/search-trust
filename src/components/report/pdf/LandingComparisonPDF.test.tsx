@@ -25,7 +25,7 @@ it('renders the actual landing PDF with bounded counts and target-city limits, n
  expect(output).toContain('These are not full-site totals.');
  expect(output).toContain('observed in the saved sample.');
  expect(output).toContain('20/30 sampled reviews');
- expect(output).toContain('customer review samples were not collected');
+ expect(output).toContain('customer reviews were not collected');
  expect(output).not.toMatch(/source_refs|"ratio"|provider_position|\/payload\/|latitude|Inspect landing page comparison sources/);
  expect(JSON.stringify(delivery)).toBe(before);
 });

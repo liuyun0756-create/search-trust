@@ -1,6 +1,15 @@
 import type {AnalysisInputManifest, KeywordVisibility, KeywordPosition, KeywordAssessment} from './generated/types';
 
 export const FIRST_PAGE_ABSENT = 'Not observed on the first page of the sampled results.';
+const uncheckedReason: Partial<Record<KeywordPosition['reason'], string>> = {
+  source_unavailable: 'Not checked: no usable search sample was saved.',
+  request_failed: 'Not checked: the search request did not complete.',
+  section_unavailable: 'Not checked: this result section was unavailable.',
+  parse_incomplete: 'Not checked: some returned results could not be read.',
+  identity_unresolved: 'Not checked: the sampled results could not be tied to the business.',
+  rank_basis_mismatch: 'Not checked: recorded positions used different ranking methods.',
+  sample_not_local: 'Not checked: the sample did not represent the target area.',
+};
 function grade(k:number,h:number){return k<2?'not_assessed':3*h>=2*k?'strong':3*h>=k?'medium':'weak';}
 export function keywordVisibilityValid(v:KeywordVisibility,m:AnalysisInputManifest){
   if(JSON.stringify(v.rows.map(r=>r.query))!==JSON.stringify(m.keyword_queries))return false;
@@ -23,7 +32,7 @@ function position(p:KeywordPosition,channel:'organic'|'local_pack'|'maps'){
     ?p.rank_source==='response_order'?`Position ${p.position} in the returned sample.`:`Observed position: ${p.position}`
     :p.status==='not_detected'?channel==='organic'?FIRST_PAGE_ABSENT:channel==='local_pack'
       ?'Not observed in the sampled Map Pack.':'Not observed in the sampled Maps results.'
-    :'Not checked in this sample.'};
+    :uncheckedReason[p.reason] ?? 'Not checked in this sample.'};
 }
 function assessment(a:KeywordAssessment){return {
   label:{strong:'Strong visibility in the checked sample.',medium:'Medium visibility in the checked sample.',weak:'Weak visibility in the checked sample.',not_assessed:'Not assessed.'}[a.assessment],

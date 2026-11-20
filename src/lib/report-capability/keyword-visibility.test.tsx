@@ -56,7 +56,7 @@ it('renders all three first-page states and only the grade plus K/N for clients'
  const section=screen.getByRole('region',{name:'Target keyword visibility'});
  expect(within(section).getAllByText('Observed position: 2')).toHaveLength(2);
  expect(within(section).getByText(FIRST_PAGE_ABSENT)).toBeTruthy();
- expect(within(section).getAllByText('Not checked in this sample.')).toHaveLength(2);
+ expect(within(section).getAllByText('Not checked: this result section was unavailable.')).toHaveLength(2);
  expect(section.textContent).toContain('Medium visibility in the checked sample.');
  expect(section.textContent).not.toMatch(/0\.5|Google Maps reference|provider_position|latitude|\/payload\//);
 });

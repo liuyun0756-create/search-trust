@@ -37,6 +37,26 @@ describe("P1 capability server boundary", () => {
     expect(rpc).toHaveBeenCalledWith("list_v22_completed_capability_reports",{p_user_id:m.user_id});
     await expect(repo.listCompletedReports(m.user_id)).rejects.toMatchObject({code:"CAPABILITY_INVALID"});
   });
+  it("adds identity review only to a completed prospect belonging to the requested owner and Case", async () => {
+    const {report} = generatedDelivery("public-0.json");
+    const m = report.input_manifest;
+    const oldId = "00000000-0000-4000-8000-000000000002";
+    const otherId = "00000000-0000-4000-8000-000000000003";
+    const complete = {id:report.id,user_id:m.user_id,case_id:m.case_id,business_name:"Clinic",site_url:m.business.site_url,
+      market:m.business.target_market,service:m.business.primary_service,report_type:"prospect",version:report.version,
+      generated_at:report.generated_at,delivery_revision:0,delivery_status:"original"};
+    const rpc = vi.fn().mockResolvedValue({data:[complete,{...complete,id:oldId}],error:null});
+    const eq = vi.fn().mockReturnValueOnce({eq:vi.fn().mockResolvedValue({data:[
+      {id:report.id,case_id:m.case_id,ruleset:"v22_capability_public_v20"},
+      {id:oldId,case_id:m.case_id,ruleset:"v22_capability_public_v12"},
+      {id:otherId,case_id:m.case_id,ruleset:"v22_capability_public_v20"},
+    ],error:null})});
+    const from = vi.fn(() => ({select:vi.fn(() => ({eq}))}));
+    const repository = new CapabilityRepository({rpc,from} as unknown as SupabaseClient);
+    const reports = await repository.listCompletedReports(m.user_id);
+    expect(reports.filter(row => row.identityReviewAvailable).map(row => row.reportId)).toEqual([report.id]);
+    expect(eq).toHaveBeenCalledWith("user_id",m.user_id);
+  });
   it("reads completed entitlement through its dedicated gate and never falls back to a candidate", async () => {
     const { report } = generatedDelivery("service-first.json");
     const m = report.input_manifest;

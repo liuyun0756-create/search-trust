@@ -2,7 +2,7 @@ import type {AnalysisInputManifest,GbpComparison,GbpMetric} from './generated/ty
 import {readerTarget} from './reader-copy';
 export const GBP_METRICS=['categories','rating','review_count','reviews_90d','latest_review','visible_replies'] as const;
 export const GBP_LABELS={categories:'Categories',rating:'Rating',review_count:'Total reviews',reviews_90d:'Reviews in the last 90 days',latest_review:'Sample latest review date',visible_replies:'Sample visible replies'};
-const reasons:Record<string,string>={customer_reviews_not_collected:'Not checked: customer review samples were not collected.',source_unavailable:'Not checked: the saved source did not provide a usable value.',identity_unresolved:'Not checked: the profile identity could not be confirmed.',date_unavailable:'Not checked: sample review dates could not be verified.',no_review_sample:'Not checked: no usable review sample was saved.',no_reviews:'Not applicable: the confirmed total review count is zero.'};
+const reasons:Partial<Record<GbpMetric['reason'],string>>={customer_reviews_not_collected:'Not checked: customer reviews were not collected.',source_unavailable:'Not checked: the saved source did not provide a usable value.',identity_unresolved:'Not checked: the profile identity could not be confirmed.',date_unavailable:'Not checked: sample review dates could not be verified.',no_review_sample:'Not checked: no usable review sample was saved.',no_reviews:'Not applicable: the confirmed total review count is zero.'};
 function text(m:GbpMetric){
  if(m.status!=='observed')return reasons[m.reason]??'Not checked in this sample.';
  if(m.denominator!=null)return `${m.numerator}/${m.denominator} sampled reviews have a visible owner reply.`;
@@ -17,7 +17,8 @@ export function gbpComparisonView(value:GbpComparison,clientOnly:boolean){
  differences:value.differences.map(d=>({metric:d.metric,text:d.status==='observed'
   ?d.direction==='different_categories'?`${d.competitor_indices.length} checked competitors share categories not returned for the customer.`
    :`${d.competitor_indices.length} checked competitors have a ${d.direction} ${GBP_LABELS[d.metric].toLowerCase()} in the saved sample.`
-  :d.reason==='customer_unchecked'?'Comparison not checked: the customer value is not available.'
+  :d.reason==='customer_unchecked'?value.rows[0]?.metrics[d.metric]?.reason==='customer_reviews_not_collected'
+    ?'Comparison not checked: customer reviews were not collected.':'Comparison not checked: the customer value is not available.'
    :d.reason==='comparison_time_gap'?'Comparison not checked: original sampling times are more than 24 hours apart.'
    :'Comparison not checked: fewer than two eligible competitors support a comparable difference.'})),
  ...(!clientOnly?{technical:structuredClone(value)}:{})};
