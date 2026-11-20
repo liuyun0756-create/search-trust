@@ -13,6 +13,7 @@ export type ReportWorkspaceItem = {
   generatedAt: string;
   deliveryRevision?: number;
   deliveryStatus?: "original" | "draft" | "approved";
+  identityReviewAvailable?: boolean;
 };
 
 export type ReportCaseGroup = {
@@ -153,6 +154,11 @@ export function ReportCaseWorkspace({ cases }: { cases: ReportCaseGroup[] }) {
                   <Link href={reportHref(item.latestReport)} className="inline-flex items-center gap-2 rounded-lg bg-[#26432e] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#365d40] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#356b3c]">
                     Open latest report <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </Link>
+                  {item.latestProspect?.identityReviewAvailable && (
+                    <Link href={`${reportHref(item.latestProspect)}#identity-title`} className="inline-flex items-center rounded-lg border border-[#dfe7dc] px-4 py-2.5 text-sm font-semibold text-[#42614a] hover:bg-[#f2f7f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#356b3c]">
+                      Confirm identity
+                    </Link>
+                  )}
                   {item.reports.length > 1 ? (
                     <details className="group w-full sm:w-auto">
                       <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-[#dfe7dc] px-4 py-2.5 text-sm font-semibold text-[#42614a] marker:content-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#356b3c]">View report history <FileText className="h-4 w-4" aria-hidden="true" /></summary>

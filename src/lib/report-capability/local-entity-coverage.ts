@@ -46,7 +46,9 @@ export function localEntityCoverageView(value: LocalEntityCoverage, clientOnly: 
     city: value.target_city,
     status: STATUS[value.status],
     limit: LIMIT,
-    scope: value.complete ? "Checked pages only" : "Some sampled pages could not be checked",
+    scope: value.status === "not_checked" && value.reason === "target_city_unavailable"
+      ? "No confirmed target city was saved."
+      : value.complete ? "Checked pages only" : "Some sampled pages could not be checked",
     observations: (Object.keys(POSITIONS) as (keyof typeof POSITIONS)[]).flatMap(key =>
       locations.has(key) ? [{position: POSITIONS[key], quote: locations.get(key)!}] : []),
     ...(!clientOnly ? { technical: {

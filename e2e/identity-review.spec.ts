@@ -8,7 +8,11 @@ test.beforeEach(async({page})=>{
 for(const row of [{scenario:'volcanoes-hiking-guides',mode:'meeting_point',expected:'Street address check is not applicable',shot:'volcanoes-meeting-point'},{scenario:'pr-plumbing-fresno',mode:'hybrid',expected:'Street address check applies.',shot:'pr-hybrid'}]){
  test(`${row.scenario}: confirm identity, compare, create and approve separate delivery`,async({page})=>{
   await page.goto(`/e2e/identity-review?scenario=${row.scenario}`);
-  await expect(page.getByTestId('current-address')).toContainText('Identity is not confirmed');
+  const status=page.getByTestId('current-address');
+  await expect(status).toContainText('GBP branch match');
+  await expect(status).toContainText('Operating model');
+  await expect(status).toContainText('Customer visits at this address');
+  await expect(status).toContainText('Unconfirmed');
   const profile=page.getByLabel('Google Business Profile',{exact:true});
   if(row.mode==='meeting_point'){
    await expect(profile.locator('option')).toHaveCount(3);

@@ -5,7 +5,7 @@ test('offline v15 comparison shows bounded samples and keeps advisor details pri
  const section=page.getByRole('region',{name:'Google Business Profile comparison'});
  await expect(section).toBeVisible();await expect(section.getByRole('cell').filter({hasText:/^At least 30/})).toHaveCount(3);
  await expect(section.getByRole('cell').filter({hasText:/^20\/30 sampled reviews have a visible owner reply\./})).toHaveCount(3);
- await expect(section.getByText('Not checked: customer review samples were not collected.',{exact:true})).toHaveCount(3);
+ await expect(section.getByText('Not checked: customer reviews were not collected.',{exact:true})).toHaveCount(3);
  expect(await section.innerText()).not.toMatch(/source_refs|\/payload\/|latitude|provider_|req_|v22_public\./);
  await page.screenshot({path:'output/p1-02/gbp-client.png',fullPage:true});
  await page.getByRole('link',{name:'Advisor preview'}).click();

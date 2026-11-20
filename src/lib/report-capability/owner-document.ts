@@ -4,6 +4,7 @@ import type { CapabilityRepository } from "./repository";
 import { initialCapabilityRevision } from "./revision";
 import { deliveryOrderConstraints } from "./order";
 import { observationWarnings } from "./reader-copy";
+import { supportsIdentityReview } from "@/lib/identity-review/view";
 
 /** Completed entitlement precedes any report or revision content read. */
 export async function loadCapabilityOwnerDocument(
@@ -18,8 +19,8 @@ export async function loadCapabilityOwnerDocument(
     document: projectCapabilityReport(report, approved?.content, !!approved),
     observationWarnings: observationWarnings(report),
     version: report.version,
-    identityReviewAvailable: report.report_type === "prospect"
-      && ["v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20"].includes(report.input_manifest.ruleset_version),
+    identityReviewAvailable: supportsIdentityReview(report.report_type, report.input_manifest.ruleset_version),
+    prospect: report.report_type === "prospect",
     generatedAt: report.generated_at,
     approvedRevision: approved?.revision ?? null,
     hasApproved: revision?.status === "approved",

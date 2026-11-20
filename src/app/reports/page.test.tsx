@@ -1,14 +1,16 @@
 import {renderToStaticMarkup} from "react-dom/server";
-import {afterEach,describe,expect,it,vi} from "vitest";
+import {afterEach,beforeEach,describe,expect,it,vi} from "vitest";
 import ReportsPage from "./page";
-const mocks=vi.hoisted(()=>({list:vi.fn(),order:vi.fn(),reviews:vi.fn()}));
-vi.mock("@/lib/auth",()=>({getCurrentUser:async()=>({userId:"00000000-0000-0000-0000-000000000001"})}));
+const mocks=vi.hoisted(()=>({list:vi.fn(),order:vi.fn(),reviews:vi.fn(),user:vi.fn()}));
+const ownerId="00000000-0000-0000-0000-000000000001";
+vi.mock("@/lib/auth",()=>({getCurrentUser:mocks.user}));
 vi.mock("@/lib/supabase",()=>({createServerClient:()=>{
   const query={from:()=>query,select:()=>query,eq:()=>query,not:()=>query,order:mocks.order};return query;
 }}));
 vi.mock("@/lib/report-capability/repository",()=>({CapabilityRepository:class {listCompletedReports=mocks.list;}}));
 vi.mock("@/lib/review-reports/repository",()=>({ReviewDeliveryRepository:class {list=mocks.reviews;}}));
 afterEach(()=>{vi.unstubAllEnvs();vi.clearAllMocks();});
+beforeEach(()=>mocks.user.mockResolvedValue({userId:ownerId}));
 describe("versioned report workspace",()=>{
   it("leaves the existing list alone with the capability switch off",async()=>{
     vi.stubEnv("V22_CAPABILITY_DISPATCH_ENABLED","false");mocks.order.mockResolvedValue({data:[],error:null});
@@ -25,6 +27,21 @@ describe("versioned report workspace",()=>{
   it("shows a load error instead of a misleading empty list when the new source fails",async()=>{
     vi.stubEnv("V22_CAPABILITY_DISPATCH_ENABLED","true");mocks.order.mockResolvedValue({data:[],error:null});mocks.list.mockRejectedValue(new Error("private"));
     const html=renderToStaticMarkup(await ReportsPage());expect(html).toContain("Reports could not be loaded");expect(html).not.toContain("No V2.2 reports yet");
+  });
+  it("links the owner directly to a reviewable frozen prospect and hides the link on older reports", async () => {
+    vi.stubEnv("V22_CAPABILITY_DISPATCH_ENABLED","true");
+    mocks.order.mockResolvedValue({data:[],error:null});
+    const modern={caseId:"case-1",reportId:"report-1",businessName:"Clinic",siteUrl:"https://clinic.example.invalid",market:"Local",service:"Dental care",type:"prospect",version:1,generatedAt:"2026-10-21T00:00:00Z",identityReviewAvailable:true};
+    mocks.list.mockResolvedValue([modern,{...modern,caseId:"case-2",reportId:"old-report",identityReviewAvailable:undefined}]);
+    const html=renderToStaticMarkup(await ReportsPage());
+    expect(mocks.list).toHaveBeenCalledWith(ownerId);
+    expect(html).toContain('href="/cases/case-1/reports/report-1#identity-title"');
+    expect(html).not.toContain('href="/cases/case-2/reports/old-report#identity-title"');
+  });
+  it("redirects visitors before loading private Case actions", async () => {
+    mocks.user.mockResolvedValueOnce(null);
+    await expect(ReportsPage()).rejects.toThrow("NEXT_REDIRECT");
+    expect(mocks.list).not.toHaveBeenCalled();
   });
   it("adds completed review versions only when their separate switch is enabled",async()=>{
     vi.stubEnv("V22_CAPABILITY_DISPATCH_ENABLED","true");vi.stubEnv("V22_REVIEW_DELIVERY_ENABLED","true");
