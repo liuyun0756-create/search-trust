@@ -3,6 +3,7 @@ import addFormats from "ajv-formats";
 import requestSchema from "./runtime-contracts/request.schema.json";
 import completedSchema from "./runtime-contracts/completed.schema.json";
 import dispatchSchema from "./runtime-contracts/dispatch.schema.json";
+import type {CapabilityReport} from "./generated/types";
 
 export type CapabilityTaskEnvelope = {
   schema_version: "v22_capability_request_envelope_v1";
@@ -11,7 +12,7 @@ export type CapabilityTaskEnvelope = {
 export type CompletedCapabilityTask = {
   schema_version: "v22_capability_task_status_v1"; job_id: string; revision: number; run_generation: number;
   status: "succeeded"; stage: "completed"; progress: 100; message: string;
-  report_reference: { report_id: string; case_id: string; schema_version: "2.2.2" | "2.2.4" | "2.2.5" | "2.2.6" | "2.2.7" | "2.2.8" | "2.2.9" | "2.2.10"; report_type: "prospect" | "verified_execution"; payload_checksum: string };
+  report_reference: { report_id: string; case_id: string; schema_version: CapabilityReport["schema_version"]; report_type: "prospect" | "verified_execution"; payload_checksum: string };
   created_at: string; deadline_at: string; updated_at: string;
 };
 const ajv = new Ajv2020({ strict: true, coerceTypes: false, useDefaults: false });

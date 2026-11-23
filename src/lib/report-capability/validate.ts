@@ -39,7 +39,33 @@ export function validateBusinessScope(value: unknown): value is BusinessScope {
   } catch { return false; }
 }
 
-function manifestValid(m: AnalysisInputManifest) {
+const inheritanceVariants = {
+  v22_capability_public_v13: ["v22_analysis_input_v3", "2.2.8"],
+  v22_capability_public_v14: ["v22_analysis_input_v4", "2.2.9"],
+  v22_capability_public_v15: ["v22_analysis_input_v5", "2.2.10"],
+  v22_capability_public_v16: ["v22_analysis_input_v6", "2.2.11"],
+  v22_capability_public_v17: ["v22_analysis_input_v7", "2.2.12"],
+  v22_capability_public_v18: ["v22_analysis_input_v8", "2.2.13"],
+  v22_capability_public_v20: ["v22_analysis_input_v10", "2.2.15"],
+} as const;
+
+function manifestLayout(m: AnalysisInputManifest): AnalysisInputManifest {
+  const inheritance = m.identity_inheritance;
+  if (!inheritance) return m;
+  return {...m, ruleset_version: inheritance.base_ruleset, schema_version: inheritanceVariants[inheritance.base_ruleset][0]};
+}
+
+function manifestValid(bound: AnalysisInputManifest) {
+  const inheritance = bound.identity_inheritance;
+  if (Boolean(inheritance) !== (bound.schema_version === "v22_analysis_input_v11")
+    || Boolean(inheritance) !== (bound.ruleset_version === "v22_capability_public_v21")) return false;
+  if (inheritance) {
+    if (bound.mode !== "acquisition" || Object.hasOwn(bound, "execution_type")
+      || instant(inheritance.confirmed_at) > instant(bound.evaluated_at)
+      || (inheritance.branch === "needs_confirmation"
+        && (inheritance.operating_model === "retained" || inheritance.visits === "retained"))) return false;
+  } else if (Object.hasOwn(bound, "identity_inheritance")) return false;
+  const m = manifestLayout(bound);
   if (!validateBusinessScope(m.business) || m.business.user_id !== m.user_id || m.business.case_id !== m.case_id || instant(m.business.confirmed_at) > instant(m.evaluated_at)) return false;
   const kinds = m.snapshots.map((s) => s.source_kind);
   if (!unique(kinds) || !unique(m.snapshots.map((s) => s.snapshot_id))) return false;
@@ -83,7 +109,7 @@ function manifestValid(m: AnalysisInputManifest) {
     || m.previous_report.report_type !== (m.mode === "after_acquisition" ? "prospect" : "verified_execution")) return false;
   if (m.previous_report?.report_id === m.job_id) return false;
   if ((m.mode === "review") !== (m.implementation !== null)) return false;
-  const { input_checksum, ...content } = m;
+  const { input_checksum, ...content } = bound;
   return canonicalDigest(content) === input_checksum;
 }
 
@@ -97,7 +123,12 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
   const invalid = { ok: false, code: "CAPABILITY_REPORT_INVALID" } as const;
   try {
     if (!structure(value)) return invalid;
-    const r = value, m = r.input_manifest;
+    if (!manifestValid(value.input_manifest)) return invalid;
+    const inheritance = value.input_manifest.identity_inheritance;
+    if (Boolean(inheritance) !== (value.schema_version === "2.2.16")) return invalid;
+    const m = manifestLayout(value.input_manifest);
+    const r: CapabilityReport = inheritance
+      ? {...value, input_manifest: m, schema_version: inheritanceVariants[inheritance.base_ruleset][1]} : value;
     const v20 = m.ruleset_version === "v22_capability_public_v20";
     if (v20 !== (r.schema_version === "2.2.15") || (v20 ? !actionAdviceValid(r) : Object.hasOwn(r,"action_advice"))) return invalid;
     const localEntity = v20 || m.ruleset_version === "v22_capability_public_v18";
@@ -118,7 +149,7 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
     const labelled = ["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"].includes(r.schema_version);
     if (labelled !== ["v22_capability_public_v8", "v22_capability_public_v9", "v22_capability_public_v10", "v22_capability_public_v11", "v22_capability_public_v12", "v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15", "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18", "v22_capability_public_v20", "v22_capability_service_v5"].includes(m.ruleset_version)) return invalid;
     if (!labelled && (r.schema_version === "2.2.4") !== (m.schema_version === "v22_analysis_input_v2")) return invalid;
-    if (!manifestValid(m) || r.id !== m.job_id || instant(r.generated_at) < instant(m.evaluated_at)
+    if (r.id !== m.job_id || instant(r.generated_at) < instant(m.evaluated_at)
       || r.report_type !== (m.mode === "acquisition" ? "prospect" : "verified_execution")
       || r.version !== ((m.base_report_ref ?? m.previous_report)?.version ?? 0) + 1
       || r.settlement_policy !== (m.execution_type === "public_reassessment" ? "no_charge_public_reassessment" : "one_credit_per_completed_analysis")
@@ -173,7 +204,7 @@ export function validateCapabilityReport(value: unknown): CapabilityValidation {
     if (Object.hasOwn(r, "prioritization") && r.prioritization == null) return invalid;
     if (ranked !== Boolean(r.prioritization) || (r.prioritization && !priorityMatches(r.prioritization, r))) return invalid;
     if (r.prioritization && r.prioritization.rules_version !== (v12 ? "v22_business_priority_v3" : /_v(?:[3456789]|10|11)$/.test(m.ruleset_version) ? "v22_business_priority_v2" : "v22_business_priority_v1")) return invalid;
-    return { ok: true, report: r };
+    return { ok: true, report: value };
   } catch { return invalid; }
 }
 
@@ -191,11 +222,11 @@ export function validateDeliveryRevision(value: unknown, report: CapabilityRepor
   try {
     if (!validateCapabilityReport(report).ok || !revisionStructure(value)) return false;
     const v3=value.schema_version === "v22_delivery_revision_v3";
-    if(v3 !== (["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"].includes(report.schema_version)))return false;
+    if(v3 !== (["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16"].includes(report.schema_version)))return false;
     if(v3 && !candidateSelectionValid(report,value))return false;
     if (!v3 && Object.hasOwn(value,"technical_omission_confirmation"))return false;
     if (v3 || value.schema_version === "v22_delivery_revision_v2") {
-      if(!["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"].includes(report.schema_version) || !value.client_action_ids || !unique(value.client_action_ids)
+      if(!["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16"].includes(report.schema_version) || !value.client_action_ids || !unique(value.client_action_ids)
         || !value.client_action_ids.every(id=>value.actions.some(a=>a.id===id))) return false;
     } else if(Object.hasOwn(value,"client_action_ids")) return false;
     const constraints = deliveryOrderConstraints(report);

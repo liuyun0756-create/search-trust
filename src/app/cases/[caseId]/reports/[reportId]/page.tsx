@@ -87,7 +87,7 @@ export default async function ReportV22Page({
         </nav> : null}
       </div>
       {query.view !== "client" && capability.prospect && (capability.identityReviewAvailable
-        ? <IdentityConfirmation caseId={caseId} reportId={reportId} />
+        ? <IdentityConfirmation caseId={caseId} reportId={reportId} inheritance={capability.identityInheritance} />
         : <section aria-labelledby="saved-identity-title" className="mx-auto mb-8 max-w-4xl rounded-2xl border border-[#718b73] bg-[#f4f8f0] p-6 text-[#22382c]">
             <h2 id="saved-identity-title" className="text-2xl font-semibold">Identity status</h2>
             <p className="mt-3 text-sm">This report format did not save identity review details.</p>

@@ -20,6 +20,7 @@ export async function loadCapabilityOwnerDocument(
     observationWarnings: observationWarnings(report),
     version: report.version,
     identityReviewAvailable: supportsIdentityReview(report.report_type, report.input_manifest.ruleset_version),
+    identityInheritance: report.input_manifest.identity_inheritance ?? undefined,
     prospect: report.report_type === "prospect",
     generatedAt: report.generated_at,
     approvedRevision: approved?.revision ?? null,
@@ -28,7 +29,7 @@ export async function loadCapabilityOwnerDocument(
     pendingDraft: revision?.status === "draft",
     deliveryRevision: revision?.revision ?? 0,
     deliveryStatus: revision?.status ?? "original",
-    candidateReport: ["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15"].includes(report.schema_version) ? report : undefined,
+    candidateReport: ["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16"].includes(report.schema_version) ? report : undefined,
     orderConstraints: deliveryOrderConstraints(report),
     editable: revision ? editableVisibility(report,{ ...revision.content, expected_revision: revision.revision }) : initialCapabilityRevision(report),
   };

@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-import type {ContactCheck} from '@/lib/report-capability/generated/types';
+import type {ContactCheck, IdentityInheritance} from '@/lib/report-capability/generated/types';
 import {modeLabels,type Mode,type Workspace,type Preview} from '@/lib/identity-review/view';
 import {contactCheckLabel} from '@/lib/report-capability/reader-copy';
 import {IdentityStatus} from './IdentityStatus';
@@ -10,7 +10,7 @@ export function addressSummary(checks:ContactCheck[],mode:Mode|null){
  const check=checks.find(c=>c.field==='address');
  return `Street address check applies. ${check?contactCheckLabel(check):'Not checked: saved evidence cannot establish the address use.'}`;
 }
-export function IdentityConfirmation({caseId,reportId,endpoint,onCommitted}:{caseId:string;reportId:string;endpoint?:string;onCommitted?:(p:Preview)=>void}){
+export function IdentityConfirmation({caseId,reportId,endpoint,onCommitted,inheritance}:{caseId:string;reportId:string;endpoint?:string;onCommitted?:(p:Preview)=>void;inheritance?:IdentityInheritance}){
  const [workspace,setWorkspace]=useState<Workspace|null>(null),[mode,setMode]=useState<Mode|''>(''),[branch,setBranch]=useState(''),[reason,setReason]=useState(''),[customersCanVisit,setCustomersCanVisit]=useState(false),[preview,setPreview]=useState<Preview|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[committed,setCommitted]=useState(false);
  const url=endpoint??`/api/v2/cases/${encodeURIComponent(caseId)}/reports/${encodeURIComponent(reportId)}/identity-review`;
  async function call(command:Record<string,unknown>){const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify(command)});const value=await response.json();if(!response.ok)throw Error(response.status===409?'The report changed or this branch lacks saved details. Your choices are retained. Reload the identity workspace before trying again.':'Identity review is unavailable. Your choices are retained.');return value;}
@@ -30,7 +30,7 @@ export function IdentityConfirmation({caseId,reportId,endpoint,onCommitted}:{cas
   {error&&<div role="alert" className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3">{error}<button className="ml-3 underline" disabled={busy} onClick={()=>execute('workspace')}>Reload identity workspace</button></div>}
   {!workspace&&!error&&<p role="status" className="mt-4">Loading saved identity…</p>}
   {workspace&&<>
-   <IdentityStatus identity={workspace.identity} checks={workspace.checks}/>
+   <IdentityStatus identity={workspace.identity} checks={workspace.checks} inheritance={inheritance}/>
    <details className="mt-3 text-sm"><summary className="cursor-pointer">System suggestion and saved evidence</summary><p className="mt-2">Suggestion: {workspace.automatic.suggested_value?modeLabels[workspace.automatic.suggested_value]:'Needs your confirmation'}. A suggestion does not confirm customer access to an address.</p>{workspace.automatic.evidence_refs.map((e,i)=><blockquote key={i} className="mt-2 border-l-2 pl-3">{e.quote}<span className="block text-xs">{e.url}</span></blockquote>)}</details>
    <fieldset disabled={busy||committed} className="mt-5 grid gap-5 sm:grid-cols-2">
     <label className="font-medium">Operating model<select aria-label="Operating model" className={inputClass} value={mode} onChange={e=>{setMode(e.target.value as Mode);setCustomersCanVisit(false);setPreview(null);}}><option value="">Choose an operating model</option>{Object.entries(modeLabels).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>

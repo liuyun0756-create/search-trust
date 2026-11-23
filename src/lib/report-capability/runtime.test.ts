@@ -15,6 +15,13 @@ describe("separate capability worker transport",()=>{
     expect(validateCapabilityTaskEnvelope(request)).toBe(true);
     expect(validateCompletedCapabilityTask(completed)).toBe(true);
   });
+  it("accepts a v21 completion reference and rejects unknown report versions",()=>{
+    const value = {...completed, report_reference: {...completed.report_reference, schema_version: "2.2.16"}};
+    expect(validateCompletedCapabilityTask(value)).toBe(true);
+    expect(validateCompletedCapabilityTask({
+      ...value, report_reference: {...value.report_reference, schema_version: "2.2.999"},
+    })).toBe(false);
+  });
   it.each(["job","time","schema","private-body","counter"])("rejects %s in the completion reference",(change)=>{
     const value=structuredClone(completed) as Record<string,unknown>;
     if(change==="job")value.job_id="00000000-0000-0000-0000-000000009999";
