@@ -12,7 +12,7 @@ import {validateCapabilityReport} from '../../src/lib/report-capability/validate
 const scalar=new Set(['claim_v22_first_service_discovery_dispatch','claim_v22_first_service_discovery_run',
   'record_v22_first_service_discovery','claim_v22_first_service_preparation','heartbeat_v22_first_service_preparation',
   'begin_v22_first_service_collection','freeze_v22_first_service_preparation','get_v22_capability_dispatch',
-  'resolve_v22_capability_analysis_input']);
+  'resolve_v22_capability_analysis_input','inspect_v22_capability_preparation']);
 const rows=new Set(['list_v22_first_service_preparation_work','complete_v22_capability_analysis']);
 
 export async function createFirstServiceFullJourney(clean=false,loss:'none'|'freeze'|'handoff'|'collection'='none'){

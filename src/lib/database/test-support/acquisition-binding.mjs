@@ -42,7 +42,8 @@ export async function seed(db,{owner,caseId,identity,service,market}){
  await db.query(`insert into client_cases(id,user_id,site_url,normalized_domain,business_name,business_identity,operating_model,primary_service,target_market)
  values($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9::jsonb)`,[caseId,owner,identity.site_url,identity.normalized_domain,identity.business_name,JSON.stringify(identity),identity.operating_model,service,JSON.stringify(market)]);
 }
-export async function enrolled(db,b){
+/** @param {() => Promise<void>} [beforeEnrollment] */
+export async function enrolled(db,b,beforeEnrollment){
  const m=b.manifest,q=b.request,owner=m.user_id,caseId=m.case_id,job=m.job_id;
  await seed(db,{owner,caseId,identity:b.old,service:m.business.primary_service,market:q.evidence_input.context.target_market});
  await rpc(db,'save_v22_business_scope',{p_user_id:owner,p_case_id:caseId,p_expected_revision:0,p_scope:m.business});
@@ -50,6 +51,7 @@ export async function enrolled(db,b){
  values($1,$2,'prospect_report','queued','queued','binding-synthetic',now()-interval '10 seconds',now()+interval '20 minutes')`,[job,caseId]);
  await db.query(`insert into workflow_charges(id,user_id,case_id,workflow_kind,idempotency_key,analysis_job_id,discovery_job_id) values($1,$2,$3,'prospect','binding-synthetic',$1,$1)`,[job,owner,caseId]);
  await db.query(`insert into credit_ledger(user_id,case_id,workflow_charge_id,analysis_job_id,kind,delta,balance_after,idempotency_key) values($1,$2,$3,$3,'prospect_debit',-1,2,'binding-synthetic')`,[owner,caseId,job]);
+ if(beforeEnrollment)await beforeEnrollment();
  const envelope={schema_version:'v22_analysis_request_envelope_v1',analyze_request:{case_id:caseId,report_type:'prospect',business_identity:b.old,primary_service:m.business.primary_service,target_market:q.evidence_input.context.target_market,queries:q.evidence_input.context.queries,competitors:q.evidence_input.context.competitors,first_party_snapshots:[]},competitor_discovery:{local_synthetic:true}};
  await rpc(db,'begin_v22_acquisition_preparation',{p_user_id:owner,p_case_id:caseId,p_job_id:job,p_idempotency_key:'binding-synthetic',p_business_version_id:m.business.id,p_request_canonical:canonicalJsonText(envelope)});
  const token=randomUUID();await rpc(db,'claim_v22_acquisition_preparation',{p_job_id:job,p_run_generation:1,p_lease_token:token,p_max_attempts:3});

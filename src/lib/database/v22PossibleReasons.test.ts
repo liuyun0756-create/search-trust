@@ -18,6 +18,7 @@ const baselineAcls=new Map<string,string|null>();
 const v17Results=new Map<string, unknown>();
 const v18BaselineAcls=new Map<string,string|null>();
 const v18Results=new Map<string, unknown>();
+let gbpNumericFixResult: {source:string;definition:string;acl:string|null} | undefined;
 const v20Results=new Map<string, unknown>();
 
 async function functionState(signature:string) {
@@ -76,6 +77,7 @@ describe.each([17,18,20])('v%i comparison SQL boundary',version=>{
     expect(await functionState(row.signature)).toEqual({source:row.old,definition:row.old_definition,acl:row.acl});
    }
    await db.exec(await readFile('supabase/migrations/'+name,'utf8'));
+   if(name.startsWith('20261119120000')) gbpNumericFixResult=await functionState('validate_v22_gbp_comparison(jsonb)');
    if(name.startsWith('20261119110000')) for(const row of actionAdviceAudit) {
     v20Results.set(row.signature,await functionState(row.signature));
    }
@@ -195,11 +197,12 @@ describe.each([17,18,20])('v%i comparison SQL boundary',version=>{
    }
   });
   it('applies the GBP numeric fix without changing validator permissions',async()=>{
-   expect(await functionState('validate_v22_gbp_comparison(jsonb)')).toEqual({
+   expect(gbpNumericFixResult).toEqual({
     source:'fbb49257bd7342006707fbb41737f4b2',
     definition:'49f1317c82b800f3135b79a98e48263a',
     acl:'{postgres=X/postgres,service_role=X/postgres}',
    });
+   expect((await functionState('validate_v22_gbp_comparison(jsonb)')).acl).toBe(gbpNumericFixResult!.acl);
   });
   it('matches all 16 target definitions and keeps existing ACLs',async()=>{
    for(const row of localEntityAudit) expect(v18Results.get(row.signature)).toEqual({

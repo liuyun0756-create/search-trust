@@ -65,13 +65,23 @@ jobs:
     timeout-minutes: 30
     env:
       SEARCHTRUST_TEST_BACKEND_ROOT: ${{ github.workspace }}/output/e2e-backend
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - name: Check out the matching backend test harness
         uses: actions/checkout@v4
         with:
           repository: liuyun0756-create/SearchTrust-RD
-          ref: 0da935e7f368af5616e060d87d94447056a79724
+          ref: 5177b86291a4bb61952392f9e345d864e161a1bf
           path: output/e2e-backend
           persist-credentials: false
       - uses: actions/setup-python@v7
@@ -81,6 +91,11 @@ jobs:
         run: |
           python -m venv "$SEARCHTRUST_TEST_BACKEND_ROOT/.venv"
           "$SEARCHTRUST_TEST_BACKEND_ROOT/.venv/bin/python" -m pip install -r "$SEARCHTRUST_TEST_BACKEND_ROOT/requirements-dev.txt"
+      - name: Run matching backend Redis integration
+        working-directory: output/e2e-backend
+        env:
+          V22_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+        run: .venv/bin/python scripts/run_v22_redis_integration.py
       - uses: actions/setup-node@v4
         with:
           node-version: 22

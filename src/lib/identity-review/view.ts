@@ -5,7 +5,7 @@ export function supportsIdentityReview(reportType: string, ruleset: unknown) {
   return reportType === "prospect" && typeof ruleset === "string"
     && ["v22_capability_public_v13", "v22_capability_public_v14", "v22_capability_public_v15",
       "v22_capability_public_v16", "v22_capability_public_v17", "v22_capability_public_v18",
-      "v22_capability_public_v20"].includes(ruleset);
+      "v22_capability_public_v20", "v22_capability_public_v21"].includes(ruleset);
 }
 export type Selection={operating_model:Mode;branch_ref:string;reason:string;customers_can_visit?:boolean};
 export type Workspace={schema_version:'identity_review_workspace_v1';report_id:string;base_checksum:string;identity_revision:number;delivery_revision:number;identity:BusinessIdentityV2;automatic:OperatingModeAssessment;notes:string[];branches:{ref:string;name:string|null;address:string|null;website:string|null;phone:string|null;available_for_reassessment:boolean;domain_match:boolean|null;phone_match:boolean|null}[];lookup_status:string;lookup_reason:string;lookup_attempts:number;evidence_as_of:string;checks:ContactCheck[]};
