@@ -235,6 +235,34 @@ describe.each([17,18,20])('v%i comparison SQL boundary',version=>{
    await expect(rpc('validate_v22_action_advice',[json({...v20ExampleReport,schema_version:'2.2.14'})])).rejects.toThrow('CAPABILITY_ACTION_ADVICE_INVALID');
    await rpc('validate_v22_action_advice',[json({schema_version:'2.2.14'})]);
   });
+  it('checks all comparison modules against the mapped manifest of an inherited v21 report', async () => {
+   const inherited = structuredClone(report);
+   inherited.schema_version = '2.2.16';
+   const manifest = inherited.input_manifest;
+   manifest.ruleset_version = 'v22_capability_public_v21';
+   manifest.schema_version = 'v22_analysis_input_v11';
+   manifest.identity_inheritance = {
+    base_ruleset: 'v22_capability_public_v20', source_identity_version_id: randomUUID(),
+    source_identity_checksum: manifest.identity_checksum, source_revision: 4, confirmed_at: manifest.evaluated_at,
+    branch: 'retained', operating_model: 'retained', visits: 'retained',
+   };
+   const validators = [
+    ['validate_v22_keyword_visibility', 'keyword_visibility', 'CAPABILITY_KEYWORDS'],
+    ['validate_v22_gbp_comparison', 'gbp_comparison', 'CAPABILITY_GBP_COMPARISON'],
+    ['validate_v22_landing_comparison', 'landing_page_comparison', 'CAPABILITY_LANDING'],
+    ['validate_v22_possible_reasons', 'possible_reasons', 'CAPABILITY_REASONS'],
+    ['validate_v22_local_entity_coverage', 'local_entity_coverage', 'CAPABILITY_LOCAL_ENTITY'],
+   ];
+   for (const [validator, module, error] of validators) {
+    await rpc(validator, [json(report)]);
+    await rpc(validator, [json(inherited)]);
+    const changed = structuredClone(inherited);
+    delete changed[module];
+    await expect(rpc(validator, [json(changed)])).rejects.toThrow(error);
+   }
+   await rpc('validate_v22_action_advice', [json(inherited)]);
+   await rpc('validate_v22_candidate_pool', [json(inherited)]);
+  });
   it('matches all v20 targets and preserves the old ACLs',async()=>{
    for(const row of actionAdviceAudit) expect(v20Results.get(row.signature)).toEqual({
     source:row.target,definition:row.target_definition,acl:row.acl,
