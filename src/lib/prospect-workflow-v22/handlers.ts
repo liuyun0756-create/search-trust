@@ -1,3 +1,4 @@
+import {branchConfirmationHeader} from "../preflight-branch/contracts";
 import {checkedKeywordQueries} from '../target-keywords/contracts';
 import { NextRequest, NextResponse } from "next/server";
 
@@ -56,6 +57,8 @@ export function createProspectWorkflowHandlers(dependencies: Dependencies) {
       if((keywordsOn&&(keywordRevision===null||!/^[1-9][0-9]{0,9}$/.test(keywordRevision)||Number(keywordRevision)>2147483647
          ||!checkedKeywordQueries(parsed.value.queries)||parsed.value.queries.some(q=>q!==q.trim())))||(!keywordsOn&&keywordRevision!==null))
         return error("TARGET_KEYWORDS_REQUIRED","Confirm and save 3–5 target keywords before starting. No credit has been reserved.",409);
+      const branchId=request.headers.get(branchConfirmationHeader);
+      if (branchId!==null && !isUuid(branchId)) return error("GBP_BRANCH_INVALID", "The saved branch could not be verified.", 400);
       let reservation;
       try {
         reservation = await repo.reserve({
@@ -65,9 +68,13 @@ export function createProspectWorkflowHandlers(dependencies: Dependencies) {
           discoveryJobId,
           idempotencyKey,
           taskIdempotencyKey,
+          ...(branchId ? {branch:{confirmationId:branchId,publicGbpUrl:parsed.value.business_identity.public_gbp_url ?? null}} : {}),
           ...(keywordsOn?{keywords:{queries:parsed.value.queries,planningRevision:Number(keywordRevision),scope:{primary_service:parsed.value.primary_service,target_market:parsed.value.target_market}}}:{}),
         });
       } catch (cause) {
+        if (cause instanceof ProspectWorkflowPersistenceError && cause.code.startsWith("GBP_BRANCH_")) {
+          return error(cause.code, "The branch confirmation could not be used. Confirm again or continue without it.", 409);
+        }
         if (cause instanceof ProspectWorkflowPersistenceError && cause.code === "INSUFFICIENT_CREDITS") {
           return error("INSUFFICIENT_CREDITS", "Buy 1 credit to start this Prospect analysis.", 409);
         }

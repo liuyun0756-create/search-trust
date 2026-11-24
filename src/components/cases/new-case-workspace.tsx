@@ -32,6 +32,8 @@ import { CoverageStep } from "./coverage-step";
 import { GoalWebsiteStep } from "./goal-website-step";
 import { NewCaseStepper } from "./new-case-stepper";
 import { PreflightStatus } from "./preflight-status";
+import {branchConfirmationHeader} from "@/lib/preflight-branch/contracts";
+import {PreflightBranchConfirmation} from "./PreflightBranchConfirmation";
 import { ProspectStartStep } from "./prospect-start-step";
 import {TargetKeywordSetup} from './TargetKeywordSetup';
 import {checkedKeywordQueries,type KeywordScope} from '@/lib/target-keywords/contracts';
@@ -74,6 +76,7 @@ export function NewCaseWorkspace({planningEnabled=false,keywordsEnabled=false}:{
   const [draftProblem, setDraftProblem] = useState<string | null>(null);
   const [workflowClosed, setWorkflowClosed] = useState(false);
   const persistenceBlocked = useRef(false);
+  const [branchSaving, setBranchSaving] = useState(false);
   const [discoverySubmitting, setDiscoverySubmitting] = useState(false);
   const [planning,setPlanning]=useState<PlanningStatus>({ready:false,revision:null});
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
@@ -327,7 +330,9 @@ export function NewCaseWorkspace({planningEnabled=false,keywordsEnabled=false}:{
         body: JSON.stringify({
           case_id: paymentHandoff.caseId,
           report_type: "prospect",
-          business_identity: confirmation.business_identity,
+          business_identity: draft.branch_confirmation?.case_id === paymentHandoff.caseId
+            ? {...confirmation.business_identity, public_gbp_url: draft.branch_confirmation.public_gbp_url}
+            : confirmation.business_identity,
           primary_service: confirmation.primary_service,
           target_market: confirmation.target_market,
           queries: keywordMode?draft.discovery_keywords!.queries:discoveryQueries(confirmation),
@@ -520,6 +525,7 @@ export function NewCaseWorkspace({planningEnabled=false,keywordsEnabled=false}:{
   }
 
   async function startDiscovery(confirmation: BusinessConfirmation, supplements: string[] = []) {
+    if (branchSaving) return;
     if (!isSignedIn) {
       openLogin();
       return;
@@ -554,12 +560,16 @@ export function NewCaseWorkspace({planningEnabled=false,keywordsEnabled=false}:{
           "x-searchtrust-workflow-id": workflowId,
           "x-searchtrust-workflow-idempotency-key": workflowIdempotencyKey,
           "x-searchtrust-discovery-job-id": jobId,
+          ...(draft.branch_confirmation?.case_id === paymentHandoff.caseId
+            ? {[branchConfirmationHeader]: draft.branch_confirmation.id} : {}),
           "idempotency-key": idempotencyKey,
           ...(keywordMode?{"x-searchtrust-keyword-planning-revision":String(draft.target_keywords!.binding!.planning_revision)}:{}),
         },
         body: JSON.stringify({
           case_id: paymentHandoff.caseId,
-          business_identity: confirmation.business_identity,
+          business_identity: draft.branch_confirmation?.case_id === paymentHandoff.caseId
+            ? {...confirmation.business_identity, public_gbp_url: draft.branch_confirmation.public_gbp_url}
+            : confirmation.business_identity,
           primary_service: confirmation.primary_service,
           target_market: confirmation.target_market,
           queries: keywordMode?draft.target_keywords!.binding!.queries:discoveryQueries(confirmation),
@@ -575,7 +585,9 @@ export function NewCaseWorkspace({planningEnabled=false,keywordsEnabled=false}:{
       setPaymentHandoff((current) => ({ ...current, status: "unlocked", message: "This Prospect Case is already covered. Refreshing or resuming will not use another credit." }));
     } catch (error) {
       const safe = apiError(error);
-      if (safe.code === "INSUFFICIENT_CREDITS") {
+      if (safe.code.startsWith("GBP_BRANCH_")) {
+        setDraft((current) => ({...reduceWorkspaceState(current, {type:"PROSPECT_START_REJECTED"}), branch_confirmation:null}));
+      } else if (safe.code === "INSUFFICIENT_CREDITS") {
         setCreditBalance(0);
         setDraft((current) => reduceWorkspaceState(current, { type: "PROSPECT_START_REJECTED" }));
       } else {
@@ -715,12 +727,17 @@ export function NewCaseWorkspace({planningEnabled=false,keywordsEnabled=false}:{
               onEdit={items=>setDraft(current=>reduceWorkspaceState(current,{type:"EDIT_TARGET_KEYWORDS",items}))}
               onConfirm={value=>setDraft(current=>reduceWorkspaceState(current,{type:"CONFIRM_TARGET_KEYWORDS",value}))}
               onBack={()=>setEditingKeywordScope(true)} onRetryCase={()=>void saveCase()} caseMessage={paymentHandoff.message}/>:null}
+            {draft.stage === "prospect_start" && paymentHandoff.caseId && !draft.prospect_workflow_id && Boolean(draft.preflight?.branch_options?.length) &&
+              <PreflightBranchConfirmation key={paymentHandoff.caseId} caseId={paymentHandoff.caseId}
+                branches={draft.preflight?.branch_options ?? []} request={authenticatedFetch}
+                receipt={draft.branch_confirmation?.case_id === paymentHandoff.caseId ? draft.branch_confirmation : null}
+                onChange={branch_confirmation => setDraft(current => ({...current,branch_confirmation}))} onBusyChange={setBranchSaving}/>}
             {draft.stage === "prospect_start" && draft.business_confirmation && (
               <ProspectStartStep
                 business={draft.business_confirmation}
                 status={paymentHandoff.status}
                 message={paymentHandoff.message}
-                caseReady={Boolean(paymentHandoff.caseId)&&!keywordProblem}
+                caseReady={Boolean(paymentHandoff.caseId)&&!keywordProblem&&!branchSaving}
                 covered={creditState === "covered"}
                 creditBalance={creditBalance}
                 signedIn={Boolean(isSignedIn)}

@@ -1,3 +1,4 @@
+import type {PreflightBranchReceipt} from "@/lib/preflight-branch/contracts";
 import {checkedKeywordQueries,type KeywordDraft,type KeywordBinding,type TargetKeyword} from '../target-keywords/contracts';
 import type { BusinessIdentity, TargetMarket } from "@/lib/report-v22/generated/types";
 
@@ -30,6 +31,7 @@ export interface BusinessConfirmation {
 }
 
 export interface NewCaseDraft {
+  branch_confirmation?: PreflightBranchReceipt | null;
   schema_version: typeof DRAFT_SCHEMA_VERSION | typeof KEYWORD_DRAFT_SCHEMA_VERSION;
   target_keywords?: KeywordDraft | null;
   discovery_keywords?: KeywordBinding | null;
@@ -170,7 +172,7 @@ export function reduceWorkspaceState(
   switch (event.type) {
     case "CONFIRM_SCOPE_FOR_KEYWORDS":
       if(state.schema_version!==KEYWORD_DRAFT_SCHEMA_VERSION||state.prospect_workflow_id)return state;
-      return touch(state,{...clearDiscovery(),stage:"business_confirmation",business_confirmation:event.confirmation,target_keywords:null},now);
+      return touch(state,{branch_confirmation:undefined,...clearDiscovery(),stage:"business_confirmation",business_confirmation:event.confirmation,target_keywords:null},now);
     case "EDIT_TARGET_KEYWORDS":
       if(state.schema_version!==KEYWORD_DRAFT_SCHEMA_VERSION||state.stage!=="business_confirmation"||state.prospect_workflow_id)return state;
       return touch(state,{target_keywords:{items:event.items,binding:null,case_id:state.target_keywords?.case_id??null}},now);
@@ -187,7 +189,7 @@ export function reduceWorkspaceState(
         preflight: null,
         preflight_error: null,
         business_confirmation: null,
-        ...clearDiscovery(),
+        branch_confirmation:undefined,...clearDiscovery(),
       }, now);
     case "START_PREFLIGHT":
       return state.stage === "preflight_running" ? state : touch(state, { stage: "preflight_running", preflight_error: null }, now);
@@ -199,7 +201,7 @@ export function reduceWorkspaceState(
       return touch(state, {
         stage: "prospect_start",
         business_confirmation: event.confirmation,
-        ...clearDiscovery(),
+        branch_confirmation:undefined,...clearDiscovery(),
         prospect_workflow_id: state.prospect_workflow_id,
       }, now);
     case "START_DISCOVERY":
