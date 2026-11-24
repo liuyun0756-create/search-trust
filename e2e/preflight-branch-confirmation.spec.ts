@@ -6,7 +6,7 @@ import {randomUUID} from "node:crypto";
 test("a new Case can confirm a saved GBP branch before the paid entry", async ({page}, info) => {
   let reservations = 0;
   const profile = E2E_BUSINESS.public_gbp_url!;
-  await page.route("**/api/v2/preflight", route => route.fulfill({json:{...preflightFixture,branch_options:[{
+  await page.route("**/api/v2/preflight", route => route.fulfill({json:{...preflightFixture,gbp_lookup_reason:"site_map_link_address_only",branch_options:[{
     ref:"42",public_gbp_url:profile,name:"SearchTrust E2E Plumbing",address:"12 Example St, Austin, TX",
     domain_matched:true,phone_matched:true,evidence_token:"synthetic-preflight-proof",
   }]}}));
@@ -22,6 +22,7 @@ test("a new Case can confirm a saved GBP branch before the paid entry", async ({
   });
   await openProspectStart(page);
   const area = page.getByRole("region",{name:"Confirm GBP branch"});
+  await expect(area.getByText(/The website’s Maps link pointed to a street address/)).toBeVisible();
   await area.getByRole("button",{name:"Choose a branch"}).click();
   await area.getByLabel("Google Business Profile",{exact:true}).selectOption("42");
   await expect(area.getByText("Website domain matches · Phone matches")).toBeVisible();

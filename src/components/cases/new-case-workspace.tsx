@@ -730,6 +730,7 @@ export function NewCaseWorkspace({planningEnabled=false,keywordsEnabled=false}:{
             {draft.stage === "prospect_start" && paymentHandoff.caseId && !draft.prospect_workflow_id && Boolean(draft.preflight?.branch_options?.length) &&
               <PreflightBranchConfirmation key={paymentHandoff.caseId} caseId={paymentHandoff.caseId}
                 branches={draft.preflight?.branch_options ?? []} request={authenticatedFetch}
+                lookupReason={draft.preflight?.gbp_lookup_reason}
                 receipt={draft.branch_confirmation?.case_id === paymentHandoff.caseId ? draft.branch_confirmation : null}
                 onChange={branch_confirmation => setDraft(current => ({...current,branch_confirmation}))} onBusyChange={setBranchSaving}/>}
             {draft.stage === "prospect_start" && draft.business_confirmation && (
