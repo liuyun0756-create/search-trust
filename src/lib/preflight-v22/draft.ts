@@ -1,3 +1,4 @@
+import {validPreflightBranchReceipt} from "@/lib/preflight-branch/contracts";
 import {validKeywordBinding,type TargetKeyword} from '../target-keywords/contracts';
 import type { WorkGoal } from "./contracts";
 import { parseDiscoveryRequest, parseDiscoveryStatusResponse, parsePreflightResponse } from "./validate";
@@ -29,7 +30,7 @@ const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const topLevelKeys = new Set([
   "schema_version", "created_at", "updated_at", "expires_at", "stage", "goal", "draft_case_id", "site_url", "gbp_url",
   "preflight", "preflight_error", "business_confirmation", "discovery_job_id", "discovery_idempotency_key", "discovery_status",
-  "prospect_workflow_id",
+  "prospect_workflow_id", "branch_confirmation",
   "discovery_error", "supplemental_website_urls", "selected_competitor_ids",
   "analysis_job_id", "analysis_idempotency_key", "previous_analysis_job_id",
 ]);
@@ -85,6 +86,7 @@ export function parseDraft(value: unknown, now = new Date()): NewCaseDraft | nul
   if (typeof value.draft_case_id !== "string" || !uuidV4.test(value.draft_case_id)) return null;
   if (typeof value.site_url !== "string" || !(typeof value.gbp_url === "string" || value.gbp_url === null)) return null;
   if (value.preflight !== null && !parsePreflightResponse(value.preflight).ok) return null;
+  if (value.branch_confirmation != null && !validPreflightBranchReceipt(value.branch_confirmation)) return null;
   if (value.discovery_status !== null && !parseDiscoveryStatusResponse(value.discovery_status).ok) return null;
   if (!(value.discovery_error === null || (object(value.discovery_error)
     && Object.keys(value.discovery_error).every((key) => ["code", "message", "retryable"].includes(key))

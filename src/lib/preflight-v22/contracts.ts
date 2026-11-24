@@ -1,3 +1,4 @@
+import type {PreflightBranchOption} from "@/lib/preflight-branch/contracts";
 import type { BusinessIdentity, TargetMarket } from "@/lib/report-v22/generated/types";
 
 export type WorkGoal = "win_new_client" | "work_existing_client";
@@ -73,6 +74,7 @@ export interface ModuleAvailability {
 }
 
 export interface PreflightResponse {
+  branch_options?: PreflightBranchOption[] | null;
   target_keyword_suggestions?:{schema_version:'v22_keyword_suggestions_v1';items:{text:string;source:'matched_gbp_category'|'site_title'|'site_h1';ref:string;profile_url:string|null}[]}|null;
   preflight_id: string;
   normalized_site_url: string;

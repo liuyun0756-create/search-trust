@@ -14,6 +14,7 @@ export interface ProspectWorkflowRepository {
     discoveryJobId: string;
     idempotencyKey: string;
     taskIdempotencyKey: string;
+    branch?:{confirmationId:string;publicGbpUrl:string|null};
     keywords?:{queries:string[];planningRevision:number;scope:KeywordScope};
   }): Promise<ProspectWorkflowReservation>;
   canResumeLegacy?(userId:string,caseId:string,workflowId:string):Promise<boolean>;
@@ -48,15 +49,19 @@ export class SupabaseProspectWorkflowRepository implements ProspectWorkflowRepos
     discoveryJobId: string;
     idempotencyKey: string;
     taskIdempotencyKey: string;
+    branch?:{confirmationId:string;publicGbpUrl:string|null};
     keywords?:{queries:string[];planningRevision:number;scope:KeywordScope};
   }): Promise<ProspectWorkflowReservation> {
-    const { data, error } = await this.db.rpc(input.keywords?"start_v22_prospect_discovery_with_keywords":"start_v22_prospect_discovery", {
+    const { data, error } = await this.db.rpc(input.branch ? "start_v22_prospect_discovery_with_branch" :
+      input.keywords ? "start_v22_prospect_discovery_with_keywords" : "start_v22_prospect_discovery", {
       p_user_id: input.userId,
       p_case_id: input.caseId,
       p_workflow_id: input.workflowId,
       p_discovery_job_id: input.discoveryJobId,
       p_workflow_idempotency_key: input.idempotencyKey,
       p_task_idempotency_key: input.taskIdempotencyKey,
+      ...(input.branch ? {p_confirmation_id:input.branch.confirmationId,p_public_gbp_url:input.branch.publicGbpUrl,
+        ...(!input.keywords ? {p_planning_revision:null,p_queries_canonical:null,p_keyword_scope:null} : {})} : {}),
       ...(input.keywords?{p_planning_revision:input.keywords.planningRevision,p_queries_canonical:canonicalJsonText(input.keywords.queries),p_keyword_scope:input.keywords.scope}:{}),
     }).single();
     const parsed = parseProspectWorkflowReservation(data);
@@ -64,6 +69,7 @@ export class SupabaseProspectWorkflowRepository implements ProspectWorkflowRepos
       const code = error?.message?.includes("INSUFFICIENT_CREDITS")
         ? "INSUFFICIENT_CREDITS"
         : error?.message?.includes("PLANNING_SETTINGS_CONFLICT")?"PLANNING_SETTINGS_CONFLICT"
+        : error?.message?.startsWith("GBP_BRANCH_") ? error.message
         : error?.message?.includes("TARGET_KEYWORDS")?"TARGET_KEYWORDS_DISCOVERY_CONFLICT":"PROSPECT_WORKFLOW_PERSISTENCE_FAILED";
       throw new ProspectWorkflowPersistenceError(code);
     }
