@@ -342,6 +342,20 @@ export type RuleVersion = string;
 export type Severity = "low" | "medium" | "high" | "critical";
 export type Status2 = ("confirmed" | "not_detected" | "not_checked" | "not_assessed") | null;
 export type Target3 = string;
+export type DiscardedRecentOrInvalid = boolean;
+export type InvalidRecords = number;
+export type PageCount = number;
+export type ReturnedCount = number;
+export type SampledAt = string | null;
+export type SortVerified = boolean;
+export type Stop =
+  | "natural_end"
+  | "sample_cap"
+  | "page_cap"
+  | "provider_failure"
+  | "branch_unavailable"
+  | "invalid_pagination"
+  | "budget";
 /**
  * @minItems 6
  * @maxItems 6
@@ -376,7 +390,7 @@ export type Reason3 =
   | "no_review_sample"
   | "no_reviews"
   | "sample_lower_bound";
-export type SampledAt = string | null;
+export type SampledAt1 = string | null;
 /**
  * @maxItems 100
  */
@@ -575,7 +589,7 @@ export type CompetitorIndices1 = [] | [number] | [number, number] | [number, num
 export type Location = "title" | "h1" | "body" | "footer";
 export type Path1 = string;
 export type Quote1 = string;
-export type SampledAt1 = string;
+export type SampledAt2 = string;
 export type SnapshotId4 = string;
 export type Url2 = string;
 /**
@@ -1115,9 +1129,23 @@ export interface FindingCoverage {
  * via the `definition` "GbpComparison".
  */
 export interface GbpComparison {
+  customer_sampling?: CustomerReviewProvenance | null;
   differences: Differences;
   rows: Rows;
   schema_version?: SchemaVersion2;
+}
+/**
+ * This interface was referenced by `SearchTrustCapabilityContracts2222Reports2222242252262272282292210221122122213221522162217DeliveryV1V2V3`'s JSON-Schema
+ * via the `definition` "CustomerReviewProvenance".
+ */
+export interface CustomerReviewProvenance {
+  discarded_recent_or_invalid: DiscardedRecentOrInvalid;
+  invalid_records: InvalidRecords;
+  page_count: PageCount;
+  returned_count: ReturnedCount;
+  sampled_at: SampledAt;
+  sort_verified: SortVerified;
+  stop: Stop;
 }
 /**
  * This interface was referenced by `SearchTrustCapabilityContracts2222Reports2222242252262272282292210221122122213221522162217DeliveryV1V2V3`'s JSON-Schema
@@ -1151,7 +1179,7 @@ export interface GbpMetric {
   lower_bound?: LowerBound;
   numerator?: Numerator;
   reason: Reason3;
-  sampled_at?: SampledAt;
+  sampled_at?: SampledAt1;
   source_refs: SourceRefs2;
   status: Status4;
   value?: Value3;
@@ -1368,7 +1396,7 @@ export interface LandingEvidence {
   location: Location;
   path: Path1;
   quote: Quote1;
-  sampled_at: SampledAt1;
+  sampled_at: SampledAt2;
   snapshot_id: SnapshotId4;
   url: Url2;
 }

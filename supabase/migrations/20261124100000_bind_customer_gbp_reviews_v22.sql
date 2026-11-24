@@ -103,7 +103,7 @@ begin
        and not exists (select 1 from (select (x->>'iso_date')::timestamptz d,
          lag((x->>'iso_date')::timestamptz) over(order by i) as previous
          from jsonb_array_elements(s->'reviews') with ordinality q(x,i)) q where q.previous<q.d)
-       and (s->>'stop'='natural_end' or ((s->'reviews'->-1)->>'iso_date')::timestamptz<t-interval '90 days');
+       and ((s->>'stop'='natural_end' and n<30) or ((s->'reviews'->-1)->>'iso_date')::timestamptz<t-interval '90 days');
      v=to_jsonb(recent);lower_bound=not exact_count;
      if lower_bound then reason='sample_lower_bound';end if;
     end if;
@@ -325,6 +325,20 @@ begin
  old := $patch$v->>'schema_version' is distinct from 'gbp_comparison_v1'$patch$;
  if position(old in definition)=0 then raise exception 'P102_TARGET_MISSING_validate_v22_gbp_comparison'; end if;
  definition := replace(definition,old,$patch$v->>'schema_version' is distinct from (case when review_version then 'gbp_comparison_v2' else 'gbp_comparison_v1' end)$patch$);
+ old := $patch$v-array['schema_version','rows','differences']<>'{}'::jsonb$patch$;
+ if position(old in definition)=0 then raise exception 'P102_TARGET_MISSING_validate_v22_gbp_comparison'; end if;
+ definition := replace(definition,old,$patch$(v-array['schema_version','rows','differences']-case when review_version then 'customer_sampling' else '' end)<>'{}'::jsonb$patch$);
+ old := $patch$ for row in select value from jsonb_array_elements(v->'rows') loop$patch$;
+ if position(old in definition)=0 then raise exception 'P102_TARGET_MISSING_validate_v22_gbp_comparison'; end if;
+ definition := replace(definition,old,$patch$ if review_version and v->'customer_sampling' is distinct from (
+  select jsonb_build_object('sampled_at',s->'sampled_at','page_count',jsonb_array_length(s->'pages'),
+    'returned_count',(select coalesce(sum((page->>'returned')::int),0) from jsonb_array_elements(s->'pages') page),
+    'sort_verified',jsonb_array_length(s->'pages')>0 and not exists (
+      select 1 from jsonb_array_elements(s->'pages') page where page->>'sort_verified' is distinct from 'true'),
+    'stop',s->'stop','invalid_records',s->'invalid_records','discarded_recent_or_invalid',s->'discarded_recent_or_invalid')
+  from (select customer->'review_sample' s) sample
+ ) then raise exception 'CAPABILITY_CUSTOMER_REVIEWS_VALUE_INVALID'; end if;
+ for row in select value from jsonb_array_elements(v->'rows') loop$patch$);
  old := $patch$   if idx=0 and field in ('reviews_90d','latest_review','visible_replies') then$patch$;
  if position(old in definition)=0 then raise exception 'P102_TARGET_MISSING_validate_v22_gbp_comparison'; end if;
  definition := replace(definition,old,$patch$   if review_version and idx=0 and field in ('reviews_90d','latest_review','visible_replies') then
@@ -349,10 +363,10 @@ begin
        or (d->>'direction'='lower' and other->>'lower_bound'='false' and (other->>'value')::numeric<(item->>'value')::numeric)) then raise exception 'CAPABILITY_GBP_COMPARISON_VALUE_INVALID'; end if;
     elsif field<>'categories' and not ((d->>'direction'='higher' and (other->>'value')::numeric>(item->>'value')::numeric)
        or (d->>'direction'='lower' and (other->>'value')::numeric<(item->>'value')::numeric)) then raise exception 'CAPABILITY_GBP_COMPARISON_VALUE_INVALID'; end if;$patch$);
- if md5(definition)<>'45b51b2493d35b5f21e0f765a1b0defa' then raise exception 'P102_TARGET_MISMATCH_validate_v22_gbp_comparison'; end if;
+ if md5(definition)<>'dd8714c4a5f19074d4dd303fbfb7f78b' then raise exception 'P102_TARGET_MISMATCH_validate_v22_gbp_comparison'; end if;
  execute definition;
  if exists(select 1 from pg_proc where oid='public.validate_v22_gbp_comparison(jsonb)'::regprocedure and
-   (proacl is distinct from prior_acl or md5(prosrc)<>'48f876bc969beb47c77784dcd5c91707')) then raise exception 'P102_ACL_OR_SOURCE_MISMATCH_validate_v22_gbp_comparison';end if;
+   (proacl is distinct from prior_acl or md5(prosrc)<>'acf06d242092f89d084e0957d28ac928')) then raise exception 'P102_ACL_OR_SOURCE_MISMATCH_validate_v22_gbp_comparison';end if;
 end $migration$;
 
 do $migration$

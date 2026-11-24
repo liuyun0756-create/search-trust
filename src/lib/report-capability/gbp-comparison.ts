@@ -26,6 +26,7 @@ export function gbpComparisonView(value:GbpComparison,clientOnly:boolean){
 export type GbpComparisonView=ReturnType<typeof gbpComparisonView>;
 export function gbpComparisonValid(value:GbpComparison,manifest:AnalysisInputManifest){
  const versionedReviews=value.schema_version==='gbp_comparison_v2';
+ if (versionedReviews ? !value.customer_sampling : Object.hasOwn(value,'customer_sampling')) return false;
  const sources=Object.fromEntries(manifest.snapshots.map(s=>[s.source_kind,s.snapshot_id]));
  if(value.rows[0]?.subject!=='customer'||value.rows.slice(1).some(r=>r.subject!=='competitor'))return false;
  if(value.differences.map(d=>d.metric).join()!==GBP_METRICS.join())return false;

@@ -12,7 +12,7 @@ import {projectCapabilityReport} from './projection';
 import {validateCapabilityReport} from './validate';
 import raw from './fixtures/customer-reviews-v22/report.json';
 
-const technical = /source_refs|\/payload\/|sha256:|provider_id|latitude|longitude|req_/;
+const technical = /customer_sampling|page_count|sort_verified|source_refs|\/payload\/|sha256:|provider_id|latitude|longitude|req_/;
 afterEach(cleanup);
 
 function fixture() {
@@ -41,7 +41,10 @@ it('renders saved customer review metrics on the web and share views without tec
     cleanup();
   }
   render(<CapabilityReportDocument document={projectCapabilityReport(report)} technicalDetails/>);
-  expect(screen.getByRole('region',{name:'Google Business Profile comparison'}).textContent).toContain('/payload/review_sample');
+  const advisor = screen.getByRole('region',{name:'Google Business Profile comparison'});
+  expect(advisor.textContent).toContain('/payload/review_sample');
+  expect(advisor.textContent).toMatch(/page_count[\s\S]*3/);
+  expect(advisor.textContent).toContain('sample_cap');
 });
 
 function layoutText(node: unknown): string {

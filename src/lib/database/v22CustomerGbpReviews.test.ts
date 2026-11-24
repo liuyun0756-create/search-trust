@@ -85,6 +85,10 @@ it('freezes and stores reviews from the pinned branch and rejects falsified cust
     metric.value = key==='latest_review'?'2026-01-01T00:00:00+00:00':99;
     await expect(db.query('select public.validate_v22_gbp_comparison($1::jsonb)',[JSON.stringify(forged)])).rejects.toThrow('CAPABILITY_CUSTOMER_REVIEWS_VALUE_INVALID');
   }
+  const sampling = structuredClone(report);
+  sampling.gbp_comparison.customer_sampling.page_count = 4;
+  await expect(db.query('select public.validate_v22_gbp_comparison($1::jsonb)',[JSON.stringify(sampling)]))
+    .rejects.toThrow('CAPABILITY_CUSTOMER_REVIEWS_VALUE_INVALID');
   const stored = await db.query(`select to_jsonb(public.store_v22_capability_report($1,$2,$3,$4::jsonb,$5)) value`,
     [owner,caseId,m.job_id,JSON.stringify(report),canonicalJsonText(report)]);
   expect(stored.rows[0]).toMatchObject({value:{schema_version:'2.2.17',payload:report}});

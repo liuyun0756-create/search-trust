@@ -1581,7 +1581,7 @@ do $migration$
 declare definition text; old text; prior_acl aclitem[]; source text;
 begin
  select pg_get_functiondef(oid),prosrc,proacl into strict definition,source,prior_acl from pg_proc where oid='public.validate_v22_gbp_comparison(jsonb)'::regprocedure;
- if md5(source)<>'48f876bc969beb47c77784dcd5c91707' or md5(definition)<>'45b51b2493d35b5f21e0f765a1b0defa' then raise exception 'P102_BASELINE_MISMATCH_validate_v22_gbp_comparison'; end if;
+ if md5(source)<>'acf06d242092f89d084e0957d28ac928' or md5(definition)<>'dd8714c4a5f19074d4dd303fbfb7f78b' then raise exception 'P102_BASELINE_MISMATCH_validate_v22_gbp_comparison'; end if;
  old := $patch$
 declare m jsonb; review_version boolean=coalesce(p->>'schema_version'='2.2.17',false); v jsonb=p->'gbp_comparison'; customer jsonb; rivals jsonb; market jsonb; run jsonb; record jsonb; call jsonb; profile_time timestamptz; customer_time timestamptz;
  row jsonb; item jsonb; original jsonb; profile jsonb; review jsonb; d jsonb; other jsonb; val jsonb;
@@ -1596,7 +1596,7 @@ begin
  if m->>'ruleset_version' is distinct from (case when p->>'schema_version'='2.2.15' then 'v22_capability_public_v20' when p->>'schema_version'='2.2.13' then 'v22_capability_public_v18' when p->>'schema_version'='2.2.12' then 'v22_capability_public_v17' when p->>'schema_version'='2.2.11' then 'v22_capability_public_v16' else 'v22_capability_public_v15' end) or m->>'schema_version' is distinct from (case when p->>'schema_version'='2.2.15' then 'v22_analysis_input_v10' when p->>'schema_version'='2.2.13' then 'v22_analysis_input_v8' when p->>'schema_version'='2.2.12' then 'v22_analysis_input_v7' when p->>'schema_version'='2.2.11' then 'v22_analysis_input_v6' else 'v22_analysis_input_v5' end)
   or v->>'schema_version' is distinct from (case when review_version then 'gbp_comparison_v2' else 'gbp_comparison_v1' end) or jsonb_typeof(v->'rows') is distinct from 'array'
   or jsonb_array_length(v->'rows') not between 1 and 4 or jsonb_typeof(v->'differences') is distinct from 'array'
-  or jsonb_array_length(v->'differences')<>6 or v-array['schema_version','rows','differences']<>'{}'::jsonb
+  or jsonb_array_length(v->'differences')<>6 or (v-array['schema_version','rows','differences']-case when review_version then 'customer_sampling' else '' end)<>'{}'::jsonb
  then raise exception 'CAPABILITY_GBP_COMPARISON_INVALID'; end if;
  select s.normalized_payload,s.id::text into customer,customer_id from public.data_snapshots s
  join jsonb_array_elements(m->'snapshots') ref on s.id=(ref->>'snapshot_id')::uuid
@@ -1607,6 +1607,14 @@ begin
  select s.normalized_payload into market from public.data_snapshots s join jsonb_array_elements(m->'snapshots') ref on s.id=(ref->>'snapshot_id')::uuid where ref->>'source_kind'='serp';
  select (ref->>'fetched_at')::timestamptz into customer_time from jsonb_array_elements(m->'snapshots') ref where ref->>'source_kind'='public_gbp';
  if customer is null or rivals is null or jsonb_array_length(v->'rows')<>1+jsonb_array_length(rivals->'competitors') then raise exception 'CAPABILITY_GBP_COMPARISON_BINDING_INVALID'; end if;
+ if review_version and v->'customer_sampling' is distinct from (
+  select jsonb_build_object('sampled_at',s->'sampled_at','page_count',jsonb_array_length(s->'pages'),
+    'returned_count',(select coalesce(sum((page->>'returned')::int),0) from jsonb_array_elements(s->'pages') page),
+    'sort_verified',jsonb_array_length(s->'pages')>0 and not exists (
+      select 1 from jsonb_array_elements(s->'pages') page where page->>'sort_verified' is distinct from 'true'),
+    'stop',s->'stop','invalid_records',s->'invalid_records','discarded_recent_or_invalid',s->'discarded_recent_or_invalid')
+  from (select customer->'review_sample' s) sample
+ ) then raise exception 'CAPABILITY_CUSTOMER_REVIEWS_VALUE_INVALID'; end if;
  for row in select value from jsonb_array_elements(v->'rows') loop
   if row->>'subject' is distinct from (case when idx=0 then 'customer' else 'competitor' end)
    or jsonb_typeof(row->'metrics') is distinct from 'object' or row-array['subject','name','metrics']<>'{}'::jsonb

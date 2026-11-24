@@ -36,7 +36,7 @@
 | `store_v22_capability_report(uuid,uuid,uuid,jsonb,text,integer)` | `5cf5e7bd11e77a91dc871033a466b81b` | `06d3d0d1b6d85a7e9ac13f097f3a5ead` | postgres、service_role |
 | `v22_a3_manifest_shape(jsonb)` | `0b0e5c86c8766ff7430d5ec9caf809d3` | `5da9618d0d5796cc9f37ba0c99e8f14b` | postgres、service_role |
 | `v22_a3_report_shape(jsonb)` | `3a783fc8d5dbe0c59941b4974b14b3b3` | `fbf8ca15345158e603c0f86b99244f0e` | postgres、service_role |
-| `validate_v22_gbp_comparison(jsonb)` | `0c8ef85809288363c25b47bc8ae303d5` | `48f876bc969beb47c77784dcd5c91707` | postgres、service_role |
+| `validate_v22_gbp_comparison(jsonb)` | `0c8ef85809288363c25b47bc8ae303d5` | `acf06d242092f89d084e0957d28ac928` | postgres、service_role |
 | `validate_v22_possible_reasons(jsonb)` | `e5ed327182dbab4779f652dff4cd4d2c` | `9f99a3793ae9e9cb48140167e26180b9` | postgres、service_role |
 | `capability_report_input_variant` | `821494ee70419167dc0c4d932365798f` | `257b4727e1067bed05e15cf2e530b14e` | 适用原定义 |
 | `capability_report_versions_schema_version_check` | `f404d0a3e4b017594d750726cfaf6a04` | `7343c61ba462f5ead01919722848e889` | 适用原定义 |
