@@ -4,9 +4,10 @@ import {useRef, useState} from "react";
 import {IdentityConfirmationFields, type IdentityFieldValues} from "@/components/report/IdentityConfirmationFields";
 import {validPreflightBranchReceipt, type PreflightBranchOption, type PreflightBranchReceipt} from "@/lib/preflight-branch/contracts";
 
-export function PreflightBranchConfirmation({caseId, branches, receipt, request, onChange, onBusyChange}: {
+export function PreflightBranchConfirmation({caseId, branches, lookupReason, receipt, request, onChange, onBusyChange}: {
   caseId: string;
   branches: PreflightBranchOption[];
+  lookupReason?: "site_map_link_address_only" | null;
   receipt: PreflightBranchReceipt | null;
   request: (path: string, init: RequestInit) => Promise<Response>;
   onChange(receipt: PreflightBranchReceipt | null): void;
@@ -52,6 +53,9 @@ export function PreflightBranchConfirmation({caseId, branches, receipt, request,
   return <section aria-label="Confirm GBP branch" className="my-4 rounded-2xl border border-[#c8d4ca] bg-[#f4f8f0] p-5 text-[#22382c]">
     <h2 className="text-lg font-semibold">Confirm GBP branch <span className="text-sm font-normal">(optional)</span></h2>
     <p className="mt-2 text-sm">Use saved preflight evidence to confirm the profile for this report. This step uses no credit.</p>
+    {lookupReason === "site_map_link_address_only" && <p className="mt-2 text-sm">
+      The website’s Maps link pointed to a street address. We searched by business name and website domain for the profile shown here.
+    </p>}
     {receipt && !editing && <p role="status" className="mt-2 text-sm">Branch saved. It will apply only if the report evidence still matches.</p>}
     {!!error && <p role="alert" className="mt-3 text-sm">{error}</p>}
     {editing && <>
