@@ -21,7 +21,7 @@ function rationale(report: CapabilityReport, action: DeliveryRevision["actions"]
   return { whyNow: {
     explanation: decision.explanation,
     systemPosition: decision.selected_order,
-    ...(["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16"].includes(report.schema_version) ? {candidateSelection:decision.selected_order === null} : {}),
+    ...(["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16", "2.2.17"].includes(report.schema_version) ? {candidateSelection:decision.selected_order === null} : {}),
     systemTarget: source.target,
     systemTitle: source.title,
     deliveryChanged: sequence !== decision.selected_order || canonicalDigest(current) !== canonicalDigest(editable),
@@ -48,7 +48,7 @@ export function projectCapabilityReport(report: CapabilityReport, approved?: Del
   const visibleIds=clientActionIds(report,approved);
   const actions=(approved?.actions ?? report.actions).filter(a=>!clientOnly || visibleIds.includes(a.id));
   return {
-    ...(["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16"].includes(report.schema_version) ? {hideSourceIdentifiers:true} : {}),
+    ...(["2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16", "2.2.17"].includes(report.schema_version) ? {hideSourceIdentifiers:true} : {}),
     ...(report.local_entity_coverage ? {localEntityCoverage: localEntityCoverageView(report.local_entity_coverage, clientOnly)} : {}),
     ...(report.possible_reasons ? {possibleReasons:possibleReasonsView(report.possible_reasons,clientOnly)} : {}),
     ...(report.landing_page_comparison ? {landingPageComparison:landingComparisonView(report.landing_page_comparison,clientOnly)} : {}),
@@ -63,7 +63,7 @@ export function projectCapabilityReport(report: CapabilityReport, approved?: Del
       id: a.id, sequence: index + 1, title: a.title, target: a.target,
       steps: [...a.steps], completion: [...a.completion], review: a.review,
       materials: a.materials.map((m) => ({ ...m, evidence_ids: [...m.evidence_ids], confirmation_items: [...m.confirmation_items] })),
-      ...(["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16"].includes(report.schema_version) ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
+      ...(["2.2.5", "2.2.6", "2.2.7", "2.2.8", "2.2.9", "2.2.10", "2.2.11", "2.2.12", "2.2.13", "2.2.15", "2.2.16", "2.2.17"].includes(report.schema_version) ? {clientVisible:visibleIds.includes(a.id),needsVerification:actionNeedsVerification(report,a.id)} : {}),
       ...(report.action_advice ? {advice: actionAdviceView(report, a, index + 1, clientOnly)} : {}),
       ...rationale(report, a, index + 1, clientOnly ? visibleIds : undefined),
     })),
