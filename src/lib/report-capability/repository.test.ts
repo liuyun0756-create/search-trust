@@ -47,9 +47,9 @@ describe("P1 capability server boundary", () => {
       generated_at:report.generated_at,delivery_revision:0,delivery_status:"original"};
     const rpc = vi.fn().mockResolvedValue({data:[complete,{...complete,id:oldId}],error:null});
     const eq = vi.fn().mockReturnValueOnce({eq:vi.fn().mockResolvedValue({data:[
-      {id:report.id,case_id:m.case_id,ruleset:"v22_capability_public_v20"},
-      {id:oldId,case_id:m.case_id,ruleset:"v22_capability_public_v12"},
-      {id:otherId,case_id:m.case_id,ruleset:"v22_capability_public_v20"},
+      {id:report.id,case_id:m.case_id,ruleset:"v22_capability_public_v20",schema_version:"2.2.15"},
+      {id:oldId,case_id:m.case_id,ruleset:"v22_capability_public_v12",schema_version:"2.2.7"},
+      {id:otherId,case_id:m.case_id,ruleset:"v22_capability_public_v22",schema_version:"2.2.17"},
     ],error:null})});
     const from = vi.fn(() => ({select:vi.fn(() => ({eq}))}));
     const repository = new CapabilityRepository({rpc,from} as unknown as SupabaseClient);

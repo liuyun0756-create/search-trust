@@ -4,24 +4,28 @@ import type { CapabilityRepository } from "./repository";
 import { initialCapabilityRevision } from "./revision";
 import { deliveryOrderConstraints } from "./order";
 import { observationWarnings } from "./reader-copy";
-import { supportsIdentityReview } from "@/lib/identity-review/view";
+import { identityStatusRows, supportsIdentityReview } from "@/lib/identity-review/view";
+import { inheritedIdentityReportVersions } from "./identity-versions";
 
 /** Completed entitlement precedes any report or revision content read. */
 export async function loadCapabilityOwnerDocument(
-  repository: Pick<CapabilityRepository, "loadCompletedReport" | "loadRevision">,
+  repository: Pick<CapabilityRepository, "loadCompletedReport" | "loadRevision" | "loadSavedIdentity">,
   userId: string, caseId: string, reportId: string, clientView: boolean,
 ) {
   const report = await repository.loadCompletedReport(userId, caseId, reportId);
   if (!report) return null;
   const revision = await repository.loadRevision(userId, caseId, report);
+  const identity = clientView ? undefined : await repository.loadSavedIdentity(report);
   const approved = clientView && revision?.status === "approved" ? revision : null;
   return {
     document: projectCapabilityReport(report, approved?.content, !!approved),
+    identityStatus: report.report_type === "prospect" && !clientView
+      ? identityStatusRows(identity, report.input_manifest.identity_inheritance ?? undefined) : undefined,
     observationWarnings: observationWarnings(report),
     version: report.version,
-    identityReviewAvailable: supportsIdentityReview(report.report_type, report.input_manifest.ruleset_version),
+    identityReviewAvailable: supportsIdentityReview(report.report_type, report.input_manifest.ruleset_version, report.schema_version),
+    allowUnconfirmedMode: report.schema_version === inheritedIdentityReportVersions.v22_capability_public_v22[1],
     identityInheritance: report.input_manifest.identity_inheritance ?? undefined,
-    prospect: report.report_type === "prospect",
     generatedAt: report.generated_at,
     approvedRevision: approved?.revision ?? null,
     hasApproved: revision?.status === "approved",

@@ -11,7 +11,12 @@ export function validCommand(v:unknown):v is Record<string,unknown>{
  if(v.operation==='commit'||v.operation==='preview')if(!isUuid(v.request_id))return false;
  if(v.operation==='preview'){
   const s=v.selection;
-  return isRecord(s)&&Object.keys(s).every(k=>['branch_ref','operating_model','reason','customers_can_visit'].includes(k))&&(!Object.hasOwn(s,'customers_can_visit')||(typeof s.customers_can_visit==='boolean'&&(!s.customers_can_visit||['storefront','hybrid'].includes(s.operating_model as string))))&&Object.hasOwn(modeLabels,s.operating_model as string)&&typeof s.branch_ref==='string'&&s.branch_ref.length<=320&&/^(cid|place_id):.+$/.test(s.branch_ref)&&typeof s.reason==='string'&&!!s.reason.trim()&&s.reason.length<=1000&&typeof v.base_checksum==='string'&&/^sha256:[a-f0-9]{64}$/.test(v.base_checksum)&&['expected_identity_revision','expected_delivery_revision'].every(k=>Number.isSafeInteger(v[k])&&(v[k] as number)>=0);
+  if(!isRecord(s))return false;
+  const mode=s.operating_model;
+  return Object.keys(s).every(k=>['branch_ref','operating_model','reason','customers_can_visit'].includes(k))
+    &&(mode===null||typeof mode==='string'&&Object.hasOwn(modeLabels,mode))
+    &&(!Object.hasOwn(s,'customers_can_visit')||(typeof s.customers_can_visit==='boolean'&&(!s.customers_can_visit||mode===null||mode==='storefront'||mode==='hybrid')))
+    &&typeof s.branch_ref==='string'&&s.branch_ref.length<=320&&/^(cid|place_id):.+$/.test(s.branch_ref)&&typeof s.reason==='string'&&!!s.reason.trim()&&s.reason.length<=1000&&typeof v.base_checksum==='string'&&/^sha256:[a-f0-9]{64}$/.test(v.base_checksum)&&['expected_identity_revision','expected_delivery_revision'].every(k=>Number.isSafeInteger(v[k])&&(v[k] as number)>=0);
  }
  return true;
 }
