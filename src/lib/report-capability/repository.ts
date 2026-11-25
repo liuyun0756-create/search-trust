@@ -2,8 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { canonicalDigest, canonicalJsonText } from "../verified-analysis-v22/digest";
 import { validateReportV22 } from "../report-v22/validate";
-import { validateAnalysisManifest, validateBusinessScope, validateCapabilityReport, validateDeliveryRevision } from "./validate";
-import type { CapabilityReport } from "./generated/types";
+import { validateAnalysisManifest, validateBusinessScope, validateCapabilityReport, validateDeliveryRevision, validateSavedIdentity } from "./validate";
+import type { BusinessIdentityV2, CapabilityReport } from "./generated/types";
 import { buildApprovedCapabilityDelivery, validateSavedCapabilityRevision } from "./delivery";
 import type { ApprovedCapabilityDelivery, SavedCapabilityRevision } from "./delivery";
 import { capabilityWorkspaceItem } from "./workspace";
@@ -35,13 +35,13 @@ export class CapabilityRepository {
     // The completed index omits the ruleset. Fetch only owner-scoped metadata,
     // then join it to the already authorized report IDs.
     const metadata = await this.db.from("capability_report_versions")
-      .select("id,case_id,ruleset:payload->input_manifest->>ruleset_version")
+      .select("id,case_id,schema_version,ruleset:payload->input_manifest->>ruleset_version")
       .eq("user_id", userId).eq("payload->>report_type", "prospect");
     if (metadata.error || !metadata.data) return reports;
     const byId = new Map(metadata.data.map(row => [row.id, row]));
     return reports.map(report => {
       const row = byId.get(report.reportId);
-      return row?.case_id === report.caseId && supportsIdentityReview(report.type, row.ruleset)
+      return row?.case_id === report.caseId && supportsIdentityReview(report.type, row.ruleset, row.schema_version)
         ? { ...report, identityReviewAvailable: true } : report;
     });
   }
@@ -151,6 +151,22 @@ export class CapabilityRepository {
     if (!saved) return null;
     if (saved.status !== "approved") throw new CapabilityPersistenceError("CAPABILITY_INVALID");
     return buildApprovedCapabilityDelivery(report, saved);
+  }
+
+  /** Call after checking report entitlement. Read only the identity from the bound recipe. */
+  async loadSavedIdentity(report: CapabilityReport): Promise<BusinessIdentityV2 | undefined> {
+    const manifest = report.input_manifest;
+    if (!supportsIdentityReview(report.report_type, manifest.ruleset_version, report.schema_version)) return undefined;
+    const {data, error} = await this.db.from("capability_generation_recipes")
+      .select("identity:recipe->request->business_identity")
+      .eq("manifest_id", manifest.id).eq("user_id", manifest.user_id).eq("case_id", manifest.case_id)
+      .maybeSingle();
+    checkError(error);
+    const identity: unknown = data?.identity;
+    if (!identity) return undefined;
+    if (!validateSavedIdentity(identity) || canonicalDigest(identity) !== manifest.identity_checksum)
+      throw new CapabilityPersistenceError("CAPABILITY_INVALID");
+    return identity;
   }
 
   async saveRevision(userId: string, caseId: string, report: CapabilityReport, value: unknown) {

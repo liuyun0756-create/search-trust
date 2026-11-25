@@ -16,7 +16,7 @@ import { CapabilityRepository } from "@/lib/report-capability/repository";
 import { loadCapabilityOwnerDocument } from "@/lib/report-capability/owner-document";
 import { CapabilityReportDocument } from "@/components/report/CapabilityReportDocument";
 import { IdentityConfirmation } from "@/components/report/IdentityConfirmation";
-import { IdentityStatus } from "@/components/report/IdentityStatus";
+import { SavedIdentityCard } from "@/components/report/SavedIdentityCard";
 import { CapabilityOwnerEditor } from "@/components/report/CapabilityOwnerEditor";
 import { CapabilityDeliveryActions } from "@/components/report/CapabilityDeliveryActions";
 import { ImplementationRecords } from "@/components/report/ImplementationRecords";
@@ -86,13 +86,11 @@ export default async function ReportV22Page({
           <Link href={`${base}?view=client`} aria-current={capability.approvedRevision ? "page" : undefined} className="underline underline-offset-4">Approved client report</Link>
         </nav> : null}
       </div>
-      {query.view !== "client" && capability.prospect && (capability.identityReviewAvailable
-        ? <IdentityConfirmation caseId={caseId} reportId={reportId} inheritance={capability.identityInheritance} />
-        : <section aria-labelledby="saved-identity-title" className="mx-auto mb-8 max-w-4xl rounded-2xl border border-[#718b73] bg-[#f4f8f0] p-6 text-[#22382c]">
-            <h2 id="saved-identity-title" className="text-2xl font-semibold">Identity status</h2>
-            <p className="mt-3 text-sm">This report format did not save identity review details.</p>
-            <IdentityStatus />
-          </section>)}
+      {capability.identityStatus ? <div className="mx-auto mb-6 max-w-4xl">
+        <SavedIdentityCard rows={capability.identityStatus}/>
+      </div> : null}
+      {query.view !== "client" && capability.identityReviewAvailable
+        ? <IdentityConfirmation caseId={caseId} reportId={reportId} inheritance={capability.identityInheritance} allowUnconfirmedMode={capability.allowUnconfirmedMode} /> : null}
       <CapabilityReportDocument document={capability.document} technicalDetails={!capability.approvedRevision} />
       <CapabilityDeliveryActions caseId={caseId} reportId={reportId} revision={capability.deliveryRevision} approved={capability.hasApproved}/>
       <CapabilityOwnerEditor key={reportId} initial={capability.editable} orderConstraints={capability.orderConstraints} candidateReport={capability.candidateReport} />

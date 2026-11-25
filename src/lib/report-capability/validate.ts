@@ -8,10 +8,11 @@ import {candidateSelectionValid} from "./candidate-selection";
 import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 import schema from "./contracts/capability.schema.json";
-import type { AnalysisInputManifest, BusinessScope, CapabilityReport, DeliveryRevision } from "./generated/types";
+import type { AnalysisInputManifest, BusinessIdentityV2, BusinessScope, CapabilityReport, DeliveryRevision } from "./generated/types";
 import { canonicalDigest } from "../verified-analysis-v22/digest";
 import { priorityMatches } from "./priority";
 import { deliveryOrderConstraints, validDeliveryOrder } from "./order";
+import { identityReportVersions as inheritanceVariants, inheritedIdentityReportVersions } from "./identity-versions";
 
 const ajv = new Ajv2020({ allErrors: true, strict: true, coerceTypes: false, useDefaults: false });
 addFormats(ajv);
@@ -20,6 +21,8 @@ const structure: ValidateFunction<CapabilityReport> = ajv.getSchema<CapabilityRe
 const revisionStructure: ValidateFunction<DeliveryRevision> = ajv.getSchema<DeliveryRevision>("capability#/$defs/DeliveryRevision")!;
 const manifestStructure: ValidateFunction<AnalysisInputManifest> = ajv.getSchema<AnalysisInputManifest>("capability#/$defs/AnalysisInputManifest")!;
 const businessStructure: ValidateFunction<BusinessScope> = ajv.getSchema<BusinessScope>("capability#/$defs/BusinessScope")!;
+export const validateSavedIdentity: ValidateFunction<BusinessIdentityV2> =
+  ajv.getSchema<BusinessIdentityV2>("capability#/$defs/BusinessIdentityV2")!;
 const order = ["site", "serp", "competitor", "public_gbp", "gsc", "ga4", "official_gbp", "rendered"];
 const sourceSchemas = ["site_inventory_snapshot_v1", "serp_market_snapshot_v1", "competitor_collection_snapshot_v1", "customer_public_gbp_snapshot_v1", "gsc_sync_v1", "ga4_sync_v1", "gbp_sync_v1", "site_rendered_snapshot_v1"];
 const unique = (values: unknown[]) => new Set(values).size === values.length;
@@ -39,16 +42,6 @@ export function validateBusinessScope(value: unknown): value is BusinessScope {
   } catch { return false; }
 }
 
-const inheritanceVariants = {
-  v22_capability_public_v13: ["v22_analysis_input_v3", "2.2.8"],
-  v22_capability_public_v14: ["v22_analysis_input_v4", "2.2.9"],
-  v22_capability_public_v15: ["v22_analysis_input_v5", "2.2.10"],
-  v22_capability_public_v16: ["v22_analysis_input_v6", "2.2.11"],
-  v22_capability_public_v17: ["v22_analysis_input_v7", "2.2.12"],
-  v22_capability_public_v18: ["v22_analysis_input_v8", "2.2.13"],
-  v22_capability_public_v20: ["v22_analysis_input_v10", "2.2.15"],
-} as const;
-
 function manifestLayout(m: AnalysisInputManifest): AnalysisInputManifest {
   const inheritance = m.identity_inheritance;
   if (!inheritance) return m;
@@ -58,14 +51,16 @@ function manifestLayout(m: AnalysisInputManifest): AnalysisInputManifest {
 function manifestValid(bound: AnalysisInputManifest) {
   const inheritance = bound.identity_inheritance;
   const reviews = bound.ruleset_version === "v22_capability_public_v22";
-  if (Boolean(inheritance) !== ["v22_analysis_input_v11", "v22_analysis_input_v12"].includes(bound.schema_version)
-    || Boolean(inheritance) !== (bound.ruleset_version === "v22_capability_public_v21" || reviews)
-    || (bound.schema_version === "v22_analysis_input_v12") !== reviews) return false;
+  const variant = Object.entries(inheritedIdentityReportVersions).find(([ruleset]) => ruleset === bound.ruleset_version)?.[1];
+  if (Boolean(inheritance) !== Boolean(variant)
+    || Boolean(inheritance) !== Object.values(inheritedIdentityReportVersions).some(([schema]) => schema === bound.schema_version)
+    || variant && variant[0] !== bound.schema_version) return false;
   if (reviews && (inheritance?.branch !== "retained"
     || !inheritance || ["v22_capability_public_v13", "v22_capability_public_v14"].includes(inheritance.base_ruleset))) return false;
   if (bound.snapshots.some(s=>s.source_kind === "public_gbp" && s.schema_version === "customer_public_gbp_snapshot_v3") !== reviews) return false;
   if (inheritance) {
-    if (bound.mode !== "acquisition" || Object.hasOwn(bound, "execution_type")
+    if (bound.mode !== "acquisition"
+      || (Object.hasOwn(bound, "execution_type") && (!reviews || bound.execution_type !== "public_reassessment"))
       || instant(inheritance.confirmed_at) > instant(bound.evaluated_at)
       || (inheritance.branch === "needs_confirmation"
         && (inheritance.operating_model === "retained" || inheritance.visits === "retained"))) return false;

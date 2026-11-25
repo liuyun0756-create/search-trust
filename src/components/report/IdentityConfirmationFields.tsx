@@ -15,22 +15,26 @@ export interface IdentityFieldValues {
   customersCanVisit: boolean;
 }
 
-export function IdentityConfirmationFields({branches, values, onChange, disabled, optionalMode = false}: {
+export function IdentityConfirmationFields({branches, values, onChange, disabled, optionalMode = false, preserveSavedVisit = false, unconfirmedModeLabel}: {
   branches: IdentityBranchOption[];
   values: IdentityFieldValues;
   onChange(value: IdentityFieldValues): void;
   disabled: boolean;
   optionalMode?: boolean;
+  preserveSavedVisit?: boolean;
+  unconfirmedModeLabel?: string;
 }) {
   const {branch, mode, reason, customersCanVisit} = values;
   const selected = branches.find((item) => item.ref === branch);
   const fieldClass = "mt-2 w-full rounded-lg border border-[#c8d4ca] bg-white p-3";
-  const canShowVisit = (mode === "storefront" || mode === "hybrid") && branch && (!optionalMode || selected?.address);
+  const canShowVisit = (mode === "storefront" || mode === "hybrid" || (!mode && preserveSavedVisit))
+    && branch && (!optionalMode || selected?.address);
   return <fieldset disabled={disabled} className="mt-5 grid gap-5 sm:grid-cols-2">
     <label className="font-medium">Operating model{optionalMode ? " (optional)" : ""}
       <select aria-label={optionalMode ? "Operating model (optional)" : "Operating model"} className={fieldClass} value={mode}
-        onChange={(event) => onChange({...values, mode: event.target.value as Mode | "", customersCanVisit: false})}>
-        <option value="">{optionalMode ? "Confirm after the report" : "Choose an operating model"}</option>
+        onChange={(event) => onChange({...values, mode: event.target.value as Mode | "",
+          customersCanVisit: !event.target.value && preserveSavedVisit && customersCanVisit})}>
+        <option value="">{unconfirmedModeLabel ?? (optionalMode ? "Confirm after the report" : "Choose an operating model")}</option>
         {Object.entries(modeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </select>
     </label>
