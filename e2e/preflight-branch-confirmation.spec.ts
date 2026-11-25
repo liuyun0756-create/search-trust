@@ -26,6 +26,7 @@ test("a new Case can confirm a saved GBP branch before the paid entry", async ({
   await area.getByRole("button",{name:"Choose a branch"}).click();
   await area.getByLabel("Google Business Profile",{exact:true}).selectOption("42");
   await expect(area.getByText("Website domain matches · Phone matches")).toBeVisible();
+  await expect(area.getByText(/Choose an operating model and confirm that customers can visit/)).toBeVisible();
   await expect(area.getByRole("button",{name:"Save branch confirmation"})).toBeDisabled();
   await area.getByRole("textbox",{name:"Confirmation reason"}).fill("Domain and phone verified");
   await page.screenshot({path:info.outputPath("new-case-confirm-gbp-branch.png"),fullPage:true});

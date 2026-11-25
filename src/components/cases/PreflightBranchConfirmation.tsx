@@ -57,6 +57,9 @@ export function PreflightBranchConfirmation({caseId, branches, lookupReason, rec
       The website’s Maps link pointed to a street address. We searched by business name and website domain for the profile shown here.
     </p>}
     {receipt && !editing && <p role="status" className="mt-2 text-sm">Branch saved. It will apply only if the report evidence still matches.</p>}
+    {selected && !values.mode && <p className="mt-2 text-sm">
+      Choose an operating model and confirm that customers can visit before the report can check the address.
+    </p>}
     {!!error && <p role="alert" className="mt-3 text-sm">{error}</p>}
     {editing && <>
       <IdentityConfirmationFields branches={branches.map((item) => ({

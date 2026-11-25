@@ -25,13 +25,15 @@ export function gbpComparisonView(value:GbpComparison,clientOnly:boolean){
 }
 export type GbpComparisonView=ReturnType<typeof gbpComparisonView>;
 export function gbpComparisonValid(value:GbpComparison,manifest:AnalysisInputManifest){
+ const versionedReviews=value.schema_version==='gbp_comparison_v2';
+ if (versionedReviews ? !value.customer_sampling : Object.hasOwn(value,'customer_sampling')) return false;
  const sources=Object.fromEntries(manifest.snapshots.map(s=>[s.source_kind,s.snapshot_id]));
  if(value.rows[0]?.subject!=='customer'||value.rows.slice(1).some(r=>r.subject!=='competitor'))return false;
  if(value.differences.map(d=>d.metric).join()!==GBP_METRICS.join())return false;
  for(const [i,row] of value.rows.entries()){
   if(Object.keys(row.metrics).sort().join()!==[...GBP_METRICS].sort().join())return false;
   for(const key of GBP_METRICS){const m=row.metrics[key];
-   const expected=i===0&&['reviews_90d','latest_review','visible_replies'].includes(key)?[]:i===0
+   const expected=i===0&&['reviews_90d','latest_review','visible_replies'].includes(key)?(versionedReviews?[`${sources.public_gbp}:/payload/review_sample`]:[]):i===0
     ?[`${sources.public_gbp}:/payload/record/fields/${key}`]
     :[`${sources.competitor}:/payload/competitors/${i-1}/${['categories','rating','review_count'].includes(key)?'public_gbp/'+key:'reviews'}`];
    if(JSON.stringify(m.source_refs)!==JSON.stringify(expected))return false;
@@ -39,14 +41,24 @@ export function gbpComparisonValid(value:GbpComparison,manifest:AnalysisInputMan
    if(m.sampled_at!=null&&(!/(?:Z|[+-]\d\d:\d\d)$/.test(m.sampled_at)||!Number.isFinite(Date.parse(m.sampled_at))))return false;
    if(m.denominator!=null&&(m.numerator==null||m.numerator>m.denominator||typeof m.value!=='number'||Math.abs(m.value-m.numerator/m.denominator)>1e-12))return false;
    if(m.status!=='observed'&&(m.lower_bound||m.numerator!=null||m.denominator!=null))return false;
-   if(i===0&&['reviews_90d','latest_review','visible_replies'].includes(key)&&(m.status!=='not_checked'||m.reason!=='customer_reviews_not_collected'))return false;
+   if(!versionedReviews&&i===0&&['reviews_90d','latest_review','visible_replies'].includes(key)&&(m.status!=='not_checked'||m.reason!=='customer_reviews_not_collected'))return false;
   }
  }
  return value.differences.every(d=>{if(d.status==='not_checked')return d.direction===null&&d.competitor_indices.length===0;
   const m=value.rows[0].metrics[d.metric];if(m.status!=='observed'||!m.sampled_at||d.competitor_indices.length<2||new Set(d.competitor_indices).size!==d.competitor_indices.length||d.reason!=='same_direction')return false;
   const others=d.competitor_indices.map(i=>value.rows[i]?.metrics[d.metric]);
-  if(others.some(v=>!v||v.status!=='observed'||!v.sampled_at||v.lower_bound)||m.lower_bound)return false;
+  if(others.some(v=>!v||v.status!=='observed'||!v.sampled_at))return false;
+  const counts=versionedReviews&&d.metric==='reviews_90d';
+  if(!counts&&(m.lower_bound||others.some(v=>v!.lower_bound)))return false;
   const times=[m,...others].map(v=>Date.parse(v!.sampled_at!));if(Math.max(...times)-Math.min(...times)>86400000)return false;
+  if(counts) return typeof m.value==='number'&&others.every(v=>typeof v!.value==='number'&&(
+    (d.direction==='higher'&&!m.lower_bound&&v!.value>(m.value as number))
+    ||(d.direction==='lower'&&!v!.lower_bound&&v!.value<(m.value as number))));
+  if(versionedReviews&&d.metric==='latest_review'){
+    const date=Date.parse(String(m.value));
+    return others.every(v=>d.direction==='higher'?Date.parse(String(v!.value))>date:
+      d.direction==='lower'&&Date.parse(String(v!.value))<date);
+  }
   return d.metric==='categories'?d.direction==='different_categories'&&Array.isArray(m.value)&&others.every(v=>Array.isArray(v!.value)&&v!.value.some(category=>!(m.value as string[]).includes(category)&&others.filter(other=>Array.isArray(other!.value)&&other!.value.includes(category)).length>=2))
    :['rating','review_count'].includes(d.metric)&&typeof m.value==='number'&&others.every(v=>typeof v!.value==='number'&&(d.direction==='higher'?v!.value>(m.value as number):d.direction==='lower'&&v!.value<(m.value as number)));
  });
