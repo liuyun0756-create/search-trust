@@ -1,6 +1,7 @@
-import {afterAll,beforeAll,expect,it} from 'vitest';
+import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {readFile} from 'node:fs/promises';
 import {database,enrolled,fixture,fix,rpc} from './test-support/acquisition-binding.mjs';
+import {withRolledBackTransaction} from './test-support/rollback-test';
 let db:any,b:any,body:any,before:any,after:any;
 beforeAll(async()=>{
  db=await database(false);b=await fixture();body=await enrolled(db,b);
@@ -34,23 +35,34 @@ it.each(['queries','target_market','competitors'])('keeps the existing %s bindin
  const recipe=structuredClone(b.recipe);recipe.request.evidence_input.context[field]=field==='target_market'?{display_name:'Elsewhere'}:[];
  await expect(insertRecipe(recipe)).rejects.toThrow('CAPABILITY_PREPARATION_CONFLICT');
 });
-it.each(['v22_capability_public_v12','v22_capability_public_v13'])('enforces the identity version gate for %s',async ruleset=>{
- const other=await database();try{
-  const input=await fixture(ruleset),call=await enrolled(other,input);
-  expect((await rpc(other,'freeze_v22_acquisition_preparation',call)).manifest_id).toBe(input.manifest.id);
-  if(ruleset.endsWith('v12')){
-   const recipe=structuredClone(input.recipe);recipe.request.business_identity=input.convertedIdentity;
-   await expect(other.query('insert into capability_generation_recipes(manifest_id,user_id,case_id,generation_input_checksum,recipe) values($1,$2,$3,$4,$5::jsonb)',[input.manifest.id,input.manifest.user_id,input.manifest.case_id,input.manifest.generation_input_checksum,JSON.stringify(recipe)])).rejects.toThrow('CAPABILITY_PREPARATION_CONFLICT');
-  }
- }finally{await other.close();}
+describe.sequential('identity version gates on the current schema',()=>{
+ let currentDb:Awaited<ReturnType<typeof database>>;
+ beforeAll(async()=>{currentDb=await database();});
+ afterAll(async()=>{await currentDb?.close();});
+ it.each(['v22_capability_public_v12','v22_capability_public_v13'])('enforces the identity version gate for %s',async ruleset=>{
+  await withRolledBackTransaction(currentDb,async other=>{
+   const input=await fixture(ruleset),call=await enrolled(other,input);
+   expect((await rpc(other,'freeze_v22_acquisition_preparation',call)).manifest_id).toBe(input.manifest.id);
+   // Check deferred constraints before rolling the test data back.
+   await other.exec('set constraints all immediate');
+   if(ruleset.endsWith('v12')){
+    const recipe=structuredClone(input.recipe);recipe.request.business_identity=input.convertedIdentity;
+    await expect(other.query('insert into capability_generation_recipes(manifest_id,user_id,case_id,generation_input_checksum,recipe) values($1,$2,$3,$4,$5::jsonb)',[input.manifest.id,input.manifest.user_id,input.manifest.case_id,input.manifest.generation_input_checksum,JSON.stringify(recipe)])).rejects.toThrow('CAPABILITY_PREPARATION_CONFLICT');
+   }
+  });
+ });
 });
-it('keeps legacy whole-object equality and raises on a changed migration baseline',async()=>{
- const other=await database(false);try{
+
+describe('identity migration baseline guard',()=>{
+ let other:Awaited<ReturnType<typeof database>>;
+ beforeAll(async()=>{other=await database(false);});
+ afterAll(async()=>{await other?.close();});
+ it('keeps legacy whole-object equality and raises on a changed migration baseline',async()=>{
   await other.exec("comment on function public.check_v22_acquisition_preparation_binding() is 'test-only baseline metadata';");
   const def=(await other.query<{definition:string}>("select pg_get_functiondef('check_v22_acquisition_preparation_binding()'::regprocedure) definition")).rows[0].definition;
   await other.exec(def.replace("return new;","return new; -- changed baseline"));
   await expect(other.exec(await readFile('supabase/migrations/'+fix,'utf8'))).rejects.toThrow('P101_PREPARATION_BINDING_BASELINE_MISMATCH');
- }finally{await other.close();}
- const bad=structuredClone(b.recipe);bad.request.business_identity=structuredClone(b.old);bad.request.business_identity.operating_model='hybrid';
- await expect(insertRecipe(bad)).rejects.toThrow('CAPABILITY_PREPARATION_CONFLICT');
+  const bad=structuredClone(b.recipe);bad.request.business_identity=structuredClone(b.old);bad.request.business_identity.operating_model='hybrid';
+  await expect(insertRecipe(bad)).rejects.toThrow('CAPABILITY_PREPARATION_CONFLICT');
+ });
 });
